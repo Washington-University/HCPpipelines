@@ -141,7 +141,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0 (compiled), 1 (interpreted)
 
 opts_AddOptional '--mctype' 'MotionCorrectionType' 'MCFLIRT OR FLIRT' "What type of motion correction to use (MCFLIRT default)" "MCFLIRT"
 
-opts_AddOptional '--bbr' 'BBR' 'T2w, T1w or NONE' "BBR contrast to use for EPI to T1w registration" "T2w"
+opts_AddOptional '--bbr-contrast' 'BBRContrast' 'T2w, T1w or NONE' "BBR contrast to use for EPI to T1w registration, default 'T2w', ignored when --species=Human" "T2w"
 
 opts_AddOptional '--wmprojabs' 'WMProjAbs' 'number' "FreeSurfer wm-proj-abs value" "2"
 
@@ -928,7 +928,7 @@ if [[ $SPECIES != "Human" ]] ; then
         convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
     fi
 fi
-#Split echos (echo name arrays are set up after Stage 1 for all RunModes).
+#Split echos
 if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Splitting echo(s)"
     for iEcho in $(seq 0 $((nEcho-1))) ; do
@@ -941,6 +941,11 @@ if [[ ${nEcho} -gt 1 ]]; then
         wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
             -subvolume "$(( iEcho + 1 ))"
     done
+else
+    tcsEchoesOrig[0]="${OrigTCSName}"
+    sctEchoesOrig[0]="${OrigScoutName}"
+    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
+    sctEchoesGdc[0]="${ScoutName}_gdc"
 fi
 
 if (( ! IsLongitudinal )); then
@@ -962,22 +967,6 @@ if (( ! IsLongitudinal )); then
 fi
 
 fi  # RunMode < 2 (end of GDC/MotionCorrection stage)
-
-# Set up echo name arrays (needed for DistortionCorrection and OneStepResampling regardless of RunMode)
-tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
-if [[ ${nEcho} -gt 1 ]]; then
-    for iEcho in $(seq 0 $((nEcho-1))) ; do
-        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
-        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")"
-        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
-        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
-    done
-else
-    tcsEchoesOrig[0]="${OrigTCSName}"
-    sctEchoesOrig[0]="${OrigScoutName}"
-    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
-    sctEchoesGdc[0]="${ScoutName}_gdc"
-fi
 
 # In longitudinal mode, the rest of this script re-runs the same code as in cross-sectional.
 # For that to function correctly, we need all relevant directories to
@@ -1051,7 +1040,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --preregistertool=${PreregisterTool} \
         --is-longitudinal="$IsLongitudinal" \
         --t1w-cross2long-xfm="$T1wCross2LongXfm" \
-        --bbr=${BBR}   \
+        --bbr-contrast=${BBRContrast}   \
         --wmprojabs=${WMProjAbs} \
         --scannerpatientposition=${ScannerPatientPosition} \
         --truepatientposition=${TruePatientPosition} \

@@ -134,9 +134,9 @@ opts_AddOptional '--is-longitudinal' 'IsLongitudinal' "longitudinal processing" 
 opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. Mandatory if is-longitudinal is set." "NONE"
 
 # NHP-specific options
-opts_AddOptional '--bbr' 'BBR' "NONE or T1w or T2w" "BBR registration method. Use T1w for MION data, T2w for BOLD fMRI (default), or NONE to skip BBR." "T2w"
+opts_AddOptional '--bbr-contrast' 'BBRContrast' "NONE or T1w or T2w" "BBR registration method. Use T1w for MION data, T2w for BOLD fMRI (default), or NONE to skip BBR. Only used when --species is not Human." "T2w"
 
-opts_AddOptional '--wmprojabs' 'WMProjAbs' 'number' "White matter projection absolute value for FreeSurfer BBR (used when --bbr=T2w)" ""
+opts_AddOptional '--wmprojabs' 'WMProjAbs' 'number' "White matter projection absolute value for FreeSurfer BBR (used when --bbr-contrast=T2w)" ""
 
 opts_AddOptional '--SEPhaseNeg2' 'SpinEchoPhaseEncodeNegative2' 'image' "Second 'negative' polarity SE-EPI image for TOPUP (NHP-specific)"
 
@@ -278,7 +278,7 @@ case $DistortionCorrection in
 esac
 
 
-if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 2017-2024
+if (( ! IsLongitudinal )) || [[ "$SPECIES" != "Human" ]]; then # - for NHP TH 2017-2024
     mkdir -p $WD
 
     # Record the input options in a log file
@@ -416,7 +416,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
                 fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
 
                 # register scout to T1w image using fieldmap
-                if [[ "$SPECIES" != "Human" && "$BBR" == "NONE" ]] ; then # - for NHP TH 2017-2024
+                if [[ "$SPECIES" != "Human" && "$BBRContrast" == "NONE" ]] ; then # - for NHP TH 2017-2024
                     # when EPI data does not have clear contrast between gray/white, bbr is not effective - Takuya Hayashi inserted for NHP
                     log_Msg "Run epi_reg_dof_nobbr"
                     ${HCPPIPEDIR_Global}/epi_reg_dof_nobbr --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
@@ -424,7 +424,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
                     ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/Magnitude.nii.gz --fmapmagbrain=${WD}/Magnitude_brain.nii.gz --echospacing=${EchoSpacing} --pedir=${UnwarpDir}
                 fi
             else
-                if [[ "$SPECIES" != "Human" && "$BBR" == "NONE" ]] ; then # - for NHP TH 2017-2024
+                if [[ "$SPECIES" != "Human" && "$BBRContrast" == "NONE" ]] ; then # - for NHP TH 2017-2024
                     log_Msg "Brain Extract of Scout using BET"
                     bet ${WD}/Scout.nii.gz ${WD}/Scout_brain.nii.gz -f 0.3
                     log_Msg "Run epi_reg_dof_nobbr"
@@ -531,7 +531,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 
 				# fine tuning with FSL-BBR between fieldmap and T1w_acpc
 		
-				if [ $BBR = "T1w" ] ; then
+				if [ $BBRContrast = "T1w" ] ; then
 					# Note that BBR=T1w is done using brain outer boundary using flipped slope. Note that using grey/white boundary
 					# does not result in stable registration because blood USPIO concentration is significantly changes the 
 					# grey/white contrast (e.g., btw higher and lower than 12mg/kg i.v. in macaque at 3T)- TH 2023
@@ -544,7 +544,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 					${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope $BBRslope -out ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII
 					${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -init ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 | awk 'NR==1 {print $1}' > ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat.mincost
 				
-				elif [ $BBR = "T2w" ] ; then
+				elif [ $BBRContrast = "T2w" ] ; then
 					BBRslope=-0.5 # positive=t1w contrast, negative=t2w contrast
 
 					log_Msg "register T2w contrast scout to T1w struc with FSL BBR"
@@ -552,7 +552,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 					${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/${ScoutInputFileSE}_undistorted2T1w_initII --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII
 					${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -init ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -wmseg ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII_fast_wmseg -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope $BBRslope | awk 'NR==1 {print $1}' > ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat.mincost
 
-				elif [ $BBR = "NONE" ] ; then
+				elif [ $BBRContrast = "NONE" ] ; then
 				
 					log_Msg "register scout to T1w with cost function of normmi" 
 					${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -out ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII -nosearch
@@ -612,7 +612,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
             log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
             ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField.nii.gz --postmat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/Jacobian2T1w.nii.gz
-            #1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
+            # 1-step resample from input (gdc) scout - NOTE: jacobian modulation is handled below, and is optional
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
 
             #resample phase images to T1w space
@@ -679,7 +679,6 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
                 log_Msg "generate combined warpfields and spline interpolated images"
                 ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp
                 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/Jacobian.nii.gz -r ${T1wImage} --premat=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat -o ${WD}/Jacobian2T1w.nii.gz
-                # 1-step resample from input (gdc) scout - NOTE: no longer includes jacobian correction, if specified
                 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp -o ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init
 
             ;;
@@ -714,7 +713,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 	#Check to see if FreeSurferNHP.sh was used
     log_Msg "Check to see if FreeSurferNHP.sh was used"
     if [ "$SPECIES" != "Human" ] ; then # - for NHP TH 2017-2024
-	    if [ "$BBR" = "T1w" ]; then
+	    if [ "$BBRContrast" = "T1w" ]; then
 	        BBRopt="--t1 --${dof}"
             BBRopt+="--wm-proj-abs 1.1 --gm-proj-abs 0.2 "  # macaque MION EPI/pial surface registration. TO DO: marmoset MION  - TH 2023
             BBRopt+="--brute1max 2 --brute1delta 2 "        # limited coarse search in NHP - TH Nov 2024
@@ -729,7 +728,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 			
 			${FSLDIR}/bin/applywarp -i ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.nii.gz -r ${T1wImage}.nii.gz --premat=${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_FSBBR.nii.gz
 
-	    elif [ "$BBR" = "T2w" ]; then
+	    elif [ "$BBRContrast" = "T2w" ]; then
 			BBRopt="--t2 "
 			BBRopt+="--${dof} --wm-proj-abs ${WMProjAbs} "
 			BBRopt+="--brute1max 2 --brute1delta 2 " # limited coarse search in NHP - TH Nov 2024
@@ -746,7 +745,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 
 			${FSLDIR}/bin/applywarp -i ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.nii.gz -r ${T1wImage}.nii.gz --premat=${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_FSBBR.nii.gz
 
-	    elif [ "$BBR" = "NONE" ]; then
+	    elif [ "$BBRContrast" = "NONE" ]; then
 		    log_Msg "Use refined registration with EPI and T1w"
 		    flirt -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.nii.gz -ref ${WD}/${T1wBrainImageFile} -dof 6 -nosearch -omat ${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileSE}_undistorted2T1w.nii.gz
         fi
@@ -760,7 +759,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 			SBRef2SEFieldByT1=FALSE  # TRUE or FALSE
 			
 			## SBRef2StrucBBR - tune up BBR between Scout_gdc (SBRef) and structure. This step will update fMRI to T1w registration by using SBRef and BBR. This step may be effective if the contrast of SBRef is good enough (e.g. contrast of single-band SBRef is very good) - TH 2024
-			if [[ "$BBR" = T1w ]] ; then
+			if [[ "$BBRContrast" = T1w ]] ; then
 			    SBRef2StrucBBR=TRUE     # FALSE or TRUE 
 			else
 			    SBRef2StrucBBR=FALSE    # FALSE or TRUE. BBR for BOLD fMRI in NHP does not robustly work
@@ -807,7 +806,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
             ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -init ${WD}/FieldMap/SBRef2Warpfield_initI.mat -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil -nosearch -omat ${WD}/FieldMap/SBRef2Warpfield_initII.mat -out ${WD}/FieldMap/SBRef2Warpfield_initII
 
             # 3rd registration of distorted SBRef-to-SEField with FS-BBR
-            if [ $BBR = "T1w" ]; then
+            if [ $BBRContrast = "T1w" ]; then
                 log_Msg "registration of distorted T1w-contrast SBRef to distorted T1w with T1w-BBR"
                 # create brain ourter surface boundary
                 ${FSLDIR}/bin/applywarp --rel -i ${WD}/brainmask_fs --premat=${WD}/str2fMRI.mat -w ${WD}/WarpField_inv -r ${WD}/SEFieldmag_undistorted_hires -o  ${WD}/brainmask_fs2Fieldmap --interp=trilinear
@@ -817,12 +816,12 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
                 ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -init ${WD}/FieldMap/SBRef2Warpfield_initII.mat -wmseg ${WD}/brainmask_fs2Fieldmap -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope 0.5 -omat ${WD}/FieldMap/SBRef2Warpfield.mat -o ${WD}/FieldMap/SBRef2Warpfield -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil 
                 ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -wmseg ${WD}/brainmask_fs2Fieldmap -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 -init ${WD}/FieldMap/SBRef2Warpfield.mat  | awk 'NR==1 {print $1}' > ${WD}/SBRef2Warpfield.mincost
           
-            elif [ $BBR = "T2w" ]; then
+            elif [ $BBRContrast = "T2w" ]; then
                 log_Msg "registration of distorted SBRef to distorted T1w with T2w-BBR"
                 ${FSLDIR}/bin/flirt -in ${WD}/FieldMap/SBRef -dof 6 -ref ${WD}/${T1wBrainImageFile}2Fieldmap -cost bbr -schedule $FSLDIR/etc/flirtsch/bbr.sch -wmseg ${WD}/wmseg_acpc_dc2Fieldmap_thr0.05 -init ${WD}/FieldMap/SBRef2Warpfield_initII.mat -omat ${WD}/FieldMap/SBRef2Warpfield.mat -o ${WD}/FieldMap/SBRef2Warpfield -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil 
                 ${FSLDIR}/bin/flirt -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -init ${WD}/FieldMap/SBRef2Warpfield.mat -wmseg ${WD}/wmseg_acpc_dc2Fieldmap_thr0.05 -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope -0.5 | awk 'NR==1 {print $1}' > ${WD}/FieldMap/SBRef2Warpfield.mincost
 
-            elif [ $BBR = "NONE" ]; then
+            elif [ $BBRContrast = "NONE" ]; then
                 log_Msg "registration between distorted SBRef and distorted T1w volume"
                 RefVolume=${WD}/${T1wBrainImageFile}2Fieldmap
                 ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap/SBRef -ref $RefVolume -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil -init ${WD}/FieldMap/SBRef2Warpfield_initII.mat -omat ${WD}/FieldMap/SBRef2Warpfield.mat -out ${WD}/FieldMap/SBRef2Warpfield -cost normmi -nosearch #-init "$WD"/Scout2T1w.mat
@@ -860,7 +859,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
 
         ## SBRef2strucBBR 
         if [[ "${SBRef2StrucBBR}" = TRUE ]] ; then 
-            if [[ "$BBR" = T1w ]]; then
+            if [[ "$BBRContrast" = T1w ]]; then
                 # use FSL-BBR
                 # use flipped bbrslope and brain boundary
                 ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
@@ -886,7 +885,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
                 ${FSLDIR}/bin/convert_xfm -omat ${WD}/GEEPItoT1w.mat -concat ${WD}/GEEPItoT1w_FSBBR.mat ${WD}/GEEPItoT1w_FSLBBR.mat
  
 
-            elif [[ "$BBR" = T2w ]]; then
+            elif [[ "$BBRContrast" = T2w ]]; then
 
                 log_Msg "Run FSL BBR with FLIRT"
                 ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/wmparc -thr 2 -uthr 2 -bin -mul 39 -add ${SubjectFolder}/T1w/wmparc -thr 41 -uthr 41 -bin ${WD}/wmseg_acpc_dc
@@ -915,7 +914,7 @@ if [[ "$IsLongitudinal" != "1" || $SPECIES != "Human" ]]; then # - for NHP TH 20
                 log_Msg "Combine xfms of FSL-BBR and FS-BBR"
                 ${FSLDIR}/bin/convert_xfm -omat ${WD}/GEEPItoT1w.mat -concat ${WD}/GEEPItoT1w_FSBBR.mat ${WD}/GEEPItoT1w_FSLBBR.mat
  
-            elif [[ "$BBR" = NONE ]]; then 
+            elif [[ "$BBRContrast" = NONE ]]; then 
                 log_Msg "Use refined registration with EPI and T1w"
                 applywarp -i ${WD}/FieldMap/TopupSiglossweight -r ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat -o ${WD}/${ScoutInputFileGE}_undistorted_siglossweight --interp=trilinear
                 fslmaths ${WD}/${ScoutInputFileGE}_undistorted_siglossweight -thr 0.5 -bin ${WD}/${ScoutInputFileGE}_undistorted_siglossweight
