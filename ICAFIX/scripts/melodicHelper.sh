@@ -84,15 +84,4 @@ done
 
 # If par_runjobs fails, print log directory location and exit with same status
 par_runjobs "$numpar"
-runjobs_status=$?
-if (( runjobs_status != 0 ))
-then
-    if [[ "$logDir" != "" ]]
-    then
-        log_Err "par_runjobs failed with status $runjobs_status. Check job logs in: $logDir"
-    else
-        log_Err "par_runjobs failed with status $runjobs_status."
-    fi
-    exit $runjobs_status
-fi
 

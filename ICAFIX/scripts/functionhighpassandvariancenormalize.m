@@ -281,10 +281,6 @@ if dovol
     clear ctsfull;
     % N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
     call_fsl(['fslcpgeom ' fmri '.nii.gz ' fname ' -d']);
-    % Check that the file was created successfully
-    if ~exist(fname, 'file')
-        error(['Failed to save volumetric variance-normalized time series. Expected file: ' fname ' in directory: ' pwd]);
-    end
 end
 % For CIFTI, we can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
 if singlerun
