@@ -622,8 +622,6 @@ if [[ "${T2wImage}" != "" ]]; then
 
     if ((flair)); then
         t2_or_flair="FLAIR"
-    else if ((t1wflair)); then
-        t2_or_flair="T1wFLAIR"
     else
         t2_or_flair="T2"
     fi

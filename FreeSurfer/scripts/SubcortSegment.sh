@@ -24,9 +24,7 @@ ScaleVolumeTransform=$5
 shift 5
 mri_segment_args="$@"
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
-source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
-log_SetToolName "$(basename $0)"
+source $HCPPIPEDIR/global/scripts/debug.shlib "$@"  # command failure reporting, also sources log.shlib
 
 AtlasFolder="$SubjectDIR/../MNINonLinear"
 # ----------------------------------------------------------------------
@@ -207,7 +205,7 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 
 cd $DIR
 # ----------------------------------------------------------------------
-log_Msg "End: $(basename $0)"
+log_Msg "End"
 # ----------------------------------------------------------------------
 
 

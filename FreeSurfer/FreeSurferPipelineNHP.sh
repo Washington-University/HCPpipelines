@@ -403,7 +403,6 @@ make_t2w_hires_nifti_file()
     local mri_vol2vol_cmd
     local return_code
     local t2_or_flair
-    local t1wflair
 
     working_dir="${1}"
 
