@@ -13,7 +13,7 @@ SkullStripMethod=PreFS                                             # PreFS or FS
 
 SPECIES="$1"
 isFLAIR="$2"    #NOTE: must be "0" or "1"
-isT1wFLAIR="$3" #NOTE: must be "0" or "1"
+isT1wDivFLAIR="$3" #NOTE: must be "0" or "1"
 
 if [[ "$SPECIES" == *Human* ]] ; then
 
@@ -57,7 +57,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
   if ((isFLAIR)) ; then                                       # control with FLAIR for pial tuning
       NSigmaAbove="3"                                         # 3: FS6 default
       NSigmaBelow="3"                                         # 3: FS6 default
-  elif ((isT1wFLAIR)) ; then                                  # control with T1w/FLAIR
+  elif ((isT1wDivFLAIR)) ; then                                  # control with T1w/FLAIR
       NSigmaAbove="3"                                         # 3: highres FLAIR (Autio et al.)                                        
       NSigmaBelow="4"                                         # 4: highres FLAIR (Autio et al.)                                         
   else                                                        # control with T2w

@@ -141,7 +141,7 @@ opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 opts_AddOptional '--flair' 'flair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--t1wflair' 't1wflair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -T1wFLAIR/-T1wFLAIRpial options (rather than the -T2/-T2pial options).  The T1w/FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
+opts_AddOptional '--t1wdivflair' 't1wdivflair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -T1wDivFLAIR/-T1wDivFLAIRpial options (rather than the -T2/-T2pial options).  The T1w/FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
 opts_AddOptional '--existing-subject' 'existing_subject' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
 
@@ -175,7 +175,7 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 
 #parse booleans
 flair=$(opts_StringToBool "$flair")
-t1wflair=$(opts_StringToBool "$t1wflair")
+t1wdivflair=$(opts_StringToBool "$t1wdivflair")
 existing_subject=$(opts_StringToBool "$existing_subject")
 conf2hires=$(opts_StringToBool "$conf2hires")
 
@@ -408,7 +408,7 @@ make_t2w_hires_nifti_file()
 
     pushd "${working_dir}"
 
-    if ((flair || t1wflair)); then
+    if ((flair || t1wdivflair)); then
         t2_or_flair="FLAIR"
     else
         t2_or_flair="T2"
@@ -637,8 +637,8 @@ fi
 if [ "${CopyBiasFromConf:-}" = "TRUE" ] ; then
 	c2hxopts+=" --copy-bias-from-conf"
 fi	
-if ((t1wflair)) ; then
-	c2hxopts+=" --T1wFLAIR"
+if ((t1wdivflair)) ; then
+	c2hxopts+=" --T1wDivFLAIR"
 fi
 if [ -n "${c2hxopts:-}" ] ; then
 	log_Msg "conf2hires expert opts: $c2hxopts"
@@ -696,7 +696,7 @@ if [ "$RunMode" -lt 2 ] ; then
     # If for some other reason the -T2pial flag needs to be excluded from recon-all, 
     # this can be accomplished using --extra-reconall-arg=-noT2pial
     if [[ "${T2wImage}" != "" ]] ; then
-        if ((flair || t1wflair)) ; then
+        if ((flair || t1wdivflair)) ; then
             recon_all_pial="-FLAIRpial"
             recon_all_initrun+=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
             T2Type=FLAIR
@@ -971,7 +971,7 @@ if [ "$RunMode" -lt 6 ]; then
 
 		pushd ${mridir}
 
-		if ((flair || t1wflair)) ; then
+		if ((flair || t1wdivflair)) ; then
 			t2_or_flair="FLAIR"
 		else
 			t2_or_flair="T2"

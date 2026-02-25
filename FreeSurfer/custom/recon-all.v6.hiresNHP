@@ -210,7 +210,7 @@ set UseCPsWithCaNorm = 0 # -canorm-usecps enable control points with ca_norm
 set DoT2pial = 0; # if 1, mris_make_surfaces refines pial using T2
 set T2max = ();
 set DoFLAIRpial = 0; # if 1, mris_make_surfaces refines pial using FLAIR
-set DoT1wFLAIRpial = 0; # if 1, mris_make_surfaces refines pial using T1w/FLAIR
+set DoT1wDivFLAIRpial = 0; # if 1, mris_make_surfaces refines pial using T1w/FLAIR
 
 
 set EMRegMaskArg = () ; # MOD: HCP: mask passed when running mri_em_reg, default is 
@@ -3987,8 +3987,8 @@ if($DoConf2Hires) then
   if($DoT2pial == 0)    set cmd = ($cmd --no-T2)
   if($DoT2pial == 1)    set cmd = ($cmd --T2)
   if($DoFLAIRpial == 1) set cmd = ($cmd --FLAIR)
-  if($DoT1wFLAIRpial == 0) set cmd = ($cmd --no-T1wFLAIR)
-  if($DoT1wFLAIRpial == 1) set cmd = ($cmd --T1wFLAIR)
+  if($DoT1wDivFLAIRpial == 0) set cmd = ($cmd --no-T1wDivFLAIR)
+  if($DoT1wDivFLAIRpial == 1) set cmd = ($cmd --T1wDivFLAIR)
   if($longitudinal) then
     set cmd = ($cmd --longitudinal $tpNid $longbaseid)
   else
