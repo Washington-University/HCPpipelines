@@ -1,7 +1,7 @@
 function hdr = make_nifti2_hdr()
     hdr = struct();
     hdr.sizeof_hdr = int32(540);
-    hdr.magic = ['n+2' 0 13 10 26 10]; %should write reset this anyway?
+    hdr.magic = ['n+2' char([0 13 10 26 10])]; %write resets this anyway
     hdr.datatype = int16(16); %default to float32
     hdr.bitpix = int16(32);
     hdr.dim = ones(1, 8, 'int64');
@@ -35,7 +35,7 @@ function hdr = make_nifti2_hdr()
     hdr.xyzt_units = int32(10); %default to mm + sec
     hdr.intent_code = int32(0);
     hdr.intent_name = char(zeros(1, 16, 'int8'));
-    hdr.dim_info = char(0);
+    hdr.dim_info = uint8(0);
     hdr.unused_str = char(zeros(1, 15, 'int8'));
     hdr.extensions = struct('ecode', {}, 'edata', {}); %esize is automatically set from the length of edata
 end

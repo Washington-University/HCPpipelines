@@ -1,7 +1,7 @@
 function outbytes = cifti_write_xml(cifti, keep_metadata)
     if ~(nargin > 1 && keep_metadata)
         prov = cifti_metadata_get(cifti.metadata, 'Provenance');
-        cifti.metadata = struct('key', 'Provenance', 'value', 'cifti_write_xml.m v1.0');
+        cifti.metadata = struct('key', 'Provenance', 'value', 'cifti_write_xml.m v2.2.3');
         if ~isempty(prov)
             cifti.metadata = cifti_metadata_set(cifti.metadata, 'ParentProvenance', prov);
         end
@@ -31,11 +31,19 @@ function tree = cifti_write_metadata(metadata, tree, matrix_uid)
 end
 
 function tree = cifti_write_maps(cifti, tree, matrix_uid)
+    haveLabels = false;
     mapused = false(length(cifti.diminfo), 1);
     for i = 1:length(cifti.diminfo)
+        if strcmp(cifti.diminfo{i}.type, 'labels')
+            if haveLabels
+                error('cifti files are not allowed to have more than one labels dimension, change one of them to scalar');
+            end
+            haveLabels = true;
+        end
         if mapused(i)
             continue;
         end
+        mapused(i) = true; %for consistency
         if i < 3 %NOTE: first and second dims are swapped compared to on disk, because of ciftiopen convention
             appliesto = sprintf('%d', 2 - i); %NOTE: no, this isn't complex, and on disk needs 0-based numbers
         else
@@ -143,6 +151,12 @@ function outstr = friendly_to_cifti_structure(instr)
         case 'DIENCEPHALON_VENTRAL_RIGHT'; outstr = 'CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_RIGHT';
         case 'HIPPOCAMPUS_LEFT'; outstr = 'CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT';
         case 'HIPPOCAMPUS_RIGHT'; outstr = 'CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT';
+        case 'HIPPOCAMPUS_DENTATE_LEFT'
+            disp('NOTE: writing nonstandard left hippocampus dentate structure to cifti-2');
+            outstr = 'CIFTI_STRUCTURE_HIPPOCAMPUS_DENTATE_LEFT';
+        case 'HIPPOCAMPUS_DENTATE_RIGHT'
+            disp('NOTE: writing nonstandard right hippocampus dentate structure to cifti-2');
+            outstr = 'CIFTI_STRUCTURE_HIPPOCAMPUS_DENTATE_RIGHT';
         case 'OTHER'; outstr = 'CIFTI_STRUCTURE_OTHER';
         case 'OTHER_GREY_MATTER'; outstr = 'CIFTI_STRUCTURE_OTHER_GREY_MATTER';
         case 'OTHER_WHITE_MATTER'; outstr = 'CIFTI_STRUCTURE_OTHER_WHITE_MATTER';
@@ -153,7 +167,7 @@ function outstr = friendly_to_cifti_structure(instr)
         case 'THALAMUS_LEFT'; outstr = 'CIFTI_STRUCTURE_THALAMUS_LEFT';
         case 'THALAMUS_RIGHT'; outstr = 'CIFTI_STRUCTURE_THALAMUS_RIGHT';
         otherwise
-            error(['invalid structure name "' instr '"in cifti struct']);
+            error(['invalid structure name "' instr '" in cifti struct']);
     end
 end
 
