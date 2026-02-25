@@ -58,7 +58,7 @@ SPECIES="Macaque"
 #   NONE: no boundary-based registration
 #   T1w:  T1w-based BBR (e.g. for MION fMRI)
 #   T2w:  T2w-based BBR (default)
-BBR="T2w"
+BBRContrast="T2w"
 
 # Receive coil bias field correction method (NONE, LEGACY, or SEBASED)
 #   SEBASED calculates bias field from spin echo images (requires TOPUP)
@@ -428,7 +428,7 @@ for Subject in $Subjlist ; do
                 --biascorrection="$BiasCorrection" \
                 --usejacobian="$UseJacobian" \
                 --mctype="$MCType" \
-                --bbr="$BBR" \
+                --bbr-contrast="$BBRContrast" \
                 --wmprojabs="$WMProjAbs" \
                 --initworldmat="$InitWorldMat" \
                 --scannerpatientposition="$ScannerPatientPosition" \
@@ -463,7 +463,7 @@ for Subject in $Subjlist ; do
                 --biascorrection=$BiasCorrection \
                 --usejacobian=$UseJacobian \
                 --mctype=$MCType \
-                --bbr=$BBR \
+                --bbr-contrast=$BBRContrast \
                 --wmprojabs=$WMProjAbs \
                 --initworldmat=$InitWorldMat \
                 --scannerpatientposition=$ScannerPatientPosition \
