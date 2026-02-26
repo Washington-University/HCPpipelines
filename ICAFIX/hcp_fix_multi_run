@@ -637,6 +637,17 @@ then
     ## ---------------------------------------------------------------------------
     ## Concatenate the individual runs and create necessary files
     ## ---------------------------------------------------------------------------
+   
+    # Make sure all paths are absolute
+    if [[ "$ConcatName" != /* ]]; then
+        ConcatName="$(pwd)/$ConcatName"
+    fi
+    if [[ "$T1wTemplateBrain" != /* && "$T1wTemplateBrain" != "" ]]; then
+        T1wTemplateBrain="$(pwd)/$T1wTemplateBrain"
+    fi
+    if [[ "$TrainingData" != /* && "$TrainingData" != "" ]]; then
+        TrainingData="$(pwd)/$TrainingData"
+    fi
 
     #Make Concatenated Folder
     ConcatFolder=$(dirname ${ConcatName})
