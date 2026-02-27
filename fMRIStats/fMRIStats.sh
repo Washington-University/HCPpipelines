@@ -24,7 +24,7 @@ opts_AddMandatory '--high-pass' 'HighPass' 'string' "the high pass filter value 
 opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration name, default 'NONE'" 'NONE'
 opts_AddOptional '--process-volume' 'ProcessVolumeStr' 'TRUE or FALSE' "whether to process volume data, default 'false'" 'false'
 opts_AddOptional '--cleanup-effects' 'CleanUpEffectsStr' 'TRUE or FALSE' "whether to compute cleanup effects metrics, default 'false'" 'false'
-opts_AddOptional '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)" 'clean_rclean_tclean'
+opts_AddOptional '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)" '_clean_rclean_tclean'
 opts_AddOptional '--ica-mode' 'ICAmode' 'sICA or sICA+tICA' "ICA mode: 'sICA' for spatial ICA only, 'sICA+tICA' for combined spatial+temporal ICA, default 'sICA'" 'sICA'
 opts_AddOptional '--fmri-names' 'fMRINames' 'string' "@-separated list of fMRI single run names (only required if data was processed with single-run FIX, must be in order and complete)" ''
 opts_AddOptional '--tica-component-tcs' 'tICAcomponentTCS' 'path' "path to tICA timecourse CIFTI (required if --tica-mode=sICA+tICA)" ''
@@ -100,9 +100,10 @@ fMRIExist=()
 for Name in "${NamesArray[@]}"
 do
   fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
-  
+
   # Check if cleaned data exists
-  if [[ -f "${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii" ]]
+  cleanedCIFTI="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
+  if [[ -f "${cleanedCIFTI}" ]]
   then
     # Check if ICA folder and signal file exist
     if [[ -d "${fMRIFolder}/${Name}_hp${HighPass}.ica" ]]
@@ -118,7 +119,7 @@ do
       log_Warn "Skipping ${Name}: ICA folder not found"
     fi
   else
-    log_Warn "Skipping ${Name}: cleaned data not found"
+    log_Warn "Skipping ${Name}: cleaned data not found [${cleanedCIFTI}]"
   fi
 done
 
@@ -135,7 +136,7 @@ log_Msg "Processing ${#fMRIExist[@]} run(s) for ${Subject}"
 for Name in "${fMRIExist[@]}"
 do
   log_Msg "Running fMRIStats on: ${Name}"
-  
+
   # Construct filepaths
   fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
   MeanCIFTI="${fMRIFolder}/${Name}_Atlas${RegString}_mean.dscalar.nii"
@@ -146,16 +147,16 @@ do
   CleanedVolumeTCS="${fMRIFolder}/${Name}_hp${HighPass}${ProcSTRING}.nii.gz"
   CIFTIOutput="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
   VolumeOutput="${fMRIFolder}/${Name}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
-  
+
   # sICATCS and Signal are always required (used in all ICA modes)
-  sICATCS="${fMRIFolder}/${Name}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"   
+  sICATCS="${fMRIFolder}/${Name}_hp${HighPass}.ica/filtered_func_data.ica/melodic_mix.sdseries.nii"
   if [ -e "${fMRIFolder}/${Name}_hp${HighPass}.ica/HandSignal.txt" ] ; then
     Signal="${fMRIFolder}/${Name}_hp${HighPass}.ica/HandSignal.txt"
   else
     Signal="${fMRIFolder}/${Name}_hp${HighPass}.ica/Signal.txt"
   fi
   # tICAcomponentTCS and tICAcomponentNoise are not constructed here because they are not necessarily programmatically named
-  
+
   # Validate required input files exist
   if [ ! -e "${MeanCIFTI}" ]; then
     log_Err_Abort "Required file not found: ${MeanCIFTI}"
@@ -169,7 +170,7 @@ do
   if [ ! -e "${CleanedCIFTITCS}" ]; then
     log_Err_Abort "Required file not found: ${CleanedCIFTITCS}"
   fi
-  
+
   if [[ -n "$fMRINames" ]]; then # Single-run FIX processing
     log_Msg "Single-run FIX processing detected based on --fmri-names argument. Run name: ${Name}"
     # Calculate start and stop sample indices for the current run (1-indexed)
@@ -207,45 +208,45 @@ do
       log_Err_Abort "unrecognized matlab mode '$MatlabMode', use 0, 1, or 2"
       ;;
   esac
-  
+
   #matlab function arguments - build array of all arguments (positional + name-value pairs)
   matlab_args_array=("$MeanCIFTI" "$CleanedCIFTITCS" "$CIFTIOutput" "$sICATCS" "$Signal")
-  
+
   # Optional name-value pairs
   matlab_args_array+=("ProcessVolume" "$ProcessVolume")
   matlab_args_array+=("CleanUpEffects" "$CleanUpEffects")
   matlab_args_array+=("ICAmode" "$ICAmode")
   matlab_args_array+=("Caret7_Command" "$Caret7_Command")
-  
+
   # Add conditionally required arguments based on flags
   if [[ "$CleanUpEffects" == "1" ]]; then
     matlab_args_array+=("OrigCIFTITCS" "$OrigCIFTITCS")
   fi
-  
+
   if [[ "$ProcessVolume" == "1" ]]; then
     matlab_args_array+=("MeanVolume" "$MeanVolume")
     matlab_args_array+=("CleanedVolumeTCS" "$CleanedVolumeTCS")
     matlab_args_array+=("VolumeOutputName" "$VolumeOutput")
-    
+
     if [[ "$CleanUpEffects" == "1" ]]; then
       matlab_args_array+=("OrigVolumeTCS" "$OrigVolumeTCS")
     fi
   fi
-  
+
   # Add runSamps if single-run FIX processing
   if [[ -n "$fMRINames" ]]; then
     matlab_args_array+=("runSamps" "$runSamps")
   fi
-  
+
   # Add tICA arguments if in sICA+tICA mode
   if [[ "$ICAmode" == "sICA+tICA" ]]; then
     matlab_args_array+=("tICAcomponentTCS" "$tICAcomponentTCS")
     matlab_args_array+=("tICAcomponentNoise" "$tICAcomponentNoise")
   fi
-  
+
   #shortcut in case the folder gets renamed
   this_script_dir=$(dirname "$0")
-  
+
   case "$MatlabMode" in
     (0)
       # For compiled MATLAB, pass all args (positional + name-value pairs flattened)
@@ -264,33 +265,33 @@ do
         fi
         matlab_args+="'$arg'"
       done
-      
+
       matlabcode="
         addpath('$HCPPIPEDIR/fMRIStats/scripts');
         fMRIStats($matlab_args);"
-      
+
       log_Msg "running matlab code: $matlabcode"
       "${matlab_interpreter[@]}" <<<"$matlabcode"
       echo
       ;;
   esac
-  
+
   log_Msg "Completed: ${Name}"
 done
 
-## Post-processing: 
-# Multi-run FIX: generate summary CSV files 
-# Single run FIX: average across individual runs then create summary CSV 
+## Post-processing:
+# Multi-run FIX: generate summary CSV files
+# Single run FIX: average across individual runs then create summary CSV
 if [[ -z "$fMRINames" ]]; then
   log_Msg "Generating summary CSV files"
   for Name in "${fMRIExist[@]}"; do
     fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
     CIFTIOutput="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
-    
+
     # Call fMRIStats_SummaryCSV MATLAB function
     matlab_args="'$CIFTIOutput'"
     matlab_args+=", 'Caret7_Command', '$Caret7_Command'"
-    
+
     matlabcode="addpath('$HCPPIPEDIR/fMRIStats/scripts');fMRIStats_SummaryCSV($matlab_args);"
     case "$MatlabMode" in
       (0)
@@ -306,7 +307,7 @@ if [[ -z "$fMRINames" ]]; then
   done
 else  # Single-run FIX processing - average across individual runs then create summary CSV
   log_Msg "Averaging fMRIStats across ${#fMRIExist[@]} single-run FIX runs"
-  
+
   ciftiFiles=()
   volFiles=()
   for Name in "${fMRIExist[@]}"; do
@@ -315,16 +316,16 @@ else  # Single-run FIX processing - average across individual runs then create s
     volFiles+=("${fMRIFolder}/${Name}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz")
   done
   N=${#fMRIExist[@]}
-  
+
   metricNamesStr=$("$Caret7_Command" -file-information "${ciftiFiles[0]}" -only-map-names)
   IFS=$'\n' read -rd '' -a metricNames <<<"$metricNamesStr" || true
   nMetrics=${#metricNames[@]}
   log_Msg "Found $nMetrics metrics: ${metricNames[*]}"
-  
+
   tempfiles_create "fMRIStats_XXXXXX" tmpDir
   tmpDir="${tmpDir%/*}"  # Extract parent directory
   log_Msg "Temp directory: $tmpDir"
-  
+
   meanIndices=()
   stdIndices=()
   for ((m=0; m<nMetrics; m++)); do
@@ -334,20 +335,20 @@ else  # Single-run FIX processing - average across individual runs then create s
       meanIndices+=($((m+1)))
     fi
   done
-  
+
   # Create two temporary CIFTIs per run: one with MEAN metrics, one with STD metrics
   if [[ ${#meanIndices[@]} -gt 0 ]]; then
     for r in "${!ciftiFiles[@]}"; do
       "$Caret7_Command" -cifti-merge "$tmpDir/run${r}_mean.dscalar.nii" -cifti "${ciftiFiles[$r]}" $(printf -- '-index %s ' "${meanIndices[@]}")
     done
   fi
-  
+
   if [[ ${#stdIndices[@]} -gt 0 ]]; then
     for r in "${!ciftiFiles[@]}"; do
       "$Caret7_Command" -cifti-merge "$tmpDir/run${r}_std.dscalar.nii" -cifti "${ciftiFiles[$r]}" $(printf -- '-index %s ' "${stdIndices[@]}")
     done
   fi
-  
+
   # Average MEAN metrics using simple mean
   if [[ ${#meanIndices[@]} -gt 0 ]]; then
     log_Msg "Averaging ${#meanIndices[@]} MEAN metrics across ${N} runs"
@@ -358,7 +359,7 @@ else  # Single-run FIX processing - average across individual runs then create s
     done
     "$Caret7_Command" -cifti-math "$meanExpr" "$tmpDir/avg_mean.dscalar.nii" "${meanArgs[@]}"
   fi
-  
+
   # Average STD metrics using RMS
   if [[ ${#stdIndices[@]} -gt 0 ]]; then
     log_Msg "Averaging ${#stdIndices[@]} STD metrics using RMS"
@@ -372,7 +373,7 @@ else  # Single-run FIX processing - average across individual runs then create s
 
   # Merge averaged MEAN and STD metrics back in original metric order
   AveragedCIFTIOutput="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
-  
+
   # Build merge indices to restore original order
   meanIdx=0
   stdIdx=0
@@ -386,7 +387,7 @@ else  # Single-run FIX processing - average across individual runs then create s
       indexOrder+=("std" "$stdIdx")
     fi
   done
-  
+
   # Build the actual merge command with indices in original order
   mergeCmd=()
   for ((i=0; i<${#indexOrder[@]}; i+=2)); do
@@ -398,14 +399,14 @@ else  # Single-run FIX processing - average across individual runs then create s
       mergeCmd+=(-cifti "$tmpDir/avg_std.dscalar.nii" -index "$idx")
     fi
   done
-  
+
   "$Caret7_Command" -cifti-merge "$AveragedCIFTIOutput" "${mergeCmd[@]}"
   log_Msg "Created averaged CIFTI with metrics in original order: $AveragedCIFTIOutput"
-  
+
   # Generate summary CSV using MATLAB
   matlab_args="'$AveragedCIFTIOutput'"
   matlab_args+=", 'Caret7_Command', '$Caret7_Command'"
-  
+
   matlabcode="addpath('$HCPPIPEDIR/fMRIStats/scripts');fMRIStats_SummaryCSV($matlab_args);"
   case "$MatlabMode" in
     (0)
@@ -418,7 +419,7 @@ else  # Single-run FIX processing - average across individual runs then create s
       "${matlab_interpreter[@]}" <<<"$matlabcode"
       ;;
   esac
-  
+
   # Repeat for volumes if requested, repeating the same steps as for CIFTI but with subvolumes instead of indices, and averaging MEAN metrics with simple mean and STD metrics with RMS
   if [[ "$ProcessVolume" == "1" && ${#volFiles[@]} -gt 0 ]]; then
     # Extract per-run MEAN and STD volume subvolumes
@@ -429,7 +430,7 @@ else  # Single-run FIX processing - average across individual runs then create s
         "$Caret7_Command" -volume-merge "$tmpDir/run${r}_mean.nii.gz" "${meanVolCmd[@]}"
       done
     fi
-    
+
     if [[ ${#stdIndices[@]} -gt 0 ]]; then
       for r in "${!volFiles[@]}"; do
         stdVolCmd=(-volume "${volFiles[$r]}")
@@ -437,7 +438,7 @@ else  # Single-run FIX processing - average across individual runs then create s
         "$Caret7_Command" -volume-merge "$tmpDir/run${r}_std.nii.gz" "${stdVolCmd[@]}"
       done
     fi
-    
+
     # Average volumes
     if [[ ${#meanIndices[@]} -gt 0 ]]; then
       meanVolExpr="(0$(printf ' + m%d' $(seq 0 $((N-1))))) / $N"
@@ -447,7 +448,7 @@ else  # Single-run FIX processing - average across individual runs then create s
       done
       "$Caret7_Command" -volume-math "$meanVolExpr" "$tmpDir/avg_mean.nii.gz" "${meanVolArgs[@]}"
     fi
-    
+
     if [[ ${#stdIndices[@]} -gt 0 ]]; then
       stdVolExpr="sqrt((0$(for r in $(seq 0 $((N-1))); do printf ' + s%d * s%d' $r $r; done)) / $N)"
       stdVolArgs=()
@@ -456,7 +457,7 @@ else  # Single-run FIX processing - average across individual runs then create s
       done
       "$Caret7_Command" -volume-math "$stdVolExpr" "$tmpDir/avg_std.nii.gz" "${stdVolArgs[@]}"
     fi
-    
+
     # Merge volumes in original metric order
     AveragedVolumeOutput="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
     mergeVolCmd=()
@@ -474,7 +475,7 @@ else  # Single-run FIX processing - average across individual runs then create s
     "$Caret7_Command" -volume-merge "$AveragedVolumeOutput" "${mergeVolCmd[@]}"
     log_Msg "Created averaged volume: $AveragedVolumeOutput"
   fi
-  
+
 fi
 
 log_Msg "fMRIStats processing complete for subject ${Subject}"
