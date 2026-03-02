@@ -114,33 +114,6 @@ else
     echo "Timepoint_cross: $Timepoint_cross"
 fi
 
-#########################################################################################
-# Organizing and cleaning up the folder structure
-#########################################################################################
-if (( ! TemplateProcessing )); then
-
-    LongDIR="${StudyFolder}/${Subject}.long.${Template}/T1w"
-
-    log_Msg "Organizing the folder structure for: ${Timepoint_cross}"
-    # create the symlink
-    TargetDIR="${StudyFolder}/${Timepoint_cross}.long.${Template}/T1w"
-    mkdir -p "${TargetDIR}"
-
-    tp_folder_fslong="${LongDIR}/${Timepoint_cross}.long.${Template}"
-    if [ ! -d "$tp_folder_fslong" ]; then
-    	log_Err_Abort "Folder $tp_folder_fslong does not exist, was longitudinal FreeSurfer run?"
-    fi
-
-    tp_folder_hcp="${TargetDIR}/${Timepoint_cross}.long.${Template}"
-    ln -sf "$tp_folder_fslong" "$tp_folder_hcp"
-    if [ ! -d "$tp_folder_hcp" ]; then
-    	log_Err_Abort "Could not create required symlink from $tp_folder_fslong to $tp_folder_hcp"
-    fi
-
-    # remove the symlink in the subject's folder
-    rm -rf "${LongDIR}/${Timepoint_cross}"
-fi
-
 ############################################################################################################
 # The next block computes the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (long_template).
 Timepoint_long=$Timepoint_cross.long.$Template
@@ -410,7 +383,7 @@ if (( TemplateProcessing ==  1 )); then
             rm -rf "$AtlasSpaceFolder_timepoint/xfms"
         fi
         mkdir -p "${AtlasSpaceFolder_timepoint}"
-        ln -sf "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/"
+        cp -r "${AtlasSpaceFolder_template}/xfms" "${AtlasSpaceFolder_timepoint}/"
 
         #one mask for all timepoints.
         cp "${AtlasSpaceFolder_template}/$T1wImageBrainMask".nii.gz "$Timepoint_brain_mask_MNI"
