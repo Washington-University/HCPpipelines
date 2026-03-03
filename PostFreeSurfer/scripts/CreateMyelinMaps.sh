@@ -199,7 +199,6 @@ if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality i
 	fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
 	fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
 
-	#TODO NHP: new feature from NHP, test
 	# Create "$OrginalT2wImage"_brainmask_fs for fMRIVolume and diffusion preprocessing
 	invwarp -w "$OutputOrigT2wToT1w" -r "$OrginalT2wImage" -o "$(remove_ext $OutputOrigT2wToT1w)"Inv
 	applywarp --interp=trilinear -i "$T1wImageBrainMask" -w "$(remove_ext $OutputOrigT2wToT1w)"Inv -r "$OrginalT2wImage" -o "$(remove_ext $OrginalT2wImage)"_brainmask_fs
@@ -336,7 +335,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	AllAvailableMeshesArray="${LowResMeshesArray[@]}"
 	AllAvailableMeshesArray+=(${HighResMesh})
 	NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
-	# TODO NHP, the following loop wasn't tested for NHP.
 	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
 	for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
 		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
@@ -369,7 +367,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	MyelinTargetFile=${ReferenceMyelinMaps}
 	# only resample the reference map into low res mesh if it isn't the first LowResMesh
 
-	# TODO NHP test this block for NHP subjects
 	if [ "$RefResMesh" != "${LowResMesh}" ]; then
 		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
 		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
@@ -384,7 +381,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 				-right-area-surfs ${T1wSurfFolder}/${Session}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 	fi
 	# the gifti files from reference maps are generated in previous versions
-	# TODO NHP test this command for NHP subjects
 	${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
 		-metric CORTEX_LEFT "$SphereFolder"/"$Session".L.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii \
 		-metric CORTEX_RIGHT "$SphereFolder"/"$Session".R.RefMyelinMap."$RefResMesh"k_fs_LR.func.gii
@@ -405,7 +401,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 
 	# ----- End moved statements -----		
 	# bias field is computed in the module MyelinMap_BC.sh
-	# TODO NHP test this command for NHP subjects
 	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii COLUMN \
 		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.BiasField.native.func.gii \
 		-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.BiasField.native.func.gii
@@ -413,7 +408,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	# bias field in native space is already generated
 	# BC is already applied in module MyelinMap_BC on MyelinMap
 	# BC the other types of given myelin maps
-	# TODO NHP: Seems to be run by MyelinMap_BC.sh, check
 	${CARET7DIR}/wb_command -cifti-math "Var - Bias" ${AtlasSpaceFolder}/${NativeFolder}/${Session}.SmoothedMyelinMap_BC.native.dscalar.nii \
 		-var Var ${AtlasSpaceFolder}/${NativeFolder}/${Session}.SmoothedMyelinMap.native.dscalar.nii \
 		-var Bias ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii
@@ -425,7 +419,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.${MyelinMap}_BC.native.func.gii
 
 		# create cifti and gifti MyelinMap in the high res mesh space
-		# TODO NHP test this command for NHP subjects
 		${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
 			COLUMN ${AtlasSpaceFolder}/${Session}.${MyelinMap}.${HighResMesh}k_fs_LR.dscalar.nii \
 			COLUMN ADAP_BARY_AREA ENCLOSING_VOXEL \
@@ -443,7 +436,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	# remove intermediate files
 	# rm ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
 	# create cifti and gift MyelinMap in the low res mesh spaces
-	# TODO NHP: test for NHP subjects
 	for LowResMesh in "${LowResMeshesArray[@]}" ; do
 		for MyelinMap in MyelinMap SmoothedMyelinMap ; do
 			${CARET7DIR}/wb_command -cifti-resample ${AtlasSpaceFolder}/${NativeFolder}/${Session}.${MyelinMap}_BC.native.dscalar.nii \
