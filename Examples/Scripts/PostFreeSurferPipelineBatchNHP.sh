@@ -109,7 +109,7 @@ QUEUE=""
 
 
 for Subject in $Subjlist ; do
-    echo $Session
+    echo $Subject
 
     #Input Variables
     #SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
