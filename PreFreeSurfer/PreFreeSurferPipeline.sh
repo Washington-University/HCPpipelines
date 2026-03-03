@@ -152,9 +152,9 @@ NONE_METHOD_OPT="NONE"
 FIELDMAP_METHOD_OPT="FIELDMAP"
 SIEMENS_METHOD_OPT="SiemensFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
-# For GE HealthCare Fieldmap Distortion Correction methods 
+# For GE HealthCare Fieldmap Distortion Correction methods
 # see explanations in global/scripts/FieldMapPreprocessingAll.sh
-GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap" 
+GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap"
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 
@@ -223,9 +223,9 @@ opts_AddOptional '--SEPhaseNeg' 'SpinEchoPhaseEncodeNegative' '<file_path>_or__N
 
 opts_AddOptional '--SEPhaseNeg2' 'SpinEchoPhaseEncodeNegative2' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a second negative phase encoding direction (e.g., AP ), set to "NONE" if not using second Spin  Echo Field Maps"
 
-opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a positive phase encoding direction (RL in  HCP data), set to 'NONE' if not using Spin Echo Field Maps" 
+opts_AddOptional '--SEPhasePos' 'SpinEchoPhaseEncodePositive' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a positive phase encoding direction (RL in  HCP data), set to 'NONE' if not using Spin Echo Field Maps"
 
-opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a second positive phase encoding direction (e.g., PA), set to "NONE" if not using second Spin Echo Field Maps" 
+opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' '<file_path>_or__NONE' "For spin echo field map, path to volume with  a second positive phase encoding direction (e.g., PA), set to "NONE" if not using second Spin Echo Field Maps"
 
 opts_AddMandatory '--seechospacing' 'SEEchoSpacing' 'seconds' "Effective Echo Spacing of Spin Echo Field Map,  (in seconds) or 'NONE' if not used"
 
@@ -239,15 +239,15 @@ opts_AddMandatory '--unwarpdir' 'UnwarpDir' '{x,y,z,x-,y-,z-} OR {i,j,k,i-,j-,k-
 
 opts_AddMandatory '--gdcoeffs' 'GradientDistortionCoeffs' 'file_path' "File containing gradient distortion  coefficients, Set to 'NONE' to turn off"
 
-opts_AddMandatory '--avgrdcmethod' 'AvgrdcSTRING' 'avgrdcmethod' "Averaging and readout distortion correction method.   See below for supported values. 
-  '${NONE_METHOD_OPT}' 
+opts_AddMandatory '--avgrdcmethod' 'AvgrdcSTRING' 'avgrdcmethod' "Averaging and readout distortion correction method.   See below for supported values.
+  '${NONE_METHOD_OPT}'
       average any repeats with no readout distortion correction
 
-  '${SPIN_ECHO_METHOD_OPT}' 
+  '${SPIN_ECHO_METHOD_OPT}'
       average any repeats and use Spin Echo Field Maps for readout
       distortion correction
 
-  '${PHILIPS_METHOD_OPT}' 
+  '${PHILIPS_METHOD_OPT}'
       average any repeats and use Philips specific Gradient Echo
       Field Maps for readout distortion correction
 
@@ -257,12 +257,12 @@ opts_AddMandatory '--avgrdcmethod' 'AvgrdcSTRING' 'avgrdcmethod' "Averaging and 
 
   '${GE_HEALTHCARE_METHOD_OPT}'
       use GE HealthCare specific Gradient Echo Field Maps for SDC (i.e., field map in Hz and magnitude image in two separate NIfTI files, via --fmapphase and --fmapmag).
-    
-  '${SIEMENS_METHOD_OPT}' 
+
+  '${SIEMENS_METHOD_OPT}'
       average any repeats and use Siemens specific Gradient Echo
       Field Maps for readout distortion correction
 
-  '${FIELDMAP_METHOD_OPT}' 
+  '${FIELDMAP_METHOD_OPT}'
       equivalent to '${SIEMENS_METHOD_OPT}' (preferred)
       This option value is maintained for backward compatibility."
 
@@ -270,11 +270,11 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file_path' "Configuration file f
 
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias Field Smoothing Sigma (optional)"
 
-opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom  brain mask saved as '<session>/T1w/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.   If PreFreeSurfer has been run before and you have created custom structural images, e.g.:  
-- '<session>/T1w/T1w_acpc_dc_restore_brain.nii.gz' 
-- '<session>/T1w/T1w_acpc_dc_restore.nii.gz' 
-- '<session>/T1w/T2w_acpc_dc_restore_brain.nii.gz' 
-- '<session>/T1w/T2w_acpc_dc_restore.nii.gz' 
+opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom  brain mask saved as '<session>/T1w/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.   If PreFreeSurfer has been run before and you have created custom structural images, e.g.:
+- '<session>/T1w/T1w_acpc_dc_restore_brain.nii.gz'
+- '<session>/T1w/T1w_acpc_dc_restore.nii.gz'
+- '<session>/T1w/T2w_acpc_dc_restore_brain.nii.gz'
+- '<session>/T1w/T2w_acpc_dc_restore.nii.gz'
   to be used when peforming MNI152 Atlas registration, specify 'CUSTOM'.  When 'MASK' or 'CUSTOM' is specified, only the AtlasRegistration step is run.  If the parameter is omitted or set to NONE (the default),   standard image processing will take place.  If using 'MASK' or 'CUSTOM', the data still needs to be staged properly by   running FreeSurfer and PostFreeSurfer afterwards.  NOTE: This option allows manual correction of brain images in cases when they  were not successfully processed and/or masked by the regular use of the pipelines.  Before using this option, first ensure that the pipeline arguments used were   correct and that templates are a good match to the data. " "NONE"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData_or__Controls_whether_the_HCP_acquisition_and_processing_guidelines_should_be_treated_as_requirements.__LegacyStyleData' "'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013)   and requires 'HCP-Style' data acquistion.   'LegacyStyleData' allows additional processing functionality and use of some acquisitions  that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image. " "HCPStyleData"
@@ -337,21 +337,21 @@ uname -a
 
 log_Msg "Parsing Command Line Options"
 
-# NOTE: UseJacobian only affects whether the spin echo field maps 
-# get intensity modulated by the gradient distortion correction warpfield 
+# NOTE: UseJacobian only affects whether the spin echo field maps
+# get intensity modulated by the gradient distortion correction warpfield
 # (T2wToT1wDistortionCorrectAndReg -> TopupPreprocessingAll)
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(opts_StringToBool ${UseJacobian})"
 
 # Set UsePhaseZero to 1 or 0
-UsePhaseZero=$(opts_StringToBool "$UsePhaseZero") 
+UsePhaseZero=$(opts_StringToBool "$UsePhaseZero")
 
 # Set BetBiasFieldCor to 1 or 0
 BetBiasFieldCor=$(opts_StringToBool "$BetBiasFieldCor")
 
 # Use --printcom=echo for just printing everything and not actually
 # running the commands (the default is to actually run the commands)
-RUN="" # SHORT CIRCUT RUN SO IT DOESNT DO ANYTHING 
+RUN="" # SHORT CIRCUT RUN SO IT DOESNT DO ANYTHING
 if [[ "$RUN" != "" ]]
 then
     log_Err_Abort "--printcom is not consistently implemented, do not rely on it"
@@ -454,7 +454,7 @@ if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
     mkdir -p ${AtlasSpaceFolder}/xfms/
 fi
 
-# log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS? 
+# log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS?
 
 if [ "$CustomBrain" = "ORIGMASK" ] ; then
 
@@ -502,7 +502,7 @@ fi  # --- skipped all the way to here if using customized structural images (--c
 #  - Perform Brain Extraction(FNIRT-based Masking)
 # ------------------------------------------------------------------------------
 
-# NOTE: We skip all the way to AtlasRegistration (last step) if using a custom 
+# NOTE: We skip all the way to AtlasRegistration (last step) if using a custom
 # brain mask or custom structural images ($CustomBrain={MASK|CUSTOM})
 
 if [ "$CustomBrain" = "NONE" ] ; then
@@ -530,7 +530,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
             TXwImage=${T2wImage}
             TXwTemplate=${T2wTemplate}
             TXwTemplate2mm=${T2wTemplate2mm}
-            # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023 
+            # Create reference volumes if the resolution of raw image differs from TXwTemplate - TH Mar 2023
             echo "T2wTemplate: ${T2wTemplate}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
             echo "T2wTemplate2mm: ${T2wTemplate2mm}" >>  ${AtlasSpaceFolder}/TemplateInfo.txt
         fi
@@ -544,7 +544,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
         else
             log_Msg "Processing Modality: $TXw"
         fi
-  
+
 
         OutputTXwImageSTRING=""
         OutputTXwBrainImageSTRING=""
@@ -570,14 +570,14 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --in=${wdir}/${TXwImage}${i} \
                     --out=${TXwFolder}/${TXwImage}${i}_gdc \
                     --owarp=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
-                    
+
                     if [ "$SPECIES" != "Human" ] ; then
                         if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
                             log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
                             ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation.sh --in=${TXwFolder}/${TXwImage}${i}_gdc --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
                             ${RUN} ${FSLDIR}/bin/convertwarp --warp1=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp --ref=${TXwFolder}/${TXwImage}${i}_gdc --postmat=${TXwFolder}/${TXwImage}${i}_gdc_reorient.mat --out=${TXwFolder}/xfms/${TXwImage}${i}_gdc_warp
                         fi
-                    
+
                         if [ $(${FSLDIR}/bin/imtest $(remove_ext $Image)_brain) = 1 ] ; then # for ACPC initialization - TH 2016
                             if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc_brain) = 1 ]] ; then
                                 ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc_brain
@@ -600,11 +600,11 @@ if [ "$CustomBrain" = "NONE" ] ; then
                         ${RUN} ${FSLDIR}/bin/fslreorient2std $Image ${TXwFolder}/${TXwImage}${i}_gdc
                     else
                         Image="`${FSLDIR}/bin/remove_ext $Image`"
-                    
+
                         if [[ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}${i}_gdc) = 1 ]] ; then
                             ${RUN} ${FSLDIR}/bin/imrm ${TXwFolder}/${TXwImage}${i}_gdc
                         fi
-                        log_Msg "reorient data to std" 
+                        log_Msg "reorient data to std"
                         if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
                             log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
                             ${RUN} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation.sh --in=${Image} --out=${TXwFolder}/${TXwImage}${i}_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition"
@@ -628,7 +628,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     i=$(($i+1))
                 done
             fi
-            
+
 
             # Average Like (Same Modality) Scans
             OutputTXwImageSTRING=$(IFS=@; echo "${OutputTXwImageARRAY[*]}")
@@ -647,14 +647,14 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --cleanup=no \
                     --brain-size="$BrainSize" \
                     --image-list="$OutputTXwImageSTRING"
-                if [ "$SPECIES" != "Human" ] && [ `echo $OutputTXwBrainImageSTRING | wc -w` -ge 1 ] ; then   # For ACPC initialization - TH 2016 
-                    log_Msg "PERFORMING SIMPLE AVERAGING FOR ${TXw} BRAIN" 
+                if [ "$SPECIES" != "Human" ] && [ `echo $OutputTXwBrainImageSTRING | wc -w` -ge 1 ] ; then   # For ACPC initialization - TH 2016
+                    log_Msg "PERFORMING SIMPLE AVERAGING FOR ${TXw} BRAIN"
                     if [ `echo $OutputTXwBrainImageSTRING | wc -w` = 1 ] ; then
                         for img in $OutputTXwBrainImageSTRING ; do
                             ${RUN} flirt -in $img -ref ${TXwFolder}/${TXwImage} -applyxfm -init ${TXwFolder}/Average${TXw}Images/ToHalfTrans0001.mat -o ${TXwFolder}/${TXwImage}_brain -interp nearestneighbour
                         done
                     elif [ `echo $OutputTXwBrainImageSTRING | wc -w` =  `echo $OutputTXwImageSTRING | wc -w` ] ; then
-                        i=1; 
+                        i=1;
                         for img in $OutputTXwBrainImageSTRING ; do
                             num=$(echo $OutputTXwBrainImageSTRING | wc -w)
                             num=$(zeropad $num 4)
@@ -713,7 +713,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
             if [ $(${FSLDIR}/bin/imtest ${TXwFolder}/${TXwImage}_acpc_custom_mask) = 1 ] ; then
                 log_Msg "Using ${TXwFolder}/${TXwImage}_acpc_custom_mask for BrainExtraction"
             fi
-    
+
             log_Msg "Performing Brain Extraction using FNIRT-based Masking"
             log_Msg "mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased"
             mkdir -p ${TXwFolder}/BrainExtraction_FNIRTbased
@@ -732,7 +732,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --betfraction=${betfraction} \
                 --brainextract=${BrainExtract} \
                 --species=${SPECIES}
-        fi   
+        fi
         # End of looping over modalities (T1w and T2w)
     done
 
@@ -754,6 +754,8 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
                 fi
 
+                # need to set to something in case of "$SPECIES" == "Human", needs to be set but is not used
+                SpinEchoPhaseEncodeZeroFSBrainmask="NONE"
                 if [[ "$SPECIES" != "Human" && "$(imtest "$T2wFolder"/T2w)" == "1" && "$UsePhaseZero" == "1" ]] ; then    # added T2w as a phase zero volume - TH Jan 2023
                     SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
                     convert_xfm -omat ${T2wFolder}/xfms/acpc_inv.mat -inverse ${T2wFolder}/xfms/acpc.mat
@@ -823,7 +825,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     ${T1wFolder}/${T1wImage}_acpc_dc_brain \
                     ${T1wFolder}/xfms/${T1wImage}_dc \
                     ${T1wFolder}/${T2wImage}_acpc_dc \
-                    ${T1wFolder}/xfms/${T2wImage}_reg_dc 
+                    ${T1wFolder}/xfms/${T2wImage}_reg_dc
 
         esac
 
@@ -839,7 +841,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
 
         if [ ! "${T2wInputImages}" = "NONE" ] ; then
 
-            log_Msg "Performing Bias Field Correction using sqrt(T1w x T2w)"    
+            log_Msg "Performing Bias Field Correction using sqrt(T1w x T2w)"
             log_Msg "mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w"
 
             mkdir -p ${T1wFolder}/BiasFieldCorrection_sqrtT1wXT2w
@@ -946,8 +948,8 @@ if [ "$RunMode" -lt 6 ]; then
     # i.e., whether the T1w/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
     # or the PostFreeSurferPipeline versions.
     # Make sure that you rerun FreeSurfer and PostFreeSurfer if using --custombrain={CUSTOM|MASK}
-    # or if otherwise simply re-running PreFreeSurfer on top of existing data [which is not advised; 
-    # in the --custombrain=NONE condition, the recommendation would be to simply delete the existing data, 
+    # or if otherwise simply re-running PreFreeSurfer on top of existing data [which is not advised;
+    # in the --custombrain=NONE condition, the recommendation would be to simply delete the existing data,
     # and run PreFreeSurfer (and then FreeSurfer and PostFreeSurfer) de novo].
 
     OutputOrigT1wToT1wPostFS=OrigT1w2T1w  #Needs to match name used in both FreeSurferPipeline and PostFreeSurferPipeline
@@ -988,7 +990,7 @@ if [ "$RunMode" -lt 6 ]; then
         --ot2=${AtlasSpaceFolder}/${T2wImage} \
         --ot2rest=${AtlasSpaceFolder}/${T2wImage}_restore \
         --ot2restbrain=${AtlasSpaceFolder}/${T2wImage}_restore_brain \
-        --fnirtconfig=${FNIRTConfig} 
+        --fnirtconfig=${FNIRTConfig}
 
 
 fi
