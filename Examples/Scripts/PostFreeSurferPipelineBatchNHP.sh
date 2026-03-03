@@ -108,7 +108,7 @@ QUEUE=""
 ######################################### DO WORK ##########################################
 
 
-for Session in $Sesslist ; do
+for Subject in $Subjlist ; do
     echo $Session
 
     #Input Variables
