@@ -20,7 +20,7 @@ get_batch_options() {
                 index=$(( index + 1 ))
                 ;;
             --Subject=*)
-                command_line_specified_sess=${argument#*=}
+                command_line_specified_subj=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             --Species=*) #Species type (Human, Chimp, Mac, Marmoset, etc.)
