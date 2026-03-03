@@ -160,7 +160,7 @@ for Subject in $Subjlist ; do
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
     echo "set -- --study-folder=$StudyFolder         \
-        --session=$Session                           \
+        --subject=$Subject                           \
         --surfatlasdir=$SurfaceAtlasDIR              \
         --grayordinatesdir=$GrayordinatesSpaceDIR    \
         --grayordinatesres=$GrayordinatesResolutions \
