@@ -137,7 +137,7 @@ for Subject in $Subjlist ; do
     fi
     job=("${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
         --study-folder="$StudyFolder" \
-        --session="$Session" \
+        --subject="$Subject" \
         --surfatlasdir="$SurfaceAtlasDIR" \
         --grayordinatesdir="$GrayordinatesSpaceDIR" \
         --grayordinatesres="$GrayordinatesResolution" \
