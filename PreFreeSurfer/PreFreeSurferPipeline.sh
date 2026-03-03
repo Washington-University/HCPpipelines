@@ -766,6 +766,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 log_Msg "mkdir -p ${wdir}"
                 mkdir -p ${wdir}
 
+                #--SEPhaseZeroBrainMask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
                 ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
                     --workingdir=${wdir} \
                     --t1=${T1wFolder}/${T1wImage}_acpc \
@@ -781,7 +782,6 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
                     --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
                     --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
-                    #--SEPhaseZeroBrainMask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
                     --seechospacing=${SEEchoSpacing} \
                     --seunwarpdir=${SEUnwarpDir} \
                     --t1sampspacing=${T1wSampleSpacing} \
