@@ -64,8 +64,8 @@ if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
 
-if [ -n "${command_line_specified_sess}" ]; then
-    Sesslist="${command_line_specified_sess}"
+if [ -n "${command_line_specified_subj}" ]; then
+    Subjlist="${command_line_specified_subj}"
 fi
 
 
