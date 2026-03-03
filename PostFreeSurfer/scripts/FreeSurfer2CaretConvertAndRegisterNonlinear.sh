@@ -186,7 +186,6 @@ done
 NonHumanSpecies=0
 if [ "$Species" != "Human" ]; then NonHumanSpecies=1; fi
 
-#TODO NHP: new feature from NHP, needs testing
 mkdir -p  "$T1wFolder"/fsaverage_LR"$HighResMesh"k
 
 
@@ -211,7 +210,6 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
     for Image in wmparc aparc.a2009s+aseg aparc+aseg ; do
         if [ -e "$FreeSurferFolder"/mri/"$Image".mgz ] ; then
             mri_convert -rt nearest -rl "$T1wFolder"/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/"$Image".mgz "$T1wFolder"/"$Image"_1mm.nii.gz
-            #TODO NHP: check that the condition is as intended.
             if (( NonHumanSpecies )); then 
                 applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$T1wImageBrainMask".nii.gz
             fi
@@ -499,57 +497,10 @@ for Hemisphere in L R ; do
     if [ ${RegName} == "MSMSulc" ] ; then
         mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
         if [ "$LongitudinalMode" == "NONE" ]; then
-            #NHP: is this needed for NHP as well? 
             cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-            #TODO: check NHP
             if (( NonHumanSpecies )); then 
 
-                #the following three lines are moved to MSMSulc.sh
-                #${CARET7DIR}/wb_command -surface-affine-regression "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.mat
-                #${CARET7DIR}/wb_command -surface-apply-affine "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.mat "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-                #${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-
-
-                #cp "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.rot.native.surf.gii
-                #DIR=$(pwd)
-                #cd "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
-                #${MSMBINDIR}/msm --conf=${MSMCONFIGDIR}/${MSMSulcConf} --inmesh="$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.rot.native.surf.gii --refmesh="$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii --indata="$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sulc.native.shape.gii --refdata="$AtlasSpaceFolder"/${Session}.${Hemisphere}.refsulc."$HighResMesh"k_fs_LR.shape.gii --out="$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}. --verbose
-
-                #TODO: check if default MSMSulc reference mesh can be used here.
-                #--refmesh="$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere.
-                #"$HighResMesh"k_fs_LR.surf.gii
                 $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --species="$Species"
-
-                #cp ${MSMCONFIGDIR}/${MSMSulcConf} "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.logdir/conf
-                #cd $DIR
-                #cp "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.HIGHRES_transformed.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.surf.gii
-
-                #cp "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere.reg.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.surf.gii
-                #${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.surf.gii ${Structure}
-
-                #Make MSMSulc Registration Areal Distortion Maps
-                #TODO NHP: check-- this code is not run below or by MSMSulc.sh
-                #${CARET7DIR}/wb_command -surface-vertex-areas "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.shape.gii
-                #${CARET7DIR}/wb_command -surface-vertex-areas "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.shape.gii
-
-                #TODO NHP: check-- this code is not run below or by MSMSulc.sh
-                #${CARET7DIR}/wb_command -metric-math "ln(spherereg / sphere) / ln(2)" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".ArealDistortion_MSMSulc.native.shape.gii -var sphere "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.shape.gii -var spherereg "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.shape.gii
-
-                #rm "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.MSMSulc.native.shape.gii
-
-                #${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".ArealDistortion_MSMSulc.native.shape.gii -map 1 "$Session"_"$Hemisphere"_Areal_Distortion_MSMSulc
-                #${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".ArealDistortion_MSMSulc.native.shape.gii MODE_AUTO_SCALE -palette-name ROY-BIG-BL -thresholding THRESHOLD_TYPE_NORMAL THRESHOLD_TEST_SHOW_OUTSIDE -1 1
-
-                #${CARET7DIR}/wb_command -surface-distortion "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.MSMSulc.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".EdgeDistortion_MSMSulc.native.shape.gii -edge-method
-
-                #${CARET7DIR}/wb_command -surface-distortion "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.MSMSulc.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".Strain_MSMSulc.native.shape.gii -local-affine-method
-                #${CARET7DIR}/wb_command -metric-merge "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainJ_MSMSulc.native.shape.gii -metric "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".Strain_MSMSulc.native.shape.gii -column 1
-                #${CARET7DIR}/wb_command -metric-merge "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainR_MSMSulc.native.shape.gii -metric "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".Strain_MSMSulc.native.shape.gii -column 2
-
-                #TODO NHP check if this is needed. No exact analog exists in code below.
-                #${CARET7DIR}/wb_command -metric-math "ln(var) / ln (2)" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainJ_MSMSulc.native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainJ_MSMSulc.native.shape.gii
-                #${CARET7DIR}/wb_command -metric-math "ln(var) / ln (2)" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainR_MSMSulc.native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainR_MSMSulc.native.shape.gii
-                #rm "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".Strain_MSMSulc.native.shape.gii
             else                 
                 $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
             fi
