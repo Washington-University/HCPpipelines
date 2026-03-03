@@ -21,7 +21,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all s
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject ID (e.g. 100610)"
 opts_AddMandatory '--concat-names' 'ConcatNames' 'string' "@-separated list of fMRI concat names (e.g. tfMRI_ALLTASKS), if single-run FIX is used, this list must be exactly 1 element long"
 opts_AddMandatory '--high-pass' 'HighPass' 'string' "the high pass filter value used in ICA+FIX"
-opts_AddMandatory '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data (only needed if --cleanup-effects=TRUE)"
+opts_AddMandatory '--proc-string' 'ProcSTRING' 'string' "processing string suffix for cleaned data"
 opts_AddOptional '--reg-name' 'RegName' 'string' "surface registration name, default 'NONE'" 'NONE'
 opts_AddOptional '--process-volume' 'ProcessVolumeStr' 'TRUE or FALSE' "whether to process volume data, default 'false'" 'false'
 opts_AddOptional '--cleanup-effects' 'CleanUpEffectsStr' 'TRUE or FALSE' "whether to compute cleanup effects metrics, default 'false'" 'false'
