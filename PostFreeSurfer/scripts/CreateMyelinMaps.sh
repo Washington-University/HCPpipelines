@@ -224,11 +224,7 @@ fi
 
 MapListFunc="corrThickness@shape"
 if [ "${T2wPresent}" = "YES" ] ; then
-  if (( NonHumanSpecies )); then 
-	MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func MyelinMap_BC@func SmoothedMyelinMap_BC@func"
-  else 
-  	MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func"
-  fi
+  MapListFunc+=" MyelinMap@func SmoothedMyelinMap@func"
 fi
 
 for Hemisphere in L R ; do
