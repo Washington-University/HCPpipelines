@@ -135,46 +135,30 @@ for Subject in $Subjlist ; do
         echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PostFreeSurfer/PostFreeSurferPipeline.sh"
         queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
     fi
-    job=("${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh \
-        --study-folder="$StudyFolder" \
-        --subject="$Subject" \
-        --surfatlasdir="$SurfaceAtlasDIR" \
-        --grayordinatesdir="$GrayordinatesSpaceDIR" \
-        --grayordinatesres="$GrayordinatesResolution" \
-        --hiresmesh="$HighResMesh" \
-        --lowresmesh="$LowResMeshes" \
-        --subcortgraylabels="$SubcorticalGrayLabels" \
-        --freesurferlabels="$FreeSurferLabels" \
-        --refmyelinmaps="$ReferenceMyelinMaps" \
-        --regname="$RegName" \
-        --use-ind-mean="$UseIndMean" \
-        --species="$Species" \
-        --mcsigma="$CorrectionSigma" \
-        --myelin-voume-fwhm="$MyelinMappingFWHM" \
+    args=(
+        --study-folder="$StudyFolder"
+        --subject="$Subject"
+        --surfatlasdir="$SurfaceAtlasDIR"
+        --grayordinatesdir="$GrayordinatesSpaceDIR"
+        --grayordinatesres="$GrayordinatesResolution"
+        --hiresmesh="$HighResMesh"
+        --lowresmesh="$LowResMeshes"
+        --subcortgraylabels="$SubcorticalGrayLabels"
+        --freesurferlabels="$FreeSurferLabels"
+        --refmyelinmaps="$ReferenceMyelinMaps"
+        --regname="$RegName"
+        --use-ind-mean="$UseIndMean"
+        --species="$Species"
+        --mcsigma="$CorrectionSigma"
+        --myelin-volume-fwhm="$MyelinMappingFWHM"
         --myelin-surface-fwhm="$SurfaceSmoothingFWHM"
-        
         )
-    
+
+    job=("${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh "${args[@]}")
     "${job[@]}"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
-
-    echo "set -- --study-folder=$StudyFolder         \
-        --subject=$Subject                           \
-        --surfatlasdir=$SurfaceAtlasDIR              \
-        --grayordinatesdir=$GrayordinatesSpaceDIR    \
-        --grayordinatesres=$GrayordinatesResolutions \
-        --hiresmesh=$HighResMesh                     \
-        --lowresmesh=$LowResMeshes                   \
-        --subcortgraylabels=$SubcorticalGrayLabels   \
-        --freesurferlabels=$FreeSurferLabels         \
-        --refmyelinmaps=$ReferenceMyelinMaps         \
-        --regname=$RegName                           \ 
-        --use-ind-mean="$UseIndMean""                \
-        --species="$Species"                         \
-        --mcsigma="$CorrectionSigma"                 \
-        --myelin-voume-fwhm="$MyelinMappingFWHM"     \
-        --myelin-surface-fwhm="$SurfaceSmoothingFWHM"
+    printf 'set -- %q\n' "${args[@]}"
 
     echo ". ${EnvironmentScript}"
 done
