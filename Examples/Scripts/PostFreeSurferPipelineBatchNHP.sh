@@ -50,7 +50,7 @@ get_batch_options "$@"
 StudyFolder="${HOME}/projects/HCPPipelines_ExampleData" #Location of Session folders (named by subjectID)
 Sessionlist="100307 100610" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-SPECIES="Human"
+Species="Human"
 
 if [ -z "$StructRes" ]; then 
     StructResOption=""
