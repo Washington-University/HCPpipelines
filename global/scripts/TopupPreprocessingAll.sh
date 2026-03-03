@@ -135,6 +135,12 @@ then
     WD=${DistortionCorrectionWarpFieldOutput}.wdir
 fi
 
+#handle NONE convention
+if [[ "$SpinEchoPhaseEncodeZeroFSBrainmask" == NONE ]]
+then
+    SpinEchoPhaseEncodeZeroFSBrainmask=""
+fi
+
 log_Msg "START: Topup Field Map Generation and Gradient Unwarping"
 
 mkdir -p "$WD"
@@ -511,7 +517,7 @@ if [[ $UnwarpDir = [xyij] ]] ; then
     # register scout to SE input (PhaseTwo) + combine motion and distortion correction
     ${FSLDIR}/bin/fslroi ${WD}/PhaseTwo_gdc ${WD}/PhaseTwo_gdc_one 0 1  # For flirt in FSL 6, -ref argument must be single 3D volume
     if [ "$SPECIES" != "Human" ] ; then
-        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != NONE ]] ; then
+        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != "" ]] ; then
             ${FSLDIR}/bin/invwarp -w ${WD}/WarpField_${vnum} -r ${WD}/Mask -o ${WD}/WarpField_${vnum}_inv --rel
             ${CARET7DIR}/wb_command -volume-resample $(${FSLDIR}/bin/remove_ext $PhaseEncodeZero).nii.gz ${WD}/Mask.nii.gz CUBIC ${WD}/PhaseZero_gdc_distorted.nii.gz -warp ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
             ${CARET7DIR}/wb_command -volume-resample ${SpinEchoPhaseEncodeZeroFSBrainmask}.nii.gz ${WD}/Mask.nii.gz TRILINEAR ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -warp  ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
@@ -546,7 +552,7 @@ elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
     # register scout to SE input (PhaseOne) + combine motion and distortion correction
     ${FSLDIR}/bin/fslroi ${WD}/PhaseOne_gdc ${WD}/PhaseOne_gdc_one 0 1  # For flirt in FSL 6, -ref argument must be single 3D volume
     if [ "$SPECIES" != "Human" ] ; then
-        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != NONE ]] ; then
+        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != "" ]] ; then
             ${FSLDIR}/bin/invwarp -w ${WD}/WarpField_${vnum} -r ${WD}/Mask -o ${WD}/WarpField_${vnum}_inv --rel
             ${CARET7DIR}/wb_command -volume-resample $(${FSLDIR}/bin/remove_ext $PhaseEncodeZero).nii.gz ${WD}/Mask.nii.gz CUBIC ${WD}/PhaseZero_gdc_distorted.nii.gz -warp ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
             ${CARET7DIR}/wb_command -volume-resample ${SpinEchoPhaseEncodeZeroFSBrainmask}.nii.gz ${WD}/Mask.nii.gz TRILINEAR ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -warp  ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
