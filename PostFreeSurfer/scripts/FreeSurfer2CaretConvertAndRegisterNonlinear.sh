@@ -187,9 +187,7 @@ NonHumanSpecies=0
 if [ "$Species" != "Human" ]; then NonHumanSpecies=1; fi
 
 #TODO NHP: new feature from NHP, needs testing
-if [ ! -e "$T1wFolder"/fsaverage_LR"$HighResMesh"k ] ; then  # TH added Mar 2023
-	mkdir -p  "$T1wFolder"/fsaverage_LR"$HighResMesh"k
-fi
+mkdir -p  "$T1wFolder"/fsaverage_LR"$HighResMesh"k
 
 
 #To prevent the code inside the if clause to be executed repeatedly when TIMEPOINT_STAGE2 mode is on
