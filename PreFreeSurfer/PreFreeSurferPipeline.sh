@@ -740,9 +740,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
   #  T2w to T1w Registration and Optional Readout Distortion Correction
   # ------------------------------------------------------------------------------
     if [ "$RunMode" -lt 5 ]; then
-        SpinEchoPhaseEncodeZero=""
         case $AvgrdcSTRING in
-
             ${FIELDMAP_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${PHILIPS_METHOD_OPT})
 
                 log_Msg "Performing ${AvgrdcSTRING} Readout Distortion Correction"
@@ -754,6 +752,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
                 fi
 
+                SpinEchoPhaseEncodeZero=""
                 SpinEchoPhaseEncodeZeroFSBrainmask=""
                 if [[ "$SPECIES" != "Human" && "$(imtest "$T2wFolder"/T2w)" == "1" && "$UsePhaseZero" == "1" ]] ; then    # added T2w as a phase zero volume - TH Jan 2023
                     SpinEchoPhaseEncodeZero="$T2wFolder"/T2w
@@ -779,7 +778,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --SEPhasePos=${SpinEchoPhaseEncodePositive} \
                     --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
                     --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
-                    --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
+                    --SEPhaseZero="$SpinEchoPhaseEncodeZero" \
                     --SEPhaseZeroBrainMask="$SpinEchoPhaseEncodeZeroFSBrainmask" \
                     --seechospacing=${SEEchoSpacing} \
                     --seunwarpdir=${SEUnwarpDir} \
