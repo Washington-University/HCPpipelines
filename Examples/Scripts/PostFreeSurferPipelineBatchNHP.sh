@@ -19,7 +19,7 @@ get_batch_options() {
                 command_line_specified_study_folder=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --Session=*)
+            --Subject=*)
                 command_line_specified_sess=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
