@@ -116,6 +116,8 @@ opts_AddOptional '--SEPhasePos2' 'SpinEchoPhaseEncodePositive2' 'image' "input s
 
 opts_AddOptional '--SEPhaseZero' 'SpinEchoPhaseEncodeZero' 'image' "input spin echo zero phase encoding image"
 
+opts_AddOptional '--SEPhaseZeroBrainMask' 'SpinEchoPhaseEncodeZeroFSBrainmask' 'image' "brain mask to use for phase zero image"
+
 opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
 
 opts_AddOptional '--usejacobian' 'UseJacobian' 'true or false' "Use jacobian"
@@ -335,7 +337,8 @@ case $DistortionCorrection in
             --phasetwo=${SpinEchoPhaseEncodePositive} \
             --phaseone2=${SpinEchoPhaseEncodeNegative2} \
             --phasetwo2=${SpinEchoPhaseEncodePositive2} \
-            --phasezero=${SpinEchoPhaseEncodeZero}  \
+            --phasezero=${SpinEchoPhaseEncodeZero} \
+            --phasezerobrainmask="$SpinEchoPhaseEncodeZeroFSBrainmask" \
             --scoutin=${ScoutInputName} \
             --seechospacing=${SEEchoSpacing} \
             --unwarpdir=${SEUnwarpDir} \
@@ -345,7 +348,7 @@ case $DistortionCorrection in
             --ojacobian=${WD}/Jacobian \
             --gdcoeffs=${GradientDistortionCoeffs} \
             --topupconfig=${TopupConfig} \
-            --usejacobian=${UseJacobian}  \
+            --usejacobian=${UseJacobian} \
             --truepatientposition="$TruePatientPosition" \
             --scannerpatientposition="$ScannerPatientPosition" \
             --species="$SPECIES"
