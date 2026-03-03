@@ -147,10 +147,10 @@ for Session in $Sesslist ; do
         --freesurferlabels="$FreeSurferLabels" \
         --refmyelinmaps="$ReferenceMyelinMaps" \
         --regname="$RegName" \
-        --use-ind-mean="$UseIndMean"\
-        --species="$Species"
-        --mcsigma="$CorrectionSigma"
-        --myelin-voume-fwhm="$MyelinMappingFWHM"
+        --use-ind-mean="$UseIndMean" \
+        --species="$Species" \
+        --mcsigma="$CorrectionSigma" \
+        --myelin-voume-fwhm="$MyelinMappingFWHM" \
         --myelin-surface-fwhm="$SurfaceSmoothingFWHM"
         
         )
