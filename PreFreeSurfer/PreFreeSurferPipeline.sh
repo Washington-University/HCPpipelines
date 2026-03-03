@@ -754,19 +754,17 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     rm -r ${T2wFolder}/T2wToT1wDistortionCorrectAndReg
                 fi
 
-                # need to set to something in case of "$SPECIES" == "Human", needs to be set but is not used
-                # SpinEchoPhaseEncodeZeroFSBrainmask="NONE"
-                # if [[ "$SPECIES" != "Human" && "$(imtest "$T2wFolder"/T2w)" == "1" && "$UsePhaseZero" == "1" ]] ; then    # added T2w as a phase zero volume - TH Jan 2023
-                #     SpinEchoPhaseEncodeZero=${T2wFolder}/T2w
-                #     convert_xfm -omat ${T2wFolder}/xfms/acpc_inv.mat -inverse ${T2wFolder}/xfms/acpc.mat
-                #     flirt -in ${T2wFolder}/T2w_acpc_brain_mask -ref ${T2wFolder}/T2w -applyxfm -init ${T2wFolder}/xfms/acpc_inv.mat -o ${T2wFolder}/T2w_brain -interp nearestneighbour
-                #     SpinEchoPhaseEncodeZeroFSBrainmask=${T2wFolder}/T2w_brain
-                # fi
+                SpinEchoPhaseEncodeZeroFSBrainmask=""
+                if [[ "$SPECIES" != "Human" && "$(imtest "$T2wFolder"/T2w)" == "1" && "$UsePhaseZero" == "1" ]] ; then    # added T2w as a phase zero volume - TH Jan 2023
+                    SpinEchoPhaseEncodeZero="$T2wFolder"/T2w
+                    convert_xfm -omat "$T2wFolder"/xfms/acpc_inv.mat -inverse "$T2wFolder"/xfms/acpc.mat
+                    flirt -in "$T2wFolder"/T2w_acpc_brain_mask -ref "$T2wFolder"/T2w -applyxfm -init "$T2wFolder"/xfms/acpc_inv.mat -o "$T2wFolder"/T2w_brain -interp nearestneighbour
+                    SpinEchoPhaseEncodeZeroFSBrainmask="$T2wFolder"/T2w_brain
+                fi
 
                 log_Msg "mkdir -p ${wdir}"
                 mkdir -p ${wdir}
 
-                #--SEPhaseZeroBrainMask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
                 ${RUN} ${HCPPIPEDIR_PreFS}/T2wToT1wDistortionCorrectAndReg.sh \
                     --workingdir=${wdir} \
                     --t1=${T1wFolder}/${T1wImage}_acpc \
@@ -782,6 +780,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                     --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
                     --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
                     --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
+                    --SEPhaseZeroBrainMask="$SpinEchoPhaseEncodeZeroFSBrainmask" \
                     --seechospacing=${SEEchoSpacing} \
                     --seunwarpdir=${SEUnwarpDir} \
                     --t1sampspacing=${T1wSampleSpacing} \
