@@ -721,32 +721,32 @@ fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
 
 if [ "$RunMode" -lt 2 ] ; then
 
-if (( ! IsLongitudinal )); then
-    mkdir -p ${T1wFolder}/Results/${NameOffMRI}
-    if [ ! -e "$fMRIFolder" ] ; then
-        log_Msg "mkdir ${fMRIFolder}"
-        mkdir "$fMRIFolder"
-    fi
-
-    ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
-else
-    #copy directory structure.
-    mkdir -p "$ResultsFolderLong"
-    fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
-    mkdir -p "$fMRIFolderLong"
-    for fd in "$fMRIFolder"/*; do
-        fname="$(basename "$fd")"
-        #create link to the original fMRI series
-        if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
-            ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
-        #skip large files that will be generated
-        elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
-        	continue
-        else
-            cp -r "$fd" "$fMRIFolderLong/"
+    if (( ! IsLongitudinal )); then
+        mkdir -p ${T1wFolder}/Results/${NameOffMRI}
+        if [ ! -e "$fMRIFolder" ] ; then
+            log_Msg "mkdir ${fMRIFolder}"
+            mkdir "$fMRIFolder"
         fi
-    done
-fi
+
+        ${FSLDIR}/bin/imcp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName"
+    else
+        #copy directory structure.
+        mkdir -p "$ResultsFolderLong"
+        fMRIFolderLong="$Path"/"$SessionLong"/"$NameOffMRI"
+        mkdir -p "$fMRIFolderLong"
+        for fd in "$fMRIFolder"/*; do
+            fname="$(basename "$fd")"
+            #create link to the original fMRI series
+            if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
+                ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
+            #skip large files that will be generated
+            elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
+            	continue
+            else
+                cp -r "$fd" "$fMRIFolderLong/"
+            fi
+        done
+    fi
 
 fi  # RunMode < 2 (end of input copy stage)
 
@@ -758,218 +758,218 @@ fi
 
 if [ "$RunMode" -lt 2 ] ; then
 
-#All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
-if (( ! IsLongitudinal )); then
-    if [[ $nEcho -gt 1 ]] ; then
-        EchoDir="${fMRIFolder}/MultiEcho"
-        mkdir -p "$EchoDir"
-    fi
-
-    # --- Do slice time correction if indicated
-    # Note that in the case of STC, $fMRIFolder/$OrigTCSName will NOT be the "original" time-series
-    # but rather the slice-time corrected version thereof.
-
-    if [ $DoSliceTimeCorrection = "TRUE" ] ; then
-        log_Msg "Running slice timing correction using FSL's 'slicetimer' tool ..."
-        log_Msg "... $fMRIFolder/$OrigTCSName will be a slice-time-corrected version of the original data"
-        TR=$(${FSLDIR}/bin/fslval "$fMRIFolder"/"$OrigTCSName" pixdim4)
-        log_Msg "TR: ${TR}"
-
-        IFS='@' read -a SliceTimerCorrectionParametersArray <<< "$SliceTimerCorrectionParameters"
-        ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_prestc
-        ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_prestc -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} -v "${SliceTimerCorrectionParametersArray[@]}"
-        ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_prestc
-    fi
-
-    # --- Copy over scout (own or reference if specified), create fake if none exists
-    if [ "$fMRIReference" != "NONE" ]; then
-        # --- copy over existing scout images
-        log_Msg "Copying Scout from Reference fMRI"
-        ${FSLDIR}/bin/imcp ${fMRIReferencePath}/Scout* ${fMRIFolder}
-
-        for simage in SBRef_nonlin SBRef_nonlin_norm
-        do
-        ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_${simage}" ${fMRIFolder}/"${NameOffMRI}_orig_${simage}"
-        done
-
-        mkdir -p ${ResultsFolder}
-        ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/"${fMRIReference}_SBRef" ${ResultsFolder}/"${NameOffMRI}_SBRef"
-    else
-        # --- Create fake "Scout" if it doesn't exist
-        if [ $fMRIScout = "NONE" ] ; then
-            ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
-        else
-            # If provided Scout is multi-volume, extract the first volume, but generate a warning
-            if (( $(${FSLDIR}/bin/fslnvols "$fMRIScout") > 1 )) ; then
-                log_Warn "Provided fMRI Scout (--fmriscout=${fMRIScout}) is multi-volume. Extracting just the first volume for use going forward."
-            fi
-            ${FSLDIR}/bin/fslroi "$fMRIScout" "$fMRIFolder"/"$OrigScoutName" 0 1
-        fi
-    fi
-
-    if [ $DistortionCorrection = "NONE" ] ; then
-        # Processing is more robust to registration problems if the fMRI is in the same orientation as the
-        # standard template (MNI152) images, which can be accomplished using FSL's `fslreorient2std`.
-        # HOWEVER, if you reorient, other parameters (such as UnwarpDir) need to be adjusted accordingly.
-        # Rather than deal with those complications here, we limit reorienting to DistortionCorrection=NONE condition.
-
-        # First though, detect if reorienting is even necessary
-        xorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_xorient | tr -d ' ')
-        yorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_yorient | tr -d ' ')
-        zorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_zorient | tr -d ' ')
-
-        log_Msg "$fMRIFolder/$OrigTCSName: xorient=${xorient}, yorient=${yorient}, zorient=${zorient}"
-
-        if [[ "$xorient" != "Right-to-Left" && "$xorient" != "Left-to-Right" || \
-            "$yorient" != "Posterior-to-Anterior" || \
-            "$zorient" != "Inferior-to-Superior" ]] ; then
-            reorient=TRUE
-        else
-            reorient=FALSE
+    #All code until DistortionCorrection...BBRbased.sh is only run in cross-sectional mode.
+    if (( ! IsLongitudinal )); then
+        if [[ $nEcho -gt 1 ]] ; then
+            EchoDir="${fMRIFolder}/MultiEcho"
+            mkdir -p "$EchoDir"
         fi
 
-        if [ $reorient = "TRUE" ] ; then
-            log_Warn "Performing fslreorient2std! Please take that into account when using the volume fMRI images in further analyses!"
+        # --- Do slice time correction if indicated
+        # Note that in the case of STC, $fMRIFolder/$OrigTCSName will NOT be the "original" time-series
+        # but rather the slice-time corrected version thereof.
 
-            # --- reorient fMRI
-            ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_pre2std
-            ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_pre2std "$fMRIFolder"/"$OrigTCSName"
-            ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
+        if [ $DoSliceTimeCorrection = "TRUE" ] ; then
+            log_Msg "Running slice timing correction using FSL's 'slicetimer' tool ..."
+            log_Msg "... $fMRIFolder/$OrigTCSName will be a slice-time-corrected version of the original data"
+            TR=$(${FSLDIR}/bin/fslval "$fMRIFolder"/"$OrigTCSName" pixdim4)
+            log_Msg "TR: ${TR}"
 
-            # --- reorient SCOUT
-            if [ "$fMRIReference" = "NONE" ]; then
-                ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
-                ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
-                ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
-            fi
+            IFS='@' read -a SliceTimerCorrectionParametersArray <<< "$SliceTimerCorrectionParameters"
+            ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_prestc
+            ${FSLDIR}/bin/slicetimer -i "$fMRIFolder"/"$OrigTCSName"_prestc -o "$fMRIFolder"/"$OrigTCSName" -r ${TR} -v "${SliceTimerCorrectionParametersArray[@]}"
+            ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_prestc
         fi
-    fi
 
-    #Gradient Distortion Correction of fMRI
-    log_Msg "Gradient Distortion Correction of fMRI"
-    if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
-        log_Msg "mkdir -p ${fMRIFolder}/GradientDistortionUnwarp"
-        mkdir -p "$fMRIFolder"/GradientDistortionUnwarp
-        ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-            --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
-            --coeffs="$GradientDistortionCoeffs" \
-            --in="$fMRIFolder"/"$OrigTCSName" \
-            --out="$fMRIFolder"/"$NameOffMRI"_gdc \
-            --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
+        # --- Copy over scout (own or reference if specified), create fake if none exists
+        if [ "$fMRIReference" != "NONE" ]; then
+            # --- copy over existing scout images
+            log_Msg "Copying Scout from Reference fMRI"
+            ${FSLDIR}/bin/imcp ${fMRIReferencePath}/Scout* ${fMRIFolder}
 
-        log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"
-        mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
-        ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
-            --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
-            --coeffs="$GradientDistortionCoeffs" \
-            --in="$fMRIFolder"/"$OrigScoutName" \
-            --out="$fMRIFolder"/"$ScoutName"_gdc \
-            --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
-
-        if [[ $UseJacobian == "true" ]]
-        then
-            ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
-            ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
-        fi
-    else
-        log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
-        ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$NameOffMRI"_gdc
-        ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc_warp 0 3
-        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp -mul 0 "$fMRIFolder"/"$NameOffMRI"_gdc_warp
-        ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$ScoutName"_gdc
-		if [[ $SPECIES != "Human" ]] ; then
-			${RUN} ${FSLDIR}/bin/fslmerge -t "$fMRIFolder"/"$ScoutName"_gdc_warp "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc
-			${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc_warp -mul 0 "$fMRIFolder"/"$ScoutName"_gdc_warp
-		fi
-        #make fake jacobians of all 1s, for completeness
-        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$OrigScoutName" -mul 0 -add 1 "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian
-        ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc_warp "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian 0 1
-        ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian -mul 0 -add 1 "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian
-    fi
-fi # if (( ! IsLongitudinal ))
-
-# Correct orientaion for sphinx-positioned data - current scanner does not allow settings of sphinx position. But this orientation correction should be done AFTER gradient distortion correction.  - TH Oct 2023
-if [[ $SPECIES != "Human" ]] ; then
-    if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
-        log_Msg "Reorient $TruePatientPosition data with a scanner patient position of $ScannerPatientPosition"
-        if [ ! -z "$InitWorldMat" ] ; then
-            log_Msg "Apply init rigid-body transformation to sform"
-            initmat="--init=${InitWorldMat}"
-        else
-            initmat=""
-        fi
-        #NOTE: don't quote ${initmat}, we don't want to pass an empty string
-        "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$ScoutName"_gdc.nii.gz --out="$fMRIFolder"/"$ScoutName"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE ${initmat}
-        "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz --out="$fMRIFolder"/"$NameOffMRI"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE ${initmat}
-        for vol in "$NameOffMRI"_gdc_warp_jacobian.nii.gz "$ScoutName"_gdc_warp_jacobian.nii.gz ; do
-            "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$vol" --out="$fMRIFolder"/"$vol" --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" ${initmat}
-        done
-        convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
-        convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
-
-    else # assume orientaion information of input volumes is correct and reorient to the conventional orientation (RPI)
-        log_Msg "Reorient to std"
-        fslreorient2std -m "$fMRIFolder"/"$ScoutName"_gdc_reorient.mat "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc  
-        fslreorient2std -m "$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc   
-        for vol in "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
-	        fslreorient2std "$fMRIFolder"/"$vol" "$fMRIFolder"/"$vol"
-        done
-        if [ ! -z "$InitWorldMat" ] ; then
-            log_Msg "Apply init rigid-body transformation to sform"
-            for vol in "$ScoutName"_gdc  "$NameOffMRI"_gdc "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
-                ${CARET7DIR}/wb_command -nifti-information -print-header "$fMRIFolder"/"$vol".nii.gz | grep -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$fMRIFolder"/"$vol"_effectivesform.mat
-                echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$fMRIFolder"/"$vol"_effectivesform.mat
-     	        convert_xfm -omat "$fMRIFolder"/${vol}_newsform.mat -concat ${InitWorldMat} "$fMRIFolder"/"$vol"_effectivesform.mat
-	            ${CARET7DIR}/wb_command -volume-set-space "$fMRIFolder"/"$vol".nii.gz "$fMRIFolder"/"$vol".nii.gz -sform $(cat "$fMRIFolder"/${vol}_newsform.mat | head -3)
-                rm  "$fMRIFolder"/${vol}_newsform.mat "$fMRIFolder"/"$vol"_effectivesform.mat
+            for simage in SBRef_nonlin SBRef_nonlin_norm
+            do
+            ${FSLDIR}/bin/imcp ${fMRIReferencePath}/"${fMRIReference}_${simage}" ${fMRIFolder}/"${NameOffMRI}_orig_${simage}"
             done
-        fi 
-        convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
-        convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
+
+            mkdir -p ${ResultsFolder}
+            ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/"${fMRIReference}_SBRef" ${ResultsFolder}/"${NameOffMRI}_SBRef"
+        else
+            # --- Create fake "Scout" if it doesn't exist
+            if [ $fMRIScout = "NONE" ] ; then
+                ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigScoutName" 0 1
+            else
+                # If provided Scout is multi-volume, extract the first volume, but generate a warning
+                if (( $(${FSLDIR}/bin/fslnvols "$fMRIScout") > 1 )) ; then
+                    log_Warn "Provided fMRI Scout (--fmriscout=${fMRIScout}) is multi-volume. Extracting just the first volume for use going forward."
+                fi
+                ${FSLDIR}/bin/fslroi "$fMRIScout" "$fMRIFolder"/"$OrigScoutName" 0 1
+            fi
+        fi
+
+        if [ $DistortionCorrection = "NONE" ] ; then
+            # Processing is more robust to registration problems if the fMRI is in the same orientation as the
+            # standard template (MNI152) images, which can be accomplished using FSL's `fslreorient2std`.
+            # HOWEVER, if you reorient, other parameters (such as UnwarpDir) need to be adjusted accordingly.
+            # Rather than deal with those complications here, we limit reorienting to DistortionCorrection=NONE condition.
+
+            # First though, detect if reorienting is even necessary
+            xorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_xorient | tr -d ' ')
+            yorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_yorient | tr -d ' ')
+            zorient=$($FSLDIR/bin/fslval "$fMRIFolder"/"$OrigTCSName" qform_zorient | tr -d ' ')
+
+            log_Msg "$fMRIFolder/$OrigTCSName: xorient=${xorient}, yorient=${yorient}, zorient=${zorient}"
+
+            if [[ "$xorient" != "Right-to-Left" && "$xorient" != "Left-to-Right" || \
+                "$yorient" != "Posterior-to-Anterior" || \
+                "$zorient" != "Inferior-to-Superior" ]] ; then
+                reorient=TRUE
+            else
+                reorient=FALSE
+            fi
+
+            if [ $reorient = "TRUE" ] ; then
+                log_Warn "Performing fslreorient2std! Please take that into account when using the volume fMRI images in further analyses!"
+
+                # --- reorient fMRI
+                ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$OrigTCSName"_pre2std
+                ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigTCSName"_pre2std "$fMRIFolder"/"$OrigTCSName"
+                ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"_pre2std
+
+                # --- reorient SCOUT
+                if [ "$fMRIReference" = "NONE" ]; then
+                    ${FSLDIR}/bin/immv "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$OrigScoutName"_pre2std
+                    ${FSLDIR}/bin/fslreorient2std "$fMRIFolder"/"$OrigScoutName"_pre2std "$fMRIFolder"/"$OrigScoutName"
+                    ${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigScoutName"_pre2std
+                fi
+            fi
+        fi
+
+        #Gradient Distortion Correction of fMRI
+        log_Msg "Gradient Distortion Correction of fMRI"
+        if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
+            log_Msg "mkdir -p ${fMRIFolder}/GradientDistortionUnwarp"
+            mkdir -p "$fMRIFolder"/GradientDistortionUnwarp
+            ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
+                --workingdir="$fMRIFolder"/GradientDistortionUnwarp \
+                --coeffs="$GradientDistortionCoeffs" \
+                --in="$fMRIFolder"/"$OrigTCSName" \
+                --out="$fMRIFolder"/"$NameOffMRI"_gdc \
+                --owarp="$fMRIFolder"/"$NameOffMRI"_gdc_warp
+
+            log_Msg "mkdir -p ${fMRIFolder}/${ScoutName}_GradientDistortionUnwarp"
+            mkdir -p "$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp
+            ${RUN} "$GlobalScripts"/GradientDistortionUnwarp.sh \
+                --workingdir="$fMRIFolder"/"$ScoutName"_GradientDistortionUnwarp \
+                --coeffs="$GradientDistortionCoeffs" \
+                --in="$fMRIFolder"/"$OrigScoutName" \
+                --out="$fMRIFolder"/"$ScoutName"_gdc \
+                --owarp="$fMRIFolder"/"$ScoutName"_gdc_warp
+
+            if [[ $UseJacobian == "true" ]]
+            then
+                ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc -mul "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian "$fMRIFolder"/"$NameOffMRI"_gdc
+                ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc -mul "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian "$fMRIFolder"/"$ScoutName"_gdc
+            fi
+        else
+            log_Msg "NOT PERFORMING GRADIENT DISTORTION CORRECTION"
+            ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigTCSName" "$fMRIFolder"/"$NameOffMRI"_gdc
+            ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc_warp 0 3
+            ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp -mul 0 "$fMRIFolder"/"$NameOffMRI"_gdc_warp
+            ${RUN} ${FSLDIR}/bin/imcp "$fMRIFolder"/"$OrigScoutName" "$fMRIFolder"/"$ScoutName"_gdc
+    		if [[ $SPECIES != "Human" ]] ; then
+    			${RUN} ${FSLDIR}/bin/fslmerge -t "$fMRIFolder"/"$ScoutName"_gdc_warp "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc
+    			${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$ScoutName"_gdc_warp -mul 0 "$fMRIFolder"/"$ScoutName"_gdc_warp
+    		fi
+            #make fake jacobians of all 1s, for completeness
+            ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$OrigScoutName" -mul 0 -add 1 "$fMRIFolder"/"$ScoutName"_gdc_warp_jacobian
+            ${RUN} ${FSLDIR}/bin/fslroi "$fMRIFolder"/"$NameOffMRI"_gdc_warp "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian 0 1
+            ${RUN} ${FSLDIR}/bin/fslmaths "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian -mul 0 -add 1 "$fMRIFolder"/"$NameOffMRI"_gdc_warp_jacobian
+        fi
+    fi # if (( ! IsLongitudinal ))
+
+    # Correct orientaion for sphinx-positioned data - current scanner does not allow settings of sphinx position. But this orientation correction should be done AFTER gradient distortion correction.  - TH Oct 2023
+    if [[ $SPECIES != "Human" ]] ; then
+        if [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] ; then
+            log_Msg "Reorient $TruePatientPosition data with a scanner patient position of $ScannerPatientPosition"
+            if [ ! -z "$InitWorldMat" ] ; then
+                log_Msg "Apply init rigid-body transformation to sform"
+                initmat="--init=${InitWorldMat}"
+            else
+                initmat=""
+            fi
+            #NOTE: don't quote ${initmat}, we don't want to pass an empty string
+            "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$ScoutName"_gdc.nii.gz --out="$fMRIFolder"/"$ScoutName"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE ${initmat}
+            "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$NameOffMRI"_gdc.nii.gz --out="$fMRIFolder"/"$NameOffMRI"_gdc --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE ${initmat}
+            for vol in "$NameOffMRI"_gdc_warp_jacobian.nii.gz "$ScoutName"_gdc_warp_jacobian.nii.gz ; do
+                "$GlobalScripts"/CorrectVolumeOrientation.sh --in="$fMRIFolder"/"$vol" --out="$fMRIFolder"/"$vol" --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" ${initmat}
+            done
+            convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
+            convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
+
+        else # assume orientaion information of input volumes is correct and reorient to the conventional orientation (RPI)
+            log_Msg "Reorient to std"
+            fslreorient2std -m "$fMRIFolder"/"$ScoutName"_gdc_reorient.mat "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc  
+            fslreorient2std -m "$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc   
+            for vol in "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
+    	        fslreorient2std "$fMRIFolder"/"$vol" "$fMRIFolder"/"$vol"
+            done
+            if [ ! -z "$InitWorldMat" ] ; then
+                log_Msg "Apply init rigid-body transformation to sform"
+                for vol in "$ScoutName"_gdc  "$NameOffMRI"_gdc "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
+                    ${CARET7DIR}/wb_command -nifti-information -print-header "$fMRIFolder"/"$vol".nii.gz | grep -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$fMRIFolder"/"$vol"_effectivesform.mat
+                    echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$fMRIFolder"/"$vol"_effectivesform.mat
+         	        convert_xfm -omat "$fMRIFolder"/${vol}_newsform.mat -concat ${InitWorldMat} "$fMRIFolder"/"$vol"_effectivesform.mat
+    	            ${CARET7DIR}/wb_command -volume-set-space "$fMRIFolder"/"$vol".nii.gz "$fMRIFolder"/"$vol".nii.gz -sform $(cat "$fMRIFolder"/${vol}_newsform.mat | head -3)
+                    rm  "$fMRIFolder"/${vol}_newsform.mat "$fMRIFolder"/"$vol"_effectivesform.mat
+                done
+            fi 
+            convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
+            convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
+        fi
     fi
-fi
-#Split echos.
-tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
-if [[ ${nEcho} -gt 1 ]]; then
-    log_Msg "Splitting echo(s)"
-    for iEcho in $(seq 0 $((nEcho-1))) ; do
-        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
-        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
-        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
-        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
-        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
-            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-        wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
-            -subvolume "$(( iEcho + 1 ))"
-        wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
-            -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
-        wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
-            -subvolume "$(( iEcho + 1 ))"
-    done
-else
-    tcsEchoesOrig[0]="${OrigTCSName}"
-    sctEchoesOrig[0]="${OrigScoutName}"
-    tcsEchoesGdc[0]="${NameOffMRI}_gdc"
-    sctEchoesGdc[0]="${ScoutName}_gdc"
-fi
+    #Split echos.
+    tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
+    if [[ ${nEcho} -gt 1 ]]; then
+        log_Msg "Splitting echo(s)"
+        for iEcho in $(seq 0 $((nEcho-1))) ; do
+            tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
+            tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
+            sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
+            sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
+            wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
+                -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+            wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
+                -subvolume "$(( iEcho + 1 ))"
+            wb_command -volume-merge "${fMRIFolder}/${tcsEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${NameOffMRI}_gdc.nii.gz" \
+                -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
+            wb_command -volume-merge "${fMRIFolder}/${sctEchoesGdc[iEcho]}.nii.gz" -volume "${fMRIFolder}/${ScoutName}_gdc.nii.gz" \
+                -subvolume "$(( iEcho + 1 ))"
+        done
+    else
+        tcsEchoesOrig[0]="${OrigTCSName}"
+        sctEchoesOrig[0]="${OrigScoutName}"
+        tcsEchoesGdc[0]="${NameOffMRI}_gdc"
+        sctEchoesGdc[0]="${ScoutName}_gdc"
+    fi
 
-if (( ! IsLongitudinal )); then
-    log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
-    mkdir -p "$fMRIFolder"/MotionCorrection
+    if (( ! IsLongitudinal )); then
+        log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
+        mkdir -p "$fMRIFolder"/MotionCorrection
 
-    ${RUN} "$PipelineScripts"/MotionCorrection.sh \
-        "$fMRIFolder"/MotionCorrection \
-        "$fMRIFolder/${tcsEchoesGdc[0]}" \
-        "$fMRIFolder/${sctEchoesGdc[0]}" \
-        "$fMRIFolder"/"$NameOffMRI"_mc \
-        "$fMRIFolder"/"$MovementRegressor" \
-        "$fMRIFolder"/"$MotionMatrixFolder" \
-        "$MotionMatrixPrefix" \
-        "$MotionCorrectionType" \
-        "$fMRIReferenceReg" \
-		"$BrainScaleFactor" \
-		"$SPECIES"
-fi
+        ${RUN} "$PipelineScripts"/MotionCorrection.sh \
+            "$fMRIFolder"/MotionCorrection \
+            "$fMRIFolder/${tcsEchoesGdc[0]}" \
+            "$fMRIFolder/${sctEchoesGdc[0]}" \
+            "$fMRIFolder"/"$NameOffMRI"_mc \
+            "$fMRIFolder"/"$MovementRegressor" \
+            "$fMRIFolder"/"$MotionMatrixFolder" \
+            "$MotionMatrixPrefix" \
+            "$MotionCorrectionType" \
+            "$fMRIReferenceReg" \
+    		"$BrainScaleFactor" \
+    		"$SPECIES"
+    fi
 
 fi  # RunMode < 2 (end of GDC/MotionCorrection stage)
 
@@ -1000,76 +1000,76 @@ DCFolder=${fMRIFolder}/${DCFolderName}
 
 if [ "$RunMode" -lt 3 ] ; then
 
-if [ $fMRIReference = "NONE" ] ; then
-    log_Msg "EPI Distortion Correction and EPI to T1w Registration"
+    if [ $fMRIReference = "NONE" ] ; then
+        log_Msg "EPI Distortion Correction and EPI to T1w Registration"
 
-    if [ -e ${DCFolder} -a ${IsLongitudinal} == "0" ] ; then
-        ${RUN} rm -r ${DCFolder}
-    fi
-    log_Msg "mkdir -p ${DCFolder}"
-    mkdir -p ${DCFolder}
+        if [ -e ${DCFolder} -a ${IsLongitudinal} == "0" ] ; then
+            ${RUN} rm -r ${DCFolder}
+        fi
+        log_Msg "mkdir -p ${DCFolder}"
+        mkdir -p ${DCFolder}
 
-    ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
-        --workingdir=${DCFolder} \
-        --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
-        --t1=${T1wFolder}/${T1wImage} \
-        --t1restore=${T1wFolder}/${T1wRestoreImage} \
-        --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
-        --fmapmag=${MagnitudeInputName} \
-        --fmapphase=${PhaseInputName} \
-        --fmapcombined=${GEB0InputName} \
-        --echodiff=${deltaTE} \
-        --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
-        --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-	    --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
-        --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
-        --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
-        --SEPhaseZeroFSBrainmask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
-        --echospacing=${EchoSpacing} \
-        --unwarpdir=${UnwarpDir} \
-        --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-        --biasfield=${T1wFolder}/${BiasField} \
-        --oregim=${fMRIFolder}/${RegOutput} \
-        --freesurferfolder=${T1wFolder} \
-        --freesurfersubjectid=${Session} \
-        --gdcoeffs=${GradientDistortionCoeffs} \
-        --qaimage=${fMRIFolder}/${QAImage} \
-        --method=${DistortionCorrection} \
-        --topupconfig=${TopupConfig} \
-        --ojacobian=${fMRIFolder}/${JacobianOut} \
-        --dof=${dof} \
-        --fmriname=${NameOffMRI} \
-        --sessionfolder=${SessionFolder} \
-        --biascorrection=${BiasCorrection} \
-        --usejacobian=${UseJacobian} \
-        --preregistertool=${PreregisterTool} \
-        --is-longitudinal="$IsLongitudinal" \
-        --t1w-cross2long-xfm="$T1wCross2LongXfm" \
-        --bbr-contrast=${BBRContrast}   \
-        --wmprojabs=${WMProjAbs} \
-        --scannerpatientposition=${ScannerPatientPosition} \
-        --truepatientposition=${TruePatientPosition} \
-        --initworldmat=${InitWorldMat} \
-        --species=${SPECIES}
+        ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
+            --workingdir=${DCFolder} \
+            --scoutin="${fMRIFolder}/${sctEchoesGdc[0]}" \
+            --t1=${T1wFolder}/${T1wImage} \
+            --t1restore=${T1wFolder}/${T1wRestoreImage} \
+            --t1brain=${T1wFolder}/${T1wRestoreImageBrain} \
+            --fmapmag=${MagnitudeInputName} \
+            --fmapphase=${PhaseInputName} \
+            --fmapcombined=${GEB0InputName} \
+            --echodiff=${deltaTE} \
+            --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
+            --SEPhasePos=${SpinEchoPhaseEncodePositive} \
+    	    --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
+            --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
+            --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
+            --SEPhaseZeroFSBrainmask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
+            --echospacing=${EchoSpacing} \
+            --unwarpdir=${UnwarpDir} \
+            --owarp=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+            --biasfield=${T1wFolder}/${BiasField} \
+            --oregim=${fMRIFolder}/${RegOutput} \
+            --freesurferfolder=${T1wFolder} \
+            --freesurfersubjectid=${Session} \
+            --gdcoeffs=${GradientDistortionCoeffs} \
+            --qaimage=${fMRIFolder}/${QAImage} \
+            --method=${DistortionCorrection} \
+            --topupconfig=${TopupConfig} \
+            --ojacobian=${fMRIFolder}/${JacobianOut} \
+            --dof=${dof} \
+            --fmriname=${NameOffMRI} \
+            --sessionfolder=${SessionFolder} \
+            --biascorrection=${BiasCorrection} \
+            --usejacobian=${UseJacobian} \
+            --preregistertool=${PreregisterTool} \
+            --is-longitudinal="$IsLongitudinal" \
+            --t1w-cross2long-xfm="$T1wCross2LongXfm" \
+            --bbr-contrast=${BBRContrast}   \
+            --wmprojabs=${WMProjAbs} \
+            --scannerpatientposition=${ScannerPatientPosition} \
+            --truepatientposition=${TruePatientPosition} \
+            --initworldmat=${InitWorldMat} \
+            --species=${SPECIES}
 
-else
-    log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
-    if [ -d ${DCFolder} ] ; then
-        log_Warn "     ... removing preexisiting files"
-        rm -r ${DCFolder}
-    fi
-    if [ -h ${DCFolder} ] ; then
-        log_Warn "     ... removing stale link"
-        rm ${DCFolder}
-    fi
-    ln -s ${fMRIReferencePath}/${DCFolderName} ${DCFolder}
-
-    if [ $("${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str") -eq 0 ]; then
-        log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"
     else
-        ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
+        log_Msg "linking EPI distortion correction and T1 registration from ${fMRIReference}"
+        if [ -d ${DCFolder} ] ; then
+            log_Warn "     ... removing preexisiting files"
+            rm -r ${DCFolder}
+        fi
+        if [ -h ${DCFolder} ] ; then
+            log_Warn "     ... removing stale link"
+            rm ${DCFolder}
+        fi
+        ln -s ${fMRIReferencePath}/${DCFolderName} ${DCFolder}
+
+        if [ $("${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str") -eq 0 ]; then
+            log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"
+        else
+            ${FSLDIR}/bin/imcp ${T1wFolder}/xfms/${fMRIReference}2str ${T1wFolder}/xfms/${fMRI2strOutputTransform}
+        fi
     fi
-fi
 
 fi  # RunMode < 3 (end of DistortionCorrection stage)
 
