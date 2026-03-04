@@ -12,4 +12,5 @@
  - Song Lin Ding (Allen Institute)
  - Hongkui Zeng (Allen Institute)
  - Ed Lein (Allen Institute)
+
 Lein, E., Zeng, H., Hayashi, T., Van Essen, D., Ding, S.-L., Ikeda, T., Ose, T., Glasser, M., Rosen, B., Coalson, T., & Reid, E. (2025). HMBA Adult Rhesus Macaque Brain Atlas [Data set]. Allen Institute. https://doi.org/10.82150/MH1E-W927
