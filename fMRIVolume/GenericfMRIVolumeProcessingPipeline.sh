@@ -985,12 +985,17 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
-fi
 
-# Ensure multi-echo directory is set up for all RunModes
-if [[ $nEcho -gt 1 ]] ; then
-    EchoDir="${fMRIFolder}/MultiEcho"
-    mkdir -p "$EchoDir"
+    if [[ $nEcho -gt 1 ]] ; then
+        EchoDir="${fMRIFolder}/MultiEcho"
+        mkdir -p "$EchoDir"
+    fi
+else
+    # When RunMode skips Stage 1, EchoDir (normally set there) needs to be set here
+    if [[ $nEcho -gt 1 ]] ; then
+        EchoDir="${fMRIFolder}/MultiEcho"
+        mkdir -p "$EchoDir"
+    fi
 fi
 
 # ---- Stage 2: EPI Distortion Correction and EPI to T1w Registration
