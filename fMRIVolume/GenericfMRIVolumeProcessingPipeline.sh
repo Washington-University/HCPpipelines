@@ -928,10 +928,15 @@ if [[ $SPECIES != "Human" ]] ; then
         convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
     fi
 fi
-#Split echos
+#Split echos.
+tcsEchoesOrig=();sctEchoesOrig=();tcsEchoesGdc=();sctEchoesGdc=();
 if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Splitting echo(s)"
     for iEcho in $(seq 0 $((nEcho-1))) ; do
+        tcsEchoesOrig[iEcho]="${OrigTCSName}_E$(printf "%02d" "$iEcho")"
+        tcsEchoesGdc[iEcho]="${NameOffMRI}_gdc_E$(printf "%02d" "$iEcho")" # Is only first echo needed for the gdc tcs?
+        sctEchoesOrig[iEcho]="${OrigScoutName}_E$(printf "%02d" "$iEcho")"
+        sctEchoesGdc[iEcho]="${ScoutName}_gdc_E$(printf "%02d" "$iEcho")"
         wb_command -volume-merge "${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigTCSName}.nii.gz" \
             -subvolume $((1 + FramesPerEcho * iEcho)) -up-to $((FramesPerEcho * (iEcho + 1)))
         wb_command -volume-merge "${fMRIFolder}/${sctEchoesOrig[iEcho]}.nii.gz" -volume "${fMRIFolder}/${OrigScoutName}.nii.gz" \
