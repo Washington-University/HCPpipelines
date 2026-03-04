@@ -1,0 +1,107 @@
+{
+    "S1200_MSMAll3T535T_rfMRI_REST": {
+        "label_file": "S1200_MSMAll3T535T_REST84.txt",
+        "feature_file": "features_20230814_154437.csv",
+        "config_file": "S1200_MSMAll3T535T_rfMRI_REST.json"
+    },
+    "S1200_MSMAll3T535T_tfMRI_Concat": {
+        "label_file": "S1200_MSMAll3T535T_TASK70.txt",
+        "feature_file": "features_20230814_164502.csv",
+        "config_file": "S1200_MSMAll3T535T_tfMRI_Concat.json"
+    },
+    "S1200_MSMAll7T87T_rfMRI_REST_7T": {
+        "label_file": "S1200_MSMAll7T87T_REST108.txt",
+        "feature_file": "features_20230814_172032.csv",
+        "config_file": "S1200_MSMAll7T87T_rfMRI_REST_7T.json"
+    },
+    "S1200_MSMAll7T87T_tfMRI_MOVIE_7T": {
+        "label_file": "S1200_MSMAll7T87T_MOVIE113.txt",
+        "feature_file": "features_20230814_222032.csv",
+        "config_file": "S1200_MSMAll7T87T_tfMRI_MOVIE_7T.json"
+    },
+    "S1200_MSMAll7T87T_tfMRI_RET_7T": {
+        "label_file": "S1200_MSMAll7T87T_RET75.txt",
+        "feature_file": "features_20230814_224743.csv",
+        "config_file": "S1200_MSMAll7T87T_tfMRI_RET_7T.json"
+    },
+    "AABC_Version2_Prelim_Data_Visits_617T_fMRI_CONCAT_ALL_clean": {
+        "label_file": "AABC617T_clean_fMRI_CONCAT_ALL_81.txt",
+        "feature_file": "features_20230814_231359.csv",
+        "config_file": "AABC_Version2_Prelim_Data_Visits_617T_fMRI_CONCAT_ALL_clean.json"
+    },
+    "HCD628_Winter2021_314T_fMRI_CONCAT_ALL_clean": {
+        "label_file": "hcd314T_clean_fMRI_CONCAT_ALL_105.txt",
+        "feature_file": "features_20230814_234708.csv",
+        "config_file": "HCD628_Winter2021_314T_fMRI_CONCAT_ALL_clean.json"
+    },
+    "HCD628_Winter2021_160independent_fMRI_CONCAT_ALL_clean": {
+        "label_file": "hcd628_160_clean_fMRI_CONCAT_ALL_123.txt",
+        "feature_file": "features_20230815_005422.csv",
+        "config_file": "HCD628_Winter2021_160independent_fMRI_CONCAT_ALL_clean.json"
+    },
+    "HCD628_Winter2021_100independent_fMRI_CONCAT_ALL_clean": {
+        "label_file": "hcd628_100_clean_fMRI_CONCAT_ALL_111.txt",
+        "feature_file": "features_20230815_003639.csv",
+        "config_file": "HCD628_Winter2021_100independent_fMRI_CONCAT_ALL_clean.json"
+    },
+    "HCD628_Winter2021_60independent_fMRI_CONCAT_ALL_clean": {
+        "label_file": "hcd628_60_clean_fMRI_CONCAT_ALL_114.txt",
+        "feature_file": "features_20230815_002113.csv",
+        "config_file": "HCD628_Winter2021_60independent_fMRI_CONCAT_ALL_clean.json"
+    },
+    "S1200_MSMAll3T535V_rfMRI_REST": {
+        "label_file": "S1200_MSMAll3T535V_REST78.txt",
+        "feature_file": "features_20230814_140918.csv",
+        "config_file": "S1200_MSMAll3T535V_rfMRI_REST.json"
+    },
+    "S1200_MSMAll3T535V_tfMRI_Concat": {
+        "label_file": "S1200_MSMAll3T535V_TASK67.txt",
+        "feature_file": "features_20230814_170110.csv",
+        "config_file": "S1200_MSMAll3T535V_tfMRI_Concat.json"
+    },
+    "S1200_MSMAll7T87V_rfMRI_REST_7T": {
+        "label_file": "S1200_MSMAll7T87V_REST108.txt",
+        "feature_file": "features_20230814_173856.csv",
+        "config_file": "S1200_MSMAll7T87V_rfMRI_REST_7T.json"
+    },
+    "S1200_MSMAll7T87V_tfMRI_MOVIE_7T": {
+        "label_file": "S1200_MSMAll7T87V_MOVIE100.txt",
+        "feature_file": "features_20230814_223707.csv",
+        "config_file": "S1200_MSMAll7T87V_tfMRI_MOVIE_7T.json"
+    },
+    "S1200_MSMAll7T87V_tfMRI_RET_7T": {
+        "label_file": "S1200_MSMAll7T87V_RET73.txt",
+        "feature_file": "features_20230814_225734.csv",
+        "config_file": "S1200_MSMAll7T87V_tfMRI_RET_7T.json"
+    },
+    "AABC_Version2_Prelim_Data_Visits_617V_fMRI_CONCAT_ALL_clean": {
+        "label_file": "AABC617V_clean_fMRI_CONCAT_ALL_78.txt",
+        "feature_file": "features_20230814_233019.csv",
+        "config_file": "AABC_Version2_Prelim_Data_Visits_617V_fMRI_CONCAT_ALL_clean.json"
+    },
+    "HCD628_Winter2021_314V_fMRI_CONCAT_ALL_clean": {
+        "label_file": "hcd314V_clean_fMRI_CONCAT_ALL_109.txt",
+        "feature_file": "features_20230815_000423.csv",
+        "config_file": "HCD628_Winter2021_314V_fMRI_CONCAT_ALL_clean.json"
+    },
+    "HCD628_Winter2021_60V_fMRI_CONCAT_ALL_rclean": {
+        "label_file": "hcd60V_rclean_fMRI_CONCAT_ALL_121.txt",
+        "feature_file": "features_20230815_090931.csv",
+        "config_file": "HCD628_Winter2021_60V_fMRI_CONCAT_ALL_rclean.json"
+    },
+    "HCD628_Winter2021_100V_fMRI_CONCAT_ALL_rclean": {
+        "label_file": "hcd100V_rclean_fMRI_CONCAT_ALL_111.txt",
+        "feature_file": "features_20230815_103758.csv",
+        "config_file": "HCD628_Winter2021_100V_fMRI_CONCAT_ALL_rclean.json"
+    },
+    "HCD628_Winter2021_60V_fMRI_CONCAT_ALL_rclean_initialize78": {
+        "label_file": "hcd60V_rclean_fMRI_CONCAT_ALL_initialize78.txt",
+        "feature_file": "features_20230815_120125.csv",
+        "config_file": "HCD628_Winter2021_60V_fMRI_CONCAT_ALL_rclean_initialize78.json"
+    },
+    "HCD628_Winter2021_100V_fMRI_CONCAT_ALL_rclean_initialize78": {
+        "label_file": "hcd100V_rclean_fMRI_CONCAT_ALL_initialize78.txt",
+        "feature_file": "features_20230815_110916.csv",
+        "config_file": "HCD628_Winter2021_100V_fMRI_CONCAT_ALL_rclean_initialize78.json"
+    }
+}
