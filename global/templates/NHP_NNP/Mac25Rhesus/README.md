@@ -4,7 +4,7 @@
  - Takuya Hayashi (RIKEN BDR Brain Connectomics Imaging Lab)
  - Takuro Ikeda (RIKEN BDR Brain Connectomics Imaging Lab)
  - Takayuki Ose (RIKEN BDR Brain Connectomics Imaging Lab)
- - Time Coalson (Washington University in St. Louis)
+ - Tim Coalson (Washington University in St. Louis)
  - Erin Reid (Washington University in St. Louis)
  - Burke Q Rosen (Washington University in St. Louis)
  - Matthew F Glasser (Washington University in St. Louis)
