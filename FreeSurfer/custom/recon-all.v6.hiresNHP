@@ -3987,7 +3987,6 @@ if($DoConf2Hires) then
   if($DoT2pial == 0)    set cmd = ($cmd --no-T2)
   if($DoT2pial == 1)    set cmd = ($cmd --T2)
   if($DoFLAIRpial == 1) set cmd = ($cmd --FLAIR)
-  if($DoT1wDivFLAIRpial == 0) set cmd = ($cmd --no-T1wDivFLAIR)
   if($DoT1wDivFLAIRpial == 1) set cmd = ($cmd --T1wDivFLAIR)
   if($longitudinal) then
     set cmd = ($cmd --longitudinal $tpNid $longbaseid)
