@@ -95,6 +95,9 @@ RegName="${39}"
 UseIndMean="${40}"
 IsLongitudinal="${41}"
 ThicknessReg="${42}"
+Species="${43}" #NHP parameters
+MyelinMappingFWHM="${44}" 
+SurfaceSmoothingFWHM="${45}" 
 
 case "$ThicknessReg" in
     (NEW|OLD|BOTH)
@@ -110,10 +113,15 @@ verbose_echo " "
 verbose_red_echo " ===> Running ${script_name}"
 verbose_echo " "
 
+NonHumanSpecies=0
+if [ "$Species" != "human" ]; then NonHumanSpecies=1; fi
+
 # -- check for presence of T2w image
 if [ -z "$IsLongitudinal" ]; then IsLongitudinal=0; fi
 
 if (( IsLongitudinal )); then
+	if (( NonHumanSpecies )); then log_Err_Abort "NHP not supported in longitudinal mode"; fi
+
 	if [ `${FSLDIR}/bin/imtest "$T1wFolder/T2w_acpc_dc.nii.gz"` -eq 0 ]; then
 		T2wPresent="NO"
 	else
@@ -129,8 +137,19 @@ fi
 
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
-MyelinMappingFWHM="5"
-SurfaceSmoothingFWHM="4"
+
+if (( NonHumanSpecies )); then 
+	MyelinMappingFWHM="${MyelinMappingFWHM:-5}"
+	SurfaceSmoothingFWHM="${SurfaceSmoothingFWHM:-4}"
+else
+	MyelinMappingFWHM="5"
+	SurfaceSmoothingFWHM="4"
+fi
+
+echo "MyelinMappingFWHM=$MyelinMappingFWHM"
+echo "SurfaceSmoothingFWHM=$SurfaceSmoothingFWHM"
+echo "CorrectionSigma=$CorrectionSigma"
+
 MyelinMappingSigma=`echo "$MyelinMappingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 
@@ -179,6 +198,11 @@ if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality i
 	fslmaths "$OutputMNIT2wImage" -abs "$OutputMNIT2wImage" -odt float
 	fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
 	fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
+
+	# Create "$OrginalT2wImage"_brainmask_fs for fMRIVolume and diffusion preprocessing
+	invwarp -w "$OutputOrigT2wToT1w" -r "$OrginalT2wImage" -o "$(remove_ext $OutputOrigT2wToT1w)"Inv
+	applywarp --interp=trilinear -i "$T1wImageBrainMask" -w "$(remove_ext $OutputOrigT2wToT1w)"Inv -r "$OrginalT2wImage" -o "$(remove_ext $OrginalT2wImage)"_brainmask_fs
+	fslmaths "$(remove_ext $OrginalT2wImage)"_brainmask_fs -thr 0.5 -bin "$(remove_ext $OrginalT2wImage)"_brainmask_fs
 	fi
 fi
 
@@ -190,6 +214,11 @@ if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -volume-math "(T1w / T2w) * (((ribbon > ($LeftGreyRibbonValue - 0.01)) * (ribbon < ($LeftGreyRibbonValue + 0.01))) + ((ribbon > ($RightGreyRibbonValue - 0.01)) * (ribbon < ($RightGreyRibbonValue + 0.01))))" "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -var ribbon "$T1wFolder"/ribbon.nii.gz
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
+
+  #NHP specific, supposed to not be needed, replaced by HCP master version code below, from "# Create surface on HighResMesh in session's T1w space"
+  #if (( NonHumanSpecies )); then 
+	#${CARET7DIR}/wb_command -cifti-separate-all "$ReferenceMyelinMaps" -left "$AtlasSpaceFolder"/"$Subject".L.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii -right "$AtlasSpaceFolder"/"$Subject".R.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii
+  #fi
 fi
 
 MapListFunc="corrThickness@shape"
@@ -223,6 +252,7 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -volume-to-surface-mapping "$T1wFolder"/T1wDividedByT2w.nii.gz "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii -myelin-style "$T1wFolder"/temp_ribbon.nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$MyelinMappingSigma"
     rm "$T1wFolder"/temp_ribbon.nii.gz
     ${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii "$SurfaceSmoothingSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".SmoothedMyelinMap.native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
+
   fi
 
   for STRING in $MapListFunc ; do
@@ -312,6 +342,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	LowResMesh="${LowResMeshesArray[0]}"
 	MyelinTargetFile=${ReferenceMyelinMaps}
 	# only resample the reference map into low res mesh if it isn't the first LowResMesh
+
 	if [ "$RefResMesh" != "${LowResMesh}" ]; then
 		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
 		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
@@ -341,8 +372,10 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		--use-ind-mean="$UseIndMean" \
 		--low-res-mesh="$LowResMesh" \
 		--myelin-target-file="$MyelinTargetFile" \
-		--map="MyelinMap"
-	# ----- End moved statements -----
+		--map="MyelinMap" \
+		--mcsigma="$CorrectionSigma"
+
+	# ----- End moved statements -----		
 	# bias field is computed in the module MyelinMap_BC.sh
 	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii COLUMN \
 		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.BiasField.native.func.gii \
@@ -397,6 +430,8 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		done
 	done
 fi
+#fi #HCP human-only tested code
+
 #Add CIFTI Maps to Spec Files
 
 MapListDscalar="corrThickness@dscalar"
