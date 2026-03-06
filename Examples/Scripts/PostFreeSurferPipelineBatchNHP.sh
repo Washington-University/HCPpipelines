@@ -51,7 +51,7 @@ StudyFolder="${HOME}/projects/HCPPipelines_ExampleData" #Location of Session fol
 Subjlist="100307 100610" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 Species="Human"
-
+StructRes="0.5"
 if [ -z "$StructRes" ]; then 
     StructResOption=""
 else 
