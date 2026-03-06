@@ -58,7 +58,7 @@ else
     StructResOption="--structres=$StructRes"
 fi
 if [ -z "$Species" ]; then 
-    Species="Human"
+    Species="Macaque"
 fi
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
