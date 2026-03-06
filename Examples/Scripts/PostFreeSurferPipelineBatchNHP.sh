@@ -48,7 +48,7 @@ get_batch_options() {
 get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/HCPPipelines_ExampleData" #Location of Session folders (named by subjectID)
-Subjlist="100307 100610" #Space delimited list of subject IDs
+Subjlist="Macaque1 Macaque2" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 Species="Macaque"
 StructRes="0.5"
