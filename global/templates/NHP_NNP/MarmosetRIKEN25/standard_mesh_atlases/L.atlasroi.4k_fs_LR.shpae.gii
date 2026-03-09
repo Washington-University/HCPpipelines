@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[L.atlasroi.164k_fs_LR.shape.gii:
+/usr/local/workbench/bin_rh_linux64/../exe_rh_linux64/wb_command -border-to-rois average.L.midthickness.164k_fs_LR.surf.gii roi_L.164k_fs_LR.border roi_L.164k_fs_LR.shape.gii -inverse
+
+L.sphere.4k_fs_LR.surf.gii:
+/usr/local/workbench/bin_rh_linux64/../exe_rh_linux64/wb_command -surface-flip-lr R.sphere.4k_fs_LR.surf.gii L.sphere.4k_fs_LR.surf.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 1.2.3
+Qt Compiled Version: 4.8.4
+Qt Runtime Version: 4.8.4
+Commit: c170db0277de04cb8a5c04fdf96e45adcda47d6d
+Commit Date: 2016-08-23 19:08:10 -0500
+Compiled with OpenMP: YES
+Compiler: g++44 (/usr/bin)
+Compiler Version: 4.4.7
+Compiled Debug: NO
+Operating System: Linux
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/usr/local/workbench/bin_rh_linux64/../exe_rh_linux64/wb_command -metric-resample L.atlasroi.164k_fs_LR.shape.gii fsaverage.L_LR.spherical_std.164k_fs_LR.surf.gii L.sphere.4k_fs_LR.surf.gii BARYCENTRIC L.atlasroi.4k_fs_LR.shpae.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/mnt/pub/devel/NHPHCPPipeline/global/templates/standard_mesh_atlases_marmoset]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="4002"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[ROI]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <AutoScaleAbsolutePercentageValues>2.000000 98.000000</AutoScaleAbsolutePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_MAP</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+   <NumericFormatMode>AUTO</NumericFormatMode>
+   <PrecisionDigits>2</PrecisionDigits>
+   <NumericSubivisions>0</NumericSubivisions>
+   <ColorBarValuesMode>DATA</ColorBarValuesMode>
+   <ShowTickMarksSelected>false</ShowTickMarksSelected>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJztWjtuFEEQ3c3hFIjIR4BdSyQmJkEkZCBZIuAE4MApEuIOlgiBAFICJM7BKSAao9XS2t6ael3v1fRYFpqSRvbOVnfX51X165ldrXZycbq/6v/L58O96+u31b1FFllkkUUW+Z+l3g/LHnjhXmtwPx6ft6ueD9uGZTem5RNnY3vsOhi/ruzX4zOO/WEOzeaY33h5busf+xTr8nZHOjctLNaPv7c557DIXHsp83n4qNf31mXqWekDLd/UGPB1q9nZst1bz9od6Xif18T6Xg4RfmzObb4R/jw77Rwt34Z//WOo7h33Plu7tk59jKL49quVve0spiI99jumThB2sut7eGphzsMIY0PLrmicZ0/kb43VaN4pGGL1iz1MX1XsqWs7qs0ot+UaAJ5tvmzuByefTJ9QL7YmFZwxsWPtQbFQ55wTi6p+zxr3fGNxPiUOKiZ6cArGthbfZ++xayKcsz2n7jfK/sv2YtUPxn4mVswegzDM8EAm/4r/DK/M4LKFj6iuWrxxqp0RT8rwH3VMK/7RmR6dCVtzZ3PM9tJe/Y3Jr/88AvurcAj0t+ZErbMdioPlusiuQcBRthaU3nr+/tvW9unD93MIjjHrm+0/KM+ZXonyhvg4woTtjSrfVvfh1toZDLUuhGGW92VwzYyJ7EL5ZPqH7Q1Kz0HxUfYaJabo/2zNlXmmjGdi6+XS66tZf1Dcy1qt3pz1s0fclFgOFb7r+KF5Wnstus9woR59JlrTrmUx4+kyfbjkDD33ZvxTedNOJ8Kf7V0Ix6xd0ff2uUSmr7f6ksUogz/1zMHmG32X5RBonOURCq+2MWNil8Gc0hNa2ED7LhP3CD/eVZ5FemtEz6kVX1UcKe+0MvzVW8d7ppjZh5S+p7wTm+tcwV7j90x5vxkMoLXQ/GptMDpz8HJPj+HhbIyY90sIX5+ufm13/18+uDMD3uYU33+1x+/1fTm59/WhjSM6Dx2+28vPZ2cUFoYk90V7u9JHUU17XFHBaVQjN8F767hGZw3ES5j9xe5FEUez/FTJDVpXiVFL//67L5uxzmr15vLJtv58qL+DaDmNa7uOZwYP5Wzi/e5AjVnJBXv2YHmu4g8zZ92HlP6g8hW2Hyi5i3geg2HL95m1Nuevt2P9en+p8a3L86c/jmoK71WMYCwNtH2tePDjx3aw0mOcOobT5XOs2HCbhK/J7yevGj6ytYwlfn/F+8L/XtazXxEFI/Vai0yXeF/J8MwXn39vFRssbj/++SCMP/Yji8E+YzPj5huzi+XL67MNq9tT7zYJw1swl61l/J7DG+PNeffR49MyR80ZEa+K6g49z63XHsznqWfEzG/kFb0eZ1rE0VU7FFuV2CpnzAhTns0WA1a/dd7q8duILDZ65HlKrD3/o7xG7+TRGQutkzlPs7jJ5C66/gIKBLOX</Data>
+</DataArray>
+</GIFTI>

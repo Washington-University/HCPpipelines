@@ -1,0 +1,60 @@
+status file for recon-all
+Thu Apr 19 13:36:09 CDT 2012
+#@# MotionCor Thu Apr 19 13:36:12 CDT 2012
+recon-all -s ChimpYerkes29 finished without error at Thu Apr 19 13:36:27 CDT 2012
+
+
+
+New invocation of recon-all 
+
+
+
+status file for recon-all
+Thu Apr 19 13:38:54 CDT 2012
+#@# Intensity Normalization Thu Apr 19 13:38:54 CDT 2012
+recon-all -s ChimpYerkes29 finished without error at Thu Apr 19 13:40:28 CDT 2012
+
+
+
+New invocation of recon-all 
+
+
+
+status file for recon-all
+Thu Apr 19 13:40:31 CDT 2012
+#@# CA Normalize Thu Apr 19 13:40:31 CDT 2012
+recon-all -s ChimpYerkes29 finished without error at Thu Apr 19 13:41:49 CDT 2012
+
+
+
+New invocation of recon-all 
+
+
+
+status file for recon-all
+Thu Apr 19 13:41:51 CDT 2012
+#@# CA Reg Thu Apr 19 13:41:51 CDT 2012
+recon-all -s ChimpYerkes29 finished without error at Thu Apr 19 19:17:37 CDT 2012
+
+
+
+New invocation of recon-all 
+
+
+
+status file for recon-all
+Thu Apr 19 19:17:42 CDT 2012
+#@# CA Reg Inv Thu Apr 19 19:17:42 CDT 2012
+recon-all -s ChimpYerkes29 finished without error at Thu Apr 19 19:18:23 CDT 2012
+
+
+
+New invocation of recon-all 
+
+
+
+status file for recon-all
+Thu Apr 19 19:18:26 CDT 2012
+#@# SubCort Seg Thu Apr 19 19:18:26 CDT 2012
+#@# Merge ASeg Thu Apr 19 19:32:37 CDT 2012
+recon-all -s ChimpYerkes29 finished without error at Thu Apr 19 19:32:37 CDT 2012

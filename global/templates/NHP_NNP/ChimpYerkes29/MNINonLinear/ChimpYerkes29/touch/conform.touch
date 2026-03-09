@@ -1,0 +1,1 @@
+mri_convert /media/myelin/brainmappers/MyelinMapping_Project/Templates/ChimpYerkes29/mri/rawavg.mgz /media/myelin/brainmappers/MyelinMapping_Project/Templates/ChimpYerkes29/mri/orig.mgz --conform

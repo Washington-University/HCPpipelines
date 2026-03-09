@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[L.atlasroi.32k_fs_LR.shape.gii:
+/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -metric-resample L.atlasroi.164k_fs_LR.shape.gii /mnt/temp_data1/HCP/HCPpipelines-5/HCPpipelines/global/templates/standard_mesh_atlases/L.sphere.164k_fs_LR.surf.gii /mnt/temp_data1/HCP/NHPHCPPipeline.dev.fs6/global/templates/NHP_NNP/SpecMac25Cyno/standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii ADAP_BARY_AREA L.atlasroi.32k_fs_LR.shape.gii -area-metrics /mnt/pub/PROJ/NHP_NNP/MacaqueCyno/SpecMac25Cyno/Mac25Cyno_v4/MNINonLinear/Mac25Cyno_v4.L.midthickness_va.164k_fs_LR.shape.gii /mnt/pub/PROJ/NHP_NNP/MacaqueCyno/SpecMac25Cyno/Mac25Cyno_v4/MNINonLinear/fsaverage_LR32k/Mac25Cyno_v4.L.midthickness_va.32k_fs_LR.shape.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.0
+Qt Compiled Version: 5.7.0
+Qt Runtime Version: 5.7.0
+Commit: a4824b22b46b2d5afa3e543a483f73faea27bcf5
+Commit Date: 2024-06-14 15:38:26 -0500
+Compiler: g++ (/usr/bin)
+Compiler Version: 4.8.4
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -metric-math 'A>0.5' L.atlasroi.32k_fs_LR.shape.gii -var A L.atlasroi.32k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/mnt/pub/PROJ/NHP_NNP/MacaqueCyno/SpecMac25Cyno/reg/Mac25Rhesus2Mac25Cyno]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[Mac25Rhesus_v4.L.atlasroi_v1.0]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_ABSOLUTE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <AutoScaleAbsolutePercentageValues>2.000000 98.000000</AutoScaleAbsolutePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <InvertPalette>OFF</InvertPalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_FILE</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+   <ThresholdOutlineDrawingMode>OFF</ThresholdOutlineDrawingMode>
+   <ThresholdOutlineDrawingColor>WHITE</ThresholdOutlineDrawingColor>
+   <HistogramRangeMode>PALETTE_HISTOGRAM_RANGE_ALL</HistogramRangeMode>
+   <HistogramBarsVisible>true</HistogramBarsVisible>
+   <HistogramEnvelopeVisible>false</HistogramEnvelopeVisible>
+   <HistogramBarsColor>CUSTOM</HistogramBarsColor>
+   <HistogramEnvelopeColor>RED</HistogramEnvelopeColor>
+   <HistogramEnvelopeLineWidthPercentage>0.5</HistogramEnvelopeLineWidthPercentage>
+   <HistogramNumberOfBuckets>100</HistogramNumberOfBuckets>
+   <NumericFormatMode>AUTO</NumericFormatMode>
+   <PrecisionDigits>2</PrecisionDigits>
+   <NumericSubivisions>0</NumericSubivisions>
+   <ColorBarValuesMode>DATA</ColorBarValuesMode>
+   <ShowTickMarksSelected>false</ShowTickMarksSelected>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt21tuo0AQBVDvLFvL0qN8BSECxtBdD86VjkZJTNctO4M1Gvn1+v567frN+uuO2dp762fV02GHJ8brJiIiIiIiIiIiIiIyJ0f/d8Z1nV+/rrt13KvbTp32sUeePUamcn/de/Wu1vnpXUf0rdAze0fdevTK1ilTnyxdMvR48vwnzZ09s+OsGXNGzxh5fqVzM59311kZzoi4Vt7P8nle/w6efS+HTLZ+rztY//3tYOu+VNne/baao/ePKo4S3e+OHbLvUbl/1e4Ve1frXKmvnnM6Rnfb6xfd679u0Z22ekX3ydgpW5foDgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwHPtJbobAAAAAAAAAAAAAAAA9XX+nErX3Tp+vqjbTp326fKZtg57VN+h8mckq3av2Lta561Ed6retULP7B0z98vaLWOvbJ0y9dEjT4fI+VGzI+bOntlx1ow5o2dUPHvEuXefeed5mc65esaV6z+99pPrzl5z5vEz7oH8Pdd3pXL3DHvNTPX+I/bJksrdl3naDhlTtfdvuvXOnOp9M6daz8zRT2Yk2+uYqU+W+0SG+2r0+1Cmf0NGzZ0xe/bMjrNmzKl8/qjnZ8S5mc+7a987zrl6RsS1n1x39pozj3/3se887ugxez8/8/3195ZfL/8EAAAAAAAAAAAAAAAAAAAAAACI9QMgYqtI</Data>
+</DataArray>
+</GIFTI>

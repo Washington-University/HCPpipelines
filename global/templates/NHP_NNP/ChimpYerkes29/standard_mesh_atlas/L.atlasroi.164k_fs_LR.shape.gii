@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Workbench
+Version: Beta 0.83
+Qt Compiled Version: 4.8.4
+Qt Runtime Version: 4.8.1
+commit: 145b742569b533b925634dd123ee63cfa045eb11
+commit date: 2013-11-04 17:05:48 -0600
+Compiled Debug: NO
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/home/brainmappers/workbench/fetchdir/wb_command.32728 -metric-math ROI > 0 ChimpYerkes29.L.roi0.8.164k_fs_LR.shape.gii -var ROI ChimpYerkes29.L.roi0.8.164k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{b16a61a9-e458-402e-8e5e-4062d88189df}]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="163842"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{d73ead58-7955-497f-8efc-6328bca3f142}]]></Value>
+      </MD>
+   </MetaData>
+   <Data>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</Data>
+</DataArray>
+</GIFTI>

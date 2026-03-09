@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Creators]]></Name>
+         <Value><![CDATA[Takuya Hayashi (RIKEN), Tim Coalson (WUSTL), Takuro Ikeda (RIKEN), Akiko Uematsu (RIKNE), Burke Rosen (WUSTL), Matthew Glasser (WUSTL), David Van Essen (WUSTL)]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[MarmosetRIKEN25.L.midthickness.164k_fs_LR.surf.gii:
+/mnt/temp_data1/HCP/workbench-dev/workbench/bin_linux64/../exe_linux64/wb_command -surface-average /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/MarmosetRIKEN25/MNINonLinear/MarmosetRIKEN25.L.midthickness.164k_fs_LR.surf.gii -uncertainty /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/MarmosetRIKEN25/MNINonLinear/MarmosetRIKEN25.L.midthickness_uncertainty.164k_fs_LR.shape.gii -stddev /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/MarmosetRIKEN25/MNINonLinear/MarmosetRIKEN25.L.midthickness_std.164k_fs_LR.shape.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22030801/MNINonLinear/A22030801.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22031701/MNINonLinear/A22031701.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22032401/MNINonLinear/A22032401.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22033101/MNINonLinear/A22033101.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22102701/MNINonLinear/A22102701.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22111001/MNINonLinear/A22111001.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A22121501/MNINonLinear/A22121501.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23012501/MNINonLinear/A23012501.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23061501/MNINonLinear/A23061501.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23081701/MNINonLinear/A23081701.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23082401/MNINonLinear/A23082401.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23083001/MNINonLinear/A23083001.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23090701/MNINonLinear/A23090701.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23091201/MNINonLinear/A23091201.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23121301/MNINonLinear/A23121301.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23122001/MNINonLinear/A23122001.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A23122601/MNINonLinear/A23122601.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24013001/MNINonLinear/A24013001.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24020801/MNINonLinear/A24020801.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24022701/MNINonLinear/A24022701.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24041001/MNINonLinear/A24041001.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24052801/MNINonLinear/A24052801.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24061301/MNINonLinear/A24061301.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24071101/MNINonLinear/A24071101.L.midthickness.164k_fs_LR.surf.gii -surf /mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/A24080801/MNINonLinear/A24080801.L.midthickness.164k_fs_LR.surf.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.0
+Qt Compiled Version: 5.7.0
+Qt Runtime Version: 5.7.0
+Commit: a4824b22b46b2d5afa3e543a483f73faea27bcf5
+Commit Date: 2024-06-14 15:38:26 -0500
+Compiler: g++ (/usr/bin)
+Compiler Version: 4.8.4
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -border-to-rois MarmosetRIKEN25.L.midthickness.164k_fs_LR.surf.gii medialwall/MarmosetRIKEN25.L.medialwall_v0.4_dve.border medialwall/MarmosetRIKEN25.L.atlasroi.164k_fs_LR.shape.gii -inverse]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Species]]></Name>
+         <Value><![CDATA[Callithrix jacchus]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Template Name/Version]]></Name>
+         <Value><![CDATA[MarmosetRIKEN25_v3]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/MarmosetRIKEN25/MNINonLinear]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="163842"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[medial wall]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_ABSOLUTE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <AutoScaleAbsolutePercentageValues>2.000000 98.000000</AutoScaleAbsolutePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <InvertPalette>OFF</InvertPalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_FILE</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+   <ThresholdOutlineDrawingMode>OFF</ThresholdOutlineDrawingMode>
+   <ThresholdOutlineDrawingColor>WHITE</ThresholdOutlineDrawingColor>
+   <HistogramRangeMode>PALETTE_HISTOGRAM_RANGE_ALL</HistogramRangeMode>
+   <HistogramBarsVisible>true</HistogramBarsVisible>
+   <HistogramEnvelopeVisible>false</HistogramEnvelopeVisible>
+   <HistogramBarsColor>CUSTOM</HistogramBarsColor>
+   <HistogramEnvelopeColor>RED</HistogramEnvelopeColor>
+   <HistogramEnvelopeLineWidthPercentage>0.5</HistogramEnvelopeLineWidthPercentage>
+   <HistogramNumberOfBuckets>100</HistogramNumberOfBuckets>
+   <NumericFormatMode>AUTO</NumericFormatMode>
+   <PrecisionDigits>2</PrecisionDigits>
+   <NumericSubivisions>0</NumericSubivisions>
+   <ColorBarValuesMode>DATA</ColorBarValuesMode>
+   <ShowTickMarksSelected>false</ShowTickMarksSelected>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>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</Data>
+</DataArray>
+</GIFTI>

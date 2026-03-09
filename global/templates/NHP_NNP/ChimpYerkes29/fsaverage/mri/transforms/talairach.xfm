@@ -1,0 +1,11 @@
+MNI Transform File
+% % % tkregister2
+% This file was created by /usr/local/bin/freesurfer/tktools/tkregister2.bin
+% Thu Apr 19 12:11:44 2012
+
+
+Transform_Type = Linear;
+Linear_Transform =
+1.244211e+00 0.000000e+00 0.000000e+00 2.442107e-01 
+0.000000e+00 1.299545e+00 0.000000e+00 2.695908e+00 
+0.000000e+00 0.000000e+00 1.299545e+00 1.347954e+00 ;

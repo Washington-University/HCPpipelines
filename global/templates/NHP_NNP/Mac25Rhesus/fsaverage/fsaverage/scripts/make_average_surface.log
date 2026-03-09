@@ -1,0 +1,1531 @@
+
+setenv SUBJECTS_DIR /mnt/temp_data1/NHP_NNP/MacaqueRhesus
+/usr/local/freesurfer-v6.0.0/bin/make_average_surface --force --out average/fsaverage --subjects A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled
+
+$Id: make_average_surface,v 1.62 2016/02/16 17:17:20 zkaufman Exp $
+Tue Jun  6 02:45:49 JST 2023
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+output ddir is /mnt/temp_data1/NHP_NNP/MacaqueRhesus
+uid=500(xnat) gid=500(xnat) groups=500(xnat),10(wheel),50709
+====================
+make_average_surface
+====================
+Tue Jun  6 02:45:49 JST 2023
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+/usr/local/freesurfer-v6.0.0/bin/make_average_surface
+--force --out average/fsaverage --subjects A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled
+input subjects: A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled
+output subject: average/fsaverage
+mri_add_xform_to_header -c auto /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/mri/mni305.cor.mgz /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/mri/mni305.cor.mgz
+INFO: extension is mgz
+
+#@# Making lh registration template ---------
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mris_make_template -norot -annot aparc lh sphere.reg A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled lh.reg.template.tif
+not aligning hemispheres before averaging.
+zeroing medial wall in aparc
+creating new parameterization...
+
+processing subject A17013101/T1w/A17013101_scaled (1 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sphere.reg...
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.inflated.H...
+curvature mean = -0.023, std = 0.959
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.smoothwm...
+
+processing subject A17020201/T1w/A17020201_scaled (2 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.sphere.reg...
+curvature mean = 0.642, std = 10.133
+curvature mean = -0.052, std = 0.332
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.inflated.H...
+curvature mean = -0.021, std = 0.958
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.smoothwm...
+
+processing subject A17021401/T1w/A17021401_scaled (3 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.sphere.reg...
+curvature mean = 0.455, std = 11.450
+curvature mean = -0.043, std = 0.295
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.inflated.H...
+curvature mean = -0.022, std = 0.958
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.smoothwm...
+
+processing subject A17030301/T1w/A17030301_scaled (4 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.sphere.reg...
+curvature mean = 0.568, std = 9.661
+curvature mean = -0.049, std = 0.322
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.inflated.H...
+curvature mean = -0.023, std = 0.974
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.smoothwm...
+
+processing subject A17030801/T1w/A17030801_scaled (5 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.sphere.reg...
+curvature mean = 0.467, std = 10.919
+curvature mean = -0.042, std = 0.298
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.inflated.H...
+curvature mean = -0.020, std = 0.972
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.smoothwm...
+
+processing subject A17031501/T1w/A17031501_scaled (6 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.sphere.reg...
+curvature mean = 0.473, std = 11.625
+curvature mean = -0.048, std = 0.369
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.inflated.H...
+curvature mean = -0.023, std = 0.966
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.smoothwm...
+
+processing subject A17040401/T1w/A17040401_scaled (7 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.sphere.reg...
+curvature mean = 0.656, std = 10.903
+curvature mean = -0.055, std = 0.348
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.inflated.H...
+curvature mean = -0.017, std = 0.954
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.smoothwm...
+
+processing subject A17042001/T1w/A17042001_scaled (8 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.sphere.reg...
+curvature mean = 0.685, std = 11.441
+curvature mean = -0.046, std = 0.424
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.inflated.H...
+curvature mean = -0.003, std = 0.935
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.smoothwm...
+
+processing subject A17070701/T1w/A17070701_scaled (9 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.sphere.reg...
+curvature mean = 0.445, std = 11.041
+curvature mean = -0.039, std = 0.277
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.inflated.H...
+curvature mean = -0.020, std = 0.949
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.smoothwm...
+
+processing subject A17071301/T1w/A17071301_scaled (10 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.sphere.reg...
+curvature mean = 0.491, std = 11.724
+curvature mean = -0.038, std = 0.273
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.inflated.H...
+curvature mean = 0.001, std = 0.900
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.smoothwm...
+
+processing subject A18012602/T1w/A18012602_scaled (11 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.sphere.reg...
+curvature mean = 0.604, std = 10.824
+curvature mean = -0.043, std = 0.320
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.inflated.H...
+curvature mean = -0.025, std = 0.933
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.smoothwm...
+
+processing subject A18022301/T1w/A18022301_scaled (12 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.sphere.reg...
+curvature mean = 0.469, std = 10.894
+curvature mean = -0.038, std = 0.374
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.inflated.H...
+curvature mean = -0.009, std = 0.974
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.smoothwm...
+
+processing subject A18030201/T1w/A18030201_scaled (13 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.sphere.reg...
+curvature mean = 0.366, std = 12.045
+curvature mean = -0.034, std = 0.293
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.inflated.H...
+curvature mean = -0.014, std = 0.963
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.smoothwm...
+
+processing subject A18030901/T1w/A18030901_scaled (14 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.sphere.reg...
+curvature mean = 0.590, std = 11.208
+curvature mean = -0.039, std = 0.476
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.inflated.H...
+curvature mean = -0.025, std = 0.934
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.smoothwm...
+
+processing subject A18031601/T1w/A18031601_scaled (15 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.sphere.reg...
+curvature mean = 0.401, std = 11.165
+curvature mean = -0.045, std = 0.307
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.inflated.H...
+curvature mean = -0.017, std = 0.955
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.smoothwm...
+
+processing subject A19062101/T1w/A19062101_scaled (16 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.sphere.reg...
+curvature mean = 0.756, std = 11.810
+curvature mean = -0.037, std = 0.316
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.inflated.H...
+curvature mean = -0.022, std = 0.988
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.smoothwm...
+
+processing subject A19062801/T1w/A19062801_scaled (17 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.sphere.reg...
+curvature mean = 0.521, std = 10.653
+curvature mean = -0.047, std = 0.330
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.inflated.H...
+curvature mean = -0.026, std = 0.999
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.smoothwm...
+
+processing subject A19121901/T1w/A19121901_scaled (18 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.sphere.reg...
+curvature mean = 0.440, std = 11.190
+curvature mean = -0.044, std = 0.310
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.inflated.H...
+curvature mean = -0.019, std = 0.975
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.smoothwm...
+
+processing subject A19122601/T1w/A19122601_scaled (19 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.sphere.reg...
+curvature mean = 0.579, std = 10.345
+curvature mean = -0.047, std = 0.382
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.inflated.H...
+curvature mean = -0.017, std = 0.956
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.smoothwm...
+
+processing subject A20030501/T1w/A20030501_scaled (20 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.sphere.reg...
+curvature mean = 0.545, std = 10.829
+curvature mean = -0.044, std = 0.319
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.inflated.H...
+curvature mean = -0.027, std = 0.984
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.smoothwm...
+
+processing subject A20031301/T1w/A20031301_scaled (21 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.sphere.reg...
+curvature mean = 0.475, std = 10.011
+curvature mean = -0.047, std = 0.360
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.inflated.H...
+curvature mean = -0.014, std = 0.946
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.smoothwm...
+
+processing subject A20031701/T1w/A20031701_scaled (22 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.sphere.reg...
+curvature mean = 0.612, std = 11.031
+curvature mean = -0.040, std = 0.293
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.inflated.H...
+curvature mean = -0.013, std = 0.979
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.smoothwm...
+
+processing subject A21072801/T1w/A21072801_scaled (23 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.sphere.reg...
+curvature mean = 0.647, std = 11.427
+curvature mean = -0.039, std = 0.356
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.inflated.H...
+curvature mean = -0.023, std = 0.974
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.smoothwm...
+
+processing subject A21072901/T1w/A21072901_scaled (24 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.sphere.reg...
+curvature mean = 0.577, std = 11.541
+curvature mean = -0.044, std = 0.408
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.inflated.H...
+curvature mean = -0.031, std = 0.996
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.smoothwm...
+
+processing subject A21081101/T1w/A21081101_scaled (25 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.sphere.reg...
+curvature mean = 0.566, std = 10.898
+curvature mean = -0.053, std = 0.450
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.inflated.H...
+curvature mean = -0.007, std = 0.941
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.smoothwm...
+writing updated template with 25 subjects to lh.reg.template.tif...
+curvature mean = 0.580, std = 11.554
+curvature mean = -0.031, std = 0.728
+
+#@# Making rh registration template ---------
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mris_make_template -norot -annot aparc rh sphere.reg A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled rh.reg.template.tif
+not aligning hemispheres before averaging.
+zeroing medial wall in aparc
+creating new parameterization...
+
+processing subject A17013101/T1w/A17013101_scaled (1 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/rh.sphere.reg...
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/rh.inflated.H...
+curvature mean = -0.022, std = 0.976
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/rh.smoothwm...
+
+processing subject A17020201/T1w/A17020201_scaled (2 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/rh.sphere.reg...
+curvature mean = 0.658, std = 10.209
+curvature mean = -0.049, std = 0.419
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/rh.inflated.H...
+curvature mean = -0.018, std = 0.974
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/rh.smoothwm...
+
+processing subject A17021401/T1w/A17021401_scaled (3 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/rh.sphere.reg...
+curvature mean = 0.394, std = 11.441
+curvature mean = -0.043, std = 0.347
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/rh.inflated.H...
+curvature mean = -0.010, std = 0.944
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/rh.smoothwm...
+
+processing subject A17030301/T1w/A17030301_scaled (4 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/rh.sphere.reg...
+curvature mean = 0.509, std = 9.510
+curvature mean = -0.048, std = 0.378
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/rh.inflated.H...
+curvature mean = -0.014, std = 0.932
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/rh.smoothwm...
+
+processing subject A17030801/T1w/A17030801_scaled (5 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/rh.sphere.reg...
+curvature mean = 0.436, std = 10.999
+curvature mean = -0.040, std = 0.281
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/rh.inflated.H...
+curvature mean = -0.014, std = 0.938
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/rh.smoothwm...
+
+processing subject A17031501/T1w/A17031501_scaled (6 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/rh.sphere.reg...
+curvature mean = 0.636, std = 11.843
+curvature mean = -0.047, std = 0.428
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/rh.inflated.H...
+curvature mean = -0.008, std = 0.945
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/rh.smoothwm...
+
+processing subject A17040401/T1w/A17040401_scaled (7 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/rh.sphere.reg...
+curvature mean = 0.584, std = 11.006
+curvature mean = -0.047, std = 0.371
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/rh.inflated.H...
+curvature mean = -0.008, std = 0.949
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/rh.smoothwm...
+
+processing subject A17042001/T1w/A17042001_scaled (8 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/rh.sphere.reg...
+curvature mean = 0.554, std = 11.389
+curvature mean = -0.044, std = 0.309
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/rh.inflated.H...
+curvature mean = -0.002, std = 0.933
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/rh.smoothwm...
+
+processing subject A17070701/T1w/A17070701_scaled (9 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/rh.sphere.reg...
+curvature mean = 0.569, std = 11.146
+curvature mean = -0.040, std = 0.290
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/rh.inflated.H...
+curvature mean = -0.012, std = 0.954
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/rh.smoothwm...
+
+processing subject A17071301/T1w/A17071301_scaled (10 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/rh.sphere.reg...
+curvature mean = 0.483, std = 11.797
+curvature mean = -0.038, std = 0.311
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/rh.inflated.H...
+curvature mean = 0.004, std = 0.916
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/rh.smoothwm...
+
+processing subject A18012602/T1w/A18012602_scaled (11 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/rh.sphere.reg...
+curvature mean = 0.513, std = 10.625
+curvature mean = -0.043, std = 0.322
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/rh.inflated.H...
+curvature mean = -0.014, std = 0.973
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/rh.smoothwm...
+
+processing subject A18022301/T1w/A18022301_scaled (12 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/rh.sphere.reg...
+curvature mean = 0.384, std = 11.149
+curvature mean = -0.038, std = 0.278
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/rh.inflated.H...
+curvature mean = -0.005, std = 0.952
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/rh.smoothwm...
+
+processing subject A18030201/T1w/A18030201_scaled (13 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/rh.sphere.reg...
+curvature mean = 0.479, std = 12.064
+curvature mean = -0.037, std = 0.279
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/rh.inflated.H...
+curvature mean = -0.015, std = 0.977
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/rh.smoothwm...
+
+processing subject A18030901/T1w/A18030901_scaled (14 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/rh.sphere.reg...
+curvature mean = 0.541, std = 11.307
+curvature mean = -0.042, std = 0.284
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/rh.inflated.H...
+curvature mean = -0.011, std = 0.934
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/rh.smoothwm...
+
+processing subject A18031601/T1w/A18031601_scaled (15 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/rh.sphere.reg...
+curvature mean = 0.412, std = 10.962
+curvature mean = -0.044, std = 0.640
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/rh.inflated.H...
+curvature mean = -0.013, std = 0.947
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/rh.smoothwm...
+
+processing subject A19062101/T1w/A19062101_scaled (16 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/rh.sphere.reg...
+curvature mean = 0.695, std = 11.577
+curvature mean = -0.032, std = 0.398
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/rh.inflated.H...
+curvature mean = -0.017, std = 0.978
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/rh.smoothwm...
+
+processing subject A19062801/T1w/A19062801_scaled (17 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/rh.sphere.reg...
+curvature mean = 0.568, std = 10.526
+curvature mean = -0.043, std = 0.689
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/rh.inflated.H...
+curvature mean = -0.024, std = 0.992
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/rh.smoothwm...
+
+processing subject A19121901/T1w/A19121901_scaled (18 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/rh.sphere.reg...
+curvature mean = 0.516, std = 11.307
+curvature mean = -0.041, std = 0.304
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/rh.inflated.H...
+curvature mean = -0.020, std = 0.914
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/rh.smoothwm...
+
+processing subject A19122601/T1w/A19122601_scaled (19 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/rh.sphere.reg...
+curvature mean = 0.681, std = 10.476
+curvature mean = -0.047, std = 0.314
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/rh.inflated.H...
+curvature mean = -0.014, std = 0.955
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/rh.smoothwm...
+
+processing subject A20030501/T1w/A20030501_scaled (20 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/rh.sphere.reg...
+curvature mean = 0.511, std = 11.037
+curvature mean = -0.044, std = 0.412
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/rh.inflated.H...
+curvature mean = -0.018, std = 0.967
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/rh.smoothwm...
+
+processing subject A20031301/T1w/A20031301_scaled (21 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/rh.sphere.reg...
+curvature mean = 0.506, std = 10.065
+curvature mean = -0.043, std = 0.404
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/rh.inflated.H...
+curvature mean = -0.013, std = 0.930
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/rh.smoothwm...
+
+processing subject A20031701/T1w/A20031701_scaled (22 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/rh.sphere.reg...
+curvature mean = 0.505, std = 11.219
+curvature mean = -0.036, std = 0.320
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/rh.inflated.H...
+curvature mean = -0.029, std = 0.980
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/rh.smoothwm...
+
+processing subject A21072801/T1w/A21072801_scaled (23 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/rh.sphere.reg...
+curvature mean = 0.608, std = 11.533
+curvature mean = -0.041, std = 0.378
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/rh.inflated.H...
+curvature mean = -0.019, std = 0.960
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/rh.smoothwm...
+
+processing subject A21072901/T1w/A21072901_scaled (24 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/rh.sphere.reg...
+curvature mean = 0.636, std = 11.963
+curvature mean = -0.042, std = 0.331
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/rh.inflated.H...
+curvature mean = -0.033, std = 0.974
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/rh.smoothwm...
+
+processing subject A21081101/T1w/A21081101_scaled (25 of 25)
+reading spherical surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/rh.sphere.reg...
+curvature mean = 0.610, std = 10.829
+curvature mean = -0.052, std = 0.346
+reading frame -1 of gca
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+ripping medial wall...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/rh.inflated.H...
+curvature mean = -0.001, std = 0.919
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/rh.sulc...
+computing parameterization for surface /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/rh.smoothwm...
+writing updated template with 25 subjects to rh.reg.template.tif...
+curvature mean = 0.522, std = 11.602
+curvature mean = -0.035, std = 0.260
+
+#@# Making average lh.white surface ---------------------
+Tue Jun  6 02:53:14 JST 2023
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mris_make_average_surface -i 7 -o white -sdir-out /mnt/temp_data1/NHP_NNP/MacaqueRhesus lh white sphere.reg average/fsaverage A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled
+reading vertex positions from white...
+---------------------------------------------------
+hemi            = lh
+avg_surf_name   = white
+canon_surf_name = sphere.reg
+out_sname       = average/fsaverage
+xform           = talairach.xfm
+---------------------------------------------------
+
+
+
+---------------------------------------------------
+#@# processing subject 1/25 A17013101/T1w/A17013101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/mri/T1.mgz
+  Surface area: 332.1 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 2/25 A17020201/T1w/A17020201_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/mri/T1.mgz
+  Surface area: 430.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 3/25 A17021401/T1w/A17021401_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/mri/T1.mgz
+  Surface area: 322.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 4/25 A17030301/T1w/A17030301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/mri/T1.mgz
+  Surface area: 411.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 5/25 A17030801/T1w/A17030801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/mri/T1.mgz
+  Surface area: 417.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 6/25 A17031501/T1w/A17031501_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/mri/T1.mgz
+  Surface area: 376.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 7/25 A17040401/T1w/A17040401_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/mri/T1.mgz
+  Surface area: 424.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 8/25 A17042001/T1w/A17042001_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/mri/T1.mgz
+  Surface area: 410.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 9/25 A17070701/T1w/A17070701_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/mri/T1.mgz
+  Surface area: 470.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 10/25 A17071301/T1w/A17071301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/mri/T1.mgz
+  Surface area: 405.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 11/25 A18012602/T1w/A18012602_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/mri/T1.mgz
+  Surface area: 412.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 12/25 A18022301/T1w/A18022301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/mri/T1.mgz
+  Surface area: 468.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 13/25 A18030201/T1w/A18030201_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/mri/T1.mgz
+  Surface area: 426.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 14/25 A18030901/T1w/A18030901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/mri/T1.mgz
+  Surface area: 422.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 15/25 A18031601/T1w/A18031601_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/mri/T1.mgz
+  Surface area: 478.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 16/25 A19062101/T1w/A19062101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/mri/T1.mgz
+  Surface area: 386.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 17/25 A19062801/T1w/A19062801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/mri/T1.mgz
+  Surface area: 409.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 18/25 A19121901/T1w/A19121901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/mri/T1.mgz
+  Surface area: 357.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 19/25 A19122601/T1w/A19122601_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/mri/T1.mgz
+  Surface area: 421.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 20/25 A20030501/T1w/A20030501_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/mri/T1.mgz
+  Surface area: 352.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 21/25 A20031301/T1w/A20031301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/mri/T1.mgz
+  Surface area: 418.0 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 22/25 A20031701/T1w/A20031701_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/mri/T1.mgz
+  Surface area: 411.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 23/25 A21072801/T1w/A21072801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/mri/T1.mgz
+  Surface area: 434.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 24/25 A21072901/T1w/A21072901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/mri/T1.mgz
+  Surface area: 393.1 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 25/25 A21081101/T1w/A21081101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/mri/T1.mgz
+  Surface area: 461.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+Finished loading all data
+Avg surf area = 410.255 cm
+Reading icosahedron from /usr/local/freesurfer-v6.0.0/lib/bem/ic7.tri...
+setting group surface area to be 410.3 cm^2 (scale=1.23)
+Adding volume geometry from /usr/local/freesurfer-v6.0.0/average/mni305.cor.mgz
+writing average white surface to /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/surf/lh.white
+writing group avg surface area 410 cm^2 into surface file
+mris_make_average_surface done
+
+
+#@# Making average lh.pial surface ---------------------
+Tue Jun  6 02:58:59 JST 2023
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mris_make_average_surface -i 7 -o pial -sdir-out /mnt/temp_data1/NHP_NNP/MacaqueRhesus lh pial sphere.reg average/fsaverage A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled
+reading vertex positions from pial...
+---------------------------------------------------
+hemi            = lh
+avg_surf_name   = pial
+canon_surf_name = sphere.reg
+out_sname       = average/fsaverage
+xform           = talairach.xfm
+---------------------------------------------------
+
+
+
+---------------------------------------------------
+#@# processing subject 1/25 A17013101/T1w/A17013101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/mri/T1.mgz
+  Surface area: 448.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 2/25 A17020201/T1w/A17020201_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/mri/T1.mgz
+  Surface area: 588.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 3/25 A17021401/T1w/A17021401_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/mri/T1.mgz
+  Surface area: 430.3 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 4/25 A17030301/T1w/A17030301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/mri/T1.mgz
+  Surface area: 561.1 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 5/25 A17030801/T1w/A17030801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/mri/T1.mgz
+  Surface area: 581.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 6/25 A17031501/T1w/A17031501_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/mri/T1.mgz
+  Surface area: 529.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 7/25 A17040401/T1w/A17040401_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/mri/T1.mgz
+  Surface area: 578.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 8/25 A17042001/T1w/A17042001_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/mri/T1.mgz
+  Surface area: 544.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 9/25 A17070701/T1w/A17070701_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/mri/T1.mgz
+  Surface area: 612.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 10/25 A17071301/T1w/A17071301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/mri/T1.mgz
+  Surface area: 559.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 11/25 A18012602/T1w/A18012602_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/mri/T1.mgz
+  Surface area: 537.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 12/25 A18022301/T1w/A18022301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/mri/T1.mgz
+  Surface area: 597.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 13/25 A18030201/T1w/A18030201_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/mri/T1.mgz
+  Surface area: 573.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 14/25 A18030901/T1w/A18030901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/mri/T1.mgz
+  Surface area: 570.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 15/25 A18031601/T1w/A18031601_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/mri/T1.mgz
+  Surface area: 621.1 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 16/25 A19062101/T1w/A19062101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/mri/T1.mgz
+  Surface area: 522.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 17/25 A19062801/T1w/A19062801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/mri/T1.mgz
+  Surface area: 550.3 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 18/25 A19121901/T1w/A19121901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/mri/T1.mgz
+  Surface area: 481.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 19/25 A19122601/T1w/A19122601_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/mri/T1.mgz
+  Surface area: 571.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 20/25 A20030501/T1w/A20030501_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/mri/T1.mgz
+  Surface area: 475.3 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 21/25 A20031301/T1w/A20031301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/mri/T1.mgz
+  Surface area: 565.1 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 22/25 A20031701/T1w/A20031701_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/mri/T1.mgz
+  Surface area: 534.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 23/25 A21072801/T1w/A21072801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/mri/T1.mgz
+  Surface area: 577.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 24/25 A21072901/T1w/A21072901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/mri/T1.mgz
+  Surface area: 546.0 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 25/25 A21081101/T1w/A21081101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/mri/T1.mgz
+  Surface area: 591.1 cm^2
+  Applying linear transform
+reading frame -1 of gca
+Finished loading all data
+Avg surf area = 550.109 cm
+Reading icosahedron from /usr/local/freesurfer-v6.0.0/lib/bem/ic7.tri...
+setting group surface area to be 550.1 cm^2 (scale=1.25)
+Adding volume geometry from /usr/local/freesurfer-v6.0.0/average/mni305.cor.mgz
+writing average pial surface to /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/surf/lh.pial
+writing group avg surface area 550 cm^2 into surface file
+mris_make_average_surface done
+
+
+#@# Making average lh.orig surface ---------------------
+Tue Jun  6 03:04:09 JST 2023
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mris_make_average_surface -i 7 -o orig -sdir-out /mnt/temp_data1/NHP_NNP/MacaqueRhesus lh orig sphere.reg average/fsaverage A17013101/T1w/A17013101_scaled A17020201/T1w/A17020201_scaled A17021401/T1w/A17021401_scaled A17030301/T1w/A17030301_scaled A17030801/T1w/A17030801_scaled A17031501/T1w/A17031501_scaled A17040401/T1w/A17040401_scaled A17042001/T1w/A17042001_scaled A17070701/T1w/A17070701_scaled A17071301/T1w/A17071301_scaled A18012602/T1w/A18012602_scaled A18022301/T1w/A18022301_scaled A18030201/T1w/A18030201_scaled A18030901/T1w/A18030901_scaled A18031601/T1w/A18031601_scaled A19062101/T1w/A19062101_scaled A19062801/T1w/A19062801_scaled A19121901/T1w/A19121901_scaled A19122601/T1w/A19122601_scaled A20030501/T1w/A20030501_scaled A20031301/T1w/A20031301_scaled A20031701/T1w/A20031701_scaled A21072801/T1w/A21072801_scaled A21072901/T1w/A21072901_scaled A21081101/T1w/A21081101_scaled
+reading vertex positions from orig...
+---------------------------------------------------
+hemi            = lh
+avg_surf_name   = orig
+canon_surf_name = sphere.reg
+out_sname       = average/fsaverage
+xform           = talairach.xfm
+---------------------------------------------------
+
+
+
+---------------------------------------------------
+#@# processing subject 1/25 A17013101/T1w/A17013101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/mri/T1.mgz
+  Surface area: 343.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 2/25 A17020201/T1w/A17020201_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17020201/T1w/A17020201_scaled/mri/T1.mgz
+  Surface area: 444.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 3/25 A17021401/T1w/A17021401_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17021401/T1w/A17021401_scaled/mri/T1.mgz
+  Surface area: 335.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 4/25 A17030301/T1w/A17030301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030301/T1w/A17030301_scaled/mri/T1.mgz
+  Surface area: 422.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 5/25 A17030801/T1w/A17030801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17030801/T1w/A17030801_scaled/mri/T1.mgz
+  Surface area: 426.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 6/25 A17031501/T1w/A17031501_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17031501/T1w/A17031501_scaled/mri/T1.mgz
+  Surface area: 392.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 7/25 A17040401/T1w/A17040401_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17040401/T1w/A17040401_scaled/mri/T1.mgz
+  Surface area: 436.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 8/25 A17042001/T1w/A17042001_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17042001/T1w/A17042001_scaled/mri/T1.mgz
+  Surface area: 417.7 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 9/25 A17070701/T1w/A17070701_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17070701/T1w/A17070701_scaled/mri/T1.mgz
+  Surface area: 476.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 10/25 A17071301/T1w/A17071301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17071301/T1w/A17071301_scaled/mri/T1.mgz
+  Surface area: 415.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 11/25 A18012602/T1w/A18012602_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18012602/T1w/A18012602_scaled/mri/T1.mgz
+  Surface area: 423.3 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 12/25 A18022301/T1w/A18022301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18022301/T1w/A18022301_scaled/mri/T1.mgz
+  Surface area: 472.3 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 13/25 A18030201/T1w/A18030201_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030201/T1w/A18030201_scaled/mri/T1.mgz
+  Surface area: 435.0 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 14/25 A18030901/T1w/A18030901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18030901/T1w/A18030901_scaled/mri/T1.mgz
+  Surface area: 430.9 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 15/25 A18031601/T1w/A18031601_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A18031601/T1w/A18031601_scaled/mri/T1.mgz
+  Surface area: 482.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 16/25 A19062101/T1w/A19062101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062101/T1w/A19062101_scaled/mri/T1.mgz
+  Surface area: 393.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 17/25 A19062801/T1w/A19062801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19062801/T1w/A19062801_scaled/mri/T1.mgz
+  Surface area: 414.8 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 18/25 A19121901/T1w/A19121901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19121901/T1w/A19121901_scaled/mri/T1.mgz
+  Surface area: 366.5 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 19/25 A19122601/T1w/A19122601_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A19122601/T1w/A19122601_scaled/mri/T1.mgz
+  Surface area: 428.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 20/25 A20030501/T1w/A20030501_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20030501/T1w/A20030501_scaled/mri/T1.mgz
+  Surface area: 360.2 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 21/25 A20031301/T1w/A20031301_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031301/T1w/A20031301_scaled/mri/T1.mgz
+  Surface area: 426.6 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 22/25 A20031701/T1w/A20031701_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A20031701/T1w/A20031701_scaled/mri/T1.mgz
+  Surface area: 416.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 23/25 A21072801/T1w/A21072801_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072801/T1w/A21072801_scaled/mri/T1.mgz
+  Surface area: 444.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 24/25 A21072901/T1w/A21072901_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21072901/T1w/A21072901_scaled/mri/T1.mgz
+  Surface area: 403.0 cm^2
+  Applying linear transform
+reading frame -1 of gca
+
+---------------------------------------------------
+#@# processing subject 25/25 A21081101/T1w/A21081101_scaled...
+  Reading /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+  Read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A21081101/T1w/A21081101_scaled/mri/T1.mgz
+  Surface area: 461.4 cm^2
+  Applying linear transform
+reading frame -1 of gca
+Finished loading all data
+Avg surf area = 418.835 cm
+Reading icosahedron from /usr/local/freesurfer-v6.0.0/lib/bem/ic7.tri...
+setting group surface area to be 418.8 cm^2 (scale=1.24)
+Adding volume geometry from /usr/local/freesurfer-v6.0.0/average/mni305.cor.mgz
+writing average orig surface to /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/surf/lh.orig
+writing group avg surface area 419 cm^2 into surface file
+mris_make_average_surface done
+
+
+---------------------------------------------------
+
+#@# Smoothing, inflating, etc lh ----------------
+/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/surf
+mris_smooth -nw -n 5 ./lh.white ./lh.smoothwm
+writing group avg surface area 410 cm^2 into surface file
+
+mris_inflate -dist .01 -f .001 -no-save-sulc -n 15 ./lh.smoothwm ./lh.inflated
+Not saving sulc
+Reading ./lh.smoothwm
+step 000: RMS=0.072 (target=0.001)   step 005: RMS=0.062 (target=0.001)   step 010: RMS=0.049 (target=0.001)   step 015: RMS=0.042 (target=0.001)   step 020: RMS=0.037 (target=0.001)   step 025: RMS=0.034 (target=0.001)   step 030: RMS=0.031 (target=0.001)   step 035: RMS=0.029 (target=0.001)   step 040: RMS=0.027 (target=0.001)   step 045: RMS=0.024 (target=0.001)   step 050: RMS=0.023 (target=0.001)   step 055: RMS=0.021 (target=0.001)   step 060: RMS=0.020 (target=0.001)   step 065: RMS=0.019 (target=0.001)   step 070: RMS=0.018 (target=0.001)   step 075: RMS=0.017 (target=0.001)   step 080: RMS=0.016 (target=0.001)   step 085: RMS=0.016 (target=0.001)   step 090: RMS=0.015 (target=0.001)   
+inflation complete.
+writing group avg surface area 410 cm^2 into surface file
+Not saving sulc
+mris_inflate utimesec    65.725008
+mris_inflate stimesec    0.074988
+mris_inflate ru_maxrss   199904
+mris_inflate ru_ixrss    0
+mris_inflate ru_idrss    0
+mris_inflate ru_isrss    0
+mris_inflate ru_minflt   25063
+mris_inflate ru_majflt   0
+mris_inflate ru_nswap    0
+mris_inflate ru_inblock  0
+mris_inflate ru_oublock  11544
+mris_inflate ru_msgsnd   0
+mris_inflate ru_msgrcv   0
+mris_inflate ru_nsignals 0
+mris_inflate ru_nvcsw    149
+mris_inflate ru_nivcsw   6733
+
+annot2std --o label/lh.aparc.annot --lh --f /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/list.subjects.txt --t average/fsaverage --a aparc --srcsurfreg sphere.reg --trgsurfreg sphere.reg
+Tue Jun  6 03:11:44 JST 2023
+
+setenv SUBJECTS_DIR /mnt/temp_data1/NHP_NNP/MacaqueRhesus
+cd /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+/usr/local/freesurfer-v6.0.0/bin/annot2std --o label/lh.aparc.annot --lh --f /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/list.subjects.txt --t average/fsaverage --a aparc --srcsurfreg sphere.reg --trgsurfreg sphere.reg
+
+freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.1-f53a55a
+$Id: annot2std,v 1.5 2016/06/13 18:00:34 greve Exp $
+Linux BCIL-G2 2.6.32-754.3.5.el6.x86_64 #1 SMP Tue Aug 14 20:46:41 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+#@# 1/25 A17013101/T1w/A17013101_scaled Tue Jun  6 03:11:44 JST 2023
+mri_annotation2label --subject A17013101/T1w/A17013101_scaled --hemi lh --seg /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh --ctab /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.ctab --annotation aparc --segbase 0
+subject = A17013101/T1w/A17013101_scaled
+annotation = aparc
+hemi = lh
+segfile = /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh
+surface   = white
+
+Reading surface 
+ /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.white
+reading frame -1 of gca
+Loading annotations from /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/label/lh.aparc.annot
+reading colortable from annotation file...
+colortable with 36 entries read (originally /autofs/space/tanha_002/users/greve/fsdev.build/average/colortable_desikan_killiany.txt)
+CTABwriteFileASCII(/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.ctab): could not open for writing
+
+Seg base 0
+No such file or directory
+mghWrite(/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh, -1): could not open file
+Converting to a segmentation
+mri_surf2surf --mapmethod nnf --hemi lh --srcsubject A17013101/T1w/A17013101_scaled --srcsurfreg sphere.reg --sval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh --trgsubject average/fsaverage --trgsurfreg sphere.reg --tval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.std.mgh
+mghRead(/mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh, -1): could not open file
+Source registration surface changed to sphere.reg
+Target registration surface changed to sphere.reg
+
+$Id: mri_surf2surf.c,v 1.103 2015/11/05 22:07:33 greve Exp $
+
+setenv SUBJECTS_DIR /mnt/temp_data1/NHP_NNP/MacaqueRhesus
+cd /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mri_surf2surf --mapmethod nnf --hemi lh --srcsubject A17013101/T1w/A17013101_scaled --srcsurfreg sphere.reg --sval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh --trgsubject average/fsaverage --trgsurfreg sphere.reg --tval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.std.mgh 
+
+sysname  Linux
+hostname BCIL-G2
+machine  x86_64
+user     xnat
+srcsubject = A17013101/T1w/A17013101_scaled
+srcval     = /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh
+srctype    = 
+trgsubject = average/fsaverage
+trgval     = /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.std.mgh
+trgtype    = 
+srcsurfreg = sphere.reg
+trgsurfreg = sphere.reg
+srchemi    = lh
+trghemi    = lh
+frame      = 0
+fwhm-in    = 0
+fwhm-out   = 0
+label-src  = (null)
+label-trg  = (null)
+OKToRevFaceOrder  = 1
+UseDualHemi = 0
+Reading source surface reg /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+Loading source data
+ERROR: could not read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh as type 3
