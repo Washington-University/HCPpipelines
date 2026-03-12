@@ -210,9 +210,6 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
     for Image in wmparc aparc.a2009s+aseg aparc+aseg ; do
         if [ -e "$FreeSurferFolder"/mri/"$Image".mgz ] ; then
             mri_convert -rt nearest -rl "$T1wFolder"/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/"$Image".mgz "$T1wFolder"/"$Image"_1mm.nii.gz
-            if (( NonHumanSpecies )); then 
-                applywarp --rel --interp=nn -i "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$T1wImageBrainMask".nii.gz
-            fi
             applywarp --rel --interp=nn -i "$T1wFolder"/"$Image"_1mm.nii.gz -r "$T1wFolder"/"$T1wImage".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1wFolder"/"$Image".nii.gz
             applywarp --rel --interp=nn -i "$T1wFolder"/"$Image"_1mm.nii.gz -r "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage" -w "$AtlasTransform" -o "$AtlasSpaceFolder"/"$Image".nii.gz
             ${CARET7DIR}/wb_command -volume-label-import "$T1wFolder"/"$Image".nii.gz "$FreeSurferLabels" "$T1wFolder"/"$Image".nii.gz -drop-unused-labels
