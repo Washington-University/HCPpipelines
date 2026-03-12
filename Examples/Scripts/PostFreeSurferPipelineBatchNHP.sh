@@ -69,6 +69,8 @@ if [ -n "${command_line_specified_subj}" ]; then
 fi
 
 
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" $StructResOption
+
 #The following values are set in SetUpSPECIES.sh:
 # Example for chimp:
 # MyelinMappingFWHM="4" 
@@ -81,8 +83,6 @@ fi
 # FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
 # SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
 # GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human.
-
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" $StructResOption
 
 
 # Requirements for this script
