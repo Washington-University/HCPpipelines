@@ -131,7 +131,7 @@ Species="${25}"
 log_Msg "Species: $Species"
 
 MSMSulcConf="${26}"
-Log_Msg "MSMSulcConf: $MSMSulcConf"
+log_Msg "MSMSulcConf: $MSMSulcConf"
 
 FlatMapRootName="${27}"
 Log_Msg "FlatMapRootName: $FlatMapRootName"
