@@ -126,8 +126,8 @@ opts_AddOptional '--species' 'Species' 'Species to be processed' "Set target spe
 
 opts_AddOptional '--myelin-volume-fwhm' 'MyelinVolumeFWHM' 'float' "Myelin mapping volume smoothing FWHM" "2"
 opts_AddOptional '--myelin-surface-fwhm' 'MyelinSurfaceFWHM' 'float' "Myelin mapping surface smoothing FWHM" "2"
-opts_AddOptional '--msmsulc-conf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "NONE"
-opts_AddOptional '--flatmap-root-name' 'FlatMapRootName' 'string' 'Flat map root name' "NONE"
+opts_AddOptional '--msmsulc-conf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "MSMSulcStrainFinalconf"
+opts_AddOptional '--flatmap-root-name' 'FlatMapRootName' 'string' 'Flat map root name' "colin.cerebral"
 
 opts_ParseArguments "$@"
 
