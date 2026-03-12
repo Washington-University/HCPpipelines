@@ -451,7 +451,7 @@ for Hemisphere in L R ; do
         cp "$SurfaceAtlasDIR"/"$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii
         cp "$SurfaceAtlasDIR"/"$Hemisphere".refsulc."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/${Session}.${Hemisphere}.refsulc."$HighResMesh"k_fs_LR.shape.gii
 
-        if (( NonHumanSpecies )) && [ -e "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
+        if [[ (( NonHumanSpecies )) && -e "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ]] ; then
                 cp "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
         elif [ -e "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
                 cp "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
