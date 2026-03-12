@@ -122,6 +122,8 @@ for Subject in $Subjlist ; do
     # CorrectionSigma=5
     # MyelinMappingFWHM=4
     # SurfaceSmoothingFWHM=7
+    # MSMSulcConf=MSMSulcStrainFinalconf
+    # FlatMapRootName=colin.cerebral
 
     SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
     FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
