@@ -134,7 +134,7 @@ MSMSulcConf="${26}"
 log_Msg "MSMSulcConf: $MSMSulcConf"
 
 FlatMapRootName="${27}"
-Log_Msg "FlatMapRootName: $FlatMapRootName"
+log_Msg "FlatMapRootName: $FlatMapRootName"
 
 #Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data.
 #In long TIMEPOINT mode, $Session=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
