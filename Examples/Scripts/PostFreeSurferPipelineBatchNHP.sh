@@ -154,6 +154,9 @@ for Subject in $Subjlist ; do
         --mcsigma="$CorrectionSigma"
         --myelin-volume-fwhm="$MyelinMappingFWHM"
         --myelin-surface-fwhm="$SurfaceSmoothingFWHM"
+        --msmsulc-conf="$MSMSulcConf"
+        --flatmap-root-name="$FlatMapRootName"
+        
         )
 
     job=("${queuing_command[@]}" "$HCPPIPEDIR"/PostFreeSurfer/PostFreeSurferPipeline.sh "${args[@]}")
