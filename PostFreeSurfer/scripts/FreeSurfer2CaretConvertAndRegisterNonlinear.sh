@@ -128,7 +128,7 @@ log_Msg "InflateExtraScale: ${InflateExtraScale}"
 LongitudinalMode="${24}"
 
 Species="${25}"
-Log_Msg "Species: $Species"
+log_Msg "Species: $Species"
 
 MSMSulcConf="${26}"
 Log_Msg "MSMSulcConf: $MSMSulcConf"
