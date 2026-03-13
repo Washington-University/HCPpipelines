@@ -6,20 +6,6 @@
 
 script_name=$(basename "${0}")
 
-show_usage() {
-    cat <<EOF
-
-${script_name}: Sub-script of PostFreeSurferPipeline.sh
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
@@ -29,15 +15,8 @@ if [ -z "${HCPPIPEDIR}" ]; then
   exit 1
 fi
 
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-    show_usage
-    exit 0
-fi
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -49,92 +28,65 @@ log_Check_Env_Var CARET7DIR
 log_Check_Env_Var MSMBINDIR
 log_Check_Env_Var MSMCONFIGDIR
 
+#this function gets called by opts_ParseArguments when --help is specified
+function usage()
+{
+    #header text
+    echo "
+$log_ToolName: takes FreeSurfer output folder and converts files into HCP format/organization, etc.
+
+Usage: $log_ToolName PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+"
+    #automatic argument descriptions
+    opts_ShowArguments
+    
+    #do not use exit, the parsing code takes care of it
+}
+
 # ------------------------------------------------------------------------------
 #  Gather and show positional parameters
 # ------------------------------------------------------------------------------
 
 log_Msg "START"
 
-StudyFolder="$1"
-log_Msg "StudyFolder: ${StudyFolder}"
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
+opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label."
+opts_AddMandatory '--t1w-folder' 'T1wFolder' 'folder' "location of T1w images"
+opts_AddMandatory '--atlas-space-folder' 'AtlasSpaceFolder' 'folder' "atlas space folder"
+opts_Optional '--native-folder' 'NativeFolder' "native folder" "Native"
+opts_AddMandatory '--freesurfer-folder' 'FreeSurferFolder' 'folder' "FreeSurfer folder"
+opts_Optional '--freesurfer-input' 'FreeSurferInput' "FreeSurfer input image" "T1w_acpc_dc_restore_1mm"
+opts_Optional '--t1w-image' 'T1wImage' "T1w image" "T1w_acpc_dc"
+opts_Optional '--t2w-image' 'T2wImage' "T2w image" "T2w_acpc_dc"
+opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
+opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'mesh' "high resolution mesh"
+opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshes' "low resolution meshes"
+opts_AddMandatory '--atlas-transform' 'AtlasTransform' 'path' "atlas transform"
+opts_AddMandatory '--inverse-atlas-transform' 'InverseAtlasTransform' 'path' "inverse atlas transform"
+opts_Optional '--atlas-space-t1w-image' 'AtlasSpaceT1wImage' "atlas space T1w image" "T1w_restore"
+opts_Optional '--atlas-space-t2w-image' 'AtlasSpaceT2wImage' "atlas space T2w image" "T2w_restore"
+opts_Optional '--t1w-image-brain-mask' 'T1wImageBrainMask' "T1w image brain mask" "brainmask_fs"
+opts_AddMandatory '--freesurfer-labels' 'FreeSurferLabels' 'path' "FreeSurfer labels"
+opts_AddMandatory '--grayordinates-space-dir' 'GrayordinatesSpaceDIR' 'path' "grayordinates space directory"
+opts_AddMandatory '--grayordinates-resolutions' 'GrayordinatesResolutions' 'resolutions' "grayordinates resolutions"
+opts_AddMandatory '--subcortical-gray-labels' 'SubcorticalGrayLabels' 'path' "subcortical gray labels"
+opts_AddMandatory '--reg-name' 'RegName' 'name' "registration name"
+opts_AddMandatory '--inflate-extra-scale' 'InflateExtraScale' 'value' "inflate extra scale"
+opts_AddMandatory '--longitudinal-mode' 'LongitudinalMode' 'mode' "longitudinal mode: NONE, TIMEPOINT_STAGE1, TIMEPOINT_STAGE2, or TEMPLATE"
+opts_AddMandatory '--species' 'Species' 'species' "species"
+opts_AddMandatory '--msm-sulc-conf' 'MSMSulcConf' 'path' "MSMSulc configuration"
+opts_AddMandatory '--flat-map-root-name' 'FlatMapRootName' 'name' "flat map root name"
 
-Session="$2"
-log_Msg "Session: ${Session}"
+opts_AddMandatory '--subject' 'Subject' 'subject ID' "actual subject label"
+opts_AddMandatory '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label"
+opts_AddMandatory '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "list of all timepoints, @ separated"
 
-T1wFolder="$3"
-log_Msg "T1wFolder: ${T1wFolder}"
+opts_ParseArguments "$@"
 
-AtlasSpaceFolder="$4"
-log_Msg "AtlasSpaceFolder: ${AtlasSpaceFolder}"
-
-NativeFolder="$5"
-log_Msg "NativeFolder: ${NativeFolder}"
-
-FreeSurferFolder="$6"
-log_Msg "FreeSurferFolder: ${FreeSurferFolder}"
-
-FreeSurferInput="$7"
-log_Msg "FreeSurferInput: ${FreeSurferInput}"
-
-T1wImage="$8"
-log_Msg "T1wImage: ${T1wImage}"
-
-T2wImage="$9"
-log_Msg "T2wImage: ${T2wImage}"
-
-SurfaceAtlasDIR="${10}"
-log_Msg "SurfaceAtlasDIR: ${SurfaceAtlasDIR}"
-
-HighResMesh="${11}"
-log_Msg "HighResMesh: ${HighResMesh}"
-
-LowResMeshes="${12}"
-log_Msg "LowResMeshes: ${LowResMeshes}"
-
-AtlasTransform="${13}"
-log_Msg "AtlasTransform: ${AtlasTransform}"
-
-InverseAtlasTransform="${14}"
-log_Msg "InverseAtlasTransform: ${InverseAtlasTransform}"
-
-AtlasSpaceT1wImage="${15}"
-log_Msg "AtlasSpaceT1wImage: ${AtlasSpaceT1wImage}"
-
-AtlasSpaceT2wImage="${16}"
-log_Msg "AtlasSpaceT2wImage: ${AtlasSpaceT2wImage}"
-
-T1wImageBrainMask="${17}"
-log_Msg "T1wImageBrainMask: ${T1wImageBrainMask}"
-
-FreeSurferLabels="${18}"
-log_Msg "FreeSurferLabels: ${FreeSurferLabels}"
-
-GrayordinatesSpaceDIR="${19}"
-log_Msg "GrayordinatesSpaceDIR: ${GrayordinatesSpaceDIR}"
-
-GrayordinatesResolutions="${20}"
-log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
-
-SubcorticalGrayLabels="${21}"
-log_Msg "SubcorticalGrayLabels: ${SubcorticalGrayLabels}"
-
-RegName="${22}"
-log_Msg "RegName: ${RegName}"
-
-InflateExtraScale="${23}"
-log_Msg "InflateExtraScale: ${InflateExtraScale}"
-
-#NONE, TIMEPOINT_STAGE1, TIMEPOINT_STAGE2, or TEMPLATE
-LongitudinalMode="${24}"
-
-Species="${25}"
-log_Msg "Species: $Species"
-
-MSMSulcConf="${26}"
-log_Msg "MSMSulcConf: $MSMSulcConf"
-
-FlatMapRootName="${27}"
-log_Msg "FlatMapRootName: $FlatMapRootName"
+#display the parsed/default values
+opts_ShowValues
 
 #Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data.
 #In long TIMEPOINT mode, $Session=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
@@ -143,11 +95,12 @@ log_Msg "FlatMapRootName: $FlatMapRootName"
 #surface averaging for MSMSulc.
 
 #Actual subject label which is part of longitudinal timepoint and template experiment roots, see comment above.
-Subject="${25}"
+#Subject="${25}"
 #Longitudinal template label
-LongitudinalTemplate="${26}"
+#LongitudinalTemplate="${26}"
 #LIST of all timepoints, @ separated
-LongitudinalTimepoints="${27}"
+#LongitudinalTimepoints="${27}"
+
 
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"

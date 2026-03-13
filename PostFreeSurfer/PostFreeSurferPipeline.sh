@@ -346,39 +346,40 @@ if ((doProcessing)); then
     log_Msg "Conversion of FreeSurfer Volumes and Surfaces to NIFTI and GIFTI and Create Caret Files and Registration"
     log_Msg "RegName: ${RegName}"
 
-    argList=("$StudyFolder")                # ${1}
-    argList+=("$ExperimentRoot")            # ${2} #same as Session in cross-sectional mode.
-    argList+=("$T1wFolder")                 # ${3}
-    argList+=("$AtlasSpaceFolder")          # ${4}
-    argList+=("$NativeFolder")              # ${5}
-    argList+=("$FreeSurferFolder")          # ${6}
-    argList+=("$FreeSurferInput")           # ${7}
-    argList+=("$T1wRestoreImage")           # ${8}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-    argList+=("$T2wRestoreImage")           # ${9}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-    argList+=("$SurfaceAtlasDIR")           # ${10}
-    argList+=("$HighResMesh")               # ${11}
-    argList+=("$LowResMeshes")              # ${12}
-    argList+=("$AtlasTransform")            # ${13}
-    argList+=("$InverseAtlasTransform")     # ${14}
-    argList+=("$AtlasSpaceT1wImage")        # ${15}
-    argList+=("$AtlasSpaceT2wImage")        # ${16}
-    argList+=("$T1wImageBrainMask")         # ${17}
-    argList+=("$FreeSurferLabels")          # ${18}
-    argList+=("$GrayordinatesSpaceDIR")     # ${19}
-    argList+=("$GrayordinatesResolution")   # ${20}
-    argList+=("$SubcorticalGrayLabels")     # ${21}
-    argList+=("$RegName")                   # ${22}
-    argList+=("$InflateExtraScale")         # ${23}
-    argList+=("$LongitudinalMode")          # ${24} #Longitudinal mode parameters
-    argList+=("$Subject")                   # ${25} #Actual subject label, not session label.
-    argList+=("$LongitudinalTemplate")      # ${26}
-    argList+=("$SessionList")               # ${27}
-    argList+=("$Species")                   # ${28} NHP parameters
-    argList+=("$MSMSulcConf")                # ${29}
-    argList+=("$FlatMapRootName")            # #{30} 
+    cmd=("$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh
+        --study-folder="$StudyFolder"
+        --session="$ExperimentRoot"
+        --t1w-folder="$T1wFolder"
+        --atlas-space-folder="$AtlasSpaceFolder"
+        --native-folder="$NativeFolder"
+        --freesurfer-folder="$FreeSurferFolder"
+        --freesurfer-input="$FreeSurferInput"
+        --t1w-image="$T1wRestoreImage"
+        --t2w-image="$T2wRestoreImage"
+        --surface-atlas-dir="$SurfaceAtlasDIR"
+        --high-res-mesh="$HighResMesh"
+        --low-res-meshes="$LowResMeshes"
+        --atlas-transform="$AtlasTransform"
+        --inverse-atlas-transform="$InverseAtlasTransform"
+        --atlas-space-t1w-image="$AtlasSpaceT1wImage"
+        --atlas-space-t2w-image="$AtlasSpaceT2wImage"
+        --t1w-image-brain-mask="$T1wImageBrainMask"
+        --freesurfer-labels="$FreeSurferLabels"
+        --grayordinates-space-dir="$GrayordinatesSpaceDIR"
+        --grayordinates-resolutions="$GrayordinatesResolution"
+        --subcortical-gray-labels="$SubcorticalGrayLabels"
+        --reg-name="$RegName"
+        --inflate-extra-scale="$InflateExtraScale"
+        --longitudinal-mode="$LongitudinalMode"
+        --subject="$Subject"
+        --longitudinal-template="$LongitudinalTemplate"
+        --longitudinal-timepoints="$SessionList"
+        --species="$Species"
+        --msm-sulc-conf="$MSMSulcConf"
+        --flat-map-root-name="$FlatMapRootName"
+    )
 
-    
-    "$PipelineScripts"/FreeSurfer2CaretConvertAndRegisterNonlinear.sh "${argList[@]}"
+    "${cmd[@]}"
 
     if [ "$LongitudinalMode" == "TIMEPOINT_STAGE1" ]; then
         log_Msg "Longitudinal timepoint stage 1 completed"
@@ -401,53 +402,54 @@ if ((doProcessing)); then
     log_Msg "Myelin Mapping"
     log_Msg "RegName: ${RegName}"
 
-    argList=("$StudyFolder")                # ${1}
-    argList+=("$ExperimentRoot")
-    argList+=("$AtlasSpaceFolder")
-    argList+=("$NativeFolder")
-    argList+=("$T1wFolder")                 # ${5}
-    argList+=("$HighResMesh")
-    argList+=("$LowResMeshes")
-    argList+=("$T1wFolder"/"$OrginalT1wImage")
-    argList+=("$T2wFolder"/"$OrginalT2wImage")
-    argList+=("$T1wFolder"/"$T1wImageBrainMask")           # ${10}
-    argList+=("$T1wFolder"/xfms/"$InitialT1wTransform")
-    argList+=("$T1wFolder"/xfms/"$dcT1wTransform")
-    argList+=("$T2wFolder"/xfms/"$InitialT2wTransform")
-    argList+=("$T1wFolder"/xfms/"$dcT2wTransform")
-    argList+=("$T1wFolder"/"$FinalT2wTransform")           # ${15}
-    argList+=("$AtlasTransform")
-    argList+=("$T1wFolder"/"$BiasField")
-    argList+=("$T1wFolder"/"$OutputT1wImage")
-    argList+=("$T1wFolder"/"$OutputT1wImageRestore")
-    argList+=("$T1wFolder"/"$OutputT1wImageRestoreBrain")  # ${20}
-    argList+=("$AtlasSpaceFolder"/"$OutputMNIT1wImage")
-    argList+=("$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore")
-    argList+=("$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain")
-    argList+=("$T1wFolder"/"$OutputT2wImage")
-    argList+=("$T1wFolder"/"$OutputT2wImageRestore")       # ${25}
-    argList+=("$T1wFolder"/"$OutputT2wImageRestoreBrain")
-    argList+=("$AtlasSpaceFolder"/"$OutputMNIT2wImage")
-    argList+=("$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore")
-    argList+=("$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain")
-    argList+=("$T1wFolder"/xfms/"$OutputOrigT1wToT1w")     # {30}
-    argList+=("$T1wFolder"/xfms/"$OutputOrigT1wToStandard")
-    argList+=("$T1wFolder"/xfms/"$OutputOrigT2wToT1w")
-    argList+=("$T1wFolder"/xfms/"$OutputOrigT2wToStandard")
-    argList+=("$AtlasSpaceFolder"/"$BiasFieldOutput")
-    argList+=("$AtlasSpaceFolder"/"$T1wImageBrainMask")    # {35}  Called T1wMNIImageBrainMask in CreateMyelinMaps.sh
-    argList+=("$AtlasSpaceFolder"/xfms/"$Jacobian")
-    argList+=("$ReferenceMyelinMaps")
-    argList+=("$CorrectionSigma")
-    argList+=("$RegName")                                  # ${39}
-    argList+=("$UseIndMean")
-    argList+=("$IsLongitudinal")                            #Longitudinal option
-    argList+=("$ThicknessReg")                              # ${42}
-    argList+=("$Species")                                   # ${43} NHP parameters
-    argList+=("$MyelinVolumeFWHM")                          # ${44}
-    argList+=("$MyelinSurfaceFWHM")                       # ${45}
-    
-    "$PipelineScripts"/CreateMyelinMaps.sh "${argList[@]}"
+    cmd=("$PipelineScripts"/CreateMyelinMaps.sh
+        --study-folder="$StudyFolder"
+        --session="$ExperimentRoot"
+        --atlas-space-folder="$AtlasSpaceFolder"
+        --native-folder="$NativeFolder"
+        --t1w-folder="$T1wFolder"
+        --high-res-mesh="$HighResMesh"
+        --low-res-meshes="$LowResMeshes"
+        --original-t1w-image="$T1wFolder"/"$OrginalT1wImage"
+        --original-t2w-image="$T2wFolder"/"$OrginalT2wImage"
+        --t1w-image-brain-mask="$T1wFolder"/"$T1wImageBrainMask"
+        --initial-t1w-transform="$T1wFolder"/xfms/"$InitialT1wTransform"
+        --dc-t1w-transform="$T1wFolder"/xfms/"$dcT1wTransform"
+        --initial-t2w-transform="$T2wFolder"/xfms/"$InitialT2wTransform"
+        --dc-t2w-transform="$T1wFolder"/xfms/"$dcT2wTransform"
+        --final-t2w-transform="$T1wFolder"/"$FinalT2wTransform"
+        --atlas-transform="$AtlasTransform"
+        --bias-field="$T1wFolder"/"$BiasField"
+        --output-t1w-image="$T1wFolder"/"$OutputT1wImage"
+        --output-t1w-image-restore="$T1wFolder"/"$OutputT1wImageRestore"
+        --output-t1w-image-restore-brain="$T1wFolder"/"$OutputT1wImageRestoreBrain"
+        --output-mni-t1w-image="$AtlasSpaceFolder"/"$OutputMNIT1wImage"
+        --output-mni-t1w-image-restore="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestore"
+        --output-mni-t1w-image-restore-brain="$AtlasSpaceFolder"/"$OutputMNIT1wImageRestoreBrain"
+        --output-t2w-image="$T1wFolder"/"$OutputT2wImage"
+        --output-t2w-image-restore="$T1wFolder"/"$OutputT2wImageRestore"
+        --output-t2w-image-restore-brain="$T1wFolder"/"$OutputT2wImageRestoreBrain"
+        --output-mni-t2w-image="$AtlasSpaceFolder"/"$OutputMNIT2wImage"
+        --output-mni-t2w-image-restore="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestore"
+        --output-mni-t2w-image-restore-brain="$AtlasSpaceFolder"/"$OutputMNIT2wImageRestoreBrain"
+        --output-orig-t1w-to-t1w="$T1wFolder"/xfms/"$OutputOrigT1wToT1w"
+        --output-orig-t1w-to-standard="$T1wFolder"/xfms/"$OutputOrigT1wToStandard"
+        --output-orig-t2w-to-t1w="$T1wFolder"/xfms/"$OutputOrigT2wToT1w"
+        --output-orig-t2w-to-standard="$T1wFolder"/xfms/"$OutputOrigT2wToStandard"
+        --bias-field-output="$AtlasSpaceFolder"/"$BiasFieldOutput"
+        --t1w-mni-image-brain-mask="$AtlasSpaceFolder"/"$T1wImageBrainMask"
+        --jacobian="$AtlasSpaceFolder"/xfms/"$Jacobian"
+        --reference-myelin-maps="$ReferenceMyelinMaps"
+        --correction-sigma="$CorrectionSigma"
+        --reg-name="$RegName"
+        --use-ind-mean="$UseIndMean"
+        --is-longitudinal="$IsLongitudinal"
+        --thickness-reg="$ThicknessReg"
+        --species="$Species"
+        --myelin-volume-fwhm="$MyelinVolumeFWHM"
+        --myelin-surface-fwhm="$MyelinSurfaceFWHM"
+    )
+    "${cmd[@]}"
 fi
 
 # Longitudinal mode only:
