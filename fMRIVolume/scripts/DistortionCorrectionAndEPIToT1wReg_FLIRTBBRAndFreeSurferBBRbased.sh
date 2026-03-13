@@ -537,16 +537,36 @@ if (( ! IsLongitudinal )); then
             imcp "$ScoutInputName" "$WD/Scout"
             imcp "$SBRefDC" "$WD/SBRef_dc"
 
-            # Sanity check: voxel grid must match
+            # Sanity check: voxel grid must match (if not, resample SBRef_dc to Scout grid)
+            GridMismatch=0
             for key in dim1 dim2 dim3 pixdim1 pixdim2 pixdim3
             do
                 a=$(${FSLDIR}/bin/fslval ${WD}/Scout $key)
                 b=$(${FSLDIR}/bin/fslval ${WD}/SBRef_dc $key)
                 if [[ "$a" != "$b" ]]
                 then
-                    log_Err_Abort "--sbref-dc must match --scoutin voxel grid (mismatch on ${key}: scout=${a}, sbrefdc=${b}). Resample your SBRef_dc to the scout grid before running."
+                    GridMismatch=1
+                    break
                 fi
             done
+
+            if ((GridMismatch))
+            then
+                log_Msg "--sbref-dc voxel grid does not match --scoutin; resampling SBRef_dc to scout grid"
+                ${FSLDIR}/bin/flirt -in ${WD}/SBRef_dc.nii.gz -ref ${WD}/Scout.nii.gz -applyxfm -usesqform -interp spline -out ${WD}/SBRef_dc_resampled.nii.gz
+                ${FSLDIR}/bin/immv ${WD}/SBRef_dc_resampled.nii.gz ${WD}/SBRef_dc.nii.gz
+
+                # Re-check after resampling; fail only if still mismatched
+                for key in dim1 dim2 dim3 pixdim1 pixdim2 pixdim3
+                do
+                    a=$(${FSLDIR}/bin/fslval ${WD}/Scout $key)
+                    b=$(${FSLDIR}/bin/fslval ${WD}/SBRef_dc $key)
+                    if [[ "$a" != "$b" ]]
+                    then
+                        log_Err_Abort "Unable to match --sbref-dc to --scoutin voxel grid after resampling (mismatch on ${key}: scout=${a}, sbrefdc=${b})."
+                    fi
+                done
+            fi
 
             # Estimate a nonlinear warp from distorted scout -> NN undistorted scout
             # We use FNIRT coefficient output and convert it to a relative warpfield (HCP convention)
