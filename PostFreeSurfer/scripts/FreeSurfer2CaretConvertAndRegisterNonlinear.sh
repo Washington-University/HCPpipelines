@@ -456,7 +456,7 @@ for Hemisphere in L R ; do
             cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
             if (( NonHumanSpecies )); then 
 
-                $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --species="$Species"
+                $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
             else                 
                 $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
             fi
