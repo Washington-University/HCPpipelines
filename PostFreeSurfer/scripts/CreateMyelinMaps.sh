@@ -6,20 +6,6 @@ set -eu
 
 script_name=$(basename "${0}")
 
-show_usage() {
-	cat <<EOF
-
-${script_name}: Sub-script of PostFreeSurferPipeline.sh
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
@@ -29,15 +15,8 @@ if [ -z "${HCPPIPEDIR}" ]; then
   exit 1
 fi
 
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -47,57 +26,78 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
 
-# ------------------------------------------------------------------------------
-#  Start work
-# ------------------------------------------------------------------------------
+#this function gets called by opts_ParseArguments when --help is specified
+function usage()
+{
+    #header text
+    echo "
+$log_ToolName: takes FreeSurfer output folder and converts files into HCP format/organization, etc.
 
+Usage: $log_ToolName PARAMETER...
+
+PARAMETERs are [ ] = optional; < > = user supplied value
+"
+    #automatic argument descriptions
+    opts_ShowArguments
+    
+    #do not use exit, the parsing code takes care of it
+}
+
+
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
+opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label"
+opts_AddMandatory '--atlas-space-folder' 'AtlasSpaceFolder' 'folder' "atlas space folder"
+opts_Optional '--native-folder' 'NativeFolder' "native folder" "Native"
+opts_AddMandatory '--t1w-folder' 'T1wFolder' 'folder' "location of T1w images"
+opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'mesh' "high resolution mesh"
+opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshes' "low resolution meshes"
+opts_Optional '--original-t1w-image' 'OrginalT1wImage' "original T1w image name" "T1w"
+opts_Optional '--original-t2w-image' 'OrginalT2wImage' "original T2w image name" "T2w"
+opts_Optional '--t1w-image-brain-mask' 'T1wImageBrainMask' "T1w brain mask image name" "brainmask_fs"
+opts_Optional '--initial-t1w-transform' 'InitialT1wTransform' "initial T1w transform filename" "acpc.mat"
+opts_Optional '--dc-t1w-transform' 'dcT1wTransform' "distortion corrected T1w transform" "T1w_dc.nii.gz"
+opts_Optional '--initial-t2w-transform' 'InitialT2wTransform' "initial T2w transform filename" "acpc.mat"
+opts_Optional '--dc-t2w-transform' 'dcT2wTransform' "distortion corrected T2w transform" "T2w_reg_dc.nii.gz"
+opts_AddMandatory '--final-t2w-transform' 'FinalT2wTransform' 'path' "final T2w to T1w transform"
+opts_AddMandatory '--atlas-transform' 'AtlasTransform' 'path' "atlas transform"
+opts_Optional '--bias-field' 'BiasField' "bias field filename" "BiasField_acpc_dc"
+opts_Optional '--output-t1w-image' 'OutputT1wImage' "output T1w image name" "T1w_acpc_dc"
+opts_Optional '--output-t1w-image-restore' 'OutputT1wImageRestore' "output restored T1w image name" "T1w_acpc_dc_restore"
+opts_Optional '--output-t1w-image-restore-brain' 'OutputT1wImageRestoreBrain' "output restored brain T1w image name" "T1w_acpc_dc_restore_brain"
+opts_Optional '--output-mni-t1w-image' 'OutputMNIT1wImage' "output MNI T1w image name" "T1w"
+opts_Optional '--output-mni-t1w-image-restore' 'OutputMNIT1wImageRestore' "output restored MNI T1w image name" "T1w_restore"
+opts_Optional '--output-mni-t1w-image-restore-brain' 'OutputMNIT1wImageRestoreBrain' "output restored brain MNI T1w image name" "T1w_restore_brain"
+opts_Optional '--output-t2w-image' 'OutputT2wImage' "output T2w image name" "T2w_acpc_dc"
+opts_Optional '--output-t2w-image-restore' 'OutputT2wImageRestore' "output restored T2w image name" "T2w_acpc_dc_restore"
+opts_Optional '--output-t2w-image-restore-brain' 'OutputT2wImageRestoreBrain' "output restored brain T2w image name" "T2w_acpc_dc_restore_brain"
+opts_Optional '--output-mni-t2w-image' 'OutputMNIT2wImage' "output MNI T2w image name" "T2w"
+opts_Optional '--output-mni-t2w-image-restore' 'OutputMNIT2wImageRestore' "output restored MNI T2w image name" "T2w_restore"
+opts_Optional '--output-mni-t2w-image-restore-brain' 'OutputMNIT2wImageRestoreBrain' "output restored brain MNI T2w image name" "T2w_restore_brain"
+opts_Optional '--output-orig-t1w-to-t1w' 'OutputOrigT1wToT1w' "original T1w to T1w transform output" "OrigT1w2T1w.nii.gz"
+opts_Optional '--output-orig-t1w-to-standard' 'OutputOrigT1wToStandard' "original T1w to standard transform output" "OrigT1w2standard.nii.gz"
+opts_Optional '--output-orig-t2w-to-t1w' 'OutputOrigT2wToT1w' "original T2w to T1w transform output" "OrigT2w2T1w.nii.gz"
+opts_Optional '--output-orig-t2w-to-standard' 'OutputOrigT2wToStandard' "original T2w to standard transform output" "OrigT2w2standard.nii.gz"
+opts_Optional '--bias-field-output' 'BiasFieldOutput' "bias field output name" "BiasField"
+opts_AddMandatory '--t1w-mni-image-brain-mask' 'T1wMNIImageBrainMask' 'path' "T1w MNI brain mask"
+opts_Optional '--jacobian' 'Jacobian' "nonlinear registration Jacobian filename" "NonlinearRegJacobians.nii.gz"
+opts_AddMandatory '--reference-myelin-maps' 'ReferenceMyelinMaps' 'path' "reference myelin maps"
+opts_AddMandatory '--correction-sigma' 'CorrectionSigma' 'value' "myelin correction sigma"
+opts_AddMandatory '--reg-name' 'RegName' 'name' "registration name"
+opts_AddMandatory '--use-ind-mean' 'UseIndMean' 'flag' "use individual mean"
+opts_AddMandatory '--is-longitudinal' 'IsLongitudinal' 'flag' "longitudinal processing mode"
+opts_AddMandatory '--thickness-reg' 'ThicknessReg' 'value' "thickness registration parameter"
+opts_AddMandatory '--species' 'Species' 'species' "species"
+opts_AddMandatory '--myelin-volume-fwhm' 'MyelinMappingFWHM' 'value' "myelin volume smoothing FWHM"
+opts_AddMandatory '--myelin-surface-fwhm' 'SurfaceSmoothingFWHM' 'value' "myelin surface smoothing FWHM"
+
+opts_ParseArguments "$@"
+
+#display the parsed/default values
+opts_ShowValues
+
+
+#start work
 log_Msg "START"
-
-StudyFolder="${1}"
-Session="${2}"
-AtlasSpaceFolder="${3}"
-NativeFolder="${4}"
-T1wFolder="${5}"
-HighResMesh="${6}"
-LowResMeshes="${7}"
-OrginalT1wImage="${8}"
-OrginalT2wImage="${9}"
-T1wImageBrainMask="${10}"
-InitialT1wTransform="${11}"
-dcT1wTransform="${12}"
-InitialT2wTransform="${13}"
-dcT2wTransform="${14}"
-FinalT2wTransform="${15}"
-AtlasTransform="${16}"
-BiasField="${17}"
-OutputT1wImage="${18}"
-OutputT1wImageRestore="${19}"
-OutputT1wImageRestoreBrain="${20}"
-OutputMNIT1wImage="${21}"
-OutputMNIT1wImageRestore="${22}"
-OutputMNIT1wImageRestoreBrain="${23}"
-OutputT2wImage="${24}"
-OutputT2wImageRestore="${25}"
-OutputT2wImageRestoreBrain="${26}"
-OutputMNIT2wImage="${27}"
-OutputMNIT2wImageRestore="${28}"
-OutputMNIT2wImageRestoreBrain="${29}"
-OutputOrigT1wToT1w="${30}"
-OutputOrigT1wToStandard="${31}"
-OutputOrigT2wToT1w="${32}"
-OutputOrigT2wToStandard="${33}"
-BiasFieldOutput="${34}"
-T1wMNIImageBrainMask="${35}"
-Jacobian="${36}"
-ReferenceMyelinMaps="${37}"
-CorrectionSigma="${38}"
-RegName="${39}"
-UseIndMean="${40}"
-IsLongitudinal="${41}"
-ThicknessReg="${42}"
-Species="${43}" #NHP parameters
-MyelinMappingFWHM="${44}" 
-SurfaceSmoothingFWHM="${45}" 
 
 case "$ThicknessReg" in
     (NEW|OLD|BOTH)
