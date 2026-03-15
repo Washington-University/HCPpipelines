@@ -308,7 +308,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	# determine the resolution of the reference myelin map
 	IsRefValid=false
 	# append the HighResMesh into the full ResMesh array
-	AllAvailableMeshesArray="${LowResMeshesArray[@]}"
+	AllAvailableMeshesArray=("${LowResMeshesArray[@]}")
 	AllAvailableMeshesArray+=(${HighResMesh})
 	NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
 	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
