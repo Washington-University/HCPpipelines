@@ -89,6 +89,7 @@ opts_AddMandatory '--thickness-reg' 'ThicknessReg' 'value' "thickness registrati
 opts_AddMandatory '--species' 'Species' 'species' "species"
 opts_AddMandatory '--myelin-volume-fwhm' 'MyelinMappingFWHM' 'value' "myelin volume smoothing FWHM"
 opts_AddMandatory '--myelin-surface-fwhm' 'SurfaceSmoothingFWHM' 'value' "myelin surface smoothing FWHM"
+opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
 
 opts_ParseArguments "$@"
 
@@ -313,7 +314,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
 	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
 	for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
-		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
+		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${SurfaceAtlasDIR}/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
 		if [ "$NumRefSurfVertices" = "$NumSurfVertices" ]; then
 			RefResMesh=${ResMesh}
 			IsRefValid=true
