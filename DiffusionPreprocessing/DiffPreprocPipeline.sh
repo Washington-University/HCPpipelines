@@ -226,6 +226,19 @@ opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the 
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'Boolean' "Specifies whether this is run on a longitudinal timepoint" "False"
 opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
 
+#NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. Human, Chimp, RhesusMacaque, Mac30BS, CynoMacaque, Marmoset, NightMonkey" "Human"
+
+opts_AddOptional '--wmprojabs' 'DiffWMProjAbs' 'number' "White matter projection absolute depth. Defaults to 2" "2"
+
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data"
+
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data"
+
+opts_AddOptional '--resamp' 'resamp_value' 'string' "Resamp value to pass to the eddy binary. If unspecified, no --resamp option is passed to eddy."
+
+opts_AddOptional '--usephasezero' 'UsePhaseZero' 'Boolean' "Use phase zero for NHP data" "False"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -245,6 +258,18 @@ extra_eddy_args=(${extra_eddy_args_manual[@]+"${extra_eddy_args_manual[@]}"})
 SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
 EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
 gpu=$(opts_StringToBool "$gpuString")
+
+# Map SPECIES string to numeric SpeciesLabel for NHP sub-scripts
+case "$SPECIES" in
+    *Human*)      SpeciesLabel="0" ;;
+    *Chimp*)      SpeciesLabel="1" ;;
+    *Macaque*)    SpeciesLabel="2" ;;
+    Marmoset)     SpeciesLabel="3" ;;
+    NightMonkey)  SpeciesLabel="4" ;;
+    *)
+        log_Err_Abort "Invalid species: '$SPECIES'. Must be one of: Human, Macaque, Chimp, NightMonkey, Marmoset."
+        ;;
+esac
 
 #defaults that depend on env variables
 if [[ "$TopupConfig" == "" ]]
@@ -347,6 +372,19 @@ validate_scripts() {
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 
+	# NHP sub-script validation (only when SPECIES != Human)
+	if [[ "$SPECIES" != "Human" ]]; then
+		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddyNHP.sh ]]; then
+			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddyNHP.sh not found"
+		fi
+		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh ]]; then
+			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh not found"
+		fi
+		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh ]]; then
+			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh not found"
+		fi
+	fi
+
 	if [[ "${error_msgs}" != "" ]]; then
 		log_Err_Abort "${error_msgs}"
 	fi
@@ -361,36 +399,71 @@ validate_scripts "$@"
 
 if (( ! IsLongitudinal )); then
     log_Msg "Invoking Pre-Eddy Steps"
-    pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
-        "--path=${StudyFolder}"
-        "--session=${Session}"
-        "--dwiname=${DWIName}"
-        "--PEdir=${PEdir}"
-        "--posData=${PosInputImages}"
-        "--negData=${NegInputImages}"
-        "--echospacing=${echospacingmilli}"
-        "--b0maxbval=${b0maxbval}"
-        "--topup-config-file=${TopupConfig}"
-        "--printcom=${runcmd}"
-        "--select-best-b0=${SelectBestB0}"
-        "--ensure-even-slices=${EnsureEvenSlices}"
-        "--combine-data-flag=${CombineDataFlag}")
+    if [[ "$SPECIES" == "Human" ]]; then
+        # Human: original HCP PreEddy
+        pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
+            "--path=${StudyFolder}"
+            "--session=${Session}"
+            "--dwiname=${DWIName}"
+            "--PEdir=${PEdir}"
+            "--posData=${PosInputImages}"
+            "--negData=${NegInputImages}"
+            "--echospacing=${echospacingmilli}"
+            "--b0maxbval=${b0maxbval}"
+            "--topup-config-file=${TopupConfig}"
+            "--printcom=${runcmd}"
+            "--select-best-b0=${SelectBestB0}"
+            "--ensure-even-slices=${EnsureEvenSlices}"
+            "--combine-data-flag=${CombineDataFlag}")
+    else
+        # NHP: NHP-specific PreEddy
+        pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddyNHP.sh"
+            "--path=${StudyFolder}"
+            "--subject=${Session}"
+            "--dwiname=${DWIName}"
+            "--PEdir=${PEdir}"
+            "--posData=${PosInputImages}"
+            "--negData=${NegInputImages}"
+            "--echospacing=${echospacingmilli}"
+            "--b0maxbval=${b0maxbval}"
+            "--topupconfig=${TopupConfig}"
+            "--printcom=${runcmd}"
+            "--truepatientposition=${TruePatientPosition}"
+            "--scannerpatientposition=${ScannerPatientPosition}"
+            "--specieslabel=${SpeciesLabel}")
+        if [[ "$(opts_StringToBool "$UsePhaseZero")" == "1" ]]; then
+            pre_eddy_cmd+=("--usephasezero")
+        fi
+    fi
 
     log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
     "${pre_eddy_cmd[@]}"
 
     log_Msg "Invoking Eddy Step"
-    eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
-        --path="$StudyFolder"
-        --session="$Session"
-        --dwiname="$DWIName"
-        --printcom="$runcmd"
-        --gpu="$gpu"
-        --cuda-version="$cuda_version")
+    if [[ "$SPECIES" == "Human" ]]; then
+        # Human: original HCP Eddy
+        eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
+            --path="$StudyFolder"
+            --session="$Session"
+            --dwiname="$DWIName"
+            --printcom="$runcmd"
+            --gpu="$gpu"
+            --cuda-version="$cuda_version")
+    else
+        # NHP: NHP-specific Eddy
+        eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh
+            --path="$StudyFolder"
+            --subject="$Session"
+            --dwiname="$DWIName"
+            --printcom="$runcmd")
+    fi
     for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
     do
         eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
     done
+    if [[ "$SPECIES" != "Human" ]] && [[ -n "${resamp_value}" ]]; then
+        eddy_cmd+=(--resamp="$resamp_value")
+    fi
 
     log_Msg "eddy_cmd: ${eddy_cmd[*]}"
     "${eddy_cmd[@]}"
@@ -403,17 +476,38 @@ fi
 #PostEddy step must be run on longitudinal session rather than copied from cross-sectional.
 if (( IsLongitudinal )); then Session="$SessionLong"; fi
 
+## TH Dev 2019 to avoid glibc causing segmentation error in gradient_unwarp.py
+if [[ "$SPECIES" != "Human" ]] && [[ "${LD_LIBRARY_PATH:-}" =~ /opt/glibc-2.14/lib ]]; then
+    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | sed -e 's@/opt/glibc-2.14/lib:@@g' | sed -e 's@:/opt/glibc-2.14/lib@@g')
+    log_Msg "Removed /opt/glibc-2.14/lib from LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+fi
+
 log_Msg "Invoking Post-Eddy Steps"
-post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
-    "--path=${StudyFolder}"
-    "--session=${Session}"
-    "--dwiname=${DWIName}"
-    "--gdcoeffs=${GdCoeffs}"
-    "--dof=${DegreesOfFreedom}"
-    "--combine-data-flag=${CombineDataFlag}"
-    "--printcom=${runcmd}"
-    "--select-best-b0=${SelectBestB0}"
-    "--t1w-cross2long-xfm=${T1wCross2LongXfm}")
+if [[ "$SPECIES" == "Human" ]]; then
+    # Human: original HCP PostEddy
+    post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
+        "--path=${StudyFolder}"
+        "--session=${Session}"
+        "--dwiname=${DWIName}"
+        "--gdcoeffs=${GdCoeffs}"
+        "--dof=${DegreesOfFreedom}"
+        "--combine-data-flag=${CombineDataFlag}"
+        "--printcom=${runcmd}"
+        "--select-best-b0=${SelectBestB0}"
+        "--t1w-cross2long-xfm=${T1wCross2LongXfm}")
+else
+    # NHP: NHP-specific PostEddy
+    post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh"
+        "--path=${StudyFolder}"
+        "--subject=${Session}"
+        "--dwiname=${DWIName}"
+        "--gdcoeffs=${GdCoeffs}"
+        "--dof=${DegreesOfFreedom}"
+        "--combine-data-flag=${CombineDataFlag}"
+        "--printcom=${runcmd}"
+        "--specieslabel=${SpeciesLabel}"
+        "--wmprojabs=${DiffWMProjAbs}")
+fi
 
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"
