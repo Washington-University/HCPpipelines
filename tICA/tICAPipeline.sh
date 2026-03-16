@@ -721,8 +721,6 @@ do
                 done
                 fMRINamesForSub=$(IFS='@'; echo "${fMRIExist[*]}")
                 #for now, always do volume outputs
-                #DEBUG
-                #OutputString="fMRI_CONCAT_ALL_d86_WF6_HCA1798_MSMAll"
                 par_addjob "$HCPPIPEDIR"/tICA/scripts/tICACleanData.sh \
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
