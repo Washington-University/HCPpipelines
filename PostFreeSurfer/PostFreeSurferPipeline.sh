@@ -448,6 +448,7 @@ if ((doProcessing)); then
         --species="$Species"
         --myelin-volume-fwhm="$MyelinVolumeFWHM"
         --myelin-surface-fwhm="$MyelinSurfaceFWHM"
+        --surface-atlas-dir="$SurfaceAtlasDIR"
     )
     "${cmd[@]}"
 fi
