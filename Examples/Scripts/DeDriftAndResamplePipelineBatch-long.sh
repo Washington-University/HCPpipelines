@@ -4,7 +4,6 @@ get_batch_options() {
     local arguments=("$@")
 
     command_line_specified_study_folder=""
-    command_line_specified_subj=""
     command_line_specified_run_local="FALSE"
 
     local index=0
@@ -17,10 +16,6 @@ get_batch_options() {
         case "$argument" in
             --StudyFolder=*)
                 command_line_specified_study_folder=${argument#*=}
-                index=$(( index + 1 ))
-                ;;
-            --Subjlist=*)
-                command_line_specified_subj=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             --runlocal)
@@ -140,10 +135,6 @@ if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
 
-if [ -n "${command_line_specified_subj}" ]; then
-    Subjlist="${command_line_specified_subj}"
-fi
-
 # Log the originating call
 echo "$0" "$@"
 
@@ -160,7 +151,8 @@ MRFixNames=$(IFS=@; echo "${MRFixNames[*]}")
 fixNames=$(IFS=@; echo "${fixNames[*]}")
 dontFixNames=$(IFS=@; echo "${dontFixNames[*]}")
 
-for Subject in "${Subjlist[@]}" ; do
+for i in "${!Subjlist[@]}" ; do
+    Subject="${Subjlist[i]}"
     echo "    ${Subject}"
     TemplateLong="${Templates[i]}"
     Timepoint_list_cross_at_separated=$(identify_timepoints "$Subject")
