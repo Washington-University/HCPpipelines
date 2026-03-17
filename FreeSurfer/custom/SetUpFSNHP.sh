@@ -57,13 +57,10 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
   if ((isFLAIR)) ; then                                       # control with FLAIR for pial tuning
       NSigmaAbove="3"                                         # 3: FS6 default
       NSigmaBelow="3"                                         # 3: FS6 default
-  elif ((isT1wDivFLAIR)) ; then                                  # control with T1w/FLAIR
-      NSigmaAbove="3"                                         # 3: highres FLAIR (Autio et al.)                                        
-      NSigmaBelow="4"                                         # 4: highres FLAIR (Autio et al.)                                         
   else                                                        # control with T2w
     NSigmaAbove="0"                                           # 2: FS6 default
     NSigmaBelow="3"                                           # 3: FS6 default
-  fi    
+  fi
   WMProjAbs="1"    
   MaxThickness="8"                                            # FS6 conf2hires       
   CopyBiasFromConf="TRUE"                                     # FS6 conf2hires
@@ -138,10 +135,13 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
   SmoothNiter="1"                                             # default: 2, 1 for hires
   SmoothNiterPial=""                                          # for woT2pial & pial                                            
 
-  if ((isFLAIR)) ; then                                              # control T2-FLAIR pial
-    NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
-    NSigmaBelow="4"                                           # T2w/FLAIR version, default=3
-  else                                                                     # control T2 pial
+  if ((isFLAIR)) ; then                                       # control with FLAIR for pial tuning
+    NSigmaAbove="0"                                           # 2: FS6 default
+    NSigmaBelow="3"                                           # 3: FS6 default
+  elif ((isT1wDivFLAIR)) ; then                               # control with T1w/FLAIR
+    NSigmaAbove="3"                                           # 3: highres FLAIR (Autio et al.)
+    NSigmaBelow="4"                                           # 4: highres FLAIR (Autio et al.)
+  else                                                        # control with T2w
     NSigmaAbove="0"                                           # 2: FS6 default
     NSigmaBelow="3"                                           # 3: FS6 default
   fi
