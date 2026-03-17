@@ -40,9 +40,6 @@ function identify_timepoints
     echo $tplist
 }
 
-
-
-
 #Assume that submission nodes have OPENMP enabled (needed for eddy - at least 8 cores suggested for HCP data)
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
@@ -115,8 +112,9 @@ for i in "${!Subjects[@]}"; do
 	    # avoids having volumes with different SNR features/ residual distortions.
 	    # [This behavior can be changed via the --combine-data-flag if necessary].
 	  
-  	    PosData="${RawDataDir}/${TimepointCross}_dMRI_dir98_PA.nii.gz@${RawDataDir}/${TimepointCross}_dMRI_dir99_PA.nii.gz"
-	    NegData="${RawDataDir}/${TimepointCross}_dMRI_dir98_AP.nii.gz@${RawDataDir}/${TimepointCross}_dMRI_dir99_AP.nii.gz"
+	  	#Not needed in longitudinal mode
+  	    #PosData="${RawDataDir}/${TimepointCross}_dMRI_dir98_PA.nii.gz@${RawDataDir}/${TimepointCross}_dMRI_dir99_PA.nii.gz"
+	    #NegData="${RawDataDir}/${TimepointCross}_dMRI_dir98_AP.nii.gz@${RawDataDir}/${TimepointCross}_dMRI_dir99_AP.nii.gz"
 	  
 	    # "Effective" Echo Spacing of dMRI image (now specified in seconds for the dMRI processing)
 	    # EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
@@ -124,9 +122,10 @@ for i in "${!Subjects[@]}"; do
 	    #   ReconMatrixPE = size of the reconstructed image in the PE dimension
 	    # In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 	    # all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
-	    EchoSpacingSec=0.00078
+		#Not needed in longitudinal mode
+	    #EchoSpacingSec=0.00078
 	  
-	    PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
+	    #PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 
 	    # Gradient distortion correction
 	    # Set to NONE to skip gradient distortion correction
@@ -143,11 +142,8 @@ for i in "${!Subjects[@]}"; do
 	    fi
 
 	    "${queuing_command[@]}" "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline.sh \
-		  --posData="${PosData}" --negData="${NegData}" \
 		  --path="${StudyFolder}" --session="${TimepointCross}" \
-		  --echospacing-seconds="${EchoSpacingSec}" --PEdir="${PEdir}" \
 		  --gdcoeffs="${Gdcoeffs}" \
-		  --gpu=FALSE  \
 		  --is-longitudinal=TRUE \
 		  --longitudinal-session="$TimepointLong" \
   		  --printcom="$PRINTCOM"		  
