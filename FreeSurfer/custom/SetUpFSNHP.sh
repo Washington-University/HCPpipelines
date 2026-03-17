@@ -137,7 +137,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
 
   if ((isFLAIR)) ; then                                       # control with FLAIR for pial tuning
     NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
-    NSigmaBelow="4"                                           # T2w/FLAIR version, default=3
+    NSigmaBelow="3"                                           # T2w/FLAIR version, default=3
   elif ((isT1wDivFLAIR)) ; then                               # control with T1w/FLAIR
     NSigmaAbove="3"                                           # 3: highres FLAIR (Autio et al.)
     NSigmaBelow="4"                                           # 4: highres FLAIR (Autio et al.)
@@ -186,12 +186,15 @@ elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU
   SmoothNiter="2"                                             # for white in conf2hires 
   SmoothNiterPial="2"                                         # for woT2pial & pial in conf2hires                                           
   if ((isFLAIR)) ; then                                       # control T2 pial
-    NSigmaAbove="0"
-    NSigmaBelow="1"
+    NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
+    NSigmaBelow="3"                                           # T2w/FLAIR version, default=3
+  elif ((isT1wDivFLAIR)) ; then                               # control with T1w/FLAIR
+    NSigmaAbove="3"                                           # 3: highres FLAIR (Autio et al.)
+    NSigmaBelow="4"                                           # 4: highres FLAIR (Autio et al.)
   else                                                        # control T2-FLAIR pial
     NSigmaAbove="1"
     NSigmaBelow="1"
-  fi    
+  fi
   WMProjAbs="0.2"
   MaxThickness="20"                                           # FS6 conf2hires       
   CopyBiasFromConf="TRUE"                                     # FS6 conf2hires
