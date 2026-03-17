@@ -178,13 +178,13 @@ opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 
 opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
-opts_AddMandatory '--PEdir' 'PEdir' '1 or 2' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
+opts_AddOptional '--PEdir' 'PEdir' '1 or 2' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA. Required in cross-sectional mode. Not used in longitudinal mode."
 
-opts_AddMandatory '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "An @ symbol separated list of data with 'positive' phase  encoding direction; e.g., data_RL1@data_RL2@...data_RLn, or data_PA1@data_PA2@...data_PAn"
+opts_AddOptional '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "An @ symbol separated list of data with 'positive' phase  encoding direction; e.g., data_RL1@data_RL2@...data_RLn, or data_PA1@data_PA2@...data_PAn. Mandatory for cross-sectional mode, not used in longitudinal mode."
 
-opts_AddMandatory '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn"
+opts_AddOptional '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn. Mandatory for cross-sectional mode, not used in longitudinal mode."
 
-opts_AddOptional '--echospacing-seconds' 'echospacingsec' 'Number in sec' "Echo spacing in seconds, REQUIRED (or deprecated millisec option)"
+opts_AddOptional '--echospacing-seconds' 'echospacingsec' 'Number in sec' "Echo spacing in seconds, REQUIRED in cross-sectional mode (or deprecated millisec option). Not used in longitudinal mode."
 opts_AddOptional '--echospacing' 'echospacing' 'Number in millisec' "DEPRECATED: please use --echospacing-seconds"
 
 opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
@@ -211,7 +211,7 @@ To get an argument like '-flag value' (where there is no '=' between the flag an
   --extra-eddy-arg=-flag --extra-eddy-arg=value"
 
 ## This is an extremely confusing flag should rework it to just use-gpu?
-opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. True." "True"
+opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. True. Not used in longitudinal mode." "True"
 
 opts_AddOptional '--cuda-version' 'cuda_version' 'X.Y' " If using the GPU-enabled version of eddy then this option can be used to specify which eddy_cuda binary version to use. If specified, FSLDIR/bin/eddy_cudaX.Y will be used."
 
@@ -252,15 +252,26 @@ then
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 fi
 
-#resolve echo spacing being required and exclusivity
-if [[ "$echospacing" == "" && "$echospacingsec" == "" ]]
-then
-    log_Err_Abort "You must specify --echospacing-seconds or --echospacing"
-fi
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
-if [[ "$echospacing" != "" && "$echospacingsec" != "" ]]
-then
-    log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
+if (( IsLongitudinal == 0 )); then 
+    if [ -z "$PEdir" -o -z "$PosInputImages" -o -z "$NegInputImages" ]; then 
+        log_Err_Abort "--PEdir, --posData, --negData must be specified in cross-sectional mode"
+    fi
+    #resolve echo spacing being required and exclusivity
+    if [[ "$echospacing" == "" && "$echospacingsec" == "" ]]
+    then
+        log_Err_Abort "You must specify --echospacing-seconds or --echospacing"
+    fi
+
+    if [[ "$echospacing" != "" && "$echospacingsec" != "" ]]
+    then
+        log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
+    fi
+else
+    if [ -n "$gpuString" ]; then 
+        log_Warn "--gpu is not used in longitudinal mode"
+    fi
 fi
 
 #internally, PreEddy script expects milliseconds
@@ -311,7 +322,6 @@ if ((SelectBestB0)); then
 fi
 
 #parse longitudinal arguments
-IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 T1wCross2LongXfm=""
 
 if (( IsLongitudinal )); then
