@@ -136,8 +136,8 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
   SmoothNiterPial=""                                          # for woT2pial & pial                                            
 
   if ((isFLAIR)) ; then                                       # control with FLAIR for pial tuning
-    NSigmaAbove="0"                                           # 2: FS6 default
-    NSigmaBelow="3"                                           # 3: FS6 default
+    NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
+    NSigmaBelow="4"                                           # T2w/FLAIR version, default=3
   elif ((isT1wDivFLAIR)) ; then                               # control with T1w/FLAIR
     NSigmaAbove="3"                                           # 3: highres FLAIR (Autio et al.)
     NSigmaBelow="4"                                           # 4: highres FLAIR (Autio et al.)
