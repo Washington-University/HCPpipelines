@@ -254,7 +254,8 @@ extra_reconall_args_long=""
 
 
 if (( UseT2w )); then
-  #make average T2-weighted bootstrap image
+  # recon-all only accepts single T2-weighted image for surface creation,
+  # so we make average T2-weighted image across timepoints to avoid timepoint-specific bias.
   "$HCPPIPEDIR/FreeSurfer/scripts/MakeAverageT2w.sh" "$StudyFolder" "$SubjectID" "$Sessions" "$TemplateID"
   extra_reconall_args_base="-T2pial -T2 ${StudyFolder}/${SubjectID}.long.${TemplateID}/T2w/bootstrap_average.nii.gz"
   extra_reconall_args_long="-T2pial"
@@ -283,6 +284,8 @@ if (( start_stage < 1 )); then
   log_Msg "Creating the base template: ${TemplateID}"
   # ----------------------------------------------------------------------
 
+  # note that -conf2hires option is not supported for longitudinal base template as of Freesurfer 6,
+  # although it is supported for longitudinal timepoints
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
   recon_all_cmd+=" -base ${TemplateID}"
