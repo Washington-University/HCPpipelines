@@ -404,7 +404,6 @@ for Hemisphere in L R ; do
         cp "$SurfaceAtlasDIR"/"$Hemisphere".refsulc."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/${Session}.${Hemisphere}.refsulc."$HighResMesh"k_fs_LR.shape.gii
 
         if (( NonHumanSpecies )) ; then
-            ls "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
             if [ -e "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
                 cp "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
                 ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
