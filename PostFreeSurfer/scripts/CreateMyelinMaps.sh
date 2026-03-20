@@ -215,11 +215,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -volume-math "(T1w / T2w) * (((ribbon > ($LeftGreyRibbonValue - 0.01)) * (ribbon < ($LeftGreyRibbonValue + 0.01))) + ((ribbon > ($RightGreyRibbonValue - 0.01)) * (ribbon < ($RightGreyRibbonValue + 0.01))))" "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -var ribbon "$T1wFolder"/ribbon.nii.gz
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
   ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$T1wFolder"/T1wDividedByT2w_ribbon.nii.gz
-
-  #NHP specific, supposed to not be needed, replaced by HCP master version code below, from "# Create surface on HighResMesh in session's T1w space"
-  #if (( NonHumanSpecies )); then 
-	#${CARET7DIR}/wb_command -cifti-separate-all "$ReferenceMyelinMaps" -left "$AtlasSpaceFolder"/"$Subject".L.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii -right "$AtlasSpaceFolder"/"$Subject".R.RefMyelinMap."$HighResMesh"k_fs_LR.func.gii
-  #fi
 fi
 
 MapListFunc="corrThickness@shape"
@@ -431,7 +426,6 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		done
 	done
 fi
-#fi #HCP human-only tested code
 
 #Add CIFTI Maps to Spec Files
 
