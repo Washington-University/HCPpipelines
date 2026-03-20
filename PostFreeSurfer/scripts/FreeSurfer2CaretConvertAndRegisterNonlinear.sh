@@ -199,7 +199,6 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
       ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
     done
 
-    #TODO: new NHP feature for all cases, double-check if it works and where it belongs in the code
     [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
@@ -597,12 +596,10 @@ for Hemisphere in L R ; do
         ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".inflated."$LowResMesh"k_fs_LR.surf.gii
         ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".very_inflated."$LowResMesh"k_fs_LR.surf.gii
 
-        #TODO: new feature from NHP, check if this code works as intended.
         for Surface in white midthickness pial ; do
             ${CARET7DIR}/wb_command -surface-resample "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii ${RegSphere} "$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii BARYCENTRIC "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere"."$Surface"."$HighResMesh"k_fs_LR.surf.gii
             ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere"."$Surface"."$HighResMesh"k_fs_LR.surf.gii
         done
-        #TODO: new feature from NHP, pay attention in tests.
         ${CARET7DIR}/wb_command -surface-generate-inflated "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".midthickness."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".inflated."$HighResMesh"k_fs_LR.surf.gii "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".very_inflated."$HighResMesh"k_fs_LR.surf.gii -iterations-scale "$HighResInflationScale"
         ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".inflated."$HighResMesh"k_fs_LR.surf.gii
         ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".very_inflated."$HighResMesh"k_fs_LR.surf.gii
