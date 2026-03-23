@@ -373,11 +373,8 @@ validate_scripts() {
 	fi
 
 	# NHP sub-script validation (only when SPECIES != Human)
-	# PreEddy is now unified; Eddy and PostEddy still have NHP variants
+	# PreEddy and Eddy are now unified; PostEddy still has NHP variant
 	if [[ "$SPECIES" != "Human" ]]; then
-		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh ]]; then
-			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh not found"
-		fi
 		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh ]]; then
 			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh not found"
 		fi
@@ -421,28 +418,19 @@ if (( ! IsLongitudinal )); then
     "${pre_eddy_cmd[@]}"
 
     log_Msg "Invoking Eddy Step"
-    if [[ "$SPECIES" == "Human" ]]; then
-        # Human: original HCP Eddy
-        eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
-            --path="$StudyFolder"
-            --session="$Session"
-            --dwiname="$DWIName"
-            --printcom="$runcmd"
-            --gpu="$gpu"
-            --cuda-version="$cuda_version")
-    else
-        # NHP: NHP-specific Eddy
-        eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh
-            --path="$StudyFolder"
-            --subject="$Session"
-            --dwiname="$DWIName"
-            --printcom="$runcmd")
-    fi
+    eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
+        --path="$StudyFolder"
+        --session="$Session"
+        --dwiname="$DWIName"
+        --printcom="$runcmd"
+        --gpu="$gpu"
+        --cuda-version="$cuda_version"
+        --species="$SPECIES")
     for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
     do
         eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
     done
-    if [[ "$SPECIES" != "Human" ]] && [[ -n "${resamp_value}" ]]; then
+    if [[ -n "${resamp_value}" ]]; then
         eddy_cmd+=(--resamp="$resamp_value")
     fi
 

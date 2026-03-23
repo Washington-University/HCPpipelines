@@ -179,6 +179,9 @@ opts_AddOptional '--cuda-version' 'cuda_version' 'X.Y' " If using the GPU-enable
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
 
+#NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. Human, Chimp, RhesusMacaque, Mac30BS, CynoMacaque, Marmoset, NightMonkey" "Human"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -214,29 +217,69 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 # Establish output directory paths
 outdir=${StudyFolder}/${Session}/${DWIName}
 
-run_eddy_cmd=("${HCPPIPEDIR_dMRI}"/run_eddy.sh
-    --nvoxhp="$nvoxhp"
-    --ff="$ff_val"
-    --wss="$DetailedOutlierStats"
-    --repol="$ReplaceOutliers"
-    --sep-offs-move="$sepOffsMove"
-    --rms="$rms"
-    --ol_nstd="$ol_nstd_value"
-    --gpu="$gpu"
-    --cuda-version="$cuda_version"
-    --workingdir="$outdir"/eddy
-    --peas="$peas"
-    --fwhm="$fwhm_value"
-    --resamp="$resamp_value")
-for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
-do
-    run_eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
-done
+if [[ "$SPECIES" == "Human" ]]; then
+    # Human: use run_eddy.sh with full GPU/CUDA support
+    run_eddy_cmd=("${HCPPIPEDIR_dMRI}"/run_eddy.sh
+        --nvoxhp="$nvoxhp"
+        --ff="$ff_val"
+        --wss="$DetailedOutlierStats"
+        --repol="$ReplaceOutliers"
+        --sep-offs-move="$sepOffsMove"
+        --rms="$rms"
+        --ol_nstd="$ol_nstd_value"
+        --gpu="$gpu"
+        --cuda-version="$cuda_version"
+        --workingdir="$outdir"/eddy
+        --peas="$peas"
+        --fwhm="$fwhm_value"
+        --resamp="$resamp_value")
+    for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
+    do
+        run_eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
+    done
 
-log_Msg "About to issue the following command to invoke the run_eddy.sh script"
-log_Msg "${run_eddy_cmd[*]}"
-#runcmd can't be quoted, it depends on bash expanding it before word splitting
-${runcmd} "${run_eddy_cmd[@]}"
+    log_Msg "About to issue the following command to invoke the run_eddy.sh script"
+    log_Msg "${run_eddy_cmd[*]}"
+    ${runcmd} "${run_eddy_cmd[@]}"
+else
+    # NHP: use run_eddyNHP.sh
+    run_eddy_cmd=("${HCPPIPEDIR_dMRI}"/run_eddyNHP.sh
+        --wss="$DetailedOutlierStats"
+        --repol="$ReplaceOutliers"
+        --sep-offs-move="$sepOffsMove"
+        --rms="$rms"
+        --fwhm="$fwhm_value"
+        -g
+        -w "$outdir"/eddy
+        --peas="$peas")
+
+    if [[ -n "$nvoxhp" ]]; then
+        run_eddy_cmd+=(--nvoxhp="$nvoxhp")
+    fi
+    if [[ -n "$ff_val" ]]; then
+        run_eddy_cmd+=(--ff="$ff_val")
+    fi
+    if [[ -n "$ol_nstd_value" ]]; then
+        run_eddy_cmd+=(--ol_nstd="$ol_nstd_value")
+    fi
+    if [[ -n "$resamp_value" ]]; then
+        run_eddy_cmd+=(--resamp="$resamp_value")
+    fi
+
+    # Mark JacobianResampling unless lsr resampling is used
+    if [[ "$resamp_value" != "lsr" ]] && [[ ! "${extra_eddy_args[*]+${extra_eddy_args[*]}}" =~ "resamp=lsr" ]]; then
+        touch "${outdir}"/eddy/JacobianResampling
+    fi
+
+    for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
+    do
+        run_eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
+    done
+
+    log_Msg "About to issue the following command to invoke the run_eddyNHP.sh script"
+    log_Msg "${run_eddy_cmd[*]}"
+    ${runcmd} "${run_eddy_cmd[@]}"
+fi
 
 log_Msg "Completed!"
 
