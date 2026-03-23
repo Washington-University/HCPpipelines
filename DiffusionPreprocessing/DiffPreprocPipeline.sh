@@ -372,13 +372,9 @@ validate_scripts() {
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 
-	# NHP sub-script validation (only when SPECIES != Human)
-	# PreEddy and Eddy are now unified; PostEddy still has NHP variant
-	if [[ "$SPECIES" != "Human" ]]; then
-		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh ]]; then
-			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh not found"
-		fi
-	fi
+	# All sub-scripts (PreEddy, Eddy, PostEddy) are now unified
+	# NHP-specific sub-scripts (run_eddyNHP.sh, eddy_postprocNHP.sh, etc.) are
+	# validated within each unified sub-script when SPECIES != Human
 
 	if [[ "${error_msgs}" != "" ]]; then
 		log_Err_Abort "${error_msgs}"
@@ -452,31 +448,19 @@ if [[ "$SPECIES" != "Human" ]] && [[ "${LD_LIBRARY_PATH:-}" =~ /opt/glibc-2.14/l
 fi
 
 log_Msg "Invoking Post-Eddy Steps"
-if [[ "$SPECIES" == "Human" ]]; then
-    # Human: original HCP PostEddy
-    post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
-        "--path=${StudyFolder}"
-        "--session=${Session}"
-        "--dwiname=${DWIName}"
-        "--gdcoeffs=${GdCoeffs}"
-        "--dof=${DegreesOfFreedom}"
-        "--combine-data-flag=${CombineDataFlag}"
-        "--printcom=${runcmd}"
-        "--select-best-b0=${SelectBestB0}"
-        "--t1w-cross2long-xfm=${T1wCross2LongXfm}")
-else
-    # NHP: NHP-specific PostEddy
-    post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddyNHP.sh"
-        "--path=${StudyFolder}"
-        "--subject=${Session}"
-        "--dwiname=${DWIName}"
-        "--gdcoeffs=${GdCoeffs}"
-        "--dof=${DegreesOfFreedom}"
-        "--combine-data-flag=${CombineDataFlag}"
-        "--printcom=${runcmd}"
-        "--specieslabel=${SpeciesLabel}"
-        "--wmprojabs=${DiffWMProjAbs}")
-fi
+post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
+    "--path=${StudyFolder}"
+    "--session=${Session}"
+    "--dwiname=${DWIName}"
+    "--gdcoeffs=${GdCoeffs}"
+    "--dof=${DegreesOfFreedom}"
+    "--combine-data-flag=${CombineDataFlag}"
+    "--printcom=${runcmd}"
+    "--select-best-b0=${SelectBestB0}"
+    "--t1w-cross2long-xfm=${T1wCross2LongXfm}"
+    "--species=${SPECIES}"
+    "--specieslabel=${SpeciesLabel}"
+    "--wmprojabs=${DiffWMProjAbs}")
 
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"
