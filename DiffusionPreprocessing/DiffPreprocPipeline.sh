@@ -373,10 +373,8 @@ validate_scripts() {
 	fi
 
 	# NHP sub-script validation (only when SPECIES != Human)
+	# PreEddy is now unified; Eddy and PostEddy still have NHP variants
 	if [[ "$SPECIES" != "Human" ]]; then
-		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddyNHP.sh ]]; then
-			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddyNHP.sh not found"
-		fi
 		if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh ]]; then
 			error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_EddyNHP.sh not found"
 		fi
@@ -399,42 +397,25 @@ validate_scripts "$@"
 
 if (( ! IsLongitudinal )); then
     log_Msg "Invoking Pre-Eddy Steps"
-    if [[ "$SPECIES" == "Human" ]]; then
-        # Human: original HCP PreEddy
-        pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
-            "--path=${StudyFolder}"
-            "--session=${Session}"
-            "--dwiname=${DWIName}"
-            "--PEdir=${PEdir}"
-            "--posData=${PosInputImages}"
-            "--negData=${NegInputImages}"
-            "--echospacing=${echospacingmilli}"
-            "--b0maxbval=${b0maxbval}"
-            "--topup-config-file=${TopupConfig}"
-            "--printcom=${runcmd}"
-            "--select-best-b0=${SelectBestB0}"
-            "--ensure-even-slices=${EnsureEvenSlices}"
-            "--combine-data-flag=${CombineDataFlag}")
-    else
-        # NHP: NHP-specific PreEddy
-        pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddyNHP.sh"
-            "--path=${StudyFolder}"
-            "--subject=${Session}"
-            "--dwiname=${DWIName}"
-            "--PEdir=${PEdir}"
-            "--posData=${PosInputImages}"
-            "--negData=${NegInputImages}"
-            "--echospacing=${echospacingmilli}"
-            "--b0maxbval=${b0maxbval}"
-            "--topupconfig=${TopupConfig}"
-            "--printcom=${runcmd}"
-            "--truepatientposition=${TruePatientPosition}"
-            "--scannerpatientposition=${ScannerPatientPosition}"
-            "--specieslabel=${SpeciesLabel}")
-        if [[ "$(opts_StringToBool "$UsePhaseZero")" == "1" ]]; then
-            pre_eddy_cmd+=("--usephasezero")
-        fi
-    fi
+    pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
+        "--path=${StudyFolder}"
+        "--session=${Session}"
+        "--dwiname=${DWIName}"
+        "--PEdir=${PEdir}"
+        "--posData=${PosInputImages}"
+        "--negData=${NegInputImages}"
+        "--echospacing=${echospacingmilli}"
+        "--b0maxbval=${b0maxbval}"
+        "--topup-config-file=${TopupConfig}"
+        "--printcom=${runcmd}"
+        "--select-best-b0=${SelectBestB0}"
+        "--ensure-even-slices=${EnsureEvenSlices}"
+        "--combine-data-flag=${CombineDataFlag}"
+        "--species=${SPECIES}"
+        "--specieslabel=${SpeciesLabel}"
+        "--truepatientposition=${TruePatientPosition}"
+        "--scannerpatientposition=${ScannerPatientPosition}"
+        "--usephasezero=${UsePhaseZero}")
 
     log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
     "${pre_eddy_cmd[@]}"
