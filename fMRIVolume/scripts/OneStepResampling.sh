@@ -163,7 +163,7 @@ NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
 #       2mm and 1mm cases because it doesn't know the peculiarities of the
 #       MNI template FOVs
-# If not a human, just custom fMRI resolution, else, if 1mm or 2mm use standard fMRI resolutions, else, use a custom fMRI resolution.
+# If not a human, just use -applyisoxfm
 if [[ $SPECIES != Human ]] ; then
     ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
     ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
