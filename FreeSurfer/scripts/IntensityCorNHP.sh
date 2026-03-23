@@ -1,5 +1,5 @@
 #!/bin/bash
-# IntesityCor.sh
+# IntensityCorNHP.sh
 # Intensity bias correction and normalization in NHP
 # Takuya Hayashi, RIKEN BCIL 2016-2024
 
