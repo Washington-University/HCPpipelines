@@ -60,6 +60,12 @@ SPECIES="Macaque"
 #   T2w:  T2w-based BBR (default)
 BBRContrast="T2w"
 
+#Whether T2w image is FLAIR, 0 or 1
+isFLAIR=0
+
+#Whether T2 image is T1w divided by FLAIR, 0 or 1
+isT1wDivFLAIR=1
+
 # Receive coil bias field correction method (NONE, LEGACY, or SEBASED)
 #   SEBASED calculates bias field from spin echo images (requires TOPUP)
 #   LEGACY uses the T1w bias field
@@ -94,6 +100,9 @@ SpecSessionlist=""
 # Set to a specific fMRI name (without extension) to process only that run
 fmriname=""
 
+#structural image resolution
+StructRes=0.4
+
 # Species-specific variables
 # These are set by SetUpSPECIES.sh (sourced after EnvironmentScript).
 # Override here only if you need non-default values for your dataset.
@@ -126,8 +135,8 @@ echo "Run locally: ${command_line_specified_run_local}"
 source "$EnvironmentScript"
 
 # Set up species-specific environment variables
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES"
-source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StructRes"
+source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "$isFLAIR" "$isT1wDivFLAIR"
 
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 #
@@ -230,19 +239,18 @@ for Subject in $Subjlist ; do
         PhaseInputName=""
     fi
 
-    # Parse @-delimited session variables from hcppipe_conf.txt
-    OrigTasklist=$(echo $Tasklist | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigTaskreflist=$(echo $Taskreflist | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigTopupPositive=$(echo $TopupPositive | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigTopupNegative=$(echo $TopupNegative | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigPhaseEncodinglist=$(echo $PhaseEncodinglist | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigFmriconcatlist=$(echo $Fmriconcatlist | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigDwellTime=$(echo $DwellTime | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigInitWorldMat=$(echo $InitWorldMat | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigScannerPatientPosition=$(echo $ScannerPatientPosition | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigTruePatientPosition=$(echo $TruePatientPosition | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigTopupPositive2=$(echo $TopupPositive2 | sed -e 's/^@//g' | sed -e 's/@$//g')
-    OrigTopupNegative2=$(echo $TopupNegative2 | sed -e 's/^@//g' | sed -e 's/@$//g')
+    OrigTasklist="$Tasklist"
+    OrigTaskreflist="$Taskreflist"
+    OrigTopupPositive="$TopupPositive"
+    OrigTopupNegative="$TopupNegative"
+    OrigPhaseEncodinglist="$PhaseEncodinglist"
+    OrigFmriconcatlist="$Fmriconcatlist"
+    OrigDwellTime="$DwellTime"
+    OrigInitWorldMat="$InitWorldMat"
+    OrigScannerPatientPosition="$ScannerPatientPosition"
+    OrigTruePatientPosition="$TruePatientPosition"
+    OrigTopupPositive2="$TopupPositive2"
+    OrigTopupNegative2="$TopupNegative2"
 
     # Determine session list
     if [ -n "$SpecSessionlist" ] ; then
