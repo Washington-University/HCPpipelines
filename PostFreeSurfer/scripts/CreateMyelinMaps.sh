@@ -26,22 +26,7 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: takes FreeSurfer output folder and converts files into HCP format/organization, etc.
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
+opts_SetScriptDescription "takes FreeSurfer output folder and converts files into HCP format/organization, etc."
 
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
