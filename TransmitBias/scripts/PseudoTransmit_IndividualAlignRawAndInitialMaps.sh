@@ -92,8 +92,8 @@ for fMRIName in "${fMRINamesArray[@]}"
 do
     #deal with naming convention mismatch in SBRef by making links to all 3 with consistent names
     #symlinks review: converted the three below to relative symlinks.
-    ( cd "$WorkingDIR" && ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/PhaseOne_gdc_dc_jac.nii.gz" "${fMRIName}_PhaseOne_gdc_dc_jac.nii.gz" )
-    ( cd "$WorkingDIR" && ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/PhaseTwo_gdc_dc_jac.nii.gz" "${fMRIName}_PhaseTwo_gdc_dc_jac.nii.gz" )
+    ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/PhaseOne_gdc_dc_jac.nii.gz" "$WorkingDIR"/"${fMRIName}_PhaseOne_gdc_dc_jac.nii.gz"
+    ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/PhaseTwo_gdc_dc_jac.nii.gz" "$WorkingDIR"/"${fMRIName}_PhaseTwo_gdc_dc_jac.nii.gz"
     
     #didn't have _gdc in the name, so add it
     ( cd "$WorkingDIR" && ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/SBRef_dc_jac.nii.gz" "${fMRIName}_SBRef_gdc_dc_jac.nii.gz" )
