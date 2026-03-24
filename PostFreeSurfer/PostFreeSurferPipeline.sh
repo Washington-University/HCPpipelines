@@ -477,11 +477,10 @@ fi
 
 if (( doQC )); then
   log_Msg "Generating structural QC scene and snapshots"
-  #TODO: Do NHP need special QC?
-    "$PipelineScripts"/GenerateStructuralScenes.sh \
-        --study-folder="$StudyFolder" \
-        --session="$ExperimentRoot" \
-        --output-folder="$AtlasSpaceFolder/StructuralQC"
+  "$PipelineScripts"/GenerateStructuralScenes.sh \
+      --study-folder="$StudyFolder" \
+      --session="$ExperimentRoot" \
+      --output-folder="$AtlasSpaceFolder/StructuralQC"
 fi
 
 verbose_green_echo "---> Finished ${log_ToolName}"

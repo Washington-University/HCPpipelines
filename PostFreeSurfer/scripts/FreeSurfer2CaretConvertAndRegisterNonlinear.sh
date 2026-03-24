@@ -1,19 +1,17 @@
 #!/bin/bash
-
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
+set -eu
 
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
+pipedirguessed=0 
+if [[ "${HCPPIPEDIR:-}" == "" ]] 
+then 
+    pipedirguessed=1 
+    #fix this if the script is more than one level below HCPPIPEDIR 
+    export HCPPIPEDIR="$(dirname -- "$0")/.." 
+fi 
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -63,29 +61,25 @@ opts_AddMandatory '--longitudinal-mode' 'LongitudinalMode' 'mode' "longitudinal 
 opts_AddMandatory '--species' 'Species' 'species' "species"
 opts_AddMandatory '--msm-sulc-conf' 'MSMSulcConf' 'path' "MSMSulc configuration"
 opts_AddMandatory '--flat-map-root-name' 'FlatMapRootName' 'name' "flat map root name"
-
+# longitudinal options
+# Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data.
+# In long TIMEPOINT mode, $Session=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
+# In long TEMPLATE mode, $Session=$ExperimentRoot, defined as <LongSubjectLabel>.long.<LongTemplate>
+# In long TEMPLATE mode we also need LongTemplate, LongSubjectLabel and all LongitudinalTimepoint labels to perform
+# surface averaging for MSMSulc.
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "actual subject label"
 opts_AddMandatory '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label"
 opts_AddMandatory '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "list of all timepoints, @ separated"
 
 opts_ParseArguments "$@"
 
+if ((pipedirguessed)) 
+then 
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh" 
+fi
+
 #display the parsed/default values
 opts_ShowValues
-
-#Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data.
-#In long TIMEPOINT mode, $Session=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
-#In long TEMPLATE mode, $Session=$ExperimentRoot, defined as <LongSubjectLabel>.long.<LongTemplate>
-#In long TEMPLATE mode we also need LongTemplate, LongSubjectLabel and all LongitudinalTimepoint labels to perform
-#surface averaging for MSMSulc.
-
-#Actual subject label which is part of longitudinal timepoint and template experiment roots, see comment above.
-#Subject="${25}"
-#Longitudinal template label
-#LongitudinalTemplate="${26}"
-#LIST of all timepoints, @ separated
-#LongitudinalTimepoints="${27}"
-
 
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
