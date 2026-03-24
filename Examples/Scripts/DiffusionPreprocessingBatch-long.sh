@@ -122,10 +122,6 @@ for i in "${!Subjects[@]}"; do
 	    #   ReconMatrixPE = size of the reconstructed image in the PE dimension
 	    # In-plane acceleration, phase oversampling, phase resolution, phase field-of-view, and interpolation
 	    # all potentially need to be accounted for (which they are in Siemen's reported BWPPPE)
-		#Not needed in longitudinal mode
-	    #EchoSpacingSec=0.00078
-	  
-	    #PEdir=2 #Use 1 for Left-Right Phase Encoding, 2 for Anterior-Posterior
 
 	    # Gradient distortion correction
 	    # Set to NONE to skip gradient distortion correction

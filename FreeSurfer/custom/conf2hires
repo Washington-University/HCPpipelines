@@ -304,7 +304,6 @@ if($#MMode) then
   if(! -e $MM && $longitudinal) then
     set MMcross = ${SUBJECTS_DIR}/${tpNid}/mri/orig/${MMode}raw.mgz
     cd orig
-    # symlinks review: relative, OK
     set cmd = (ln -sf $MMcross ${MMode}raw.mgz)
     echo $cmd | tee -a $LF
     ln -sf $MMcross ${MMode}raw.mgz |& tee -a $LF

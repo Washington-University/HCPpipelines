@@ -651,8 +651,7 @@ else # IsLongitudinal=1
 
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat
     #this needs for the following command to succeed if ${WD}/fMRI2str_refinement.mat is symlink pointing to read-only source.
-    rm -f ${WD}/fMRI2str_refinement.mat
-    cp ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat
+    cp -f ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat
 fi
 
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz
