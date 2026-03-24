@@ -73,9 +73,9 @@ cmd=(mri_robust_template)
 cmd_mov=()
 cmd_lta=()
 
-Sessions=$(echo "${Sessions}" | sed 's/@/ /g')
+IFS='@' read -a SessionsArray <<<"$Sessions"
 
-for session in ${Sessions[@]}; do
+for session in "${SessionsArray[@]}"; do
     cmd_mov+=("$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz")
     cmd_lta+=("$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta")
 done
