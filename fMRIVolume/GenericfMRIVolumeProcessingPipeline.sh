@@ -1076,8 +1076,8 @@ if [[ ${nEcho} -gt 1 ]]; then
     log_Msg "Fitting T2* and combining Echoes"
 
     #symlink review: links changed to relative.
-    ( ${RUN} cd "$EchoDir" && ${RUN} ln -sf "../${NameOffMRI}_nonlin_norm.nii.gz" "${NameOffMRI}_nonlin_norm.nii.gz" )
-    ( ${RUN} cd "$EchoDir" && ${RUN} ln -sf "../${NameOffMRI}_SBRef_nonlin_norm.nii.gz" "${NameOffMRI}_SBRef_nonlin_norm.nii.gz" )
+    ${RUN} ln -sf "../${NameOffMRI}_nonlin_norm.nii.gz" "$EchoDir"/"${NameOffMRI}_nonlin_norm.nii.gz"
+    ${RUN} ln -sf "../${NameOffMRI}_SBRef_nonlin_norm.nii.gz" "$EchoDir"/"${NameOffMRI}_SBRef_nonlin_norm.nii.gz"
 
     echo ${echoTE} > ${EchoDir}/TEs.txt
 
