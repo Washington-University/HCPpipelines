@@ -950,7 +950,7 @@ else
         rm ${DCFolder}
     fi
     #symlink review: link changed to relative. 
-    ( cd "$fMRIFolder" && ln -sf "../fMRIReference/${DCFolderName}" "${DCFolderName}" )
+    ln -sf "../fMRIReference/${DCFolderName}" "${DCFolder}"
 
     if [ $("${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str") -eq 0 ]; then
         log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"
