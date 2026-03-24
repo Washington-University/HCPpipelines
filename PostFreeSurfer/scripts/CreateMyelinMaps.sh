@@ -1,18 +1,15 @@
 #!/bin/bash
 set -eu
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
-
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0 
+if [[ "${HCPPIPEDIR:-}" == "" ]] 
+then 
+    pipedirguessed=1 
+    #fix this if the script is more than one level below HCPPIPEDIR 
+    export HCPPIPEDIR="$(dirname -- "$0")/.." 
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -77,6 +74,11 @@ opts_AddMandatory '--myelin-surface-fwhm' 'SurfaceSmoothingFWHM' 'value' "myelin
 opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
 
 opts_ParseArguments "$@"
+
+if ((pipedirguessed)) 
+then 
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh" 
+fi 
 
 #display the parsed/default values
 opts_ShowValues
