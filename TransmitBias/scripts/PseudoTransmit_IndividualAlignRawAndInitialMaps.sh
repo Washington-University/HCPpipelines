@@ -96,7 +96,7 @@ do
     ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/PhaseTwo_gdc_dc_jac.nii.gz" "$WorkingDIR"/"${fMRIName}_PhaseTwo_gdc_dc_jac.nii.gz"
     
     #didn't have _gdc in the name, so add it
-    ( cd "$WorkingDIR" && ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/SBRef_dc_jac.nii.gz" "${fMRIName}_SBRef_gdc_dc_jac.nii.gz" )
+    ln -sf "../../$fMRIName/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/FieldMap/SBRef_dc_jac.nii.gz" "$WorkingDIR"/"${fMRIName}_SBRef_gdc_dc_jac.nii.gz"
 done
 
 function ReuseBBR4Longitudinal {
