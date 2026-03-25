@@ -248,16 +248,20 @@ log_Msg "Starting main functionality"
 # ----------------------------------------------------------------------
 log_Msg "Preparing the folder structure"
 # ----------------------------------------------------------------------
-Sessions=`echo ${Sessions} | sed 's/@/ /g'`
 
 extra_reconall_args_base=""
 extra_reconall_args_long=""
 
-Session0=( $Sessions ); Session0=${Session0[0]}
+
 if (( UseT2w )); then
-  extra_reconall_args_base="-T2pial -T2 ${StudyFolder}/${Session0}/T1w/T2w_acpc_dc_restore.nii.gz"
+  # recon-all only accepts single T2-weighted image for surface creation,
+  # so we make average T2-weighted image across timepoints to avoid timepoint-specific bias.
+  "$HCPPIPEDIR/FreeSurfer/scripts/MakeAverageT2w.sh" "$StudyFolder" "$SubjectID" "$Sessions" "$TemplateID"
+  extra_reconall_args_base="-T2pial -T2 ${StudyFolder}/${SubjectID}.long.${TemplateID}/T2w/bootstrap_average.nii.gz"
   extra_reconall_args_long="-T2pial"
 fi
+
+Sessions=$(echo "${Sessions}" | sed 's/@/ /g')
 
 log_Msg "extra_reconall_args_base: $extra_reconall_args_base"
 log_Msg "extra_reconall_args_long: $extra_reconall_args_long"
@@ -280,6 +284,8 @@ if (( start_stage < 1 )); then
   log_Msg "Creating the base template: ${TemplateID}"
   # ----------------------------------------------------------------------
 
+  # note that -conf2hires option is not supported for longitudinal base template as of Freesurfer 6,
+  # although it is supported for longitudinal timepoints
   recon_all_cmd="recon-all.v6.hires"
   recon_all_cmd+=" -sd ${LongDIR}"
   recon_all_cmd+=" -base ${TemplateID}"
@@ -314,7 +320,7 @@ if (( end_stage > 0 )); then
     log_Msg "Running longitudinal recon all for session: ${Session}"
     recon_all_cmd="recon-all.v6.hires"
     recon_all_cmd+=" -sd ${LongDIR}"
-    recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
+    recon_all_cmd+=" -long ${Session} ${TemplateID} -all -conf2hires"
     
     recon_all_cmd+=" $extra_reconall_args_long "
     T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
