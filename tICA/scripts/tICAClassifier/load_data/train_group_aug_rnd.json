@@ -1,0 +1,42 @@
+{
+    "S1200_MSMAll3T535T_rfMRI_REST": {
+        "aug_config_name": "aug28_chosen159_rnd100_20230828-203900",
+        "aug_keyword": "aug28"
+    },
+    "S1200_MSMAll3T535T_tfMRI_Concat": {
+        "aug_config_name": "aug28_chosen159_rnd100_20230828-204530",
+        "aug_keyword": "aug28"
+    },
+    "S1200_MSMAll7T87T_rfMRI_REST_7T": {
+        "aug_config_name": "aug28_chosen16_rnd100_20230828-204829",
+        "aug_keyword": "aug28"
+    },
+    "S1200_MSMAll7T87T_tfMRI_MOVIE_7T": {
+        "aug_config_name": "aug28_chosen16_rnd100_20230828-204932",
+        "aug_keyword": "aug28"
+    },
+    "S1200_MSMAll7T87T_tfMRI_RET_7T": {
+        "aug_config_name": "aug28_chosen16_rnd100_20230828-205300",
+        "aug_keyword": "aug28"
+    },
+    "AABC_Version2_Prelim_Data_Visits_617T_fMRI_CONCAT_ALL_clean": {
+        "aug_config_name": "aug28_chosen139_rnd100_20230828-205604",
+        "aug_keyword": "aug28"
+    },
+    "HCD628_Winter2021_314T_fMRI_CONCAT_ALL_clean": {
+        "aug_config_name": "aug28_chosen192_rnd100_20230828-205429",
+        "aug_keyword": "aug28"
+    },
+    "HCD628_Winter2021_160independent_fMRI_CONCAT_ALL_clean": {
+        "aug_config_name": "aug28_chosen157_rnd100_20230828-205812",
+        "aug_keyword": "aug28"
+    },
+    "HCD628_Winter2021_100independent_fMRI_CONCAT_ALL_clean": {
+        "aug_config_name": "aug28_chosen47_rnd100_20230828-205825",
+        "aug_keyword": "aug28"
+    },
+    "HCD628_Winter2021_60independent_fMRI_CONCAT_ALL_clean": {
+        "aug_config_name": "aug28_chosen57_rnd100_20230828-210022",
+        "aug_keyword": "aug28"
+    }
+}
