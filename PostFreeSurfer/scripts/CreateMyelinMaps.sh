@@ -69,8 +69,10 @@ opts_AddMandatory '--use-ind-mean' 'UseIndMean' 'flag' "use individual mean"
 opts_AddMandatory '--is-longitudinal' 'IsLongitudinal' 'flag' "longitudinal processing mode"
 opts_AddMandatory '--thickness-reg' 'ThicknessReg' 'value' "thickness registration parameter"
 opts_AddMandatory '--species' 'Species' 'species' "species"
-opts_AddMandatory '--myelin-volume-fwhm' 'MyelinMappingFWHM' 'value' "myelin volume smoothing FWHM"
-opts_AddMandatory '--myelin-surface-fwhm' 'SurfaceSmoothingFWHM' 'value' "myelin surface smoothing FWHM"
+#5 is default for human species.
+opts_AddOptional '--myelin-volume-fwhm' 'MyelinMappingFWHM' 'value' "myelin volume smoothing FWHM" "5"
+#4 is default for human species.
+opts_AddOptional '--myelin-surface-fwhm' 'SurfaceSmoothingFWHM' 'value' "myelin surface smoothing FWHM" "4"
 opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
 
 opts_ParseArguments "$@"
@@ -125,14 +127,6 @@ fi
 
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
-
-if (( NonHumanSpecies )); then 
-	MyelinMappingFWHM="${MyelinMappingFWHM:-5}"
-	SurfaceSmoothingFWHM="${SurfaceSmoothingFWHM:-4}"
-else
-	MyelinMappingFWHM="5"
-	SurfaceSmoothingFWHM="4"
-fi
 
 echo "MyelinMappingFWHM=$MyelinMappingFWHM"
 echo "SurfaceSmoothingFWHM=$SurfaceSmoothingFWHM"

@@ -61,15 +61,10 @@ opts_AddMandatory '--longitudinal-mode' 'LongitudinalMode' 'mode' "longitudinal 
 opts_AddMandatory '--species' 'Species' 'species' "species"
 opts_AddMandatory '--msm-sulc-conf' 'MSMSulcConf' 'path' "MSMSulc configuration"
 opts_AddMandatory '--flat-map-root-name' 'FlatMapRootName' 'name' "flat map root name"
-# longitudinal options
-# Subject variable is retired, renamed to Session to reflect (possibliy) multi-session nature of subject data.
-# In long TIMEPOINT mode, $Session=$ExperimentRoot, which is defined as <LongSubjectLabel>.long.<Timepoint>
-# In long TEMPLATE mode, $Session=$ExperimentRoot, defined as <LongSubjectLabel>.long.<LongTemplate>
-# In long TEMPLATE mode we also need LongTemplate, LongSubjectLabel and all LongitudinalTimepoint labels to perform
+# the following longitudinal options are only required if LongitudinalMode=TEMPLATE.
 # surface averaging for MSMSulc.
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "actual subject label"
-opts_AddMandatory '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label"
-opts_AddMandatory '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "list of all timepoints, @ separated"
+opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label" ""
+opts_AddOptional '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "list of all timepoints, @ separated" ""
 
 opts_ParseArguments "$@"
 
@@ -84,8 +79,14 @@ opts_ShowValues
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
 
-LongitudinalTimepoints="${LongitudinalTimepoints//@/ }"
-log_Msg "LongitudinalTimepoints: $LongitudinalTimepoints"
+if [[ "$LongitudinalMode" == "TEMPLATE" ]]; then 
+
+    if [ -z "$LongitudinalTemplate" -o -z "$LongitudinalTimepoints" ]; then 
+        log_Err_Abort "--longitudinal-template and --longitudinal-timepoints are required if --longitudinal-mode=TEMPLATE"
+    fi
+    LongitudinalTimepoints="${LongitudinalTimepoints//@/ }"
+    log_Msg "LongitudinalTimepoints: $LongitudinalTimepoints"
+fi
 
 GrayordinatesResolutions=${GrayordinatesResolutions//@/ }
 log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
