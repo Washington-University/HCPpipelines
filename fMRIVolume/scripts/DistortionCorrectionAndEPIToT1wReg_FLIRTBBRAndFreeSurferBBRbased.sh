@@ -649,8 +649,9 @@ if (( ! IsLongitudinal )); then
     fi
 else # IsLongitudinal=1
 
-    ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat
-    #this needs for the following command to succeed if ${WD}/fMRI2str_refinement.mat is symlink pointing to read-only source.
+    ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat    
+    #cp -f would keep existing symlink if its target is writable, but we want to create a normal file, so removing target first.
+    rm -f ${WD}/fMRI2str_refinement.mat
     cp -f ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat
 fi
 
