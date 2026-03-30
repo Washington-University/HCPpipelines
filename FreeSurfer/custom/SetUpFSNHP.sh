@@ -14,12 +14,12 @@ SkullStripMethod=PreFS                                             # PreFS or FS
 SPECIES="$1"
 isFLAIR="$2"    #NOTE: must be "0" or "1"
 isT1wDivFLAIR="$3" #NOTE: must be "0" or "1"
+ScaleFactor="$4" # must match BrainScaleFactor in SetUpSPECIES.sh
 
 if [[ "$SPECIES" == *Human* ]] ; then
 
   IntensityCor="FAST"
   TemplateWMSkeleton="NONE"
-  ScaleFactor=1
   mri_segment_args=""
   mri_fill_args="-C 0 0 27"
   T2normSigma=""
@@ -41,7 +41,6 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
 
   IntensityCor="FAST"
   TemplateWMSkeleton="NONE"
-  ScaleFactor="1.25"
   BiasFieldFastSmoothingSigma="25"                            # = 20*ScaleFactor
   StrongBias_args="-s"                                        # strong bias in T1w
   mri_normalize_args="-sigma 10 -gentle"                      # = 8*ScaleFactor.
@@ -76,7 +75,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
 
   # IntensityCor
   IntensityCor="FAST"
-  ScaleFactor="2"
   BiasFieldFastSmoothingSigma="40"                            # = 20*ScaleFactor
   StrongBias_args="-s"                                        # strong bias in T1w
 
@@ -157,7 +155,6 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
 elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU and TH
 
   IntensityCor="FAST"
-  ScaleFactor="5"
   BiasFieldFastSmoothingSigma="100"                           # = 20*ScaleFactor
   mri_normalize_args="-sigma 50 -gentle"                      #  
   #WMSeg_wlo="70"                                             # set smaller value to suppress "pial-inflation failure" e.g. 70
@@ -217,7 +214,6 @@ elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU
 elif [[ "$SPECIES" = NightMonkey ]] ; then                         # tuned by TH, TI in Aug 2020
 
   IntensityCor="FAST"
-  ScaleFactor="4"
   BiasFieldFastSmoothingSigma="80"                            # = 20*ScaleFactor
   mri_normalize_args="-sigma 32 -gentle"                      # = 8*ScaleFactor
   #WMSeg_wlo="95"      

@@ -5,13 +5,14 @@ set -e
 #  environment: FSLDIR , FREESURFER_HOME , HCPPIPEDIR , CARET7DIR , PATH (for gradient_unwarp.py)
 
 Usage () {
-    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --RunMode=<mode> --T2wType=<type> --EnvironmentScript=<path>"
+    echo "$(basename $0) --StudyFolder=<path> --Subject=<id> --Species=<species> --StrucRes=<res> --RunMode=<mode> --T2wType=<type> --EnvironmentScript=<path>"
     echo ""
     echo "Options:"
     echo "  --StudyFolder: Path to the study folder containing subject data"
     echo "  --Subject: Subject identifier (multiple subjects can be separated by space or @)"
     echo "  --T2wType: T2w image type (T2w or FLAIR or T1wDivFLAIR, default: T2w)"
     echo "  --Species: Species type (Human, Chimp, MacaqueCyno, MacaqueRhesus, MacaqueSnow, NightMonkey, Marmoset)"
+    echo "  --StrucRes: Structural resolution in mm (must match PreFreeSurfer setting)"
     echo "  --RunMode: Pipeline run mode (Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish)"
     echo "  --RunLocal: Run locally (TRUE or FALSE, default: FALSE)"
 	echo ""
@@ -27,6 +28,7 @@ Subjlist="nhp_session1 nhp_session2"
 SPECIES="MacaqueRhesus"
 RunMode="Default"
 T2wType="T2w"
+StrucRes="0.5" # structural resolution in mm (must match PreFreeSurfer setting)
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 RunLocal="FALSE"
 
@@ -58,6 +60,10 @@ get_batch_options() {
                 SPECIES=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
+            --StrucRes=*)
+                StrucRes=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
             --RunMode=*)
                 RunMode=${argument#*=}
                 index=$(( index + 1 ))
@@ -84,12 +90,16 @@ get_batch_options() {
 get_batch_options "$@"
 
 # Check required settings
-if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ]  || [ -z "$SPECIES" ] || [ -z "$RunMode" ] || [ -z "$EnvironmentScript" ]; then
+if [ -z "$StudyFolder" ] || [ -z "$Subjlist" ] || [ -z "$T2wType" ] || [ -z "$SPECIES" ] || [ -z "$StrucRes" ] || [ -z "$RunMode" ] || [ -z "$EnvironmentScript" ]; then
     echo "ERROR: Missing required settings"
     Usage
 fi
 
 source $EnvironmentScript
+
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
+#HACK: work around the log tool name hack in SetUpSPECIES.sh
+log_SetToolName "$(basename -- "$0")"
 
 # Log the originating call
 echo "$@"
@@ -157,7 +167,8 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --flair="$isFLAIR" \
         --t1wdivflair="$isT1wDivFLAIR" \
         --species="$SPECIES" \
-        --runmode="$RunMode" 
+        --scale-factor="$BrainScaleFactor" \
+        --runmode="$RunMode"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
@@ -169,6 +180,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --flair="$isFLAIR" \
         --t1wdivflair="$isT1wDivFLAIR" \
         --species="$SPECIES" \
+        --scale-factor="$BrainScaleFactor" \
         --runmode="$RunMode" 
     echo ". ${EnvironmentScript}"
 
