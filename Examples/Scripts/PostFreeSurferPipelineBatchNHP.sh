@@ -51,12 +51,9 @@ StudyFolder="${HOME}/projects/HCPPipelines_ExampleData" #Location of Session fol
 Subjlist="Macaque1 Macaque2" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 Species="RhesusMacaque"
+#StructRes is mandatory
 StructRes="0.5"
-if [ -z "$StructRes" ]; then 
-    StructResOption=""
-else 
-    StructResOption="--structres=$StructRes"
-fi
+
 if [ -z "$Species" ]; then 
     Species="RhesusMacaque"
 fi
@@ -69,7 +66,7 @@ if [ -n "${command_line_specified_subj}" ]; then
 fi
 
 
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" $StructResOption
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --structres "$StructRes"
 
 #The following values are set in SetUpSPECIES.sh:
 # Example for chimp:
