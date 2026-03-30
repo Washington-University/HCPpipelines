@@ -253,6 +253,7 @@ for Analysis in ${Analyses} ; do
 			echo "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly." >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 			log_Err_Abort "ERROR: Cannot find Contrasts list at ${LevelTwoFEATDir}/Contrasts.txt. Verify that Level1 and Level2 analyses completed correctly."
 		else
+			rm -f ${SummaryDirectory}/Contrasts.txt
 			cp ${LevelTwoFEATDir}/Contrasts.txt ${SummaryDirectory}/Contrasts.txt
 		fi
 		
