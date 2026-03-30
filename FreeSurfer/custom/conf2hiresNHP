@@ -464,8 +464,9 @@ if($#MMode) then
     endif
     if($DoFLAIR) then
       set cmd = ($cmd -FLAIR rawavg.$MMode -nsigma_above $p_NSigmaAbove -nsigma_below $p_NSigmaBelow)
-    else if($DoT1wDivFLAIR) then
-      # Use T1w divided by FLAIR as if T2w since the former has high signal in CSF like T2w, TH 2025 
+    endif
+    if($DoT1wDivFLAIR) then
+      # Use T1w divided by FLAIR as if T2w since the former has high signal in CSF like T2w, TH 2025
       set cmd = ($cmd -T2 rawavg.${MMode} -nsigma_above $p_NSigmaAbove  -nsigma_below $p_NSigmaBelow)
     endif
     set cmd = ($cmd $subject $hemi)
