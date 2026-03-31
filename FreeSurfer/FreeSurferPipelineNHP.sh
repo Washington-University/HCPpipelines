@@ -527,7 +527,7 @@ esac
 if ((! existing_subject)) ; then
 
 	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
-	# certain files need to be reverted to their PreFreeSurfer output versions
+	# certain files need to be restored to their PreFreeSurfer output versions
 	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
 		log_Msg "restore PreFreeSurfer resampling"	
 		${HCPPIPEDIR_FS}/RestorePreFreeSurferResamplingNHP.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
