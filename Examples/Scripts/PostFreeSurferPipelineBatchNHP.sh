@@ -66,7 +66,7 @@ if [ -n "${command_line_specified_subj}" ]; then
 fi
 
 
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --structres "$StructRes"
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --structres="$StructRes"
 
 #The following values are set in SetUpSPECIES.sh:
 # Example for chimp:
