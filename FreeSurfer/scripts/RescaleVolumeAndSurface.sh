@@ -112,7 +112,7 @@ log_Msg "Checking FS inputs"
 # ----------------------------------------------------------------------
 # copying current FS input and rescale
 mri_convert ${scaledmridir}/orig/001.mgz ${scaledmridir}/orig/001.nii.gz
-${HCPPIPEDIR}/global/scripts/ScaleVolume.sh ${scaledmridir}/orig/001.nii.gz $RescaleFactor ${mridir}/orig/RescaledT1w.nii.gz ${RescaleVolumeTransform}.world.mat
+${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh ${scaledmridir}/orig/001.nii.gz $RescaleFactor ${mridir}/orig/RescaledT1w.nii.gz ${RescaleVolumeTransform}.world.mat
 
 # test difference between current PreFS and FS volumes
 mri_convert ${mridir}/rawavg.mgz ${mridir}/orig/rawavg.nii.gz
@@ -128,7 +128,7 @@ log_Msg "If the absdiff is too large, something is wrong and you need to correct
 log_Msg "Creating conform space"
 # ----------------------------------------------------------------------
 mri_convert ${scaledmridir}/orig.mgz ${scaledmridir}/orig.nii.gz
-${HCPPIPEDIR}/global/scripts/ScaleVolume.sh ${scaledmridir}/orig.nii.gz $RescaleFactor ${mridir}/orig.nii.gz 
+${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh ${scaledmridir}/orig.nii.gz $RescaleFactor ${mridir}/orig.nii.gz 
 mri_convert ${mridir}/orig.nii.gz ${mridir}/orig.mgz
 
 # ----------------------------------------------------------------------

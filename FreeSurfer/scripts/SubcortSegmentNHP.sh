@@ -1,5 +1,5 @@
 #!/bin/bash
-# SubcortSegment.sh
+# SubcortSegmentNHP.sh
 # The script edits subcortical segment (aseg) and white matter segment (wm) for NHP brain using FS6. The wm is deweighted
 # for cortex and weighted for claustrum and white matter skeleton based on species template. Skeleton weighting is needed
 # for NHP brain cortical surface anlaysis, since the white matter is often thin relative to the resolution of MRI and difficult

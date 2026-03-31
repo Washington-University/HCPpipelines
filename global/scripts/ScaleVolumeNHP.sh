@@ -1,5 +1,5 @@
 #!/bin/bash
-# ScaleVolume.sh
+# ScaleVolumeNHP.sh
 # Scale volume for NHP FreeSurfer
 # The script calculates a scaled volume to be used for FreeSurfer. Scaling factor is usually set by the number larger
 # than 1 for small brain, and useful for NHP brain. The brain of the output volume is enlarged by the scaling factor
@@ -31,7 +31,7 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 tempfiles_create scaleVol_XXXXXX.mat tmpmat
 
 # ----------------------------------------------------------------------
-log_Msg "START: ScaleVolume.sh"
+log_Msg "START: ScaleVolumeNHP.sh"
 # ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
@@ -68,5 +68,5 @@ if [[ "${outmat:-}" != "" ]] ; then
 	cp "$tmpmat" "$outmat"
 fi
 # ----------------------------------------------------------------------
-log_Msg "End: ScaleVolume.sh"
+log_Msg "End: ScaleVolumeNHP.sh"
 # ----------------------------------------------------------------------

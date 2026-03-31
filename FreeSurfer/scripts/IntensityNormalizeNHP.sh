@@ -1,5 +1,6 @@
 #! /bin/bash
 
+# IntensityNormalizeNHP.sh
 # Normalize intensity of cortical grey or white matter of input volumes
 # Takuya Hayashi, RIKEN Brain Connectomics Imaging Laboratory, 2024
 # set -eux

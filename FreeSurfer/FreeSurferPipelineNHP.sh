@@ -664,12 +664,12 @@ if [ "$RunMode" -lt 2 ] ; then
 		## This section scales them so that FreeSurfer 6 can work properly in scaled space. The data will be
 		## rescaled to the original space by a script, RescaleVolumeAndSurface.sh, after FS was finished - TH 2017-2023 
 		log_Msg "Scale T1w brain volume"		
-		${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "${zero_threshold_T1wImage}" "$ScaleFactor" $(remove_ext ${T1wImage})_scaled "$SubjectDIR"/xfms/real2fs.world.mat
-		${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled 
+		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "${zero_threshold_T1wImage}" "$ScaleFactor" $(remove_ext ${T1wImage})_scaled "$SubjectDIR"/xfms/real2fs.world.mat
+		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled 
 
 		if [[ "${T2wImage}" != "" ]] ; then
 			log_Msg "Scale T2w volume"
-			${HCPPIPEDIR}/global/scripts/ScaleVolume.sh "$T2wImage" "$ScaleFactor" $(remove_ext ${T2wImage})_scaled
+			${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "$T2wImage" "$ScaleFactor" $(remove_ext ${T2wImage})_scaled
 		fi
 
 	fi
@@ -820,9 +820,9 @@ if [ "$RunMode" -lt 4 ]; then
 	## This section replaces function of 'recon-all -segmentation'  - TH 2017-2024
 	## Paste claustrum and deweight cortical gray in wm.mgz. If any of wm.edit.mgz, brainmask.edit.mgz, brain.finalsurfs.edit.mgz
 	## or aseg.presurf.edit.mgz was found, the script uses each as wm.mgz, brainmask.mnz, brain.finalsurfs.mgz and aseg.presurf.mgz respectively.
-	## ${PipelineScripts}/IntensityNormalize.sh may be useful for normalizing intensity of white matter or grey matter to create
+	## ${PipelineScripts}/IntensityNormalizeNHP.sh may be useful for normalizing intensity of white matter or grey matter to create
 	## brain.finalsurfs.edit.mgz,
-	cmd=("$PipelineScripts"/SubcortSegment.sh "$SubjectDIR" "$SubjectID" "$T1wImage" "$TemplateWMSkeleton" "$SubjectDIR"/xfms/real2fs.world.mat ${mri_segment_args:-})
+	cmd=("$PipelineScripts"/SubcortSegmentNHP.sh "$SubjectDIR" "$SubjectID" "$T1wImage" "$TemplateWMSkeleton" "$SubjectDIR"/xfms/real2fs.world.mat ${mri_segment_args:-})
 	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	mridir=${SubjectDIR}/${SubjectID}/mri

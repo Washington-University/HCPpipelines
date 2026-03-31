@@ -439,7 +439,7 @@ if($#MMode) then
   set T2RibbonEdit = ribbon.edit.mgz;
   if(-f $T2RibbonEdit) then
     set Conf2HiresPath = `dirname $0`
-    ${Conf2HiresPath}/../scripts/IntensityNormalize.sh conf.${MMode}.mgz brainmask.mgz aseg.presurf.mgz -g $T2RibbonEdit -o conf.${MMode}.edit
+    ${Conf2HiresPath}/../scripts/IntensityNormalizeNHP.sh conf.${MMode}.mgz brainmask.mgz aseg.presurf.mgz -g $T2RibbonEdit -o conf.${MMode}.edit
     ln -sf conf.${MMode}.edit.mgz ${MMode}.mgz
   else
     ln -sf conf.${MMode}.mgz ${MMode}.mgz
