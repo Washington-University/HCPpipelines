@@ -1,10 +1,10 @@
 #! /bin/bash
-# RescaleVolumeAndSurface.sh
+# RescaleVolumeAndSurfaceNHP.sh
 
 #set -eu
 
 Usage_exit (){
-echo "RescaleVolumeAndSurface.sh <SubjectDIR> <SubjectID> <ScaleVolumeMatrix (world.mat)> <T1wImage> <T2wImage> <FLAIR|T2|NONE> [ScaleSuffix]"
+echo "RescaleVolumeAndSurfaceNHP.sh <SubjectDIR> <SubjectID> <ScaleVolumeMatrix (world.mat)> <T1wImage> <T2wImage> <FLAIR|T2|NONE> [ScaleSuffix]"
 exit 0;
 }
 [ "$6" = "" ] && Usage_exit
@@ -218,7 +218,7 @@ for hemi in lh rh ; do
 done
 
 # ----------------------------------------------------------------------
-log_Msg "End: RescaleVolumeAndSurface.sh"
+log_Msg "End: RescaleVolumeAndSurfaceNHP.sh"
 # ----------------------------------------------------------------------
 
 log_Msg "END: RescaleVolumeAndSurface"

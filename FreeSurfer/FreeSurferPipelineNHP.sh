@@ -662,7 +662,7 @@ if [ "$RunMode" -lt 2 ] ; then
 		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
 
 		## This section scales them so that FreeSurfer 6 can work properly in scaled space. The data will be
-		## rescaled to the original space by a script, RescaleVolumeAndSurface.sh, after FS was finished - TH 2017-2023 
+		## rescaled to the original space by a script, RescaleVolumeAndSurfaceNHP.sh, after FS was finished - TH 2017-2023 
 		log_Msg "Scale T1w brain volume"		
 		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "${zero_threshold_T1wImage}" "$ScaleFactor" $(remove_ext ${T1wImage})_scaled "$SubjectDIR"/xfms/real2fs.world.mat
 		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled 
@@ -808,7 +808,7 @@ if [ "$RunMode" -lt 3 ] ; then
 
 	## This section replaces function of 'recon-all -gcareg, -canorm and -careg' using FLIRT and FNIRT - TH 2017-2024
 	log_Msg "...registration to GCA template"
-	cmd=("$PipelineScripts"/Conf2GCAReg_FNIRTbased.sh "$SubjectDIR" "$SubjectID" "$GCAdir/$GCA")
+	cmd=("$PipelineScripts"/Conf2GCAReg_FNIRTbasedNHP.sh "$SubjectDIR" "$SubjectID" "$GCAdir/$GCA")
 	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	log_Msg "...third recon-all steps for segmentation with GCA"
@@ -897,11 +897,11 @@ if [ "$RunMode" -lt 5 ]; then
 		#don't quote $recon_all_pial or $conf2hiresflag, we don't want to pass an empty string
 		"${recon_all_cmd[@]}" -cortribbon ${recon_all_pial} "${extra_reconall_args[@]}" ${conf2hiresflag}
 		log_Msg "...rescale volume and surface to native space"
-		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
+		cmd=("$PipelineScripts"/RescaleVolumeAndSurfaceNHP.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
 		echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 	else
 		log_Msg "...rescale volume and surface to native space"
-		cmd=("$PipelineScripts"/RescaleVolumeAndSurface.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
+		cmd=("$PipelineScripts"/RescaleVolumeAndSurfaceNHP.sh "$SubjectDIR" "$SubjectID" "$SubjectDIR"/xfms/real2fs.world.mat "$T1wImage" "$T2wImage" "$T2Type" "$ScaleSuffix")
 		echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 		log_Msg "...fifth recon-all steps for hires white and pial using conf2hires"
 		"${recon_all_cmd[@]}" -cortribbon ${recon_all_pial} "${extra_reconall_args[@]}" ${conf2hiresflag}

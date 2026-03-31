@@ -1,5 +1,5 @@
 #! /bin/bash
-# Conf2GCAReg_FNIRTbased.sh
+# Conf2GCAReg_FNIRTbasedNHP.sh
 # The script registers the brain volume (nu.mgz) to GCA template using FNIRT and creates non-linear transformation warpfield (talairach.m3z).
 #
 # Takuya Hayashi, RIKEN BDR Brain Connectomics Imaging Lab 
