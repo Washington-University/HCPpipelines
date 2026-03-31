@@ -19,7 +19,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source $HCPPIPEDIR/global/scripts/opts.shlib                   # Command line option functions
+
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -78,7 +78,6 @@ T2wImage=$(remove_ext "$5")
 t2_or_flair="$6"
 ScaleSuffix="${7:-_scaled}"
 
-log_SetToolName "RescaleVolumeAndSurface.sh"
 log_Msg "START: RescaleVolumeAndSurface"
 log_Msg "Moving $SubjectID to ${SubjectID}${ScaleSuffix}"
 mv "$SubjectDIR"/"$SubjectID" "$SubjectDIR"/"$SubjectID""$ScaleSuffix"

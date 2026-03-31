@@ -129,7 +129,7 @@ opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by
 # Show usage information
 opts_AddMandatory '--subject' 'SubjectID' 'subject' "Subject ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/subject"
 
-opts_AddOptional '--session-dir' 'SubjectDIR' 'session' 'path to subject directory required' "--subject-dir" "--subjectDIR"
+opts_AddMandatory '--session-dir' 'SubjectDIR' 'session' 'path to freesurfer subject directory required' "--subject-dir" "--subjectDIR"
 
 opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-subject is set' "" "--t1"
 
@@ -157,7 +157,7 @@ opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhesus|M
 
 opts_AddOptional '--runmode' 'RunMode' 'Default|FSinit|FSbrainseg|FSsurfinit|FShires|FSFinish' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish (default: Default)" "Default"
 
-opts_AddMandatory '--scale-factor' 'ScaleFactor' 'number' "Brain scale factor for NHP processing (must match BrainScaleFactor in SetUpSPECIES.sh).  Controls volume rescaling for FreeSurfer and derived parameters in SetUpFSNHP.sh."
+opts_AddMandatory '--scale-factor' 'ScaleFactor' 'number' "Brain scale factor for NHP processing (must match BrainScaleFactor used during PreFreeSurferNHP.sh).  Controls volume rescaling for FreeSurfer and derived parameters in SetUpFSNHP.sh."
 
 opts_ParseArguments "$@"
 

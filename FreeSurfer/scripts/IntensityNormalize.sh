@@ -24,7 +24,6 @@ echo ""
 echo "Useful for suppressing surface errors due to signal inhomogeneity of cortical ribbon (e.g. high myelin, B1 bias) or white matter "
 echo "(e.g. white matter lesions, vascular malformation). Default outputs are <input>.edit.mgz and <input>.edit.biasfield.mgz"
 echo ""
-echo "MANNUALS TO BE WRITTEN"
 
 exit 1;
 }

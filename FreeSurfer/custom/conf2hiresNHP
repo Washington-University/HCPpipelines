@@ -598,7 +598,7 @@ while( $#argv != 0 )
     case "--T1wDivFLAIR":
     case "--t1wdivflair":
       set DoT1wDivFLAIR = 1;
-      set MMode = FLAIR
+      set MMode = T2
       breaksw
     case "--no-t1wdivflair":
     case "--no-T1wDivFLAIR":

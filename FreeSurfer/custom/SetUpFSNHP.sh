@@ -14,7 +14,7 @@ SkullStripMethod=PreFS                                             # PreFS or FS
 SPECIES="$1"
 isFLAIR="$2"    #NOTE: must be "0" or "1"
 isT1wDivFLAIR="$3" #NOTE: must be "0" or "1"
-ScaleFactor="$4" # must match BrainScaleFactor in SetUpSPECIES.sh
+
 
 if [[ "$SPECIES" == *Human* ]] ; then
 

@@ -24,9 +24,7 @@ gca=$3
 
 FNIRTConfig=$HCPPIPEDIR/global/config/T1_2_MNI152_2mm.cnf 
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
-source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
-log_SetToolName "$(basename $0)"
+source $HCPPIPEDIR/global/scripts/log.shlib "$@" # Logging related functions
 
 # ----------------------------------------------------------------------
 log_Msg "Start: $(basename $0)"

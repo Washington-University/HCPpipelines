@@ -25,13 +25,11 @@ ScaleFactor="$2"
 out=$(remove_ext "$3")
 outmat="${4:-}"
 
-source "$HCPPIPEDIR"/global/scripts/log.shlib "$@"  # Logging related functions
-source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"  #also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 
 tempfiles_create scaleVol_XXXXXX.mat tmpmat
 
-log_SetToolName "ScaleVolume.sh"
 # ----------------------------------------------------------------------
 log_Msg "START: ScaleVolume.sh"
 # ----------------------------------------------------------------------
@@ -39,7 +37,7 @@ log_Msg "START: ScaleVolume.sh"
 # ----------------------------------------------------------------------
 log_Msg " reading sform from input"
 # ----------------------------------------------------------------------
-read -a sform <<<"$(wb_command -nifti-information -print-header "$T1wImage".nii.gz  | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' | tr '\n' ' ')"
+read -d '' -a sform <<<"$(wb_command -nifti-information -print-header "$T1wImage".nii.gz  | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}')" || true
 newsform=()
 sumsform=0
 for ((i = 0; i < 12; ++i))

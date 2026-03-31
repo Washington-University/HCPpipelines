@@ -61,9 +61,7 @@ while getopts m:s opt; do
 done
 shift $((OPTIND - 1))
 
-source $HCPPIPEDIR/global/scripts/log.shlib  # Logging related functions
-source $HCPPIPEDIR/global/scripts/opts.shlib # Command line option functions
-log_SetToolName "$(basename $0)"
+source $HCPPIPEDIR/global/scripts/log.shlib "$@"  # Logging related functions
 # ----------------------------------------------------------------------
 log_Msg "Start: $(basename $0)"
 # ----------------------------------------------------------------------
@@ -157,4 +155,3 @@ ${FREESURFER_HOME}/bin/mri_convert -ns 1 -odt uchar "$tmpdir"/orig_restore_scale
 # ----------------------------------------------------------------------
 log_Msg "End: $(basename $0)"
 # ----------------------------------------------------------------------
-exit 0;
