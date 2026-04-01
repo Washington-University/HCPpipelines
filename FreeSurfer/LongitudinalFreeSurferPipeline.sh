@@ -315,7 +315,7 @@ if (( end_stage > 0 )); then
     log_Msg "Running longitudinal recon all for session: ${Session}"
     recon_all_cmd="recon-all.v6.hires"
     recon_all_cmd+=" -sd ${TemplateT1wDir}"
-    recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
+    recon_all_cmd+=" -long ${Session} ${TemplateID} -all -conf2hires"
     
     recon_all_cmd+=" $extra_reconall_args_long "
     T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
