@@ -1,0 +1,1 @@
+mri_cc -aseg aseg.auto_noCCseg.mgz -o aseg.auto.mgz -lta /media/myelin/brainmappers/MyelinMapping_Project/Templates/ChimpYerkes29/mri/transforms/cc_up.lta ChimpYerkes29

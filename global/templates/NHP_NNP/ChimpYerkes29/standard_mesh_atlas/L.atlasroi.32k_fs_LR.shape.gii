@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[L.atlasroi.164k_fs_LR.shape.gii:
+/home/brainmappers/workbench/fetchdir/wb_command.32728 -metric-math ROI > 0 ChimpYerkes29.L.roi0.8.164k_fs_LR.shape.gii -var ROI ChimpYerkes29.L.roi0.8.164k_fs_LR.shape.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Workbench
+Version: Beta 0.83
+Qt Compiled Version: 4.8.4
+Qt Runtime Version: 4.8.1
+commit: 145b742569b533b925634dd123ee63cfa045eb11
+commit date: 2013-11-04 17:05:48 -0600
+Compiled Debug: NO
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/home/brainmappers/workbench/fetchdir/wb_command.362 -metric-resample L.atlasroi.164k_fs_LR.shape.gii fsaverage.L_LR.spherical_std.164k_fs_LR.surf.gii L.sphere.32k_fs_LR.surf.gii BARYCENTRIC L.atlasroi.32k_fs_LR.shape.gii -largest]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{e59e25ea-6b76-4334-b82d-c80a8bf6ff23}]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[#1]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_MAP</ThresholdRangeMode>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[UniqueID]]></Name>
+         <Value><![CDATA[{9f73a087-247b-4790-a837-be3fc33eada8}]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt3EtOw0AQBcDcjKtxdMQCCUWC2E5Pf8b1pFpBpl8nQThZ+PH4/Hj86Tv//fyIaXl33+66xXNxPLvutuNe9umbXXbZYY/pO0zuH909a8+o/xeZr8+Va5PfvbLfT2f7Vr7/p3TVsU+/O3XTaVafLl069KjuUDm/anbF3OyZEfOOzpw059Ws1TNWnh919vP5kef+nB19JkCWqFTvAQAw1aRrqinXgBOuWbtfW3fudyRde2V3O5NufVb3upouPSL7TJ7/boeoVM09Mzt7Zua8rFkZc1bPWHn+qrMnnBl5nsiURFwDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwI6mpvp5AwAAgLuq/nxe/R1B5fyK2RXfy2TPzJyXNStjzuoZK89fdXbWudFndjgrYsd3z7j6+Kuv+5XHnX3Mkd+/ayL+jgAAAAAAAAAAAAAAAAAAAAAAAACot9N95na4f94u9wGcusdPx8n3ZNS9T2e9c7p26ns0U3pW9o1Ix07P/SJ6VmdSr07p1kdERERErqf6Mx7Xr/uru67arbrnnXfaaZ+77VLdMWKP6n537l/d7Wr36l536Fzd6Uzf6j479azu8qpndYeJ3QAAAAAAAAAAAAAAAAAAYIYvcpstyA==</Data>
+</DataArray>
+</GIFTI>

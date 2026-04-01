@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Creators]]></Name>
+         <Value><![CDATA[Takuya Hayashi (RIKEN), Tim Coalson (WUSTL), Takuro Ikeda (RIKEN), Burke Rosen (WUSTL), Erin Reid (WUSTL), Matthew Glasser (WUSTL), David Van Essen (WUSTL)]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[Mac25Rhesus_v4.L.atlasroi_v1.0.32k_fs_LR.shape.gii:
+/usr/local/workbench-v1.5.0/centos/workbench/bin_rh_linux64/../exe_rh_linux64/wb_command -metric-resample Mac25Rhesus_v4.L.atlasroi_v1.0.164k_fs_LR.shape.gii Mac25Rhesus_v4.L.sphere.164k_fs_LR.surf.gii /mnt/temp_data1/HCP/NHPHCPPipeline.dev.fs6/global/templates/NHP_NNP/SpecMac25Rhesus_v4/standard_mesh_atlases/L.sphere.32k_fs_LR.surf.gii ADAP_BARY_AREA Mac25Rhesus_v4.L.atlasroi_v1.0.32k_fs_LR.shape.gii -area-metrics Mac25Rhesus_v4.L.midthickness_va.164k_fs_LR.shape.gii ../../../MNINonLinear/fsaverage_LR32k/Mac25Rhesus_v4.L.midthickness_va.32k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 1.4.2
+Qt Compiled Version: 5.7.0
+Qt Runtime Version: 5.7.0
+Commit: b527c79e526a558637f37c202af18c78cd98fa22
+Commit Date: 2021-02-11 13:49:38 -0600
+Compiled with OpenMP: YES
+Compiler: g++ (/export/gcc-4.8.5/bin)
+Compiler Version: 4.8.5
+Compiled Debug: NO
+Operating System: Linux]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/usr/local/workbench-v1.5.0/centos/workbench/bin_rh_linux64/../exe_rh_linux64/wb_command -metric-math 'A>0.5' Mac25Rhesus_v4.L.atlasroi_v1.0.32k_fs_LR.shape.gii -var A Mac25Rhesus_v4.L.atlasroi_v1.0.32k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Species]]></Name>
+         <Value><![CDATA[Macaca mulatta]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Template Name/Version]]></Name>
+         <Value><![CDATA[Mac25Rhesus_v5]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/mnt/pub/PROJ/NHP_NNP/MacaqueRhesus/SpecMac25Rhesus_v4/Mac25Rhesus_v4/medialwall/Mac25Rhesus_v4_init/MNINonLinear]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[Mac25Rhesus_v5]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_ABSOLUTE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <AutoScaleAbsolutePercentageValues>2.000000 98.000000</AutoScaleAbsolutePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <InvertPalette>OFF</InvertPalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_FILE</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+   <ThresholdOutlineDrawingMode>OFF</ThresholdOutlineDrawingMode>
+   <ThresholdOutlineDrawingColor>WHITE</ThresholdOutlineDrawingColor>
+   <HistogramRangeMode>PALETTE_HISTOGRAM_RANGE_ALL</HistogramRangeMode>
+   <HistogramBarsVisible>true</HistogramBarsVisible>
+   <HistogramEnvelopeVisible>false</HistogramEnvelopeVisible>
+   <HistogramBarsColor>CUSTOM</HistogramBarsColor>
+   <HistogramEnvelopeColor>RED</HistogramEnvelopeColor>
+   <HistogramEnvelopeLineWidthPercentage>0.5</HistogramEnvelopeLineWidthPercentage>
+   <HistogramNumberOfBuckets>100</HistogramNumberOfBuckets>
+   <NumericFormatMode>AUTO</NumericFormatMode>
+   <PrecisionDigits>2</PrecisionDigits>
+   <NumericSubivisions>0</NumericSubivisions>
+   <ColorBarValuesMode>DATA</ColorBarValuesMode>
+   <ShowTickMarksSelected>false</ShowTickMarksSelected>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt2VFOAkEQBFBu5tU8uuHDxBBQFma2q9tXyftBdrp6I2yil8vnx+WwaXnlHnS7F527P5vpe03ebVom7iQiIiIiIiIiIiKSlB1/h33n/0XU/3+teqfpu03ca9pOk/aZssuEPbrvoPv53Tv27ta5U98uXTv0TO+Y3C+1W2KvtE5JfVK6JPSo7vAfZ1fMnTzvrFlnzOl8/q6zd5ybfN6qsxLOqLhWXsvt7+DR5ymw373Pa3ePvoe6+u27tZu/nhVdPPPcS9d9h879u3bv2Ltb50599dzXsbrPb/2quzzqVt2jQ6+0PgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQ0TXVHewyb4/vVPf4j/27du/Y+2equ0zr26Vrh57pHZP7pXa7TXWfxHuV1CelS0KP6g6V86tmV8ydPO+sWWfM2T2j49k7zl195srzqp9L0NVfOXJNWvdVmbDDjp2SMmGH70zY4Zru/a+Z3j85k3qnp3Pf9Oi5Lun9kpN67xJ7pX0Wkr7vUrokPLOqn/WV86tmV8ydPO+sWRNm7LxXu87ece7qM1eet+qsFee8e8Y717967SvXHb3myPuffe8z73vn549+du/129fuPbMAAAAAAAAAAAAAAAAAAAAAAADqfQGJfzha</Data>
+</DataArray>
+</GIFTI>

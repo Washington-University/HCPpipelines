@@ -1,0 +1,59 @@
+Log file for annot2std
+Tue Jun  6 03:11:44 JST 2023
+
+setenv SUBJECTS_DIR /mnt/temp_data1/NHP_NNP/MacaqueRhesus
+cd /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+/usr/local/freesurfer-v6.0.0/bin/annot2std --o label/lh.aparc.annot --lh --f /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/list.subjects.txt --t average/fsaverage --a aparc --srcsurfreg sphere.reg --trgsurfreg sphere.reg
+
+freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.1-f53a55a
+$Id: annot2std,v 1.5 2016/06/13 18:00:34 greve Exp $
+Linux BCIL-G2 2.6.32-754.3.5.el6.x86_64 #1 SMP Tue Aug 14 20:46:41 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+#@# 1/25 A17013101/T1w/A17013101_scaled Tue Jun  6 03:11:44 JST 2023
+mri_annotation2label --subject A17013101/T1w/A17013101_scaled --hemi lh --seg /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh --ctab /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.ctab --annotation aparc --segbase 0
+subject = A17013101/T1w/A17013101_scaled
+annotation = aparc
+hemi = lh
+segfile = /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh
+surface   = white
+
+Reading surface 
+ /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.white
+reading frame -1 of gca
+Loading annotations from /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/label/lh.aparc.annot
+Seg base 0
+Converting to a segmentation
+mri_surf2surf --mapmethod nnf --hemi lh --srcsubject A17013101/T1w/A17013101_scaled --srcsurfreg sphere.reg --sval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh --trgsubject average/fsaverage --trgsurfreg sphere.reg --tval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.std.mgh
+Source registration surface changed to sphere.reg
+Target registration surface changed to sphere.reg
+
+$Id: mri_surf2surf.c,v 1.103 2015/11/05 22:07:33 greve Exp $
+
+setenv SUBJECTS_DIR /mnt/temp_data1/NHP_NNP/MacaqueRhesus
+cd /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage
+mri_surf2surf --mapmethod nnf --hemi lh --srcsubject A17013101/T1w/A17013101_scaled --srcsurfreg sphere.reg --sval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh --trgsubject average/fsaverage --trgsurfreg sphere.reg --tval /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.std.mgh 
+
+sysname  Linux
+hostname BCIL-G2
+machine  x86_64
+user     xnat
+srcsubject = A17013101/T1w/A17013101_scaled
+srcval     = /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh
+srctype    = 
+trgsubject = average/fsaverage
+trgval     = /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.std.mgh
+trgtype    = 
+srcsurfreg = sphere.reg
+trgsurfreg = sphere.reg
+srchemi    = lh
+trghemi    = lh
+frame      = 0
+fwhm-in    = 0
+fwhm-out   = 0
+label-src  = (null)
+label-trg  = (null)
+OKToRevFaceOrder  = 1
+UseDualHemi = 0
+Reading source surface reg /mnt/temp_data1/NHP_NNP/MacaqueRhesus/A17013101/T1w/A17013101_scaled/surf/lh.sphere.reg
+reading frame -1 of gca
+Loading source data
+ERROR: could not read /mnt/temp_data1/NHP_NNP/MacaqueRhesus/average/fsaverage/label/tmpdir.annot2std.219235/seg.1.A17013101/T1w/A17013101_scaled.mgh as type 3

@@ -14,3 +14,7 @@
 
 # nfs temporaries
 .nfs*
+*.gca
+*0.25mm*.nii.gz
+*0.15mm*.nii.gz
+*0.1mm*.nii.gz

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Creators]]></Name>
+         <Value><![CDATA[Takuya Hayashi (RIKEN)]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[L.atlasroi.164k_fs_LR.shape.gii:
+/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -metric-resample /mnt/temp_data1/HCP/NHPHCPPipeline.dev.fs6/global/templates/NHP_NNP/SpecMac25Rhesus_v4/standard_mesh_atlases/L.atlasroi.164k_fs_LR.shape.gii MSMSulc/L.sphere.reg.surf.gii /mnt/temp_data1/HCP/HCPpipelines-5/HCPpipelines/global/templates/standard_mesh_atlases/L.sphere.164k_fs_LR.surf.gii ADAP_BARY_AREA L.atlasroi.164k_fs_LR.shape.gii -area-metrics /mnt/pub/PROJ/NHP_NNP/MacaqueRhesus/SpecMac25Rhesus/Mac25Rhesus_v4/MNINonLinear/Mac25Rhesus_v4.L.midthickness_va.164k_fs_LR.shape.gii /mnt/pub/PROJ/NHP_NNP/MacaqueCyno/SpecMac25Cyno/Mac25Cyno_v4/MNINonLinear/Mac25Cyno_v4.L.midthickness_va.164k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.0
+Qt Compiled Version: 5.7.0
+Qt Runtime Version: 5.7.0
+Commit: a4824b22b46b2d5afa3e543a483f73faea27bcf5
+Commit Date: 2024-06-14 15:38:26 -0500
+Compiler: g++ (/usr/bin)
+Compiler Version: 4.8.4
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -metric-math 'A>0.5' L.atlasroi.164k_fs_LR.shape.gii -var A L.atlasroi.164k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Species]]></Name>
+         <Value><![CDATA[Macaca fascicularis]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Template Name/Version]]></Name>
+         <Value><![CDATA[Mac25Cyno_v5]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/mnt/pub/PROJ/NHP_NNP/MacaqueCyno/SpecMac25Cyno/reg/Mac25Rhesus2Mac25Cyno]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="163842"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[Mac25Rhesus_v4.L.atlasroi_v1.0]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_ABSOLUTE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <AutoScaleAbsolutePercentageValues>2.000000 98.000000</AutoScaleAbsolutePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <InvertPalette>OFF</InvertPalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_FILE</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+   <ThresholdOutlineDrawingMode>OFF</ThresholdOutlineDrawingMode>
+   <ThresholdOutlineDrawingColor>WHITE</ThresholdOutlineDrawingColor>
+   <HistogramRangeMode>PALETTE_HISTOGRAM_RANGE_ALL</HistogramRangeMode>
+   <HistogramBarsVisible>true</HistogramBarsVisible>
+   <HistogramEnvelopeVisible>false</HistogramEnvelopeVisible>
+   <HistogramBarsColor>CUSTOM</HistogramBarsColor>
+   <HistogramEnvelopeColor>RED</HistogramEnvelopeColor>
+   <HistogramEnvelopeLineWidthPercentage>0.5</HistogramEnvelopeLineWidthPercentage>
+   <HistogramNumberOfBuckets>100</HistogramNumberOfBuckets>
+   <NumericFormatMode>AUTO</NumericFormatMode>
+   <PrecisionDigits>2</PrecisionDigits>
+   <NumericSubivisions>0</NumericSubivisions>
+   <ColorBarValuesMode>DATA</ColorBarValuesMode>
+   <ShowTickMarksSelected>false</ShowTickMarksSelected>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>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</Data>
+</DataArray>
+</GIFTI>

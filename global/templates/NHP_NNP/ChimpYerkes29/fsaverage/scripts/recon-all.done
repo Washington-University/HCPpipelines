@@ -1,0 +1,10 @@
+------------------------------
+SUBJECT ChimpYerkes29
+DATE Thu Apr 19 19:32:37 CDT 2012
+USER brainmappers
+HOST brainmappers-desktop1
+PROCESSOR x86_64
+OS Linux
+Linux brainmappers-desktop1 2.6.38-14-generic #58-Ubuntu SMP Tue Mar 27 20:04:55 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+$Id: recon-all,v 1.379.2.17 2011/05/20 22:48:18 nicks Exp $
+/usr/local/bin/freesurfer/bin/recon-all

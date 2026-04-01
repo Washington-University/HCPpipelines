@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[/media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/L.atlasroi.164k_fs_LR.shape.gii:
+/home/brainmappers/workbench/fetchdir/wb_command.32728 -metric-math ROI > 0 ChimpYerkes29.L.roi0.8.164k_fs_LR.shape.gii -var ROI ChimpYerkes29.L.roi0.8.164k_fs_LR.shape.gii
+
+/media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/L.sphere.20k_fs_LR.surf.gii:
+/home/brainmappers/workbench/fetchdir/wb_command.15149 -surface-flip-lr /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/R.sphere.20k_fs_LR.surf.gii /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/L.sphere.20k_fs_LR.surf.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Version: Beta 0.85
+Qt Compiled Version: 4.8.5
+Qt Runtime Version: 4.8.1
+commit: fe9ecd757a4b3ffcc3cd97340f0d814401d86605
+commit date: 2014-04-29 10:37:27 -0500
+Compiled Debug: NO
+Operating System: Linux
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/home/brainmappers/workbench/fetchdir/wb_command.15194 -metric-resample /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/L.atlasroi.164k_fs_LR.shape.gii /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/fsaverage.L_LR.spherical_std.164k_fs_LR.surf.gii /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/L.sphere.20k_fs_LR.surf.gii BARYCENTRIC /media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp/L.atlasroi.20k_fs_LR.shape.gii -largest]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/2TBB/Connectome_Project/Pipelines/global/templates/standard_mesh_atlases_chimp]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="20252"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[#1]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_MAP</ThresholdRangeMode>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt20Fug0AMBdDcrFfr0aPuIlWEYbDHBp6ltyp8/5AqsOH1+v15bfqbb3//dl6Xmelf6Y7Xp8voGTfdO3bu17Vbx15nOmV0nvm9y7qGXX6XdXjm7oq9d9636np23XFkT2Z+p9y97OjMyLyorNmcz6yzGWfOh7uYnereAE/U5Xe4Q4/q+1LlvbHq3lzxbDAyq/dF7T06q/bM7MreMTuZ2Xv5GbnRmZF5UVkROZXnm/4Tec8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5nSc6msCAPA0K57DVjzvZe7IfmbNyM7oHJ0ZmReVlZFTeX72zqPnjB4/+j2MHLd1TJc5838PAAAAAAAAAAAAAAA8U+d3Ejq/O9GxW9d3TnSa+94qOnXpsjcdOmR0+cybnezPO9phtM+KqdhpjDHmObP6ee1OrnJtr9Dz6h11O96tYy99tvvo0adD5f6q3QAAAAAAAAAAAP+9AQNgWJg=</Data>
+</DataArray>
+</GIFTI>

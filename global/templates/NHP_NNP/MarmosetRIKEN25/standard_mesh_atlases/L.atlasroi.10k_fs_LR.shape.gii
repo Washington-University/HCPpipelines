@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Creators]]></Name>
+         <Value><![CDATA[Takuya Hayashi (RIKEN), Akiko Uematsu (RIKEN), Takuro Ikeda (RIKEN), Burke Rosen (WUSTL), Tim Coalson (WUSTL), Matthew Glasser (WUSTL), David Van Essen (WUSTL)]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[medialwall/MarmosetRIKEN25.L.atlasroi.10k_fs_LR.shape.gii:
+/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -metric-resample medialwall/MarmosetRIKEN25.L.atlasroi.164k_fs_LR.shape.gii MarmosetRIKEN25.L.sphere.164k_fs_LR.surf.gii fsaverage_LR10k/MarmosetRIKEN25.L.sphere.10k_fs_LR.surf.gii ADAP_BARY_AREA medialwall/MarmosetRIKEN25.L.atlasroi.10k_fs_LR.shape.gii -area-metrics MarmosetRIKEN25.L.midthickness_va.164k_fs_LR.shape.gii fsaverage_LR10k/MarmosetRIKEN25.L.midthickness_va.10k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.0
+Qt Compiled Version: 5.7.0
+Qt Runtime Version: 5.7.0
+Commit: a4824b22b46b2d5afa3e543a483f73faea27bcf5
+Commit Date: 2024-06-14 15:38:26 -0500
+Compiler: g++ (/usr/bin)
+Compiler Version: 4.8.4
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/usr/local/workbench-v2.0.0/bin_linux64/../exe_linux64/wb_command -metric-math 'A>0.5' medialwall/MarmosetRIKEN25.L.atlasroi.10k_fs_LR.shape.gii -var A medialwall/MarmosetRIKEN25.L.atlasroi.10k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Species]]></Name>
+         <Value><![CDATA[Callithrix jacchus]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Template Name/Version]]></Name>
+         <Value><![CDATA[MarmosetRIKEN25_v3]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/mnt/pub/PROJ/NHP_NNP/Marmoset/SpecMarmosetRIKEN25/MarmosetRIKEN25/MNINonLinear]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="10242"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[medial wall]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[PaletteColorMapping]]></Name>
+         <Value><![CDATA[<PaletteColorMapping Version="1">
+   <ScaleMode>MODE_AUTO_SCALE_ABSOLUTE_PERCENTAGE</ScaleMode>
+   <AutoScalePercentageValues>98.000000 2.000000 2.000000 98.000000</AutoScalePercentageValues>
+   <AutoScaleAbsolutePercentageValues>2.000000 98.000000</AutoScaleAbsolutePercentageValues>
+   <UserScaleValues>-100.000000 0.000000 0.000000 100.000000</UserScaleValues>
+   <PaletteName>ROY-BIG-BL</PaletteName>
+   <InterpolatePalette>true</InterpolatePalette>
+   <InvertPalette>OFF</InvertPalette>
+   <DisplayPositiveData>true</DisplayPositiveData>
+   <DisplayZeroData>false</DisplayZeroData>
+   <DisplayNegativeData>true</DisplayNegativeData>
+   <ThresholdTest>THRESHOLD_TEST_SHOW_OUTSIDE</ThresholdTest>
+   <ThresholdType>THRESHOLD_TYPE_OFF</ThresholdType>
+   <ThresholdFailureInGreen>false</ThresholdFailureInGreen>
+   <ThresholdNormalValues>-1.000000 1.000000</ThresholdNormalValues>
+   <ThresholdMappedValues>-1.000000 1.000000</ThresholdMappedValues>
+   <ThresholdMappedAvgAreaValues>-1.000000 1.000000</ThresholdMappedAvgAreaValues>
+   <ThresholdDataName></ThresholdDataName>
+   <ThresholdRangeMode>PALETTE_THRESHOLD_RANGE_MODE_FILE</ThresholdRangeMode>
+   <ThresholdLowHighLinked>false</ThresholdLowHighLinked>
+   <ThresholdOutlineDrawingMode>OFF</ThresholdOutlineDrawingMode>
+   <ThresholdOutlineDrawingColor>WHITE</ThresholdOutlineDrawingColor>
+   <HistogramRangeMode>PALETTE_HISTOGRAM_RANGE_ALL</HistogramRangeMode>
+   <HistogramBarsVisible>true</HistogramBarsVisible>
+   <HistogramEnvelopeVisible>false</HistogramEnvelopeVisible>
+   <HistogramBarsColor>CUSTOM</HistogramBarsColor>
+   <HistogramEnvelopeColor>RED</HistogramEnvelopeColor>
+   <HistogramEnvelopeLineWidthPercentage>0.5</HistogramEnvelopeLineWidthPercentage>
+   <HistogramNumberOfBuckets>100</HistogramNumberOfBuckets>
+   <NumericFormatMode>AUTO</NumericFormatMode>
+   <PrecisionDigits>2</PrecisionDigits>
+   <NumericSubivisions>0</NumericSubivisions>
+   <ColorBarValuesMode>DATA</ColorBarValuesMode>
+   <ShowTickMarksSelected>false</ShowTickMarksSelected>
+</PaletteColorMapping>
+]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt2VlOwzAUBdDujK2xdMQXCDVOnLzBCedKR4jWfpeKZii8Xt/5/Nj29/mudHav0C8iIiJrZ3Q/tXWPlfVzVKbrPrG6s6PvST0iIk/M7LV/ZV2vu6O3urOyr6qroie7I3P+neZGz1xx1gozOvae2Ze5/uy6vTWzz48enz0mAQAAAAAAAADgqMx0vzbguoxjOXpm5DknalbEufDqjCv7z57Pz1wLZq8jRzKz9q6JPIYAgHWsdE/gHgQAAAAAAAAAfmSms/tIP9zJ1ff1leNndFyJyP9L5zkg+lx3piP79Vf3vevMTmWPiIjUp+teobqzo+9JPSIid0nH58K93urOzL53/RVdd07l3yUyZ0fOz3jfRs+MnBc1K/r/CGdmXNlfuW92z8z6o2uPrNtbM3p+5vHR97+/kmvr93r3vtF7NqMjqye7I3N+1exVZ0bOi5oVPadzf+U+AAAAYHVfI7f9zA==</Data>
+</DataArray>
+</GIFTI>
