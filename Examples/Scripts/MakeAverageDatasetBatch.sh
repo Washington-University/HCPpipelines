@@ -54,12 +54,12 @@ get_batch_options() {
 get_batch_options "$@"
 
 # Default values
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100206 100307 100408" #Space delimited list of subject IDs
 #RegName="NONE"
 RegName="MSMAll"
 
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Set script variables if specified at the command line
 if [ -n "${command_line_specified_study_folder}" ]; then
