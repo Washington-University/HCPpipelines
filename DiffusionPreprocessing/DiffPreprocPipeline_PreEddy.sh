@@ -149,6 +149,17 @@ opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified val
   0 - As 1, but also include uncombined single volumes
 Defaults to 1" "1"
 
+#NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. Human, Chimp, RhesusMacaque, Mac30BS, CynoMacaque, Marmoset, NightMonkey" "Human"
+
+opts_AddOptional '--specieslabel' 'SpeciesLabel' 'number' "Species label for NHP sub-scripts (0=Human, 1=Chimp, 2=Macaque, etc.). Defaults to 0" "0"
+
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data"
+
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data"
+
+opts_AddOptional '--usephasezero' 'UsePhaseZero' 'Boolean' "Use T2w as phase-zero reference volume for NHP topup" "False"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -161,6 +172,7 @@ opts_ShowValues
 #parse booleans
 SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
 EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
+UsePhaseZero=$(opts_StringToBool "$UsePhaseZero")
 
 #defaults that depend on env variables
 if [[ "$TopupConfig" == "" ]]
@@ -205,6 +217,16 @@ validate_scripts() {
 
 	if [[ ! -f "${HCPPIPEDIR_dMRI}"/run_topup.sh ]]; then
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topup.sh not found"
+	fi
+
+	# NHP sub-script validation (only when SPECIES != Human)
+	if [[ "$SPECIES" != "Human" ]]; then
+		if [[ ! -f "${HCPPIPEDIR_dMRI}"/basic_preproc.sh ]]; then
+			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc.sh not found"
+		fi
+		if [[ ! -f "${HCPPIPEDIR_dMRI}"/run_topupNHP.sh ]]; then
+			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topupNHP.sh not found"
+		fi
 	fi
 
 	if [[ "$error_msgs" != "" ]]; then
@@ -286,9 +308,24 @@ for Image in ${PosInputImages}; do
 	else
 		PosVols[${Pos_count}]=$(${FSLDIR}/bin/fslval ${Image} dim4)
 		absname=$(${FSLDIR}/bin/imglob ${Image})
-		${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
-		${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
-		${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] && [[ "$TruePatientPosition" =~ ^(HFS|FFS|HFSx|FFSx)$ ]]; then
+			# NHP: correct/reorient input data based on patient position - TH Aug 2024
+			log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${absname} --out=${outdir}/rawdata/${basePos}_${Pos_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		elif [[ "$SPECIES" != "Human" ]]; then
+			# NHP: fslreorient2std + rotate bvecs
+			${runcmd} ${FSLDIR}/bin/fslreorient2std -m ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		else
+			# Human: simple copy
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+			${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		fi
 	fi
 	Pos_count=$((${Pos_count} + 1))
 done
@@ -309,9 +346,24 @@ for Image in ${NegInputImages}; do
 	else
 		NegVols[${Neg_count}]=$(${FSLDIR}/bin/fslval ${Image} dim4)
 		absname=$(${FSLDIR}/bin/imglob ${Image})
-		${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
-		${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
-		${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] && [[ "$TruePatientPosition" =~ ^(HFS|FFS|HFSx|FFSx)$ ]]; then
+			# NHP: correct/reorient input data based on patient position - TH Aug 2024
+			log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${absname} --out=${outdir}/rawdata/${baseNeg}_${Neg_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		elif [[ "$SPECIES" != "Human" ]]; then
+			# NHP: fslreorient2std + rotate bvecs
+			${runcmd} ${FSLDIR}/bin/fslreorient2std -m ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		else
+			# Human: simple copy
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+			${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		fi
 	fi
 	Neg_count=$((${Neg_count} + 1))
 done
@@ -394,36 +446,59 @@ if [[ ${Paired_flag} == 0 && ${SelectBestB0} == 0 ]]; then
 	log_Err_Abort "This will work, provided that --combine-data-flag=2 is used"
 fi
 
-log_Msg "Running Intensity Normalisation"
-${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
+if [[ "$SPECIES" == "Human" ]]; then
+	# Human: intensity normalisation + select-best-b0 or sequence-based b0 extraction
+	log_Msg "Running Intensity Normalisation"
+	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 
-if ((SelectBestB0)); then
-	log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
-	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
-else
-	log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
-	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
-fi
-
-if ((EnsureEvenSlices)); then
-	dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
-	if [[ $(isodd "$dimz") == 1 ]]; then
-		echo "Removing one slice from data to get even number of slices"
-		for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
-			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
-			${runcmd} ${FSLDIR}/bin/imrm ${outdir}/topup/${filename}
-			${runcmd} ${FSLDIR}/bin/immv ${outdir}/topup/${filename}_tmp ${outdir}/topup/${filename}
-		done
-		${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/eddy/Pos_Neg ${outdir}/eddy/Pos_Neg_tmp 0 -1 0 -1 1 -1
-		${runcmd} ${FSLDIR}/bin/imrm ${outdir}/eddy/Pos_Neg
-		${runcmd} ${FSLDIR}/bin/immv ${outdir}/eddy/Pos_Neg_tmp ${outdir}/eddy/Pos_Neg
+	if ((SelectBestB0)); then
+		log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
+		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
 	else
-		echo "Skipping slice removal, because data already has an even number of slices"
+		log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
+		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 	fi
-fi
 
-log_Msg "Running Topup"
-${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
+	if ((EnsureEvenSlices)); then
+		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
+		if [[ $(isodd "$dimz") == 1 ]]; then
+			echo "Removing one slice from data to get even number of slices"
+			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
+				${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
+				${runcmd} ${FSLDIR}/bin/imrm ${outdir}/topup/${filename}
+				${runcmd} ${FSLDIR}/bin/immv ${outdir}/topup/${filename}_tmp ${outdir}/topup/${filename}
+			done
+			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/eddy/Pos_Neg ${outdir}/eddy/Pos_Neg_tmp 0 -1 0 -1 1 -1
+			${runcmd} ${FSLDIR}/bin/imrm ${outdir}/eddy/Pos_Neg
+			${runcmd} ${FSLDIR}/bin/immv ${outdir}/eddy/Pos_Neg_tmp ${outdir}/eddy/Pos_Neg
+		else
+			echo "Skipping slice removal, because data already has an even number of slices"
+		fi
+	fi
+
+	log_Msg "Running Topup"
+	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
+else
+	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topupNHP
+	log_Msg "Running Basic Preprocessing"
+	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
+
+	log_Msg "Running Topup"
+	# Add T2w as a phase-zero volume if available and requested - TH Jan 2023
+	if ((UsePhaseZero)) && [[ $(${FSLDIR}/bin/imtest ${StudyFolder}/${Session}/T2w/T2w.nii.gz) == 1 ]]; then
+		T2wImage=${StudyFolder}/${Session}/T2w/T2w.nii.gz
+		# Use scanner coordinate for initial registration between T2w and dMRI - TH Jan 2023
+		${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${outdir}/topup/T2w2dMRI.mat ${T2wImage} ${outdir}/topup/Pos_b0.nii.gz
+		${FSLDIR}/bin/flirt -in ${T2wImage} -ref ${outdir}/topup/Pos_b0.nii.gz -applyxfm -init ${outdir}/topup/T2w2dMRI.mat -o ${outdir}/topup/Zero.nii.gz
+		${FSLDIR}/bin/immv ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0
+		${FSLDIR}/bin/fslmerge -t ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0 ${outdir}/topup/Zero
+		${FSLDIR}/bin/fslmaths ${outdir}/topup/Pos_Neg_b0 -inm 10000 ${outdir}/topup/Pos_Neg_b0
+		cp ${outdir}/topup/acqparams.txt ${outdir}/topup/acqparams_NoZero.txt
+		cat ${outdir}/topup/acqparams.txt | tail -1 | awk '{print $1,$2,0,0.01}' >> ${outdir}/topup/acqparams.txt
+	fi
+
+	${runcmd} ${HCPPIPEDIR_dMRI}/run_topupNHP.sh ${outdir}/topup ${TopupConfig} ${SpeciesLabel}
+fi
 
 log_Msg "Completed!"
 
