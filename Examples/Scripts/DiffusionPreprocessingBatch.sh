@@ -126,10 +126,17 @@ for Subject in $Subjlist ; do
   # volume per pair. This reduces file size by 2x (and thence speeds subsequent processing) and
   # avoids having volumes with different SNR features/ residual distortions.
   # [This behavior can be changed via the --combine-data-flag if necessary].
-  
+
+  #Fully paired data
   PosData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_RL.nii.gz"
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"
-  
+  CombineDataFlag=1
+
+  #b0s only paired
+  #PosData="${RawDataDir}/Diffusion6b0_PA.nii.gz"
+  #NegData="${RawDataDir}/Diffusion64DWI6b0_AP.nii.gz"
+  #CombineDataFlag=2
+
   # "Effective" Echo Spacing of dMRI image (now specified in seconds for the dMRI processing)
   # EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
   #   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
@@ -159,6 +166,7 @@ for Subject in $Subjlist ; do
       --path="${StudyFolder}" --subject="${SubjectID}" \
       --echospacing-seconds="${EchoSpacingSec}" --PEdir="${PEdir}" \
       --gdcoeffs="${Gdcoeffs}" \
+      --combine-data-flag=${CombineDataFlag} \
       --printcom="$PRINTCOM"
 
 done
