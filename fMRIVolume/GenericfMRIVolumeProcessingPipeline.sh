@@ -697,7 +697,8 @@ else
         elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
         	continue
         else
-            cp -r "$fd" "$fMRIFolderLong/"
+            cp -rL "$fd" "$fMRIFolderLong/"
+            chmod -R u+w "$fMRIFolderLong/"
         fi
     done
 fi
