@@ -893,6 +893,16 @@ if (( IsLongitudinal )); then
         EchoDir="${fMRIFolder}/MultiEcho"
         mkdir -p "$EchoDir"
     fi
+    sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+    #update UseBiasFieldMNI variable for downstream longitudinal processing. Only need to update non-empty, valid values (error checking done earlier in the script)
+    case "$BiasCorrection" in
+        LEGACY)
+            UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
+            ;;
+        SEBASED)
+            UseBiasFieldMNI="$sebasedBiasFieldMNI"
+            ;;
+    esac
 fi
 
 #EPI Distortion Correction and EPI to T1w Registration
