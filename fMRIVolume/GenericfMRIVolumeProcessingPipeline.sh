@@ -698,7 +698,6 @@ else
         	continue
         else
             cp -rL "$fd" "$fMRIFolderLong/"
-            chmod -R u+w "$fMRIFolderLong/"
         fi
     done
 fi
