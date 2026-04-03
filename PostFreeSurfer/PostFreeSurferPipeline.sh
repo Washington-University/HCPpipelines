@@ -88,8 +88,6 @@ opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correct
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
-
-
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
 opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the mean of the session's myelin map as reference map's myelin map mean, defaults to 'YES'" 'YES'
 opts_AddOptional '--thickness-regression' 'ThicknessReg' 'OLD, NEW or BOTH' "whether to use the updated curvature-thickness regression, defaults to 'BOTH'
@@ -124,8 +122,8 @@ opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Lon
 #NHP options
 opts_AddOptional '--species' 'Species' 'Species to be processed' "Set target species for non-human primate processing [Human]" "Human"
 
-opts_AddOptional '--myelin-volume-fwhm' 'MyelinVolumeFWHM' 'float' "Myelin mapping volume smoothing FWHM" "2"
-opts_AddOptional '--myelin-surface-fwhm' 'MyelinSurfaceFWHM' 'float' "Myelin mapping surface smoothing FWHM" "2"
+opts_AddOptional '--myelin-volume-fwhm' 'MyelinVolumeFWHM' 'float' "Myelin mapping volume smoothing FWHM" "5"
+opts_AddOptional '--myelin-surface-fwhm' 'MyelinSurfaceFWHM' 'float' "Myelin mapping surface smoothing FWHM" "4"
 opts_AddOptional '--msmsulc-conf' 'MSMSulcConf' 'string' 'MSMSulc configuration' "MSMSulcStrainFinalconf"
 opts_AddOptional '--flatmap-root-name' 'FlatMapRootName' 'string' 'Flat map root name' "colin.cerebral"
 
