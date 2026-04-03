@@ -78,6 +78,7 @@ for Hemisphere in $Hemi ; do
 	ReferenceMesh="$(cd "$(dirname -- "$RefMesh")"; pwd)/${RefMeshFile/HEMISPHERE/$Hemisphere}"
 	RefDataFile=$(basename -- "$RefData")
 	ReferenceData="$(cd "$(dirname -- "$RefData")"; pwd)/${RefDataFile/HEMISPHERE/$Hemisphere}"
+
 	(
 		cd "$NativeFolder"/"$RegName"
 

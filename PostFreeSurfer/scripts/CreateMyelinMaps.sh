@@ -1,43 +1,19 @@
 #!/bin/bash
 set -eu
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
-
-script_name=$(basename "${0}")
-
-show_usage() {
-	cat <<EOF
-
-${script_name}: Sub-script of PostFreeSurferPipeline.sh
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
-fi
-
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
+pipedirguessed=0 
+if [[ "${HCPPIPEDIR:-}" == "" ]] 
+then 
+    pipedirguessed=1 
+    #fix this if the script is more than one level below HCPPIPEDIR 
+    export HCPPIPEDIR="$(dirname -- "$0")/../.." 
 fi
 
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
-
-opts_ShowVersionIfRequested $@
-
-if opts_CheckForHelpRequest $@; then
-	show_usage
-	exit 0
-fi
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -47,54 +23,71 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
 
-# ------------------------------------------------------------------------------
-#  Start work
-# ------------------------------------------------------------------------------
+opts_SetScriptDescription "takes FreeSurfer output folder and converts files into HCP format/organization, etc."
 
+
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
+opts_AddMandatory '--session' 'Session' 'session ID' "session (timepoint, visit) label"
+opts_AddMandatory '--atlas-space-folder' 'AtlasSpaceFolder' 'folder' "atlas space folder"
+opts_AddOptional '--native-folder' 'NativeFolder' "native folder" "Native"
+opts_AddMandatory '--t1w-folder' 'T1wFolder' 'folder' "location of T1w images"
+opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'mesh' "high resolution mesh"
+opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshes' "low resolution meshes"
+opts_AddOptional '--original-t1w-image' 'OrginalT1wImage' "original T1w image name" "T1w"
+opts_AddOptional '--original-t2w-image' 'OrginalT2wImage' "original T2w image name" "T2w"
+opts_AddOptional '--t1w-image-brain-mask' 'T1wImageBrainMask' "T1w brain mask image name" "brainmask_fs"
+opts_AddOptional '--initial-t1w-transform' 'InitialT1wTransform' "initial T1w transform filename" "acpc.mat"
+opts_AddOptional '--dc-t1w-transform' 'dcT1wTransform' "distortion corrected T1w transform" "T1w_dc.nii.gz"
+opts_AddOptional '--initial-t2w-transform' 'InitialT2wTransform' "initial T2w transform filename" "acpc.mat"
+opts_AddOptional '--dc-t2w-transform' 'dcT2wTransform' "distortion corrected T2w transform" "T2w_reg_dc.nii.gz"
+opts_AddMandatory '--final-t2w-transform' 'FinalT2wTransform' 'path' "final T2w to T1w transform"
+opts_AddMandatory '--atlas-transform' 'AtlasTransform' 'path' "atlas transform"
+opts_AddOptional '--bias-field' 'BiasField' "bias field filename" "BiasField_acpc_dc"
+opts_AddOptional '--output-t1w-image' 'OutputT1wImage' "output T1w image name" "T1w_acpc_dc"
+opts_AddOptional '--output-t1w-image-restore' 'OutputT1wImageRestore' "output restored T1w image name" "T1w_acpc_dc_restore"
+opts_AddOptional '--output-t1w-image-restore-brain' 'OutputT1wImageRestoreBrain' "output restored brain T1w image name" "T1w_acpc_dc_restore_brain"
+opts_AddOptional '--output-mni-t1w-image' 'OutputMNIT1wImage' "output MNI T1w image name" "T1w"
+opts_AddOptional '--output-mni-t1w-image-restore' 'OutputMNIT1wImageRestore' "output restored MNI T1w image name" "T1w_restore"
+opts_AddOptional '--output-mni-t1w-image-restore-brain' 'OutputMNIT1wImageRestoreBrain' "output restored brain MNI T1w image name" "T1w_restore_brain"
+opts_AddOptional '--output-t2w-image' 'OutputT2wImage' "output T2w image name" "T2w_acpc_dc"
+opts_AddOptional '--output-t2w-image-restore' 'OutputT2wImageRestore' "output restored T2w image name" "T2w_acpc_dc_restore"
+opts_AddOptional '--output-t2w-image-restore-brain' 'OutputT2wImageRestoreBrain' "output restored brain T2w image name" "T2w_acpc_dc_restore_brain"
+opts_AddOptional '--output-mni-t2w-image' 'OutputMNIT2wImage' "output MNI T2w image name" "T2w"
+opts_AddOptional '--output-mni-t2w-image-restore' 'OutputMNIT2wImageRestore' "output restored MNI T2w image name" "T2w_restore"
+opts_AddOptional '--output-mni-t2w-image-restore-brain' 'OutputMNIT2wImageRestoreBrain' "output restored brain MNI T2w image name" "T2w_restore_brain"
+opts_AddOptional '--output-orig-t1w-to-t1w' 'OutputOrigT1wToT1w' "original T1w to T1w transform output" "OrigT1w2T1w.nii.gz"
+opts_AddOptional '--output-orig-t1w-to-standard' 'OutputOrigT1wToStandard' "original T1w to standard transform output" "OrigT1w2standard.nii.gz"
+opts_AddOptional '--output-orig-t2w-to-t1w' 'OutputOrigT2wToT1w' "original T2w to T1w transform output" "OrigT2w2T1w.nii.gz"
+opts_AddOptional '--output-orig-t2w-to-standard' 'OutputOrigT2wToStandard' "original T2w to standard transform output" "OrigT2w2standard.nii.gz"
+opts_AddOptional '--bias-field-output' 'BiasFieldOutput' "bias field output name" "BiasField"
+opts_AddMandatory '--t1w-mni-image-brain-mask' 'T1wMNIImageBrainMask' 'path' "T1w MNI brain mask"
+opts_AddOptional '--jacobian' 'Jacobian' "nonlinear registration Jacobian filename" "NonlinearRegJacobians.nii.gz"
+opts_AddMandatory '--reference-myelin-maps' 'ReferenceMyelinMaps' 'path' "reference myelin maps"
+opts_AddMandatory '--correction-sigma' 'CorrectionSigma' 'value' "myelin correction sigma"
+opts_AddMandatory '--reg-name' 'RegName' 'name' "registration name"
+opts_AddMandatory '--use-ind-mean' 'UseIndMean' 'flag' "use individual mean"
+opts_AddMandatory '--is-longitudinal' 'IsLongitudinal' 'flag' "longitudinal processing mode"
+opts_AddMandatory '--thickness-reg' 'ThicknessReg' 'value' "thickness registration parameter"
+opts_AddMandatory '--species' 'Species' 'species' "species"
+#5 is default for human species.
+opts_AddOptional '--myelin-volume-fwhm' 'MyelinMappingFWHM' 'value' "myelin volume smoothing FWHM" "5"
+#4 is default for human species.
+opts_AddOptional '--myelin-surface-fwhm' 'SurfaceSmoothingFWHM' 'value' "myelin surface smoothing FWHM" "4"
+opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed)) 
+then 
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh" 
+fi 
+
+#display the parsed/default values
+opts_ShowValues
+
+
+#start work
 log_Msg "START"
-
-StudyFolder="${1}"
-Session="${2}"
-AtlasSpaceFolder="${3}"
-NativeFolder="${4}"
-T1wFolder="${5}"
-HighResMesh="${6}"
-LowResMeshes="${7}"
-OrginalT1wImage="${8}"
-OrginalT2wImage="${9}"
-T1wImageBrainMask="${10}"
-InitialT1wTransform="${11}"
-dcT1wTransform="${12}"
-InitialT2wTransform="${13}"
-dcT2wTransform="${14}"
-FinalT2wTransform="${15}"
-AtlasTransform="${16}"
-BiasField="${17}"
-OutputT1wImage="${18}"
-OutputT1wImageRestore="${19}"
-OutputT1wImageRestoreBrain="${20}"
-OutputMNIT1wImage="${21}"
-OutputMNIT1wImageRestore="${22}"
-OutputMNIT1wImageRestoreBrain="${23}"
-OutputT2wImage="${24}"
-OutputT2wImageRestore="${25}"
-OutputT2wImageRestoreBrain="${26}"
-OutputMNIT2wImage="${27}"
-OutputMNIT2wImageRestore="${28}"
-OutputMNIT2wImageRestoreBrain="${29}"
-OutputOrigT1wToT1w="${30}"
-OutputOrigT1wToStandard="${31}"
-OutputOrigT2wToT1w="${32}"
-OutputOrigT2wToStandard="${33}"
-BiasFieldOutput="${34}"
-T1wMNIImageBrainMask="${35}"
-Jacobian="${36}"
-ReferenceMyelinMaps="${37}"
-CorrectionSigma="${38}"
-RegName="${39}"
-UseIndMean="${40}"
-IsLongitudinal="${41}"
-ThicknessReg="${42}"
 
 case "$ThicknessReg" in
     (NEW|OLD|BOTH)
@@ -110,10 +103,15 @@ verbose_echo " "
 verbose_red_echo " ===> Running ${script_name}"
 verbose_echo " "
 
+NonHumanSpecies=0
+if [ "$Species" != "human" ]; then NonHumanSpecies=1; fi
+
 # -- check for presence of T2w image
 if [ -z "$IsLongitudinal" ]; then IsLongitudinal=0; fi
 
 if (( IsLongitudinal )); then
+	if (( NonHumanSpecies )); then log_Err_Abort "NHP not supported in longitudinal mode"; fi
+
 	if [ `${FSLDIR}/bin/imtest "$T1wFolder/T2w_acpc_dc.nii.gz"` -eq 0 ]; then
 		T2wPresent="NO"
 	else
@@ -129,8 +127,11 @@ fi
 
 LeftGreyRibbonValue="3"
 RightGreyRibbonValue="42"
-MyelinMappingFWHM="5"
-SurfaceSmoothingFWHM="4"
+
+echo "MyelinMappingFWHM=$MyelinMappingFWHM"
+echo "SurfaceSmoothingFWHM=$SurfaceSmoothingFWHM"
+echo "CorrectionSigma=$CorrectionSigma"
+
 MyelinMappingSigma=`echo "$MyelinMappingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 SurfaceSmoothingSigma=`echo "$SurfaceSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 
@@ -179,6 +180,11 @@ if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality i
 	fslmaths "$OutputMNIT2wImage" -abs "$OutputMNIT2wImage" -odt float
 	fslmaths "$OutputMNIT2wImage" -div "$BiasFieldOutput" "$OutputMNIT2wImageRestore"
 	fslmaths "$OutputMNIT2wImageRestore" -mas "$T1wMNIImageBrainMask" "$OutputMNIT2wImageRestoreBrain"
+
+	# Create "$OrginalT2wImage"_brainmask_fs for fMRIVolume and diffusion preprocessing
+	invwarp -w "$OutputOrigT2wToT1w" -r "$OrginalT2wImage" -o "$(remove_ext $OutputOrigT2wToT1w)"Inv
+	applywarp --interp=trilinear -i "$T1wImageBrainMask" -w "$(remove_ext $OutputOrigT2wToT1w)"Inv -r "$OrginalT2wImage" -o "$(remove_ext $OrginalT2wImage)"_brainmask_fs
+	fslmaths "$(remove_ext $OrginalT2wImage)"_brainmask_fs -thr 0.5 -bin "$(remove_ext $OrginalT2wImage)"_brainmask_fs
 	fi
 fi
 
@@ -223,6 +229,7 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -volume-to-surface-mapping "$T1wFolder"/T1wDividedByT2w.nii.gz "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii -myelin-style "$T1wFolder"/temp_ribbon.nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$MyelinMappingSigma"
     rm "$T1wFolder"/temp_ribbon.nii.gz
     ${CARET7DIR}/wb_command -metric-smoothing "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".MyelinMap.native.func.gii "$SurfaceSmoothingSigma" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".SmoothedMyelinMap.native.func.gii -roi "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
+
   fi
 
   for STRING in $MapListFunc ; do
@@ -278,12 +285,12 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	# determine the resolution of the reference myelin map
 	IsRefValid=false
 	# append the HighResMesh into the full ResMesh array
-	AllAvailableMeshesArray="${LowResMeshesArray[@]}"
+	AllAvailableMeshesArray=("${LowResMeshesArray[@]}")
 	AllAvailableMeshesArray+=(${HighResMesh})
 	NumRefSurfVertices=$(${CARET7DIR}/wb_command -file-information "$ReferenceMyelinMaps" -only-cifti-xml | grep -m 1 -oP 'SurfaceNumberOf(Vertices|Nodes)="\K\d+')
 	# compare vertex numbers between mesh files in the template directory and the input reference myelin map
 	for ResMesh in "${AllAvailableMeshesArray[@]}" ; do
-		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${HCPPIPEDIR}/global/templates/standard_mesh_atlases/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
+		NumSurfVertices=$(grep -m 1 -oP 'Dim0="\K\d+' ${SurfaceAtlasDIR}/L.atlasroi.${ResMesh}k_fs_LR.shape.gii)
 		if [ "$NumRefSurfVertices" = "$NumSurfVertices" ]; then
 			RefResMesh=${ResMesh}
 			IsRefValid=true
@@ -312,6 +319,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	LowResMesh="${LowResMeshesArray[0]}"
 	MyelinTargetFile=${ReferenceMyelinMaps}
 	# only resample the reference map into low res mesh if it isn't the first LowResMesh
+
 	if [ "$RefResMesh" != "${LowResMesh}" ]; then
 		log_Msg "resample the reference map with ${NumRefSurfVertices} ~ ${RefResMesh}k vertices into low res mesh"
 		MyelinTargetFile=${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.RefMyelinMap.${LowResMesh}k_fs_LR.dscalar.nii
@@ -341,8 +349,10 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		--use-ind-mean="$UseIndMean" \
 		--low-res-mesh="$LowResMesh" \
 		--myelin-target-file="$MyelinTargetFile" \
-		--map="MyelinMap"
-	# ----- End moved statements -----
+		--map="MyelinMap" \
+		--mcsigma="$CorrectionSigma"
+
+	# ----- End moved statements -----		
 	# bias field is computed in the module MyelinMap_BC.sh
 	${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${NativeFolder}/${Session}.BiasField.native.dscalar.nii COLUMN \
 		-metric CORTEX_LEFT ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.BiasField.native.func.gii \
@@ -397,6 +407,7 @@ if [ "${T2wPresent}" = "YES" ] ; then
 		done
 	done
 fi
+
 #Add CIFTI Maps to Spec Files
 
 MapListDscalar="corrThickness@dscalar"
