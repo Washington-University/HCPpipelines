@@ -40,17 +40,17 @@ opts_AddMandatory '--t1w-folder' 'T1wFolder' 'folder' "location of T1w images"
 opts_AddMandatory '--atlas-space-folder' 'AtlasSpaceFolder' 'folder' "atlas space folder"
 opts_AddOptional '--native-folder' 'NativeFolder' "native folder" "Native"
 opts_AddMandatory '--freesurfer-folder' 'FreeSurferFolder' 'folder' "FreeSurfer folder"
-opts_AddOptional '--freesurfer-input' 'FreeSurferInput' "FreeSurfer input image" "T1w_acpc_dc_restore_1mm"
-opts_AddOptional '--t1w-image' 'T1wImage' "T1w image" "T1w_acpc_dc"
-opts_AddOptional '--t2w-image' 'T2wImage' "T2w image" "T2w_acpc_dc"
+opts_AddOptional '--freesurfer-input' 'FreeSurferInput' "filename stem" "FreeSurfer input image" "T1w_acpc_dc_restore_1mm"
+opts_AddOptional '--t1w-image' 'T1wImage' "filename stem" "T1w image" "T1w_acpc_dc_restore"
+opts_AddOptional '--t2w-image' 'T2wImage' "filename stem" "T2w image" "T2w_acpc_dc_restore"
 opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'mesh' "high resolution mesh"
 opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshes' "low resolution meshes"
 opts_AddMandatory '--atlas-transform' 'AtlasTransform' 'path' "atlas transform"
 opts_AddMandatory '--inverse-atlas-transform' 'InverseAtlasTransform' 'path' "inverse atlas transform"
-opts_AddOptional '--atlas-space-t1w-image' 'AtlasSpaceT1wImage' "atlas space T1w image" "T1w_restore"
-opts_AddOptional '--atlas-space-t2w-image' 'AtlasSpaceT2wImage' "atlas space T2w image" "T2w_restore"
-opts_AddOptional '--t1w-image-brain-mask' 'T1wImageBrainMask' "T1w image brain mask" "brainmask_fs"
+opts_AddOptional '--atlas-space-t1w-image' 'AtlasSpaceT1wImage' "filename stem" "atlas space T1w image" "T1w_restore"
+opts_AddOptional '--atlas-space-t2w-image' 'AtlasSpaceT2wImage' "filename stem" "atlas space T2w image" "T2w_restore"
+opts_AddOptional '--t1w-image-brain-mask' 'T1wImageBrainMask' "filename stem" "T1w image brain mask" "brainmask_fs"
 opts_AddMandatory '--freesurfer-labels' 'FreeSurferLabels' 'path' "FreeSurfer labels"
 opts_AddMandatory '--grayordinates-space-dir' 'GrayordinatesSpaceDIR' 'path' "grayordinates space directory"
 opts_AddMandatory '--grayordinates-resolutions' 'GrayordinatesResolutions' 'resolutions' "grayordinates resolutions"
@@ -432,12 +432,7 @@ for Hemisphere in L R ; do
         mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
         if [ "$LongitudinalMode" == "NONE" ]; then
             cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-            if (( NonHumanSpecies )); then 
-
-                $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
-            else                 
-                $HCPPIPEDIR/global/scripts/MSMSulc.sh --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
-            fi
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere"
         elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
             #average surfaces from different timepoints
             average_cmd_args=()
