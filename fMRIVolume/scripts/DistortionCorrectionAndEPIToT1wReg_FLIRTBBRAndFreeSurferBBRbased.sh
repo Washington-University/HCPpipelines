@@ -649,8 +649,10 @@ if (( ! IsLongitudinal )); then
     fi
 else # IsLongitudinal=1
 
-    ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat
-    cp ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat
+    ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat    
+    #cp -f would keep existing symlink if its target is writable, but we want to create a normal file, so removing target first.
+    rm -f ${WD}/fMRI2str_refinement.mat
+    cp -f ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat
 fi
 
 ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz

@@ -168,6 +168,7 @@ then
     signalTxtName="ReCleanSignal.txt"
 fi
 
+SesslistRawCross="$SesslistRaw"
 if ((IsLongitudinal)); then
     if [[ "$ICAmode" != "REUSE_TICA" ]]; then
         log_Err_Abort "mode other than REUSE_TICA is not supported in longitudinal processing"
@@ -183,6 +184,7 @@ if ((IsLongitudinal)); then
     for sess in "${SesslistCross[@]}"; do
         Sesslist+=("${sess}.long.$TemplateLong")
     done
+    SesslistStr="${Sesslist[@]}"; SesslistRaw="${SesslistStr// /@}"
 else
     IFS='@' read -a Sesslist <<<"$SesslistRaw"
 fi
@@ -760,7 +762,7 @@ if (( IsLongitudinal )); then
     "$HCPPIPEDIR"/tICA/scripts/tICAMakeCleanLongitudinalTemplate.sh \
         --study-folder="$StudyFolder"       \
         --subject="$Subject"                \
-        --session-list="$SesslistRaw"       \
+        --session-list="$SesslistRawCross"       \
         --template-long="$TemplateLong"     \
         --extract-fmri-name-list="$concatNamesToUse" \
         --highpass="$HighPass"              \

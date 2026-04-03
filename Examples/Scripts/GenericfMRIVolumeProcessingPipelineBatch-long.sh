@@ -131,10 +131,7 @@ for i in "${!Subjects[@]}"; do
 	for TimepointCross in "${Timepoint_list_cross[@]}"; do
 		echo "${SCRIPT_NAME}: Processing Timepoint: ${TimepointCross}"
 		TimepointLong=${TimepointCross}.long.${TemplateLong}
-		
-		#symlink unprocessed data to the longitudinal session.
-		echo ln -sfr "${StudyFolder}/${TimepointCross}/unprocessed" "${StudyFolder}/${TimepointLong}/unprocessed"
-		
+				
 		if (( $? )); then 
 			echo "ERROR: linking fMRI raw data to longitudinal session failed."
 			exit -1

@@ -246,7 +246,7 @@ if ((DoVol))
 then
     for fmri in "${InputArray[@]}"
     do
-        fslcpgeom "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" "$MNIFolder/Results/$fmri/${fmri}${OutString}.nii.gz"        
+        fslcpgeom "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" "$MNIFolder/Results/$fmri/${fmri}${OutString}.nii.gz"
         fslcpgeom "$MNIFolder/Results/$fmri/${fmri}${ProcString}_vn.nii.gz" "$MNIFolder/Results/$fmri/${fmri}${OutString}_vn.nii.gz"
     done
 fi
@@ -261,6 +261,7 @@ then
     #extract specified runs to another concatenated file (generally intended to recreate the REST concatenated set)
     if [[ "$extractNameOut" != "" ]]
     then
+        mkdir -p "$MNIFolder/Results/$extractNameOut"
         cp "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}_vn.dscalar.nii" \
             "$MNIFolder/Results/$extractNameOut/${extractNameOut}_Atlas${RegString}${OutString}_vn.dscalar.nii"
         extractcmd=("$HCPPIPEDIR"/global/scripts/ExtractFromMRFIXConcat.sh

@@ -470,7 +470,7 @@ T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
 T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
 T1wFolder="T1w" #Location of T1w images
-AtlasSpaceFolder="MNINonLinear"
+AtlasSpaceFolderBase="MNINonLinear"
 ResultsFolder="Results"
 BiasField="BiasField_acpc_dc"
 BiasFieldMNI="BiasField"
@@ -497,7 +497,7 @@ SessionFolderLong="$Path"/"$SessionLong"
 
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
 #this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
-sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
 
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
@@ -601,7 +601,7 @@ else
   log_Msg "Using reference image from ${fMRIReferencePath}"
   fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
   fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_gdc_mask
-  ReferenceResultsFolder="$Path"/"$Session"/"$AtlasSpaceFolder"/"$ResultsFolder"/"$fMRIReference"
+  ReferenceResultsFolder="$Path"/"$Session"/"$AtlasSpaceFolderBase"/"$ResultsFolder"/"$fMRIReference"
 
   if [ "$fMRIReferencePath" = "$fMRIFolder" ] ; then
     log_Err_Abort "Specified fMRI reference (--fmriref=${fMRIReference}) is the same as the current fMRI (--fmriname=${NameOffMRI})!"
@@ -666,13 +666,13 @@ T1wFolderLong="$Path"/"$SessionLong"/"$T1wFolder"
 T1wFolder=$T1wFolderCross
 
 
-AtlasSpaceFolderCross="$Path"/"$Session"/"$AtlasSpaceFolder"
-AtlasSpaceFolderLong="$Path"/"$SessionLong"/"$AtlasSpaceFolder"
-AtlasSpaceFolder=$AtlasSpaceFolderCross
+AtlasSpaceFolderCross="$Path"/"$Session"/"$AtlasSpaceFolderBase"
+AtlasSpaceFolderLong="$Path"/"$SessionLong"/"$AtlasSpaceFolderBase"
+AtlasSpaceFolder="$AtlasSpaceFolderCross"
 
 ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
-ResultsFolder=$ResultsFolderCross
+ResultsFolder="$ResultsFolderCross"
 
 if (( ! IsLongitudinal )); then
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
@@ -689,14 +689,16 @@ else
     mkdir -p "$fMRIFolderLong"
     for fd in "$fMRIFolder"/*; do
         fname="$(basename "$fd")"
-        #create link to the original fMRI series
+        # create relative link to the original fMRI series
+        # symlink review note: Relative links should be OK
         if [ "$fname" == "${NameOffMRI}_orig.nii.gz" ]; then
             ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
         #skip large files that will be generated
         elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
         	continue
         else
-            cp -r "$fd" "$fMRIFolderLong/"
+            cp -rL "$fd" "$fMRIFolderLong/"
+            chmod -R +w "$fMRIFolderLong/"
         fi
     done
 fi
@@ -891,6 +893,16 @@ if (( IsLongitudinal )); then
         EchoDir="${fMRIFolder}/MultiEcho"
         mkdir -p "$EchoDir"
     fi
+    sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+    #update UseBiasFieldMNI variable for downstream longitudinal processing. Only need to update non-empty, valid values (error checking done earlier in the script)
+    case "$BiasCorrection" in
+        LEGACY)
+            UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
+            ;;
+        SEBASED)
+            UseBiasFieldMNI="$sebasedBiasFieldMNI"
+            ;;
+    esac
 fi
 
 #EPI Distortion Correction and EPI to T1w Registration
@@ -948,7 +960,8 @@ else
         log_Warn "     ... removing stale link"
         rm ${DCFolder}
     fi
-    ln -s ${fMRIReferencePath}/${DCFolderName} ${DCFolder}
+    #symlink review: link changed to relative. 
+    ln -sf "../fMRIReference/${DCFolderName}" "${DCFolder}"
 
     if [ $("${FSLDIR}/bin/imtest ${T1wFolder}/xfms/${fMRIReference}2str") -eq 0 ]; then
         log_Err_Abort "The expected ${T1wFolder}/xfms/${fMRIReference}2str from the reference (${fMRIReference}) does not exist!"
@@ -1073,8 +1086,9 @@ if [[ ${nEcho} -gt 1 ]]; then
     # # fit T2* and S0 then Combine Echoes
     log_Msg "Fitting T2* and combining Echoes"
 
-    ${RUN} ln -sf ${fMRIFolder}/${NameOffMRI}_nonlin_norm.nii.gz ${EchoDir}/${NameOffMRI}_nonlin_norm.nii.gz
-    ${RUN} ln -sf ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz ${EchoDir}/${NameOffMRI}_SBRef_nonlin_norm.nii.gz
+    #symlink review: links changed to relative.
+    ${RUN} ln -sf "../${NameOffMRI}_nonlin_norm.nii.gz" "$EchoDir"/"${NameOffMRI}_nonlin_norm.nii.gz"
+    ${RUN} ln -sf "../${NameOffMRI}_SBRef_nonlin_norm.nii.gz" "$EchoDir"/"${NameOffMRI}_SBRef_nonlin_norm.nii.gz"
 
     echo ${echoTE} > ${EchoDir}/TEs.txt
 
