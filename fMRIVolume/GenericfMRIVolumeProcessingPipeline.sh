@@ -470,7 +470,7 @@ T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
 T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
 T1wFolder="T1w" #Location of T1w images
-AtlasSpaceFolder="MNINonLinear"
+AtlasSpaceFolderBase="MNINonLinear"
 ResultsFolder="Results"
 BiasField="BiasField_acpc_dc"
 BiasFieldMNI="BiasField"
@@ -497,7 +497,7 @@ SessionFolderLong="$Path"/"$SessionLong"
 
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
 #this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
-sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
 
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
@@ -601,7 +601,7 @@ else
   log_Msg "Using reference image from ${fMRIReferencePath}"
   fMRIReferenceImage="$fMRIReferencePath"/"$ScoutName"_gdc
   fMRIReferenceImageMask="$fMRIReferencePath"/"$ScoutName"_gdc_mask
-  ReferenceResultsFolder="$Path"/"$Session"/"$AtlasSpaceFolder"/"$ResultsFolder"/"$fMRIReference"
+  ReferenceResultsFolder="$Path"/"$Session"/"$AtlasSpaceFolderBase"/"$ResultsFolder"/"$fMRIReference"
 
   if [ "$fMRIReferencePath" = "$fMRIFolder" ] ; then
     log_Err_Abort "Specified fMRI reference (--fmriref=${fMRIReference}) is the same as the current fMRI (--fmriname=${NameOffMRI})!"
@@ -666,13 +666,13 @@ T1wFolderLong="$Path"/"$SessionLong"/"$T1wFolder"
 T1wFolder=$T1wFolderCross
 
 
-AtlasSpaceFolderCross="$Path"/"$Session"/"$AtlasSpaceFolder"
-AtlasSpaceFolderLong="$Path"/"$SessionLong"/"$AtlasSpaceFolder"
-AtlasSpaceFolder=$AtlasSpaceFolderCross
+AtlasSpaceFolderCross="$Path"/"$Session"/"$AtlasSpaceFolderBase"
+AtlasSpaceFolderLong="$Path"/"$SessionLong"/"$AtlasSpaceFolderBase"
+AtlasSpaceFolder="$AtlasSpaceFolderCross"
 
 ResultsFolderCross="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ResultsFolderLong="$AtlasSpaceFolderLong"/"$ResultsFolder"/"$NameOffMRI"
-ResultsFolder=$ResultsFolderCross
+ResultsFolder="$ResultsFolderCross"
 
 if (( ! IsLongitudinal )); then
     mkdir -p ${T1wFolder}/Results/${NameOffMRI}
@@ -893,7 +893,7 @@ if (( IsLongitudinal )); then
         EchoDir="${fMRIFolder}/MultiEcho"
         mkdir -p "$EchoDir"
     fi
-    sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolder/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+    sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
     #update UseBiasFieldMNI variable for downstream longitudinal processing. Only need to update non-empty, valid values (error checking done earlier in the script)
     case "$BiasCorrection" in
         LEGACY)
