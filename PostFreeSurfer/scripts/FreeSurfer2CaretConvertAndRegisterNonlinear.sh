@@ -179,11 +179,13 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
       ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
     done
 
-    [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
-    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
-
-    [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
-    ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
+    if [[ "${T2wImage}" != "NONE" ]]
+    then
+        wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+        wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
+    fi
+    wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+    wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
 
     #Import Subcortical ROIs
     for GrayordinatesResolution in ${GrayordinatesResolutions} ; do

@@ -160,7 +160,7 @@ for Subject in $Subjlist ; do
     "${job[@]}"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
-    printf 'set -- %q\n' "${args[@]}"
+    echo "set -- ${args[*]}"
 
     echo ". ${EnvironmentScript}"
 done
