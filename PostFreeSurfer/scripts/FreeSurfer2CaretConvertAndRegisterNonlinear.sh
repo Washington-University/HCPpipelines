@@ -414,9 +414,7 @@ for Hemisphere in L R ; do
         ${CARET7DIR}/wb_command -metric-math "ln(var) / ln (2)" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainR_FS.native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".StrainR_FS.native.shape.gii
         rm "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".Strain_FS.native.shape.gii
 
-        if [ ! -e "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc ] ; then
-            mkdir "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
-        fi
+        mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
         #Calculate Affine Transform and Apply
         ${CARET7DIR}/wb_command -surface-affine-regression "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.reg.reg_LR.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/rotate.${Hemisphere}.mat
         ${CARET7DIR}/wb_command -surface-apply-affine "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.${Hemisphere}.sphere.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/rotate.${Hemisphere}.mat "$AtlasSpaceFolder"/"$NativeFolder"/${Hemisphere}.sphere_rot.surf.gii
