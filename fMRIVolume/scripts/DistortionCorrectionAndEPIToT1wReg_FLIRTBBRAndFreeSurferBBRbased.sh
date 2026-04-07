@@ -766,89 +766,12 @@ if (( ! IsLongitudinal )) || [[ "$SPECIES" != "Human" ]]; then # - for NHP TH 20
             ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFileSE}_undistorted2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz
 
         else # SPIN_ECHO_METHOD_OPT
-		    ## SBRef2SEFieldByT1w - tune up registration betweeen SBRef and SEFieldmap by way of T1w. This will update SBRef2Warpfield.mat by performing 3-step, 1) simulate distorted T1w based on topup, 2) BBR registration btw distorted SBRef and distorted T1w volume, and 3) BBR registration btw undistorted SBRef and T1w_acpc. This step may be effective if SBRef to SEFieldmap registration (in TopupPreprocessingAll.sh) does not work well (e.g. quality of single-band SBRef is not very good) - TH Oct 2023
-			SBRef2SEFieldByT1=FALSE  # TRUE or FALSE
-			
 			## SBRef2StrucBBR - tune up BBR between Scout_gdc (SBRef) and structure. This step will update fMRI to T1w registration by using SBRef and BBR. This step may be effective if the contrast of SBRef is good enough (e.g. contrast of single-band SBRef is very good) - TH 2024
 			if [[ "$BBRContrast" = T1w ]] ; then
 			    SBRef2StrucBBR=TRUE     # FALSE or TRUE 
 			else
 			    SBRef2StrucBBR=FALSE    # FALSE or TRUE. BBR for BOLD fMRI in NHP does not robustly work
 			fi
-
-        if [[ "${SBRef2SEFieldByT1w}" = TRUE ]] ; then
-            # simulate distorted T1w volume in SEFieldmap space in order to tune up regitration of SBRef-to-SEField magnitude
-			log_Msg "Simulate distorted T1w volume and white matter segment in SEFieldmap space"
-			hires=$(${FSLDIR}/bin/fslval $T1wRestoreImage pixdim1)
-			${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str.mat -concat ${WD}/SEEPItoT1w.mat ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat	
-			${FSLDIR}/bin/convert_xfm -omat ${WD}/str2fMRI.mat -inverse ${WD}/fMRI2str.mat
-   		    ${FSLDIR}/bin/invwarp -w ${WD}/WarpField.nii.gz -r ${WD}/${ScoutInputFileSE}_undistorted.nii.gz -o ${WD}/WarpField_inv --rel
-    	    ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileSE}_undistorted -ref ${WD}/${ScoutInputFileSE}_undistorted -applyisoxfm $hires -o ${WD}/${ScoutInputFileSE}_undistorted_hires  
-    	    ${FSLDIR}/bin/applywarp --rel -i ${WD}/${T1wBrainImageFile}.nii.gz --premat=${WD}/str2fMRI.mat -w ${WD}/WarpField_inv -r ${WD}/${ScoutInputFileSE}_undistorted_hires -o ${WD}/${T1wBrainImageFile}2Fieldmap
-    	    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/wmparc -thr 2 -uthr 2 -bin -mul 39 -add ${SubjectFolder}/T1w/wmparc -thr 41 -uthr 41 -bin ${WD}/wmseg_acpc_dc
-    	    ${FSLDIR}/bin/applywarp --rel -i ${WD}/wmseg_acpc_dc --premat=${WD}/str2fMRI.mat -w ${WD}/WarpField_inv -r ${WD}/SEFieldmag_undistorted_hires -o  ${WD}/wmseg_acpc_dc2Fieldmap --interp=trilinear
-    	    ${FSLDIR}/bin/fslmaths ${WD}/wmseg_acpc_dc2Fieldmap -thr 0.05 -bin ${WD}/wmseg_acpc_dc2Fieldmap_thr0.05
-
-    	    # estimate distorted sigloss map in SEFieldmap space
-    	    log_Msg "Estimate distorted sigloss map in SEFieldmap space"
-    	    siglossthr=99 # default threshold (in percent) for sigloss. 
-    	    SiglossTHR=$(echo "$siglossthr / 100" | bc -l)
-    	    ${FSLDIR}/bin/applywarp --rel -i ${WD}/${T1wBrainImageFile}_mask_dil --premat=${WD}/str2fMRI.mat -w ${WD}/WarpField_inv -r ${WD}/${ScoutInputFileSE}_undistorted -o ${WD}/${T1wBrainImageFile}_mask_dil2Fieldmap --interp=nn
-    	    ${FSLDIR}/bin/sigloss -i ${WD}/FieldMap/TopupField.nii.gz -s ${WD}/FieldMap/TopupSigloss.nii.gz --te=0.03 -d z
-    	    ${FSLDIR}/bin/applywarp --rel -i ${WD}/FieldMap/TopupSigloss.nii.gz -r ${WD}/${ScoutInputFileSE}_undistorted -w ${WD}/WarpField_inv -o ${WD}/${ScoutInputFileSE}_distorted_sigloss --interp=trilinear
-    	    ${FSLDIR}/bin/fslmaths ${WD}/FieldMap/TopupSigloss.nii.gz -thr $SiglossTHR -bin ${WD}/FieldMap/TopupSiglossweight
-    	    ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileSE}_distorted_sigloss -thr $SiglossTHR -bin -mas ${WD}/${T1wBrainImageFile}_mask_dil2Fieldmap ${WD}/${ScoutInputFileSE}_distorted_siglossweight
-
-    	    # 1st registration of distorted SBRef to distorted SEField copied from TopupPreprocessingAll
-    	    if [[ $UnwarpDir = [xyij] ]] ; then 
-    	        VolumeNumber=$(${FSLDIR}/bin/fslval ${WD}/FieldMap/PhaseOne dim4)
-                vnum=$(${FSLDIR}/bin/zeropad $((VolumeNumber + 1)) 2)
-                PhaseVol=Two
-            elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then            
-                VolumeNumber=0
-                vnum=$(${FSLDIR}/bin/zeropad $((VolumeNumber + 1)) 2)
-                PhaseVol=One
-            fi
-            cp ${WD}/FieldMap/SBRef2Warpfield.mat ${WD}/FieldMap/SBRef2Warpfield_initI.mat
-            ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileSE}_distorted_siglossweight -dilM ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil
-
-            # 2nd registration of distorted SBRef to distorted T1w (in Fieldmap space) with cost fuction corratio and sigloss weight
-            log_Msg "registration between distorted SBRef and distorted T1w with cost function of corratio"
-            ${FSLDIR}/bin/flirt -dof 6 -interp spline -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -init ${WD}/FieldMap/SBRef2Warpfield_initI.mat -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil -nosearch -omat ${WD}/FieldMap/SBRef2Warpfield_initII.mat -out ${WD}/FieldMap/SBRef2Warpfield_initII
-
-            # 3rd registration of distorted SBRef-to-SEField with FS-BBR
-            if [ $BBRContrast = "T1w" ]; then
-                log_Msg "registration of distorted T1w-contrast SBRef to distorted T1w with T1w-BBR"
-                # create brain ourter surface boundary
-                ${FSLDIR}/bin/applywarp --rel -i ${WD}/brainmask_fs --premat=${WD}/str2fMRI.mat -w ${WD}/WarpField_inv -r ${WD}/SEFieldmag_undistorted_hires -o  ${WD}/brainmask_fs2Fieldmap --interp=trilinear
-                ${FSLDIR}/bin/fslmaths ${WD}/brainmask_fs2Fieldmap -thr 0.5 -bin ${WD}/brainmask_fs2Fieldmap
-
-                # use flipped bbrslope
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -init ${WD}/FieldMap/SBRef2Warpfield_initII.mat -wmseg ${WD}/brainmask_fs2Fieldmap -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope 0.5 -omat ${WD}/FieldMap/SBRef2Warpfield.mat -o ${WD}/FieldMap/SBRef2Warpfield -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil 
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -wmseg ${WD}/brainmask_fs2Fieldmap -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 -init ${WD}/FieldMap/SBRef2Warpfield.mat  | awk 'NR==1 {print $1}' > ${WD}/SBRef2Warpfield.mincost
-          
-            elif [ $BBRContrast = "T2w" ]; then
-                log_Msg "registration of distorted SBRef to distorted T1w with T2w-BBR"
-                ${FSLDIR}/bin/flirt -in ${WD}/FieldMap/SBRef -dof 6 -ref ${WD}/${T1wBrainImageFile}2Fieldmap -cost bbr -schedule $FSLDIR/etc/flirtsch/bbr.sch -wmseg ${WD}/wmseg_acpc_dc2Fieldmap_thr0.05 -init ${WD}/FieldMap/SBRef2Warpfield_initII.mat -omat ${WD}/FieldMap/SBRef2Warpfield.mat -o ${WD}/FieldMap/SBRef2Warpfield -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil 
-                ${FSLDIR}/bin/flirt -in ${WD}/FieldMap/SBRef -ref ${WD}/${T1wBrainImageFile}2Fieldmap -init ${WD}/FieldMap/SBRef2Warpfield.mat -wmseg ${WD}/wmseg_acpc_dc2Fieldmap_thr0.05 -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope -0.5 | awk 'NR==1 {print $1}' > ${WD}/FieldMap/SBRef2Warpfield.mincost
-
-            elif [ $BBRContrast = "NONE" ]; then
-                log_Msg "registration between distorted SBRef and distorted T1w volume"
-                RefVolume=${WD}/${T1wBrainImageFile}2Fieldmap
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap/SBRef -ref $RefVolume -inweight ${WD}/${ScoutInputFileSE}_distorted_siglossweight_dil -init ${WD}/FieldMap/SBRef2Warpfield_initII.mat -omat ${WD}/FieldMap/SBRef2Warpfield.mat -out ${WD}/FieldMap/SBRef2Warpfield -cost normmi -nosearch #-init "$WD"/Scout2T1w.mat
-            fi
-
-            # Recreate undistortion warpfield
-            log_Msg "recreating warpfield for SBRef"
-            imcp ${WD}/WarpField ${WD}/WarpField_init
-            ${FSLDIR}/bin/convertwarp --relout --rel -r ${WD}/FieldMap/Phase${PhaseVol}_gdc_one --premat=${WD}/FieldMap/SBRef2WarpField.mat --warp1=${WD}/FieldMap/WarpField_${vnum} --out=${WD}/WarpField
-
-            # Recreate SBRef_dc and SBRef_dc_jac
-            log_Msg "recreating SBRef_dc and SBRef_jac in FieldMap"
-            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/SBRef.nii.gz -r ${WD}/FieldMap/SBRef.nii.gz -w ${WD}/WarpField -o ${WD}/FieldMap/SBRef_dc.nii.gz
-            ${FSLDIR}/bin/fslmaths ${WD}/FieldMap/SBRef_dc -mul ${WD}/FieldMap/Jacobian ${WD}/FieldMap/SBRef_dc_jac
-        fi  
-        ## Finish SBRef2SEFieldByT1w
 
         cp ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/SBRef_dc -r ${T1wImage} --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat --postmat=${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
