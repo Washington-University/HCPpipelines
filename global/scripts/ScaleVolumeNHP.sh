@@ -37,7 +37,7 @@ log_Msg "START: ScaleVolumeNHP.sh"
 # ----------------------------------------------------------------------
 log_Msg " reading sform from input"
 # ----------------------------------------------------------------------
-read -d '' -a sform <<<"$(wb_command -nifti-information -print-header "$T1wImage".nii.gz  | grep --text -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}')" || true
+read -a sform <<<"$(wb_command -nifti-information -print-header "$T1wImage".nii.gz  | grep --text -A 3 "effective sform" | tail -n 3 | tr '\n' ' ')"
 newsform=()
 sumsform=0
 for ((i = 0; i < 12; ++i))
