@@ -223,8 +223,4 @@ done
 log_Msg "End: RescaleVolumeAndSurfaceNHP.sh"
 # ----------------------------------------------------------------------
 
-log_Msg "END: RescaleVolumeAndSurface"
-
-exit 0
-
 
