@@ -108,7 +108,7 @@ StructRes=0.4
 # Override here only if you need non-default values for your dataset.
 # Example values for Macaque:
 #   FinalFMRIResolution="1.25"
-#   TopUpConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
+#   TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 #   WMProjAbs="1"
 #   BrainScaleFactor="0.36"
 #   betspecieslabel="1"
@@ -432,7 +432,7 @@ for Subject in $Subjlist ; do
                 --fmrires="$FinalFMRIResolution" \
                 --dcmethod="$DistortionCorrection" \
                 --gdcoeffs="$GradientDistortionCoeffs" \
-                --topupconfig="$TopUpConfig" \
+                --topupconfig="$TopupConfig" \
                 --biascorrection="$BiasCorrection" \
                 --usejacobian="$UseJacobian" \
                 --mctype="$MCType" \
@@ -467,7 +467,7 @@ for Subject in $Subjlist ; do
                 --fmrires=$FinalFMRIResolution \
                 --dcmethod=$DistortionCorrection \
                 --gdcoeffs=$GradientDistortionCoeffs \
-                --topupconfig=$TopUpConfig \
+                --topupconfig=$TopupConfig \
                 --biascorrection=$BiasCorrection \
                 --usejacobian=$UseJacobian \
                 --mctype=$MCType \
