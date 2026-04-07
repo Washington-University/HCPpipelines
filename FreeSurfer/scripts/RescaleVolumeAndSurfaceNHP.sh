@@ -5,6 +5,8 @@
 
 Usage_exit (){
 echo "RescaleVolumeAndSurfaceNHP.sh <SubjectDIR> <SubjectID> <ScaleVolumeMatrix (world.mat)> <T1wImage> <T2wImage> <FLAIR|T2|NONE> [ScaleSuffix]"
+echo
+echo "Undo the NHP scaling of volumes for FreeSurfer, and also fix the scaling of surfaces, sulc, and thickness to real space"
 exit 0;
 }
 [ "$6" = "" ] && Usage_exit
