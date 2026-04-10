@@ -64,7 +64,7 @@ for s = 1:numel(Subjlist)
       runAmp = load([PFMFolder '/Results.ppp/Amplitudes/sub-' Subjlist{s} '_run-' subfMRINames{r} '.csv']);
 
       origTCS = [origTCS ; runTCS];
-      TCS = [TCS ; runTCS .* repmat(runAmp', numel(runTCS), 1)];
+      TCS=[TCS ; runTCS.*repmat(runAmp',length(runTCS),1)];
     end  % for r = 1:numel(subfMRINames)
     
     %% Create original time course and spectral CIFTI files

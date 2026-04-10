@@ -42,6 +42,7 @@ opts_AddMandatory '--ref-image' 'RefImage' 'path' "reference image for PROFUMO p
 opts_AddMandatory '--runs-timepoints' 'RunsXNumTimePoints' "total timepoints across runs" "total timepoints across runs"
 opts_AddMandatory '--concat-name' 'ConcatName' "concatenated fMRI name if using multi-run data" ''
 opts_AddMandatory '--volume-template-file' 'VolumeTemplateFile' "volume template file path" ''
+opts_AddMandatory '--fmri-resolution' 'fMRIResolution' "fMRI resolution string for template selection, like '2','1.60' or '2.40'" ''
 
 #PROFUMO specific parameters
 opts_AddOptional '--profumo-threads' 'ProfumoThreads' 'integer' "number of threads for PROFUMO" '25'
@@ -59,6 +60,8 @@ opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '
 #RSN regression specific parameters
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBias' 'YES or NO' 'whether the input data used legacy bias correction' 'NO'
 opts_AddOptional '--scale-factor' 'ScaleFactor' 'float' 'scale factor for RSN regression' '0.01'
+opts_AddOptional '--low-dims' 'LowDims' 'dims' "low ICA dimensions separated by @s for RSN regression" ''
+
 
 #general settings
 opts_AddOptional '--starting-step' 'startStep' 'step' "what step to start processing at, one of:
@@ -226,7 +229,7 @@ do
                 --subject-list="$SubjlistRaw" \
                 --fmri-names="$fMRINames" \
                 --concat-name="$ConcatName" \
-                --proc-string="$fMRIProcSTRING" \
+                --proc-string="_Atlas_${RegName}_$fMRIProcSTRING" \
                 --output-fmri-name="$OutputfMRIName" \
                 --output-string="$OutputSTRING" \
                 --surf-reg-name="$RegName" \
@@ -239,25 +242,30 @@ do
             log_Msg "Running RSNRegression step"
             
             # Set up template paths
-            # LowDimTemplate="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/melodic_oIC_${PFMdim}.dscalar.nii"
+            LowDimTemplate="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/melodic_oIC_${PFMdim}.dscalar.nii"
             
             for Subject in "${Subjlist[@]}"
             do
-                # Build list of existing fMRI files for this subject (same logic as your example)
-                fMRINamesForSub=""
-                for fMRIName in "${fMRINamesArray[@]}"
-                do
-                    if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}${fMRIProcSTRING}.dtseries.nii" ]]
-                    then
-                        if [[ "$fMRINamesForSub" != "" ]]
+                if [[ "$ConcatName" != "" ]]
+                then
+                    fMRINamesForSub="${ConcatName}"
+                else 
+                    # Build list of existing fMRI files for this subject (same logic as your example)
+                    fMRINamesForSub=""
+                    for fMRIName in "${fMRINamesArray[@]}"
+                    do
+                        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}.dtseries.nii" ]]
                         then
-                            fMRINamesForSub="${fMRINamesForSub}@${fMRIName}"
-                        else
-                            fMRINamesForSub="${fMRIName}"
+                            if [[ "$fMRINamesForSub" != "" ]]
+                            then
+                                fMRINamesForSub="${fMRINamesForSub}@${fMRIName}"
+                            else
+                                fMRINamesForSub="${fMRIName}"
+                            fi
                         fi
-                    fi
-                done
-                
+                    done
+                fi
+
                 if [[ "$fMRINamesForSub" == "" ]]
                 then
                     log_Warn "No valid fMRI runs found for subject $Subject, skipping"
@@ -271,10 +279,12 @@ do
                 rsn_cmd=("$HCPPIPEDIR"/global/scripts/RSNregression.sh
                     --study-folder="$StudyFolder"
                     --subject="$Subject"
-                    --subject-timeseries="$ConcatName" # "$fMRINamesForSub"
+                    --subject-timeseries="$fMRINamesForSub" # "$fMRINamesForSub"
                     --surf-reg-name="$RegName"
+                    --low-ica-dims="$LowDims"
                     --low-res="$LowResMesh"
                     --proc-string="_$fMRIProcSTRING"
+                    --low-ica-template-name="$LowDimTemplate"
                     --method="dual"
                     --output-string="$OutputSTRING"
                     --output-spectra="$RunsXNumTimePoints"

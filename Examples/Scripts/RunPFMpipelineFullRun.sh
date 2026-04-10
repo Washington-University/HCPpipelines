@@ -17,14 +17,19 @@ get_options() {
     local arguments=("$@")
 
     # initialize variables
-    StudyFolder="/media/myelin/brainmappers/BICAN/Macaque/MacaqueRhesus"
-    Subjlist="$(find ${StudyFolder} -maxdepth 1 -type d -name "A*" -exec basename {} \; | paste -sd@ -)"
-    EnvironmentScript="/media/myelin/burke/projects/Mac25Rhesus/scripts/Mac25Rhesus_v5_SetUpHCPPipeline.sh"
-    GroupAverageName="Mac25Rhesus_v5"
-    RegName=""
+    StudyFolder="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final"
+    #Subjlist="100610"
+    Subjlist="100610@102311@102816@104416@105923@108323@109123@111312@111514@114823@115017@115825@116726@118225@125525@126426@128935@130518@131217@131722@132118@134627@134829@135124@137128@140117@144226@145834@146129@146432@146735@146937@148133@150423@155938@156334@157336@158035@158136@159239@162935@164131@164636@165436@167036@167440@169343@169444@169747@171633@172130@173334@175237@176542@177140@177645@177746@178142@178243@178647@180533@181232@181636@182436@182739@185442@186949@187345@191033@191336@191841@192439@192641@193845@195041@196144@197348@198653@199655@200210@200311@200614@201515@203418@204521@205220@209228@212419@214019@214524@221319@233326@239136@246133@249947@251833@257845@263436@283543@318637@320826@330324@346137@352738@360030@365343@380036@381038@389357@393247@395756@397760@406836@412528@429040@436845@463040@467351@473952@525541@536647@541943@547046@550439@552241@562345@572045@573249@581450@585256@601127@617748@627549@638049@654552@671855@680957@690152@706040@724446@725751@732243@751550@757764@765864@770352@771354@782561@783462@789373@814649@818859@825048@826353@833249@859671@861456@871762@872764@878776@878877@898176@899885@901139@901442@905147@910241@926862@927359@942658@951457@958976@966975@973770@995174"
+    #ret exclude 473952
+    #Subjlist="100610@102311@102816@104416@105923@108323@109123@111312@111514@114823@115017@115825@116726@118225@125525@126426@128935@130518@131217@131722@132118@134627@134829@135124@137128@140117@144226@145834@146129@146432@146735@146937@148133@150423@155938@156334@157336@158035@158136@159239@162935@164131@164636@165436@167036@167440@169343@169444@169747@171633@172130@173334@175237@176542@177140@177645@177746@178142@178243@178647@180533@181232@181636@182436@182739@185442@186949@187345@191033@191336@191841@192439@192641@193845@195041@196144@197348@198653@199655@200210@200311@200614@201515@203418@204521@205220@209228@212419@214019@214524@221319@233326@239136@246133@249947@251833@257845@263436@283543@318637@320826@330324@346137@352738@360030@365343@380036@381038@389357@393247@395756@397760@406836@412528@429040@436845@463040@467351@525541@536647@541943@547046@550439@552241@562345@572045@573249@581450@585256@601127@617748@627549@638049@654552@671855@680957@690152@706040@724446@725751@732243@751550@757764@765864@770352@771354@782561@783462@789373@814649@818859@825048@826353@833249@859671@861456@871762@872764@878776@878877@898176@899885@901139@901442@905147@910241@926862@927359@942658@951457@958976@966975@973770@995174"
+
+    EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/Scripts/SetUpHCPPipeline_PFM_AY.sh"
+    GroupAverageName="S1200_MSMAll7T175"
+
+    RegName="MSMAll"
     MatlabMode=1
     RunLocal=0
-    QUEUE="matlabparallelhigh.q@brainmappers-desktop3"
+    QUEUE="matlabparallelhigh.q"
 
     # parse arguments
     local index argument
@@ -135,78 +140,75 @@ main() {
 
     # general settings
     # set the start step beginning from RunPROFUMO which is by default the first step
-    # StartStep="RunPROFUMO"
-    # StopStep="RunPROFUMO"  
-    # StartStep="PostPROFUMO"
-    # StopStep="PostPROFUMO"  
-    # StartStep="PostPROFUMO"
-    # StartStep="RSNRegression"  
-    # StopStep="RSNRegression"
-    # StartStep="RunPROFUMO"
-    # StopStep=""
-
-    StartStep="PostPROFUMO"
+    StartStep="RunPROFUMO"
     StopStep="GroupPFMs"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
-    parLimit=5
+    parLimit=-1
 
     
     # general inputs
-    fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR@BOLD_REST_3_AP@BOLD_REST_4_PA"
-    # fMRINames="BOLD_REST_1_RL@BOLD_REST_2_LR"
-    randSeed=1 # random seed for PROFUMO 
+    fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL" 
 
-    OutputfMRIName="BOLD_REST_CONCAT"
+    randSeed=123 # random seed for PROFUMO 
+
+    OutputfMRIName="rfMRI_REST"
     # set the MR concat fMRI name, if multi-run FIX was used, leave empty for single runs
-    ConcatName="BOLD_REST_CONCAT"
-    # set the output spectra size for individual projection, RunsXNumTimePoints
-    subjectExpectedTimepoints="8508"
-    # set temporal highpass full-width (2*sigma) used in preprocessing
-    HighPass="pd2"
+    ConcatName=""
 
+    # set the output spectra size for individual projection, RunsXNumTimePoints    #subjectExpectedTimepoints="3655"
+    subjectExpectedTimepoints="4800"
+
+    # set temporal highpass full-width (2*sigma) used in preprocessing
+    HighPass="2000"
+
+    #set fMRIResolution of data, like '2','1.60' or '2.40'
+    fMRIResolution="2.0"  
 
     # PFM settings for REST data
-    PFMdim="16"  # set the PFM dimensionality
-    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${GroupAverageName}_${OutputfMRIName}_PFM_d${PFMdim}_s${randSeed}_test
-    # Reference image for PROFUMO
-    RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP/Mac25Rhesus_v5_BOLD_REST_CONCAT_MIGP_Atlas_hppd2_clean_meanvn.dscalar.nii"
+    # set the PFM dimensionality
+    PFMdim="99" 
 
+    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_PFM_d${PFMdim}
+    # Reference image for PROFUMO
+    RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_rclean_tclean_meanvn.dscalar.nii"
+    
     # set the file name component representing the preprocessing already done
-    fMRIProcSTRING="hp${HighPass}_clean"
+    fMRIProcSTRING="hp${HighPass}_clean_rclean_tclean"
 
     # set the mesh resolution, like '32' for 32k_fs_LR
-    LowResMesh="10"
+    LowResMesh="32"
 
+    
     # Define OutputSTRING with seed designation
     OutputSTRING="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${randSeed}_PFMs"
 
     # RSN regression settings
-    LowDims="6"
     FixLegacyBiasString="NO"
     ScaleFactor="0.01"
+    LowDims="7@8@9@10@11@12@13@14@15@16@17@18@19@20@21"
 
     # Volume template file
-    VolumeTemplateCIFTI="/media/myelin/brainmappers/BICAN/Macaque/MacaqueRhesus/Mac25Rhesus_v5/MNINonLinear/Results/Mac25Rhesus_v5_VolMaps_16_template.dscalar.nii"
-
+    VolumeTemplateCIFTI="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll7T175/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
+ 
     # PROFUMO settings
-    ProfumoSingularity="/media/myelin/burke/projects/Mac25Rhesus/HCPpipelines/PFM/profumo_v2.sif" 
+    ProfumoSingularity="/media/myelin/andrea/HCPpipelines/PFM/profumo_v2.sif" 
     ProfumoConfig="${PFMFolder}/dataLocations.json"  
-    TR="0.702"
+    TR="1.0"
     ProfumoThreads="14"
     DOFCorrection="0.5"
     CovModel="Subject"
-    nStarts="1" # number of multi-start iterations for PROFUMO
+    nStarts="5" # number of multi-start iterations for PROFUMO
     RandomSeed="$randSeed" # random seed for PROFUMO reproducibility
     # RefImage will be auto-set based on data type below
-
+    
     # build Profumo data location json
     mkdir -p $PFMFolder
     echo '{' > $ProfumoConfig
     for Subject in $(echo $Subjlist | tr "@" "\n"); do
         echo -e "\t\"$Subject\": {" >> $ProfumoConfig
         for fMRIName in $(echo $fMRINames | tr "@" "\n"); do
-            runFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${fMRIProcSTRING}.dtseries.nii"
+            runFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}.dtseries.nii"
             if [[ -e $runFile ]]; then
                 echo -e "\t\t\"$fMRIName\": \"$runFile\"," >> $ProfumoConfig
             fi
@@ -234,6 +236,7 @@ main() {
                                     --pfm-folder="$PFMFolder" \
                                     --surf-reg-name="$RegName" \
                                     --concat-name="$ConcatName" \
+                                    --fmri-resolution="$fMRIResolution" \
                                     --low-res-mesh="$LowResMesh" \
                                     --runs-timepoints="$subjectExpectedTimepoints" \
                                     --low-dims="$LowDims" \
@@ -249,7 +252,7 @@ main() {
                                     --profumo-threads="$ProfumoThreads" \
                                     --profumo-dof-correction="$DOFCorrection" \
                                     --profumo-cov-model="$CovModel" \
-                                    --profumo-multi-start-iterations="$nStarts"\
+                                    --profumo-multi-start-iterations="$nStarts" \
                                     --profumo-random-seed="$RandomSeed" \
                                     --ref-image="$RefImage" \
                                     --volume-template-file="$VolumeTemplateCIFTI"
@@ -261,3 +264,4 @@ main() {
 # Invoke the main function to get things started
 #
 main "$@"
+
