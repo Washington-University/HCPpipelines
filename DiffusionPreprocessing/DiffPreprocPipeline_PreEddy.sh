@@ -391,7 +391,7 @@ fi
 if [[ ${Paired_flag} == 0 && ${SelectBestB0} == 0 ]]; then
 	log_Err "No pairs of phase encoding directions were specified in the inputs"
 	log_Err "Input at least one posData/negData pair, even if they don't have the same length, or even the same bvals/bvecs"
-	log_Err_Abort "This will work, provided that --combine-data-flag=2 is used"
+	log_Err_Abort "This will work, provided that --select-best-b0=True is used"
 fi
 
 log_Msg "Running Intensity Normalisation"
