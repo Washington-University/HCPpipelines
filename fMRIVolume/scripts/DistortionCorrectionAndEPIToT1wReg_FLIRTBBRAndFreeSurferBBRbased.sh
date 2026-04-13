@@ -773,103 +773,103 @@ if (( ! IsLongitudinal )) || [[ "$SPECIES" != "Human" ]]; then # - for NHP TH 20
 			    SBRef2StrucBBR=FALSE    # FALSE or TRUE. BBR for BOLD fMRI in NHP does not robustly work
 			fi
 
-        cp ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat
-        ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/SBRef_dc -r ${T1wImage} --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat --postmat=${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
+            cp ${WD}/${ScoutInputFileSE}_undistorted2T1w_init.mat ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${WD}/FieldMap/SBRef_dc -r ${T1wImage} --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat --postmat=${WD}/SEEPItoT1w.mat -o ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
 
-        if ((UseJacobian)) ; then
-            log_Msg "apply Jacobian correction to scout image"
-            if [[ "$UseBiasField" != "" ]]; then
-                ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -div ${UseBiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
+            if ((UseJacobian)) ; then
+                log_Msg "apply Jacobian correction to scout image"
+                if [[ "$UseBiasField" != "" ]]; then
+                    ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -div ${UseBiasField} -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
+                else
+                    ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
+                fi
             else
-                ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -mul ${WD}/Jacobian2T1w.nii.gz ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz
+                log_Msg "do not apply Jacobian correction to scout image"
+                if [[ "$UseBiasField" != "" ]]; then
+                    log_Msg "apply bias field correction to scout image"
+                    ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -div ${UseBiasField} ${WD}/${ScoutInputFileGE}_undistorted2T1w_init
+                fi
             fi
-        else
-            log_Msg "do not apply Jacobian correction to scout image"
-            if [[ "$UseBiasField" != "" ]]; then
-                log_Msg "apply bias field correction to scout image"
-                ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -div ${UseBiasField} ${WD}/${ScoutInputFileGE}_undistorted2T1w_init
+
+            ## SBRef2strucBBR 
+            if [[ "${SBRef2StrucBBR}" = TRUE ]] ; then 
+                if [[ "$BBRContrast" = T1w ]]; then
+                    # use FSL-BBR
+                    # use flipped bbrslope and brain boundary
+                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
+                    ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope 0.5 -out ${WD}/${ScoutInputFileGE}_undistorted2T1w_FSLBBR
+                    ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -init ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 | awk 'NR==1 {print $1}' > ${WD}/GEEPItoT1w_FSLBBR.mat.mincost
+                    log_Msg "Run FreeSurfer bbregister" 
+                    ### FREESURFER BBR - found to be an improvement, probably due to better GM/WM boundary
+                    SUBJECTS_DIR=${FreeSurferSubjectFolder}
+                    export SUBJECTS_DIR
+                    BBRopt="--t1 --${dof} --wm-proj-abs 1.1 --gm-proj-abs 0.2 "  # Macaque MION data 
+                    BBRopt+="--brute1max 2 --brute1delta 2 "
+                    log_Msg "Run Normally"      
+                    # Use "hidden" bbregister DOF options
+                    log_Msg "Use \"hidden\" bbregister DOF options"
+                    ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_FSLBBR.nii.gz --surf pial.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat ${BBRopt} --reg ${WD}/GEEPItoT1w_FSBBR.dat 
+
+                    # Create FSL-style matrix and then combine with existing warp fields
+                    log_Msg "Create FSL-style matrix and then combine with existing warp fields"
+                    ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/GEEPItoT1w_FSBBR.dat --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/GEEPItoT1w_FSBBR.mat
+
+                    # Combine xfms of FSL-BBR and FS-BBR
+                    log_Msg "Combine xfms of FSL-BBR and FS-BBR"
+                    ${FSLDIR}/bin/convert_xfm -omat ${WD}/GEEPItoT1w.mat -concat ${WD}/GEEPItoT1w_FSBBR.mat ${WD}/GEEPItoT1w_FSLBBR.mat
+     
+
+                elif [[ "$BBRContrast" = T2w ]]; then
+
+                    log_Msg "Run FSL BBR with FLIRT"
+                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/wmparc -thr 2 -uthr 2 -bin -mul 39 -add ${SubjectFolder}/T1w/wmparc -thr 41 -uthr 41 -bin ${WD}/wmseg_acpc_dc
+                    ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/wmseg_acpc_dc -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope -0.5  -out ${WD}/${ScoutInputFileGE}_undistorted2T1w
+                    ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -init ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/wmseg_acpc_dc -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope -0.5 | awk 'NR==1 {print $1}' > ${WD}/GEEPItoT1w_FSLBBR.mat.mincost
+
+                    BBRopt="--t2 --${dof} --wm-proj-abs ${WMProjAbs} "
+                    BBRopt+="--brute1max 2 --brute1delta 2 "
+                    log_Msg "Run FreeSurfer bbregister" 
+                    ### FREESURFER BBR - found to be an improvement, probably due to better GM/WM boundary
+                    SUBJECTS_DIR=${FreeSurferSubjectFolder}
+                    export SUBJECTS_DIR
+
+                    # Run Normally
+                    log_Msg "Run Normally"
+                    # Use "hidden" bbregister DOF options
+          
+    	            log_Msg "Use \"hidden\" bbregister DOF options"
+                    ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg  ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat ${BBRopt} --reg ${WD}/GEEPItoT1w_FSBBR.dat --o ${WD}/${ScoutInputFileGE}_undistorted2T1w.nii.gz
+
+                    # Create FSL-style matrix and then combine with existing warp fields
+                    log_Msg "Create FSL-style matrix and then combine with existing warp fields"
+                    ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/GEEPItoT1w.dat --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/GEEPItoT1w_FSBBR.mat
+     
+                    # Combine xfms of FSL-BBR and FS-BBR
+                    log_Msg "Combine xfms of FSL-BBR and FS-BBR"
+                    ${FSLDIR}/bin/convert_xfm -omat ${WD}/GEEPItoT1w.mat -concat ${WD}/GEEPItoT1w_FSBBR.mat ${WD}/GEEPItoT1w_FSLBBR.mat
+     
+                elif [[ "$BBRContrast" = NONE ]]; then 
+                    log_Msg "Use refined registration with EPI and T1w"
+                    applywarp -i ${WD}/FieldMap/TopupSiglossweight -r ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat -o ${WD}/${ScoutInputFileGE}_undistorted_siglossweight --interp=trilinear
+                    fslmaths ${WD}/${ScoutInputFileGE}_undistorted_siglossweight -thr 0.5 -bin ${WD}/${ScoutInputFileGE}_undistorted_siglossweight
+                    fslmaths ${WD}/${ScoutInputFileGE}_undistorted_siglossweight -dil ${WD}/${ScoutInputFileGE}_undistorted_siglossweight_dil
+                    flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz -ref ${WD}/${T1wBrainImageFile} -dof 6 -nosearch -omat ${WD}/GEEPItoT1w.mat -inweight ${WD}/${ScoutInputFileGE}_undistorted_siglossweight_dil
+                fi
             fi
-        fi
+            ## Finish SBRef2strucBBR
 
-        ## SBRef2strucBBR 
-        if [[ "${SBRef2StrucBBR}" = TRUE ]] ; then 
-            if [[ "$BBRContrast" = T1w ]]; then
-                # use FSL-BBR
-                # use flipped bbrslope and brain boundary
-                ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope 0.5 -out ${WD}/${ScoutInputFileGE}_undistorted2T1w_FSLBBR
-                ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -init ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 | awk 'NR==1 {print $1}' > ${WD}/GEEPItoT1w_FSLBBR.mat.mincost
-                log_Msg "Run FreeSurfer bbregister" 
-                ### FREESURFER BBR - found to be an improvement, probably due to better GM/WM boundary
-                SUBJECTS_DIR=${FreeSurferSubjectFolder}
-                export SUBJECTS_DIR
-                BBRopt="--t1 --${dof} --wm-proj-abs 1.1 --gm-proj-abs 0.2 "  # Macaque MION data 
-                BBRopt+="--brute1max 2 --brute1delta 2 "
-                log_Msg "Run Normally"      
-                # Use "hidden" bbregister DOF options
-                log_Msg "Use \"hidden\" bbregister DOF options"
-                ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_FSLBBR.nii.gz --surf pial.deformed --init-reg ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat ${BBRopt} --reg ${WD}/GEEPItoT1w_FSBBR.dat 
-
-                # Create FSL-style matrix and then combine with existing warp fields
-                log_Msg "Create FSL-style matrix and then combine with existing warp fields"
-                ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/GEEPItoT1w_FSBBR.dat --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/GEEPItoT1w_FSBBR.mat
-
-                # Combine xfms of FSL-BBR and FS-BBR
-                log_Msg "Combine xfms of FSL-BBR and FS-BBR"
-                ${FSLDIR}/bin/convert_xfm -omat ${WD}/GEEPItoT1w.mat -concat ${WD}/GEEPItoT1w_FSBBR.mat ${WD}/GEEPItoT1w_FSLBBR.mat
- 
-
-            elif [[ "$BBRContrast" = T2w ]]; then
-
-                log_Msg "Run FSL BBR with FLIRT"
-                ${FSLDIR}/bin/fslmaths ${SubjectFolder}/T1w/wmparc -thr 2 -uthr 2 -bin -mul 39 -add ${SubjectFolder}/T1w/wmparc -thr 41 -uthr 41 -bin ${WD}/wmseg_acpc_dc
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/wmseg_acpc_dc -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope -0.5  -out ${WD}/${ScoutInputFileGE}_undistorted2T1w
-                ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -init ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/wmseg_acpc_dc -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope -0.5 | awk 'NR==1 {print $1}' > ${WD}/GEEPItoT1w_FSLBBR.mat.mincost
-
-                BBRopt="--t2 --${dof} --wm-proj-abs ${WMProjAbs} "
-                BBRopt+="--brute1max 2 --brute1delta 2 "
-                log_Msg "Run FreeSurfer bbregister" 
-                ### FREESURFER BBR - found to be an improvement, probably due to better GM/WM boundary
-                SUBJECTS_DIR=${FreeSurferSubjectFolder}
-                export SUBJECTS_DIR
-
-                # Run Normally
-                log_Msg "Run Normally"
-                # Use "hidden" bbregister DOF options
-      
-	            log_Msg "Use \"hidden\" bbregister DOF options"
-                ${FREESURFER_HOME}/bin/bbregister --s ${FreeSurferSubjectID} --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --surf white.deformed --init-reg  ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}/mri/transforms/eye.dat ${BBRopt} --reg ${WD}/GEEPItoT1w_FSBBR.dat --o ${WD}/${ScoutInputFileGE}_undistorted2T1w.nii.gz
-
-                # Create FSL-style matrix and then combine with existing warp fields
-                log_Msg "Create FSL-style matrix and then combine with existing warp fields"
-                ${FREESURFER_HOME}/bin/tkregister2 --noedit --reg ${WD}/GEEPItoT1w.dat --mov ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --targ ${T1wImage}.nii.gz --fslregout ${WD}/GEEPItoT1w_FSBBR.mat
- 
-                # Combine xfms of FSL-BBR and FS-BBR
-                log_Msg "Combine xfms of FSL-BBR and FS-BBR"
-                ${FSLDIR}/bin/convert_xfm -omat ${WD}/GEEPItoT1w.mat -concat ${WD}/GEEPItoT1w_FSBBR.mat ${WD}/GEEPItoT1w_FSLBBR.mat
- 
-            elif [[ "$BBRContrast" = NONE ]]; then 
-                log_Msg "Use refined registration with EPI and T1w"
-                applywarp -i ${WD}/FieldMap/TopupSiglossweight -r ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz --premat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat -o ${WD}/${ScoutInputFileGE}_undistorted_siglossweight --interp=trilinear
-                fslmaths ${WD}/${ScoutInputFileGE}_undistorted_siglossweight -thr 0.5 -bin ${WD}/${ScoutInputFileGE}_undistorted_siglossweight
-                fslmaths ${WD}/${ScoutInputFileGE}_undistorted_siglossweight -dil ${WD}/${ScoutInputFileGE}_undistorted_siglossweight_dil
-                flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.nii.gz -ref ${WD}/${T1wBrainImageFile} -dof 6 -nosearch -omat ${WD}/GEEPItoT1w.mat -inweight ${WD}/${ScoutInputFileGE}_undistorted_siglossweight_dil
+            if [ -e ${WD}/GEEPItoT1w.mat ] ; then
+                ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement.mat -concat ${WD}/GEEPItoT1w.mat ${WD}/SEEPItoT1w.mat
+            else
+                cp ${WD}/SEEPItoT1w.mat ${WD}/fMRI2str_refinement.mat
             fi
-        fi
-        ## Finish SBRef2strucBBR
 
-        if [ -e ${WD}/GEEPItoT1w.mat ] ; then
-            ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement.mat -concat ${WD}/GEEPItoT1w.mat ${WD}/SEEPItoT1w.mat
-        else
-            cp ${WD}/SEEPItoT1w.mat ${WD}/fMRI2str_refinement.mat
-        fi
-
-        log_Msg "recalculating fMRI2str.mat"  
-        ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str.mat -concat ${WD}/fMRI2str_refinement.mat ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat
-        log_Msg "calculating init warpfield of SBRef2T1w (Scout_gdc_undistorted2T1w_init_warp.nii.gz)"
-        ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField --postmat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat -o ${WD}/${ScoutInputFileGE}_undistorted2T1w_init_warp
-        log_Msg "calculating final warpfield of SBRef2T1w (fMRI2str.nii.gz)"
-        ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFileGE}_undistorted2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz
+            log_Msg "recalculating fMRI2str.mat"  
+            ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str.mat -concat ${WD}/fMRI2str_refinement.mat ${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat
+            log_Msg "calculating init warpfield of SBRef2T1w (Scout_gdc_undistorted2T1w_init_warp.nii.gz)"
+            ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${WD}/WarpField --postmat=${WD}/${ScoutInputFileGE}_undistorted2T1w_init.mat -o ${WD}/${ScoutInputFileGE}_undistorted2T1w_init_warp
+            log_Msg "calculating final warpfield of SBRef2T1w (fMRI2str.nii.gz)"
+            ${FSLDIR}/bin/convertwarp --relout --rel --warp1=${WD}/${ScoutInputFileGE}_undistorted2T1w_init_warp.nii.gz --ref=${T1wImage} --postmat=${WD}/fMRI2str_refinement.mat --out=${WD}/fMRI2str.nii.gz
 
         fi # DistortionCorrection != SPIN_ECHO_METHOD_OPT
 
