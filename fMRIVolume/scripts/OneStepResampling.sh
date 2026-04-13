@@ -71,6 +71,7 @@ opts_AddOptional '--wb-resample' 'useWbResampleStr' 'true/false' "Use wb_command
 
 opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whether to do 'linear', 'nonlinear' or no ('NONE', default) registration to external BOLD reference image" "NONE"
 
+opts_AddOptional '--species' 'SPECIES' 'species' "species name" "Human"
 
 opts_ParseArguments "$@"
 
@@ -162,13 +163,20 @@ NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
 #       2mm and 1mm cases because it doesn't know the peculiarities of the
 #       MNI template FOVs
-if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
-    ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
-elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
-    ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
+# If not a human, just use -applyisoxfm
+if [[ $SPECIES != Human ]] ; then
+    ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
 else
-  ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
-  ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    #For legacy reasons, we use human fMRI templates that aren't exactly the same dimensions as -applyisoxfm produces
+    if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
+        ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
+    elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
+        ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
+    else
+        ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
+        ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
+    fi
 fi
 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${ResampRefIm} --premat=$FSLDIR/etc/flirtsch/ident.mat -o ${WD}/${T1wImageFile}.${FinalfMRIResolution}
