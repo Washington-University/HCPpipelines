@@ -101,7 +101,7 @@ SpecSessionlist=""
 fmriname=""
 
 #structural image resolution
-StructRes=0.4
+StructRes=0.5
 
 # Species-specific variables
 # These are set by SetUpSPECIES.sh (sourced after EnvironmentScript).
