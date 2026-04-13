@@ -42,7 +42,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
   IntensityCor="FAST"
   TemplateWMSkeleton="NONE"
   BiasFieldFastSmoothingSigma="25"                            # = 20*ScaleFactor
-  StrongBias_args="-s"                                        # strong bias in T1w
+  StrongBias="TRUE"                                            # strong bias in T1w
   mri_normalize_args="-sigma 10 -gentle"                      # = 8*ScaleFactor.
   mri_segment_args=""    
   initcc="128 110 125"                                        # FS5.3.0 voxel coordinate in orig.mgz and wm.mgz
@@ -76,9 +76,9 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
   # IntensityCor
   IntensityCor="FAST"
   BiasFieldFastSmoothingSigma="40"                            # = 20*ScaleFactor
-  StrongBias_args="-s"                                        # strong bias in T1w
+  StrongBias="TRUE"                                            # strong bias in T1w
 
-  # recon-all.v6.hiresNHP 
+  # recon-all.v6.hiresNHP
   mri_normalize_args="-sigma 16 -gentle"                      # = 8*ScaleFactor. FS6 default sigma=8
 
   mris_make_surfaces_args=""

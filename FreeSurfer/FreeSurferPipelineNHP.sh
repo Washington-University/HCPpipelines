@@ -721,7 +721,7 @@ if [ "$RunMode" -lt 2 ] ; then
 	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	## This section replaces 'FS -nuintensirycor' for NHP - TH 2017-2023
-	cmd=("$PipelineScripts"/IntensityCorNHP.sh "$SubjectDIR"/"$SubjectID"/mri/orig.mgz "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz "$SubjectDIR"/"$SubjectID"/mri/nu.mgz -t1 -m "$IntensityCor","$BiasFieldFastSmoothingSigma" ${StrongBias_args:-})
+	cmd=("$PipelineScripts"/IntensityCorNHP.sh --input "$SubjectDIR"/"$SubjectID"/mri/orig.mgz --brainmask "$SubjectDIR"/"$SubjectID"/mri/brainmask.conf.mgz --output "$SubjectDIR"/"$SubjectID"/mri/nu.mgz --type T1 --method "$IntensityCor" --smoothing "$BiasFieldFastSmoothingSigma" --strongbias "${StrongBias:-FALSE}")
 	echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
 	log_Msg "...second recon-all for normalization"

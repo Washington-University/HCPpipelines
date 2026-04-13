@@ -5,102 +5,106 @@
 
 set -eu
 
-usage_exit() {
-      cat <<EOF
-
-  Intenity biasfield correction and normalization in NHP
-
-  Usage for T1w:
-	$(basename $0) <T1w input.mgz> <brainmask.mgz> <output.mgz> -t1 [options]
- 
-  Usage for T2w or T2w FLAIR:
-	$(basename $0) <T2w input.mgz> <brainmask.mgz> <output.mgz> -t2 <white matter mask.mgz> [options]
-
-  Options:
-	-m <method>,<num> : "FAST,<low pass>" or "ANTS,<spline space>". Default is "FAST,20"
-	-s                : strong bias correction
-
-  Outputs are output.mgz, output_brain.mgz and output_brain_histogram.png
-
-
-EOF
-    exit 1;
-}
-
-[ "$5" = "" ] && usage_exit
-
-command="$0 $@"
- 
-in=`echo $1 | sed -e 's/.mgz//'`
-mask=`echo $2 | sed -e 's/.mgz//'`
-out=`echo $3 | sed -e 's/.mgz//'`
-shift 3
-if [ "$1" = "-t1" ] ; then
-	type=T1
-	shift 1
-else
-	type=T2
-	mask2=`echo $2 | sed -e 's/.mgz//'`
-	shift 2
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
-strongbiasflag=""
-while getopts m:s opt; do
-        case "$opt" in
-            m)
-                method=$(echo "$OPTARG" | cut -d ',' -f1)
-                smoothing=$(echo "$OPTARG" | cut -d ',' -f2)
-		;;
-            s)
-                strongbiasflag="--strongbias"
-                ;;
-              \?)
-                usage_exit
-                ;;
-	esac
-done
-shift $((OPTIND - 1))
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-source $HCPPIPEDIR/global/scripts/log.shlib "$@"  # Logging related functions
+opts_SetScriptDescription "Intensity bias field correction and normalization for NHP"
+
+opts_AddMandatory '--input' 'InputImage' 'image' "input image (.mgz)"
+opts_AddMandatory '--brainmask' 'BrainMask' 'image' "brain mask image (.mgz)"
+opts_AddMandatory '--output' 'OutputImage' 'image' "output image (.mgz)"
+opts_AddMandatory '--type' 'ImageType' 'T1|T2' "image type: T1 or T2"
+
+opts_AddOptional '--wm-mask' 'WMMask' 'image' "white matter mask image (.mgz), required for T2 type"
+opts_AddOptional '--method' 'Method' 'FAST|ANTS' "bias correction method (default: FAST)" "FAST"
+opts_AddOptional '--smoothing' 'Smoothing' 'number' "smoothing parameter: low pass sigma for FAST (default: 20), spline spacing for ANTS (default: 200)"
+opts_AddOptional '--strongbias' 'StrongBias' 'TRUE/FALSE' "use stronger bias field correction (default: FALSE)" "FALSE"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
 # ----------------------------------------------------------------------
 log_Msg "Start: $(basename $0)"
 # ----------------------------------------------------------------------
 
-method=${method:-FAST}
-if [ $method = FAST ] ; then
-	lowpass=${smoothing:-20}         
+# strip .mgz extension
+in=$(echo "$InputImage" | sed -e 's/.mgz//')
+mask=$(echo "$BrainMask" | sed -e 's/.mgz//')
+out=$(echo "$OutputImage" | sed -e 's/.mgz//')
+
+# validate type
+if [[ "$ImageType" != "T1" && "$ImageType" != "T2" ]]; then
+    log_Err_Abort "unknown --type '$ImageType', must be T1 or T2"
+fi
+
+type="$ImageType"
+
+# handle wm-mask for T2
+if [[ "$type" == "T2" ]]; then
+    if [[ -z "$WMMask" ]]; then
+        log_Err_Abort "--wm-mask is required when --type is T2"
+    fi
+    mask2=$(echo "$WMMask" | sed -e 's/.mgz//')
+fi
+
+# validate method
+if [[ "$Method" != "FAST" && "$Method" != "ANTS" ]]; then
+    log_Err_Abort "unknown --method '$Method', must be FAST or ANTS"
+fi
+
+# set smoothing defaults based on method
+if [[ "$Method" == "FAST" ]]; then
+    lowpass=${Smoothing:-20}
 else
-	splinespace=${smoothing:-200}
+    splinespace=${Smoothing:-200}
+fi
+
+# parse strongbias boolean
+StrongBias=$(opts_StringToBool "$StrongBias")
+if ((StrongBias)); then
+    strongbiasflag="--strongbias"
+else
+    strongbiasflag=""
 fi
 
 ScaleFactorT1w=110 # white matter value for T1w
 ScaleFactorT2w=57  # white matter value for T2w
 
-if [[ $method != FAST && $method != ANTS ]] ; then
-	echo "ERROR: unknown method $method"
-	exit 1;
-fi
-if [ $method = FAST ] ; then
+if [[ "$Method" == "FAST" ]]; then
 	echo "FSLDIR:      $FSLDIR"
 	echo "$type lowpass:     $lowpass"
 
-elif [ $method = ANTS ] ; then
+elif [[ "$Method" == "ANTS" ]]; then
 	echo "ANTSPATH:    $ANTSPATH"
 	echo "$type splinespace  $splinespace"
 
-	if [ -z $ANTSPATH ] ; then
-		echo "ERROR: ANTSPATH is not set"
-		exit 1;
+	if [[ -z "${ANTSPATH:-}" ]]; then
+		log_Err_Abort "ANTSPATH is not set"
 	fi
 fi
 
-tmpdir="`dirname $in`/"`basename $in`".IntensityCor"
-mkdir -p $tmpdir
-echo "$command" >> $tmpdir/log.txt
-echo "PWD = `pwd`" >> $tmpdir/log.txt
-echo "date: `date`" >> $tmpdir/log.txt
-echo "============================" >> $tmpdir/log.txt
-echo "" >> $tmpdir/log.txt
+tmpdir="$(dirname "$in")/$(basename "$in").IntensityCor"
+mkdir -p "$tmpdir"
+echo "$0 $@" >> "$tmpdir"/log.txt
+echo "PWD = $(pwd)" >> "$tmpdir"/log.txt
+echo "date: $(date)" >> "$tmpdir"/log.txt
+echo "============================" >> "$tmpdir"/log.txt
+echo "" >> "$tmpdir"/log.txt
 
 # convert from mgz to nifti
 log_Msg "Convert from .mgz to .nii.gz..."
@@ -108,17 +112,15 @@ mri_convert "$in".mgz "$tmpdir"/orig.nii.gz -odt float
 mri_convert "$mask".mgz "$tmpdir"/mask.nii.gz --like "$tmpdir"/orig.nii.gz
 ${FSLDIR}/bin/fslmaths "$tmpdir"/orig -mas "$tmpdir"/mask "$tmpdir"/orig_brain
 
-#${FSLDIR}/bin/fslmaths "$tmpdir"/orig_brain -thr 40 "$tmpdir"/orig_brain  # needed for Lyon M146 (Simulated T2w from diffusion MRI)
-
-# run biasfield correciton
-if [ $method = FAST ] ; then
+# run biasfield correction
+if [[ "$Method" == "FAST" ]]; then
 
 	log_Msg "Run fsl_anat..."
 	${FSLDIR}/bin/fsl_anat -i "$tmpdir"/orig_brain -o "$tmpdir"/orig_brain --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${lowpass} --nocleanup -t $type $strongbiasflag
 	${FSLDIR}/bin/fslmaths "$tmpdir"/orig_brain.anat/${type}_biascorr "$tmpdir"/orig_brain_restore
 	${FSLDIR}/bin/fslmaths "$tmpdir"/orig -div "$tmpdir"/orig_brain.anat/${type}_fast_bias "$tmpdir"/orig_restore
 
-elif [ $method = ANTS ] ; then
+elif [[ "$Method" == "ANTS" ]]; then
 
 	log_Msg "Run ANTs..."
 	fslmaths "$tmpdir"/orig.nii.gz "$tmpdir"/orig_abs.nii.gz
@@ -127,19 +129,19 @@ elif [ $method = ANTS ] ; then
 
 fi
 
-# run normaliztion 
+# run normalization
 log_Msg "Scaling restored image"
 
-if [ $type = T1 ] ; then
+if [[ "$type" == "T1" ]]; then
 
 	fslmaths "$tmpdir"/orig_brain.anat/T1_fast_seg.nii.gz -thr 3 -uthr 3 -bin "$tmpdir"/wm.roi.nii.gz
-	mean=`${FSLDIR}/bin/fslstats "$tmpdir"/orig_brain -k "$tmpdir"/wm.roi.nii.gz -m`
+	mean=$(${FSLDIR}/bin/fslstats "$tmpdir"/orig_brain -k "$tmpdir"/wm.roi.nii.gz -m)
 	${FSLDIR}/bin/fslmaths "$tmpdir"/orig_restore -mul $ScaleFactorT1w -div $mean "$tmpdir"/orig_restore_scale -odt char
 
-elif [ $type = T2 ] ; then
+elif [[ "$type" == "T2" ]]; then
 
 	${FREESURFER_HOME}/bin/mri_convert "$mask2".mgz "$tmpdir"/mask2.nii.gz --like "$tmpdir"/orig.nii.gz
-	mean=`${FSLDIR}/bin/fslstats "$tmpdir"/orig_restore.nii.gz -k "$tmpdir"/mask2 -M`
+	mean=$(${FSLDIR}/bin/fslstats "$tmpdir"/orig_restore.nii.gz -k "$tmpdir"/mask2 -M)
 	${FSLDIR}/bin/fslmaths "$tmpdir"/orig_restore -mul $ScaleFactorT2w -div $mean "$tmpdir"/orig_restore_scale -odt char
 
 fi
@@ -149,7 +151,7 @@ log_Msg "Convert back to .mgz..."
 ${FREESURFER_HOME}/bin/mri_convert -ns 1 -odt uchar "$tmpdir"/orig_restore_scale.nii.gz "$out".mgz --like "$in".mgz
 ${FSLDIR}/bin/fslmaths "$tmpdir"/orig_restore_scale.nii.gz -mas "$tmpdir"/mask.nii.gz "$tmpdir"/orig_restore_scale_brain.nii.gz
 ${FSLDIR}/bin/fsl_histogram -i "$tmpdir"/orig_restore_scale_brain.nii.gz -b 254 -m "$tmpdir"/mask.nii.gz -o "$out"_brain_hist.png
-${FREESURFER_HOME}/bin/mri_convert -ns 1 -odt uchar "$tmpdir"/orig_restore_scale_brain.nii.gz "$out"_brain.mgz --like "$in".mgz 
+${FREESURFER_HOME}/bin/mri_convert -ns 1 -odt uchar "$tmpdir"/orig_restore_scale_brain.nii.gz "$out"_brain.mgz --like "$in".mgz
 #rm -rf $tmpdir
 
 # ----------------------------------------------------------------------
