@@ -89,7 +89,8 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              use a pair of Spin Echo EPI images ('Spin Echo Field Maps') for SDC when
              SE fieldmaps have different acquisition parameters (echo spacing, resolution,
              PE direction, matrix) than the fMRI data. Requires --seechospacing and
-             --seunwarpdir in addition to the standard SE parameters.
+             --seunwarpdir in addition to the standard SE parameters. This should be the
+             polarity of the positive SE image.
              NOTE: Less accurate than '${SPIN_ECHO_METHOD_OPT}' when SE and fMRI parameters
              differ substantially (especially PE direction axis or limited SE spatial coverage).
 
