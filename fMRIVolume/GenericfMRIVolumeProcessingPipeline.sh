@@ -40,6 +40,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
+INHOMOGENEITY_FIELDMAP_METHOD_OPT="INHOMOGENEITY_FIELDMAP"
 NONE_METHOD_OPT="NONE"
 ON_SCANNER_METHOD_OPT="OnScanner"
 
@@ -92,6 +93,12 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              NOTE: Less accurate than '${SPIN_ECHO_METHOD_OPT}' when SE and fMRI parameters
              differ substantially (especially PE direction axis or limited SE spatial coverage).
 
+        '${INHOMOGENEITY_FIELDMAP_METHOD_OPT}'
+             use a pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on
+             diffusion B0 images, UKB style). The fieldmap is registered to T1w space and
+             used directly for distortion correction via epi_reg. No phase images or delta
+             TE are needed. Requires --inhomfmap.
+
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapcombined argument).
              This option is maintained for backward compatibility.
@@ -131,6 +138,8 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
 opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)" '' '--fmap'
+
+opts_AddOptional '--inhomfmap' 'InhomFieldMap' 'file' "pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
 
 # OTHER OPTIONS:
 
@@ -400,6 +409,12 @@ case "$DistortionCorrection" in
         fi
         if [ -z ${deltaTE} ]; then
             log_Err_Abort "--echodiff must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
+
+    ${INHOMOGENEITY_FIELDMAP_METHOD_OPT})
+        if [ -z ${InhomFieldMap} ]; then
+            log_Err_Abort "--inhomfmap must be specified with --dcmethod=${DistortionCorrection}"
         fi
         ;;
 
@@ -969,6 +984,7 @@ if [ $fMRIReference = "NONE" ] ; then
         --preregistertool=${PreregisterTool} \
         --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
+        --inhomfmap=${InhomFieldMap} \
         --is-longitudinal="$IsLongitudinal" \
         --t1w-cross2long-xfm="$T1wCross2LongXfm"
 else

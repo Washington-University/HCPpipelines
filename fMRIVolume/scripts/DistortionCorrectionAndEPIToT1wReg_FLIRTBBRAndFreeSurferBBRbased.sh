@@ -17,6 +17,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
+INHOMOGENEITY_FIELDMAP_METHOD_OPT="INHOMOGENEITY_FIELDMAP"
 NONE_METHOD_OPT="NONE"
 
 # --------------------------------------------------------------------------------
@@ -100,6 +101,10 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
         '${PHILIPS_METHOD_OPT}'
              use Philips specific Gradient Echo Field Maps for SDC
 
+        '${INHOMOGENEITY_FIELDMAP_METHOD_OPT}'
+             use a pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on
+             diffusion B0 images, UKB style). Requires --inhomfmap.
+
         '${NONE_METHOD_OPT}'
              do not use any SDC"
 
@@ -142,6 +147,8 @@ opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transfor
 opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'spacing (seconds)' "effective echo spacing of SE fieldmaps, in seconds. Required for --method=${TOPUP_MISMATCHED_METHOD_OPT}."
 
 opts_AddOptional '--seunwarpdir' 'SEUnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction of SE fieldmaps according to the *voxel* axes. Required for --method=${TOPUP_MISMATCHED_METHOD_OPT}. Can differ from --unwarpdir."
+
+opts_AddOptional '--inhomfmap' 'InhomFieldMap' 'image' "pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --method=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
 
 opts_ParseArguments "$@"
 
@@ -246,7 +253,7 @@ log_Msg "START"
 #ScoutExtension must initialize for both cross-sectional and longitudinal modes.
 
 case $DistortionCorrection in
-	${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${TOPUP_MISMATCHED_METHOD_OPT} )
+	${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${TOPUP_MISMATCHED_METHOD_OPT} | ${INHOMOGENEITY_FIELDMAP_METHOD_OPT} )
 		ScoutExtension="_undistorted"
 	;;
 	${NONE_METHOD_OPT})
@@ -669,6 +676,80 @@ if (( ! IsLongitudinal )); then
                     --inputdir="$WD"
             fi
 
+            ;;
+
+        ${INHOMOGENEITY_FIELDMAP_METHOD_OPT})
+
+            # -----------------------------------------------------------
+            # -- Pre-computed Inhomogeneity Fieldmap (UKB style)       --
+            # -----------------------------------------------------------
+            # The input is a pre-computed B0 inhomogeneity fieldmap in Hz,
+            # e.g., from TOPUP --fout on reverse-PE diffusion B0 images.
+            # This is registered to T1w space and used directly for distortion
+            # correction via epi_reg_dof. No phase images or delta TE needed.
+
+            log_Msg "---> Inhomogeneity Fieldmap distortion correction"
+
+            # 1/ Convert fieldmap from Hz to rad/s (FUGUE/epi_reg expect rad/s)
+            log_Msg "Converting fieldmap from Hz to rad/s"
+            ${FSLDIR}/bin/fslmaths ${InhomFieldMap} -mul 6.2832 ${WD}/FieldMap_rads_orig -odt float
+
+            # 2/ Register fieldmap to T1w space
+            # Use abs(fieldmap) as a registerable proxy (has tissue contrast from B0 inhomogeneity pattern)
+            log_Msg "Registering fieldmap to T1w space"
+            ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_rads_orig -abs ${WD}/FieldMap_abs
+            ${FSLDIR}/bin/bet ${WD}/FieldMap_abs ${WD}/FieldMap_abs_brain -f 0.35 -m
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap_abs_brain -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/fmap2T1w.mat -out ${WD}/FieldMap_abs2T1w -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+
+            # Apply registration to the actual fieldmap (rad/s)
+            ${FSLDIR}/bin/flirt -in ${WD}/FieldMap_rads_orig -ref ${T1wImage} -applyxfm -init ${WD}/fmap2T1w.mat -out ${WD}/FieldMap_rads2T1w
+
+            # 3/ Brain-mask the registered fieldmap using T1w brain mask
+            log_Msg "Brain-masking and extrapolating fieldmap"
+            ${FSLDIR}/bin/fslmaths ${WD}/${T1wBrainImageFile} -abs -bin ${WD}/FieldMap_T1w_brain_mask
+            ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_rads2T1w -mas ${WD}/FieldMap_T1w_brain_mask ${WD}/FieldMap_rads2T1w_brain
+
+            # 4/ Extrapolate fieldmap beyond mask to avoid edge effects (fugue --unmaskfmap)
+            # and demean to avoid spurious voxel shifts (following Philips method pattern)
+            ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rads2T1w_brain --mask=${WD}/FieldMap_T1w_brain_mask --unmaskfmap --savefmap=${WD}/FieldMap_rads2T1w_unmasked --unwarpdir=${UnwarpDir}
+
+            # Demean: subtract median within brain mask
+            fmap_median=$(${FSLDIR}/bin/fslstats ${WD}/FieldMap_rads2T1w_unmasked -k ${WD}/FieldMap_T1w_brain_mask -P 50)
+            ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_rads2T1w_unmasked -sub ${fmap_median} ${WD}/FieldMap
+
+            # 5/ Copy scout image
+            cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
+
+            # Test if T1w Brain is much larger, suggesting poor fieldmap-based brain extraction;
+            # check if NHP (FreeSurferNHP) — if so, create brain-extracted scout for registration
+            MagnitudeBrainSize=$(${FSLDIR}/bin/fslstats ${WD}/${T1wBrainImageFile} -V | cut -d " " -f 2)
+            if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
+                # NHP case: extract scout brain for registration
+                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Scout.nii.gz -ref ${T1wImage} -omat "$WD"/Scout2T1w.mat -out ${WD}/Scout2T1w.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+                ${FSLDIR}/bin/convert_xfm -omat "$WD"/T1w2Scout.mat -inverse "$WD"/Scout2T1w.mat
+                ${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Scout.nii.gz --premat="$WD"/T1w2Scout.mat -o ${WD}/Scout_brain_mask.nii.gz
+                fslmaths ${WD}/Scout_brain_mask.nii.gz -bin ${WD}/Scout_brain_mask.nii.gz
+                fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
+
+                # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${T1wImage} --fmapmagbrain=${WD}/${T1wBrainImageFile} --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
+            else
+                # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${T1wImage} --fmapmagbrain=${WD}/${T1wBrainImageFile} --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
+            fi
+
+            # 6/ Create spline interpolated output for scout to T1w + apply bias field correction
+            ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}${ScoutExtension}_warp.nii.gz -o ${WD}/${ScoutInputFile}${ScoutExtension}_1vol.nii.gz
+            ${FSLDIR}/bin/immv ${WD}/${ScoutInputFile}${ScoutExtension}_1vol.nii.gz ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.nii.gz
+            ${FSLDIR}/bin/immv ${WD}/${ScoutInputFile}${ScoutExtension}_warp.nii.gz ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp.nii.gz
+            cp "${WD}/${ScoutInputFile}${ScoutExtension}_init.mat" "${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat"
+
+            # 7/ Compute Jacobian of the distortion correction warp (from epi_reg_dof)
+            ${FSLDIR}/bin/convertwarp --rel -w ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp.nii.gz -r ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init_warp.nii.gz --jacobian=${WD}/Jacobian2T1w.nii.gz -o ${WD}/junk_warp
+            ${FSLDIR}/bin/fslmaths ${WD}/Jacobian2T1w.nii.gz -Tmean ${WD}/Jacobian2T1w.nii.gz
+            ${FSLDIR}/bin/imcp ${WD}/Jacobian2T1w.nii.gz ${WD}/Jacobian.nii.gz
+
+            #jacobian and bias field are applied outside the case, as they are done the same as other fieldmap methods
             ;;
 
         ${NONE_METHOD_OPT})
