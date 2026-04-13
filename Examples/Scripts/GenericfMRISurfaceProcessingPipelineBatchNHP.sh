@@ -4,8 +4,10 @@ get_batch_options() {
     local arguments=("$@")
 
     command_line_specified_study_folder=""
-    command_line_specified_sess=""
+    command_line_specified_subj=""
     command_line_specified_run_local="FALSE"
+    command_line_specified_Tasklist=""
+    command_line_specified_SpecSessionlist=""
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -19,8 +21,16 @@ get_batch_options() {
                 command_line_specified_study_folder=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
-            --Session=*)
-                command_line_specified_sess=${argument#*=}
+            --Subject=*)
+                command_line_specified_subj=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --Tasklist=*)
+                command_line_specified_Tasklist=${argument#*=}
+                index=$(( index + 1 ))
+                ;;
+            --SpecSessionlist=*)
+                command_line_specified_SpecSessionlist=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
             --runlocal)
@@ -37,135 +47,137 @@ get_batch_options() {
     done
 }
 
-
-#TODO NHP: check if -S <num> is NHP feature or legacy human feature (likely the latter)
-# Usage () {
-# echo ""
-# echo "Usage $0 <StudyFolder> <Subject1> [options]"
-# echo ""
-# echo "   Options:"
-# echo "       -S <num>             : specify Nth session. You need all sets of variables in hcppipe_conf.txt"
-# echo "                              (i.e., Tasklist, Taskreflist, TopupPositive, TopupNegative, PhaseEncodingList,"
-# echo "                              and DwellTime, TruePatientPosition [HFS, HFSx, FFSx], ScannerPatientPosition "
-# echo "                              [HFS, HFP, FFS, FFP])"
-# echo "       -d                   : dry run (print commands in the terminal but not run)" 
-# echo ""
-# exit 1;
-# }
-
-
 get_batch_options "$@"
+StudyFolder="${HOME}/projects/NHP_Data"
+# Space delimited list of subject IDs
+Subjlist="SubjectA"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Session folders (named by SessionID)
-Sesslist="nhp_session1 nhp_session2" #Space delimited list of Session IDs
+# Pipeline environment script
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-SPECIES="Macaque"
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
 
-if [ -n "${command_line_specified_sess}" ]; then
-    Sesslist="${command_line_specified_sess}"
+if [ -n "${command_line_specified_subj}" ]; then
+    Subjlist="${command_line_specified_subj}"
 fi
 
-if [ "$SPECIES" = "" ] ; then 
-    echo "ERROR: please export SPECIES first to any of Macaque, MacaqueCyno, MacaqueRhesus, Marmoset, NightMonkey, Chimp, Human"
-    exit 1
+if [ -n "${command_line_specified_Tasklist}" ]; then
+    Tasklist="${command_line_specified_Tasklist}"
 fi
+
+# Species label (Macaque, MacaqueCyno, MacaqueRhesus, Marmoset, NightMonkey, Chimp, Human)
+Species="Macaque"
 
 # Requirements for this script
 #  installed versions of: FSL, Connectome Workbench (wb_command)
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
+#Structural resolution, a mandatory option for SetUpSPECIES.sh
+StructRes=0.5
+
 #Set up pipeline environment variables and software
 source "$EnvironmentScript"
-source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES"
-#HACK: work around the log tool name hack in the sourced script
-#since debug.shlib will be active by default, set the log toolname back to the Batch script
-log_SetToolName "$(basename -- "$0")"
 
+source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --structres="$StructRes"
+
+# The following variables from the SetUpSpecies.sh are used:
+# LowResMeshes
+# finalfMRIResolution
+# SmoothingFWHM
+# GrayordinatesResolution
+
+if [[ $LowResMeshes != "" ]] ; then
+  LowResMesh=$(echo $LowResMeshes | sed -e 's/@/ /g' | awk '{print $NF}')
+else
+  echo "ERROR: cannot find LowResMeshes"
+  exit 1;
+fi
+
+RegName=MSMSulc
 
 # Log the originating call
 echo "$@"
 
-#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
-#DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE=""
-#QUEUE="hcp_priority.q"
+#QUEUE=""
+QUEUE="long.q"
 
-########################################## INPUTS ##########################################
+if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+    echo "About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
+    queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+else
+    echo "About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
+    queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+fi
 
-#Scripts called by this script do assume they run on the outputs of the FreeSurfer Pipeline
+########################################## INPUTS ########################################## 
+
+# Scripts called by this script do assume they run on the outputs of the 
+# GenericfMRIVolumeProcessingPipeline
 
 ######################################### DO WORK ##########################################
 
-TaskList=()
-TaskList+=(rfMRI_REST1_RL)
-TaskList+=(rfMRI_REST1_LR)
-TaskList+=(rfMRI_REST2_RL)
-TaskList+=(rfMRI_REST2_LR)
-TaskList+=(tfMRI_EMOTION_RL)
-TaskList+=(tfMRI_EMOTION_LR)
-TaskList+=(tfMRI_GAMBLING_RL)
-TaskList+=(tfMRI_GAMBLING_LR)
-TaskList+=(tfMRI_LANGUAGE_RL)
-TaskList+=(tfMRI_LANGUAGE_LR)
-TaskList+=(tfMRI_MOTOR_RL)
-TaskList+=(tfMRI_MOTOR_LR)
-TaskList+=(tfMRI_RELATIONAL_RL)
-TaskList+=(tfMRI_RELATIONAL_LR)
-TaskList+=(tfMRI_SOCIAL_RL)
-TaskList+=(tfMRI_SOCIAL_LR)
-TaskList+=(tfMRI_WM_RL)
-TaskList+=(tfMRI_WM_LR)
+for Subject in $Subjlist ; do
+    echo $Subject
+    # The following variables from the hcppipe_conf.txt are used:
+    # Tasklist
+    # SpecSessionlist
 
-for Session in $Sesslist ; do
-    echo $Session
-
-    for fMRIName in "${TaskList[@]}" ; do
-        echo "  ${fMRIName}"
-        
-        #The following options are defined in SetUpSecies.sh
-        #LowResMesh="32" #Needs to match what is in PostFreeSurfer, 32 is on average 2mm spacing between the vertices on the midthickness
-        #FinalfMRIResolution="2" #Needs to match what is in fMRIVolume, i.e. 2mm for 3T HCP data and 1.6mm for 7T HCP data
-        #SmoothingFWHM="2" #Recommended to be roughly the grayordinates spacing, i.e 2mm on HCP data 
-        #GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. 2mm gives the HCP standard grayordinates space with 91282 grayordinates.  Can be different from the FinalfMRIResolution (e.g. in the case of HCP 7T data at 1.6mm)
-        RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
-
-        if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-            echo "About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
-            queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    if [ -z "$Tasklist" ]; then 
+        if [ -e ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt ] ; then
+        source ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt
         else
-            echo "About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
-            queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+            echo "Cannot find hcppipe_conf.txt in ${Subject}/RawData";
+            echo "Exiting without processing.";
+            exit 1;
+        fi
+    fi
+
+    # command-line SpecSessionlist overrides what is in hcppipe_conf.txt
+    if [ -n "${command_line_specified_SpecSessionlist}" ]; then
+        SpecSessionlist="${command_line_specified_SpecSessionlist}"
+    fi
+
+    OrigTasklist=$(echo $Tasklist | sed -e 's/^@//g' | sed -e 's/@$//g')
+
+    if [ ! -z $SpecSessionlist ] ; then
+        Sessionlist=$(echo $SpecSessionlist | sed -e 's/,/ /g')
+    else
+        nsession=$(echo $OrigTasklist | awk -F"@" '{print NF}')
+        Sessionlist=$(seq 1 $nsession);
+    fi
+
+    for session in $Sessionlist ; do
+        if [ "$(echo $OrigTasklist | grep @)" != "" ] ; then
+            Tasklist=$(echo $OrigTasklist | cut -d '@' -f $session)
         fi
 
-        "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
-            --path="$StudyFolder" \
-            --session="$Session" \
-            --fmriname="$fMRIName" \
-            --lowresmesh="$LowResMesh" \
-            --fmrires="$FinalfMRIResolution" \
-            --smoothingFWHM="$SmoothingFWHM" \
-            --grayordinatesres="$GrayordinatesResolution" \
-            --regname="$RegName" \
-            --species="$SPECIES"
+        for fMRIName in $Tasklist ; do
+            fMRIName=$(basename $(remove_ext $fMRIName))
 
-        # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+            "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
+                --path=$StudyFolder \
+                --subject=$Subject \
+                --fmriname=$fMRIName \
+                --lowresmesh=$LowResMesh \
+                --fmrires=$FinalfMRIResolution \
+                --smoothingFWHM=$SmoothingFWHM \
+                --grayordinatesres=$GrayordinatesResolution \
+                --regname=$RegName
 
-        echo "set -- --path=$StudyFolder \
-            --session=$Session \
-            --fmriname=$fMRIName \
-            --lowresmesh=$LowResMesh \
-            --fmrires=$FinalfMRIResolution \
-            --smoothingFWHM=$SmoothingFWHM \
-            --grayordinatesres=$GrayordinatesResolution \
-            --regname=$RegName" \
-            --species="$SPECIES"
+            # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+            echo "set -- --path=$StudyFolder \
+                --subject=$Subject \
+                --fmriname=$fMRIName \
+                --lowresmesh=$LowResMesh \
+                --fmrires=$FinalfMRIResolution \
+                --smoothingFWHM=$SmoothingFWHM \
+                --grayordinatesres=$GrayordinatesResolution \
+                --regname=$RegName"
 
-        echo ". ${EnvironmentScript}"
-
-    done
-done
+            echo ". ${EnvironmentScript}"
+        done #for fMRIName
+    done #for session
+done #for Subject
