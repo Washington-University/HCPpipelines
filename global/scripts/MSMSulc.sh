@@ -38,6 +38,14 @@ SurfaceTemplateFolder="$HCPPIPEDIR"/global/templates/standard_mesh_atlases
 NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
 NativeFolder="$NonlinearFolder"/Native
 
+#Try to append $MSMCONFIGDIR to ConfFile if the file does not exist.
+if [ ! -f "$ConfFile" ] && [ -d "${MSMCONFIGDIR}" ]; then 
+	ConfFile="${MSMCONFIGDIR}/$ConfFile"
+fi
+if [ ! -f "$ConfFile" ]; then 
+	log_Err_Abort "MSM config file $ConfFile does not exist"
+fi
+
 #if user provided --refmesh but not --refdata, scream
 if [[ "$RefMesh" != "" && "$RefData" == "" ]]
 then

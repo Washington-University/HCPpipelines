@@ -137,6 +137,10 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
+if [ ! -d "$MSMCONFIGDIR" ]; then 
+    log_Err_Abort "\$MSMCONFIGDIR must be set to run MSMSulc"
+fi
+
 #internal scripts don't actually support multiple low res in one call, mostly because they are in different folders
 if [[ "$GrayordinatesSpaceDIR" == "" ]]
 then
