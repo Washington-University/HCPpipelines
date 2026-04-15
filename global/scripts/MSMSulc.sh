@@ -38,8 +38,8 @@ SurfaceTemplateFolder="$HCPPIPEDIR"/global/templates/standard_mesh_atlases
 NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
 NativeFolder="$NonlinearFolder"/Native
 
-#Try to append $MSMCONFIGDIR to ConfFile if the file does not exist.
-if [ ! -f "$ConfFile" ] && [ -d "${MSMCONFIGDIR}" ]; then 
+#If the config file doesn't have a directory separator, treat it as relative to $MSMCONFIGDIR
+if [[ "$ConfFile" != */* ]]; then 
 	ConfFile="${MSMCONFIGDIR}/$ConfFile"
 fi
 if [ ! -f "$ConfFile" ]; then 

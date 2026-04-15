@@ -137,7 +137,7 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
-if [ ! -d "$MSMCONFIGDIR" ]; then 
+if [[ "$MSMSulcConf" != */* && "${MSMCONFIGDIR:-}" == "" ]]; then 
     log_Err_Abort "\$MSMCONFIGDIR must be set to run MSMSulc"
 fi
 
