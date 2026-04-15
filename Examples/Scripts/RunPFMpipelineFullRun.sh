@@ -19,7 +19,7 @@ get_options() {
     # initialize variables
     StudyFolder="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final"
     Subjlist="100610@102311"
-    EnvironmentScript="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/Scripts/SetUpHCPPipeline_PFM.sh"
+    EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
     GroupAverageName="S1200_MSMAll7T175"
 
     RegName="MSMAll"
