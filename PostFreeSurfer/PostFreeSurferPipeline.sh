@@ -373,7 +373,6 @@ if ((doProcessing)); then
         --reg-name="$RegName"
         --inflate-extra-scale="$InflateExtraScale"
         --longitudinal-mode="$LongitudinalMode"
-        --subject="$Subject"
         --longitudinal-template="$LongitudinalTemplate"
         --longitudinal-timepoints="$SessionList"
         --species="$Species"
