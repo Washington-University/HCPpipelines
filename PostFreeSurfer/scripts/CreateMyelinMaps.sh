@@ -99,10 +99,6 @@ esac
 
 log_Msg "RegName: ${RegName}"
 
-verbose_echo " "
-verbose_red_echo " ===> Running ${script_name}"
-verbose_echo " "
-
 NonHumanSpecies=0
 if [ "$Species" != "human" ]; then NonHumanSpecies=1; fi
 
@@ -433,8 +429,5 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
 done
 
 rm ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
-
-verbose_green_echo "---> Finished ${script_name}"
-verbose_echo " "
 
 log_Msg "END"
