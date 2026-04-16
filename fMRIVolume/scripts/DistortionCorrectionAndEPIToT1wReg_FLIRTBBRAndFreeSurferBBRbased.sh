@@ -150,6 +150,10 @@ opts_AddOptional '--seunwarpdir' 'SEUnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-
 
 opts_AddOptional '--inhomfmap' 'InhomFieldMap' 'image' "pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --method=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
 
+opts_AddOptional '--inhomfmapmag' 'InhomFieldMapMag' 'image' "magnitude image in the same space as --inhomfmap (e.g., a b=0 volume from the diffusion acquisition). Used for registration to T1w. Mutually exclusive with --inhomfmapdwi. At least one of --inhomfmapmag or --inhomfmapdwi should be provided for --method=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
+
+opts_AddOptional '--inhomfmapdwi' 'InhomFieldMapDWI' 'image' "4D diffusion image in the same space as --inhomfmap; the first volume (b=0) will be extracted and used for registration to T1w. Mutually exclusive with --inhomfmapmag. At least one of --inhomfmapmag or --inhomfmapdwi should be provided for --method=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -690,16 +694,23 @@ if (( ! IsLongitudinal )); then
 
             log_Msg "---> Inhomogeneity Fieldmap distortion correction"
 
+            # Prepare magnitude image in fieldmap space for registration
+            if [[ -n "$InhomFieldMapDWI" ]]; then
+                log_Msg "Extracting b=0 (first volume) from diffusion image for registration"
+                ${FSLDIR}/bin/fslroi ${InhomFieldMapDWI} ${WD}/InhomFmapMag 0 1
+            else
+                log_Msg "Using provided magnitude image for registration"
+                ${FSLDIR}/bin/imcp ${InhomFieldMapMag} ${WD}/InhomFmapMag
+            fi
+
             # 1/ Convert fieldmap from Hz to rad/s (FUGUE/epi_reg expect rad/s)
             log_Msg "Converting fieldmap from Hz to rad/s"
             ${FSLDIR}/bin/fslmaths ${InhomFieldMap} -mul 6.2832 ${WD}/FieldMap_rads_orig -odt float
 
-            # 2/ Register fieldmap to T1w space
-            # Use abs(fieldmap) as a registerable proxy (has tissue contrast from B0 inhomogeneity pattern)
-            log_Msg "Registering fieldmap to T1w space"
-            ${FSLDIR}/bin/fslmaths ${WD}/FieldMap_rads_orig -abs ${WD}/FieldMap_abs
-            ${FSLDIR}/bin/bet ${WD}/FieldMap_abs ${WD}/FieldMap_abs_brain -f 0.35 -m
-            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/FieldMap_abs_brain -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/fmap2T1w.mat -out ${WD}/FieldMap_abs2T1w -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            # 2/ Register fieldmap to T1w space using magnitude image (in exact registration with fieldmap)
+            log_Msg "Registering fieldmap to T1w space via magnitude image"
+            ${FSLDIR}/bin/bet ${WD}/InhomFmapMag ${WD}/InhomFmapMag_brain -f 0.35 -m
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/InhomFmapMag_brain -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/fmap2T1w.mat -out ${WD}/InhomFmapMag2T1w -searchrx -30 30 -searchry -30 30 -searchrz -30 30
 
             # Apply registration to the actual fieldmap (rad/s)
             ${FSLDIR}/bin/flirt -in ${WD}/FieldMap_rads_orig -ref ${T1wImage} -applyxfm -init ${WD}/fmap2T1w.mat -out ${WD}/FieldMap_rads2T1w
@@ -732,10 +743,12 @@ if (( ! IsLongitudinal )); then
                 fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
 
                 # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
-                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${T1wImage} --fmapmagbrain=${WD}/${T1wBrainImageFile} --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
+                # Use magnitude image registered to T1w as --fmapmag/--fmapmagbrain (same space as fieldmap after registration)
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/InhomFmapMag2T1w --fmapmagbrain=${WD}/InhomFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
             else
                 # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
-                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${T1wImage} --fmapmagbrain=${WD}/${T1wBrainImageFile} --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
+                # Use magnitude image registered to T1w as --fmapmag/--fmapmagbrain (same space as fieldmap after registration)
+                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/InhomFmapMag2T1w --fmapmagbrain=${WD}/InhomFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
             fi
 
             # 6/ Create spline interpolated output for scout to T1w + apply bias field correction

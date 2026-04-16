@@ -142,6 +142,10 @@ opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy f
 
 opts_AddOptional '--inhomfmap' 'InhomFieldMap' 'file' "pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
 
+opts_AddOptional '--inhomfmapmag' 'InhomFieldMapMag' 'file' "magnitude image in the same space as --inhomfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. Mutually exclusive with --inhomfmapdwi. At least one of --inhomfmapmag or --inhomfmapdwi is required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
+
+opts_AddOptional '--inhomfmapdwi' 'InhomFieldMapDWI' 'file' "4D diffusion image in the same space as --inhomfmap; the first volume (b=0) will be extracted and used for fieldmap-to-T1w registration. Mutually exclusive with --inhomfmapmag. At least one of --inhomfmapmag or --inhomfmapdwi is required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
+
 # OTHER OPTIONS:
 
 opts_AddOptional '--dof' 'dof' '6 OR 9 OR 12' "Degrees of freedom for the EPI to T1 registration: 6 (default) or 9 or or 12" "6"
@@ -416,6 +420,12 @@ case "$DistortionCorrection" in
     ${INHOMOGENEITY_FIELDMAP_METHOD_OPT})
         if [ -z ${InhomFieldMap} ]; then
             log_Err_Abort "--inhomfmap must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [[ -n "$InhomFieldMapMag" && -n "$InhomFieldMapDWI" ]]; then
+            log_Err_Abort "--inhomfmapmag and --inhomfmapdwi are mutually exclusive; provide only one"
+        fi
+        if [[ -z "$InhomFieldMapMag" && -z "$InhomFieldMapDWI" ]]; then
+            log_Err_Abort "--dcmethod=${DistortionCorrection} requires --inhomfmapmag or --inhomfmapdwi for fieldmap-to-T1w registration"
         fi
         ;;
 
@@ -986,6 +996,8 @@ if [ $fMRIReference = "NONE" ] ; then
         --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
         --inhomfmap=${InhomFieldMap} \
+        --inhomfmapmag=${InhomFieldMapMag} \
+        --inhomfmapdwi=${InhomFieldMapDWI} \
         --is-longitudinal="$IsLongitudinal" \
         --t1w-cross2long-xfm="$T1wCross2LongXfm"
 else
