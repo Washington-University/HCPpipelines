@@ -105,7 +105,7 @@ if [[ "$SPECIES" != "Human" ]] ; then
     # Scaling brain size to adapt to size dependency of mcflirt - TH 2024
     if [[ ! -z "$BrainScaleFactor" && ! $(echo "$BrainScaleFactor == 1" | bc) = 1 ]] ; then
         log_Msg "Scaling brain with a factor = $BrainScaleFactor"
-        ${HCPPIPEDIR_Global}/ScaleVolume.sh ${Scout}.nii.gz ${BrainScaleFactor} ${WorkingDirectory}/scout_scale.nii.gz ${WorkingDirectory}/scale.world.mat
+        ${HCPPIPEDIR_Global}/ScaleVolumeNHP.sh ${Scout}.nii.gz ${BrainScaleFactor} ${WorkingDirectory}/scout_scale.nii.gz ${WorkingDirectory}/scale.world.mat
         ${FSLDIR}/bin/convert_xfm -omat ${WorkingDirectory}/rescale.world.mat -inverse ${WorkingDirectory}/scale.world.mat
         ${CARET7DIR}/wb_command -convert-affine -from-world ${WorkingDirectory}/scale.world.mat -to-flirt ${WorkingDirectory}/scale.mat ${Scout}.nii.gz ${WorkingDirectory}/scout_scale.nii.gz 
         ${CARET7DIR}/wb_command -convert-affine -from-world ${WorkingDirectory}/rescale.world.mat -to-flirt ${WorkingDirectory}/rescale.mat ${WorkingDirectory}/scout_scale.nii.gz ${Scout}.nii.gz
