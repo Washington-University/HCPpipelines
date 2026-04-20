@@ -441,12 +441,6 @@ fi
 #PostEddy step must be run on longitudinal session rather than copied from cross-sectional.
 if (( IsLongitudinal )); then Session="$SessionLong"; fi
 
-## TH Dev 2019 to avoid glibc causing segmentation error in gradient_unwarp.py
-if [[ "$SPECIES" != "Human" ]] && [[ "${LD_LIBRARY_PATH:-}" =~ /opt/glibc-2.14/lib ]]; then
-    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | sed -e 's@/opt/glibc-2.14/lib:@@g' | sed -e 's@:/opt/glibc-2.14/lib@@g')
-    log_Msg "Removed /opt/glibc-2.14/lib from LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-fi
-
 log_Msg "Invoking Post-Eddy Steps"
 post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
     "--path=${StudyFolder}"
