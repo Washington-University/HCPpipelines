@@ -60,12 +60,6 @@ SPECIES="Macaque"
 #   T2w:  T2w-based BBR (default)
 BBRContrast="T2w"
 
-#Whether T2w image is FLAIR, 0 or 1
-isFLAIR=0
-
-#Whether T2 image is T1w divided by FLAIR, 0 or 1
-isT1wDivFLAIR=1
-
 # Receive coil bias field correction method (NONE, LEGACY, or SEBASED)
 #   SEBASED calculates bias field from spin echo images (requires TOPUP)
 #   LEGACY uses the T1w bias field
@@ -107,7 +101,7 @@ StructRes=0.5
 # These are set by SetUpSPECIES.sh (sourced after EnvironmentScript).
 # Override here only if you need non-default values for your dataset.
 # Example values for Macaque:
-#   FinalFMRIResolution="1.25"
+#   FinalfMRIResolution="1.25"
 #   TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 #   WMProjAbs="1"
 #   BrainScaleFactor="0.36"
@@ -136,7 +130,7 @@ source "$EnvironmentScript"
 
 # Set up species-specific environment variables
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StructRes"
-source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "$isFLAIR" "$isT1wDivFLAIR"
+source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "0" "0"
 
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 #
@@ -144,7 +138,7 @@ source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "$isFLAIR" "$isT
 #CorticalScaleFactor="1"     # Cortical scale factor
 #
 #### fMRIVolume-relevant variables
-#FinalFMRIResolution="2"     # Target final resolution of fMRI data in mm
+#FinalfMRIResolution="2"     # Target final resolution of fMRI data in mm
 #TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"  # Config for topup or "NONE" if not used
 #WMProjAbs="2"               # FreeSurfer wm-proj-abs value
 #betspecieslabel="1"          # Species label for bet4animal (0=smallest, 4=largest brain)
@@ -429,7 +423,7 @@ for Subject in $Subjlist ; do
                 --echospacing="$DwellTime" \
                 --echodiff="$DeltaTE" \
                 --unwarpdir="$UnwarpDir" \
-                --fmrires="$FinalFMRIResolution" \
+                --fmrires="$FinalfMRIResolution" \
                 --dcmethod="$DistortionCorrection" \
                 --gdcoeffs="$GradientDistortionCoeffs" \
                 --topupconfig="$TopupConfig" \
@@ -464,7 +458,7 @@ for Subject in $Subjlist ; do
                 --echospacing=$DwellTime \
                 --echodiff=$DeltaTE \
                 --unwarpdir=$UnwarpDir \
-                --fmrires=$FinalFMRIResolution \
+                --fmrires=$FinalfMRIResolution \
                 --dcmethod=$DistortionCorrection \
                 --gdcoeffs=$GradientDistortionCoeffs \
                 --topupconfig=$TopupConfig \
