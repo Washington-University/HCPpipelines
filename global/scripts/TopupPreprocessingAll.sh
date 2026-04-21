@@ -71,6 +71,8 @@ opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "HFS (de
 
 opts_AddOptional '--initworldmat' 'InitWorldMat' 'matrix' "world matrix moving func to structure space"
 
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human)" "Human"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -131,6 +133,12 @@ DistortionCorrectionWarpFieldOutput=$("$FSLDIR"/bin/remove_ext "$DistortionCorre
 if [[ $WD == "" ]]
 then
     WD=${DistortionCorrectionWarpFieldOutput}.wdir
+fi
+
+#handle NONE convention
+if [[ "$SpinEchoPhaseEncodeZeroFSBrainmask" == NONE ]]
+then
+    SpinEchoPhaseEncodeZeroFSBrainmask=""
 fi
 
 log_Msg "START: Topup Field Map Generation and Gradient Unwarping"
@@ -274,7 +282,7 @@ if [ ! $GradientDistortionCoeffs = "NONE" ] ; then
 
     if [ ! $Phase2ndDir = TRUE ] ; then
         # Merge both sets of images
-        ${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc $mergezero 
+        ${FSLDIR}/bin/fslmerge -t ${WD}/BothPhases ${WD}/PhaseOne_gdc ${WD}/PhaseTwo_gdc
     else
         ${FSLDIR}/bin/fslmaths ${WD}/PhaseOne2 -abs -bin -dilD -Tmin ${WD}/PhaseOne2_mask
         ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${WD}/PhaseOne2_mask -r ${WD}/PhaseOne2_mask -w ${WD}/PhaseOne2_gdc_warp -o ${WD}/PhaseOne2_mask_gdc
@@ -509,7 +517,7 @@ if [[ $UnwarpDir = [xyij] ]] ; then
     # register scout to SE input (PhaseTwo) + combine motion and distortion correction
     ${FSLDIR}/bin/fslroi ${WD}/PhaseTwo_gdc ${WD}/PhaseTwo_gdc_one 0 1  # For flirt in FSL 6, -ref argument must be single 3D volume
     if [ "$SPECIES" != "Human" ] ; then
-        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != NONE ]] ; then
+        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != "" ]] ; then
             ${FSLDIR}/bin/invwarp -w ${WD}/WarpField_${vnum} -r ${WD}/Mask -o ${WD}/WarpField_${vnum}_inv --rel
             ${CARET7DIR}/wb_command -volume-resample $(${FSLDIR}/bin/remove_ext $PhaseEncodeZero).nii.gz ${WD}/Mask.nii.gz CUBIC ${WD}/PhaseZero_gdc_distorted.nii.gz -warp ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
             ${CARET7DIR}/wb_command -volume-resample ${SpinEchoPhaseEncodeZeroFSBrainmask}.nii.gz ${WD}/Mask.nii.gz TRILINEAR ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -warp  ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
@@ -544,7 +552,7 @@ elif [[ $UnwarpDir = [xyij]- || $UnwarpDir = -[xyij] ]] ; then
     # register scout to SE input (PhaseOne) + combine motion and distortion correction
     ${FSLDIR}/bin/fslroi ${WD}/PhaseOne_gdc ${WD}/PhaseOne_gdc_one 0 1  # For flirt in FSL 6, -ref argument must be single 3D volume
     if [ "$SPECIES" != "Human" ] ; then
-        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != NONE ]] ; then
+        if [[ $(imtest ${WD}/PhaseZero_gdc) = 1 && "$SpinEchoPhaseEncodeZeroFSBrainmask" != "" ]] ; then
             ${FSLDIR}/bin/invwarp -w ${WD}/WarpField_${vnum} -r ${WD}/Mask -o ${WD}/WarpField_${vnum}_inv --rel
             ${CARET7DIR}/wb_command -volume-resample $(${FSLDIR}/bin/remove_ext $PhaseEncodeZero).nii.gz ${WD}/Mask.nii.gz CUBIC ${WD}/PhaseZero_gdc_distorted.nii.gz -warp ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz
             ${CARET7DIR}/wb_command -volume-resample ${SpinEchoPhaseEncodeZeroFSBrainmask}.nii.gz ${WD}/Mask.nii.gz TRILINEAR ${WD}/PhaseZero_gdc_distorted_brainmask_fs.nii.gz -warp  ${WD}/WarpField_${vnum}_inv.nii.gz -fnirt ${WD}/Mask.nii.gz

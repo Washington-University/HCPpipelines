@@ -24,8 +24,15 @@ function outstruct = cifti_parse_xml(bytes, filename)
     outstruct.metadata = cifti_parse_metadata(tree, find(tree, '/CIFTI/Matrix/MetaData'), filename);
     map_uids = find(tree, '/CIFTI/Matrix/MatrixIndicesMap');
     outstruct.diminfo = {};
+    haveLabels = false;
     for map_uid = map_uids
         [map, applies] = cifti_parse_map(tree, map_uid, filename);
+        if strcmp(map.type, 'labels')
+            if haveLabels || length(applies) > 1
+                mywarn('more than one labels dimension', filename);
+            end
+            haveLabels = true;
+        end
         appliesmod = applies;
         appliesmod(applies < 3) = 3 - applies(applies < 3); %NOTE: swap 1 and 2 to match ciftiopen cdata convention...
         outstruct.diminfo(appliesmod) = {map}; %lhs {} doesn't support multi-assignment, but () on cell does...
@@ -182,6 +189,9 @@ function map = cifti_parse_dense(tree, map_uid, filename)
                 if length(model.vertlist) ~= model.count
                     myerror('VertexIndices does not match IndexCount', filename);
                 end
+                if length(unique(model.vertlist)) ~= length(model.vertlist)
+                    myerror('brain models have repeated or overlapping voxels', filename);
+                end
             case 'vox'
                 if isfield(model, 'numvert')
                     mywarn('SurfaceNumberOfVertices attribute present in Voxel type BrainModel', filename);
@@ -234,7 +244,7 @@ function map = cifti_parse_dense(tree, map_uid, filename)
     if length(unique(allstructs)) ~= length(allstructs)
         myerror('brain models specify a structure more than once', filename);
     end
-    if size(unique(allvox, 'rows'), 1) ~= size(allvox, 1)
+    if size(unique(allvox', 'rows'), 1) ~= size(allvox, 2)
         myerror('brain models have repeated or overlapping voxels', filename);
     end
 end
@@ -264,6 +274,8 @@ function outstr = cifti_structure_to_friendly(instr, filename)
         case 'CIFTI_STRUCTURE_DIENCEPHALON_VENTRAL_RIGHT'; outstr = 'DIENCEPHALON_VENTRAL_RIGHT';
         case 'CIFTI_STRUCTURE_HIPPOCAMPUS_LEFT'; outstr = 'HIPPOCAMPUS_LEFT';
         case 'CIFTI_STRUCTURE_HIPPOCAMPUS_RIGHT'; outstr = 'HIPPOCAMPUS_RIGHT';
+        case 'CIFTI_STRUCTURE_HIPPOCAMPUS_DENTATE_LEFT'; outstr = 'HIPPOCAMPUS_DENTATE_LEFT';
+        case 'CIFTI_STRUCTURE_HIPPOCAMPUS_DENTATE_RIGHT'; outstr = 'HIPPOCAMPUS_DENTATE_RIGHT';
         case 'CIFTI_STRUCTURE_OTHER'; outstr = 'OTHER';
         case 'CIFTI_STRUCTURE_OTHER_GREY_MATTER'; outstr = 'OTHER_GREY_MATTER';
         case 'CIFTI_STRUCTURE_OTHER_WHITE_MATTER'; outstr = 'OTHER_WHITE_MATTER';
@@ -436,7 +448,7 @@ function map = cifti_parse_parcels(tree, map_uid, filename)
         map.parcels(i) = thisparcel;
     end
     map.length = length(map.parcels);
-    allvox = horzcat(map.parcels.voxlist);
+    allvox = [map.parcels.voxlist];
     if size(unique(allvox', 'rows'), 1) ~= size(allvox, 2)
         myerror('parcels have repeated or overlapping voxels', filename);
     end

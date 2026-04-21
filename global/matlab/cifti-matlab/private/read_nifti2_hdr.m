@@ -84,7 +84,7 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
         badsize = hdr.sizeof_hdr; %save incorrect size for error message
         fclose(fid);
         hdr.endian = 'b';
-        fid = fopen(filename, 'r', 'b');
+        fid = fopen(filename, 'rb', hdr.endian);
         hdr.sizeof_hdr = fread_excepting(fid, [1 1 ], 'int32=>int32', filename); % 0
     end
     
@@ -99,7 +99,7 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
         error('%s seems to be a nifti-1 file', filename)
     end
 
-    hdr.magic           = fread_excepting(fid, [1 8 ], 'int8=>char', filename     ); % 4       `n', '+', `2', `\0','\r','\n','\032','\n' or (0x6E,0x2B,0x32,0x00,0x0D,0x0A,0x1A,0x0A)
+    hdr.magic           = fread_excepting(fid, [1 8 ], 'uint8=>char', filename     ); % 4       `n', '+', `2', `\0','\r','\n','\032','\n' or (0x6E,0x2B,0x32,0x00,0x0D,0x0A,0x1A,0x0A)
     hdr.datatype        = fread_excepting(fid, [1 1 ], 'int16=>int16', filename   ); % 12      See file formats
     hdr.bitpix          = fread_excepting(fid, [1 1 ], 'int16=>int16', filename   ); % 14      See file formats
     hdr.dim             = fread_excepting(fid, [1 8 ], 'int64=>int64', filename   ); % 16      See file formats
@@ -109,7 +109,7 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
         error('inconsistent endianness in the header');
     end
 
-    if ~strcmp(hdr.magic, ['n+2' 0 13 10 26 10])
+    if ~strcmp(hdr.magic, ['n+2' char([0 13 10 26 10])])
         % see https://www.nitrc.org/forum/forum.php?thread_id=2148&forum_id=1941
         % support only single-file
         error('wrong magic string in the header');
@@ -128,8 +128,8 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
     hdr.toffset         = fread_excepting(fid, [1 1 ], 'double=>double', filename ); % 216     0
     hdr.slice_start     = fread_excepting(fid, [1 1 ], 'int64=>int64', filename   ); % 224     0
     hdr.slice_end       = fread_excepting(fid, [1 1 ], 'int64=>int64', filename   ); % 232     0
-    hdr.descrip         = fread_excepting(fid, [1 80], 'int8=>char', filename     ); % 240     All zeros
-    hdr.aux_file        = fread_excepting(fid, [1 24], 'int8=>char', filename     ); % 320     All zeros
+    hdr.descrip         = fread_excepting(fid, [1 80], 'uint8=>char', filename     ); % 240     All zeros
+    hdr.aux_file        = fread_excepting(fid, [1 24], 'uint8=>char', filename     ); % 320     All zeros
     hdr.qform_code      = fread_excepting(fid, [1 1 ], 'int32=>int32', filename   ); % 344     NIFTI_XFORM_UNKNOWN (0)
     hdr.sform_code      = fread_excepting(fid, [1 1 ], 'int32=>int32', filename   ); % 348     NIFTI_XFORM_UNKNOWN (0)
     hdr.quatern_b       = fread_excepting(fid, [1 1 ], 'double=>double', filename ); % 352     0
@@ -144,9 +144,9 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
     hdr.slice_code      = fread_excepting(fid, [1 1 ], 'int32=>int32', filename   ); % 496     0
     hdr.xyzt_units      = fread_excepting(fid, [1 1 ], 'int32=>int32', filename   ); % 500     0xC (seconds, millimeters)
     hdr.intent_code     = fread_excepting(fid, [1 1 ], 'int32=>int32'   ); % 504     See file formats
-    hdr.intent_name     = fread_excepting(fid, [1 16], 'int8=>char'     ); % 508     See file formats
-    hdr.dim_info        = fread_excepting(fid, [1 1 ], 'int8=>int8'     ); % 524     0
-    hdr.unused_str      = fread_excepting(fid, [1 15], 'int8=>char'     ); % 525     All zeros
+    hdr.intent_name     = fread_excepting(fid, [1 16], 'uint8=>char'     ); % 508     See file formats
+    hdr.dim_info        = fread_excepting(fid, [1 1 ], 'uint8=>uint8'     ); % 524     0
+    hdr.unused_str      = fread_excepting(fid, [1 15], 'uint8'     ); % 525     All zeros
     % disp(ftell(fid));                                          % 540     End of the header
 
     if feof(fid)
@@ -158,11 +158,11 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
     end
 
     hdr.extensions = struct([]);
-    extender = fread_excepting(fid, [1 4], 'int8=>int8'); % 540, extender bytes
+    extender = fread_excepting(fid, [1 4], 'uint8=>uint8'); % 540, extender bytes
     % 0 0 0 0 means no extensions
     if any(extender ~= [0 0 0 0])
         %"extentions match those of NIfTI-1.1 when the extender bytes are 1 0 0 0", https://nifti.nimh.nih.gov/nifti-2/
-        if ~any(extender ~= [1 0 0 0])
+        if all(extender == [1 0 0 0])
             while ftell(fid) + 8 < hdr.vox_offset && ~feof(fid)
                 extension = struct();
                 esize = fread_excepting(fid, [1 1], 'int32=>int32'); % includes the size and code int32s
@@ -170,7 +170,7 @@ function [hdr, fid, cleanupObj] = read_nifti2_hdr(filename)
                     break;
                 end
                 extension.ecode = fread_excepting(fid, [1 1], 'int32=>int32');
-                extension.edata = fread_excepting(fid, [1 esize - 8], 'int8=>char');
+                extension.edata = fread_excepting(fid, [1 esize - 8], 'uint8');
                 hdr.extensions = [hdr.extensions extension];
             end
         end
@@ -180,3 +180,4 @@ end
 function cleanup(fid)
     fclose(fid);
 end
+
