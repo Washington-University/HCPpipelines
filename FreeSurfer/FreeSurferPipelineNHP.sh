@@ -157,7 +157,7 @@ opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhesus|M
 
 opts_AddOptional '--runmode' 'RunMode' 'Default|FSinit|FSbrainseg|FSsurfinit|FShires|FSFinish' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish (default: Default)" "Default"
 
-opts_AddMandatory '--scale-factor' 'ScaleFactor' 'number' "Brain scale factor for NHP processing (must match BrainScaleFactor used during PreFreeSurferNHP.sh).  Controls volume rescaling for FreeSurfer and derived parameters in SetUpFSNHP.sh."
+opts_AddMandatory '--scale-factor' 'ScaleFactor' 'number' "Brain scale factor for NHP processing (recommended value is BrainScaleFactor in SetUpSPECIES.sh).  Controls volume rescaling for FreeSurfer and some derived parameters in SetUpFSNHP.sh."
 
 opts_ParseArguments "$@"
 
