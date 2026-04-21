@@ -40,7 +40,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
-INHOMOGENEITY_FIELDMAP_METHOD_OPT="INHOMOGENEITY_FIELDMAP"
+REAL_FIELDMAP_METHOD_OPT="REAL_FIELDMAP"
 NONE_METHOD_OPT="NONE"
 ON_SCANNER_METHOD_OPT="OnScanner"
 
@@ -94,11 +94,11 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              NOTE: Less accurate than '${SPIN_ECHO_METHOD_OPT}' when SE and fMRI parameters
              differ substantially (especially PE direction axis or limited SE spatial coverage).
 
-        '${INHOMOGENEITY_FIELDMAP_METHOD_OPT}'
-             use a pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on
-             diffusion B0 images, UKB style). The fieldmap is registered to T1w space and
-             used directly for distortion correction via epi_reg. No phase images or delta
-             TE are needed. Requires --inhomfmap.
+        '${REAL_FIELDMAP_METHOD_OPT}'
+             use a pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0
+             images, UKB style). The fieldmap is registered to T1w space and used directly
+             for distortion correction via epi_reg. No phase images or deltavTE are needed.
+             Requires --inrealfmap.
 
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapcombined argument).
@@ -140,11 +140,9 @@ opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times
 
 opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)" '' '--fmap'
 
-opts_AddOptional '--inhomfmap' 'InhomFieldMap' 'file' "pre-computed inhomogeneity fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--inrealfmap' 'RealFieldMap' 'file' "pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${REAL_FIELDMAP_METHOD_OPT}."
 
-opts_AddOptional '--inhomfmapmag' 'InhomFieldMapMag' 'file' "magnitude image in the same space as --inhomfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. Mutually exclusive with --inhomfmapdwi. At least one of --inhomfmapmag or --inhomfmapdwi is required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
-
-opts_AddOptional '--inhomfmapdwi' 'InhomFieldMapDWI' 'file' "4D diffusion image in the same space as --inhomfmap; the first volume (b=0) will be extracted and used for fieldmap-to-T1w registration. Mutually exclusive with --inhomfmapmag. At least one of --inhomfmapmag or --inhomfmapdwi is required for --dcmethod=${INHOMOGENEITY_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--inrealfmapmag' 'RealFieldMapMag' 'file' "magnitude image in the same space as --inrealfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. Mutually exclusive with --inrealfmapdwi. --inrealfmapmag is required for --dcmethod=${REAL_FIELDMAP_METHOD_OPT}."
 
 # OTHER OPTIONS:
 
@@ -417,15 +415,12 @@ case "$DistortionCorrection" in
         fi
         ;;
 
-    ${INHOMOGENEITY_FIELDMAP_METHOD_OPT})
-        if [ -z ${InhomFieldMap} ]; then
-            log_Err_Abort "--inhomfmap must be specified with --dcmethod=${DistortionCorrection}"
+    ${REAL_FIELDMAP_METHOD_OPT})
+        if [ -z ${RealFieldMap} ]; then
+            log_Err_Abort "--inrealfmap must be specified with --dcmethod=${DistortionCorrection}"
         fi
-        if [[ -n "$InhomFieldMapMag" && -n "$InhomFieldMapDWI" ]]; then
-            log_Err_Abort "--inhomfmapmag and --inhomfmapdwi are mutually exclusive; provide only one"
-        fi
-        if [[ -z "$InhomFieldMapMag" && -z "$InhomFieldMapDWI" ]]; then
-            log_Err_Abort "--dcmethod=${DistortionCorrection} requires --inhomfmapmag or --inhomfmapdwi for fieldmap-to-T1w registration"
+        if [[ -z "$RealFieldMapMag" ]]; then
+            log_Err_Abort "--dcmethod=${DistortionCorrection} requires --inrealfmapmag for fieldmap-to-T1w registration"
         fi
         ;;
 
@@ -995,9 +990,8 @@ if [ $fMRIReference = "NONE" ] ; then
         --preregistertool=${PreregisterTool} \
         --seechospacing=${SEEchoSpacing} \
         --seunwarpdir=${SEUnwarpDir} \
-        --inhomfmap=${InhomFieldMap} \
-        --inhomfmapmag=${InhomFieldMapMag} \
-        --inhomfmapdwi=${InhomFieldMapDWI} \
+        --realfmap=${RealFieldMap} \
+        --realfmapmag=${RealFieldMapMag} \
         --is-longitudinal="$IsLongitudinal" \
         --t1w-cross2long-xfm="$T1wCross2LongXfm"
 else
