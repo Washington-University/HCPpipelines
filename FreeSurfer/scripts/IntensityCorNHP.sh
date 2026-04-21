@@ -52,10 +52,8 @@ if [[ "$ImageType" != "T1" && "$ImageType" != "T2" ]]; then
     log_Err_Abort "unknown --type '$ImageType', must be T1 or T2"
 fi
 
-type="$ImageType"
-
 # handle wm-mask for T2
-if [[ "$type" == "T2" ]]; then
+if [[ "$ImageType" == "T2" ]]; then
     if [[ -z "$WMMask" ]]; then
         log_Err_Abort "--wm-mask is required when --type is T2"
     fi
@@ -87,11 +85,11 @@ ScaleFactorT2w=57  # white matter value for T2w
 
 if [[ "$Method" == "FAST" ]]; then
 	echo "FSLDIR:      $FSLDIR"
-	echo "$type lowpass:     $lowpass"
+	echo "$ImageType lowpass:     $lowpass"
 
 elif [[ "$Method" == "ANTS" ]]; then
 	echo "ANTSPATH:    $ANTSPATH"
-	echo "$type splinespace  $splinespace"
+	echo "$ImageType splinespace  $splinespace"
 
 	if [[ -z "${ANTSPATH:-}" ]]; then
 		log_Err_Abort "ANTSPATH is not set"
@@ -116,9 +114,9 @@ ${FSLDIR}/bin/fslmaths "$tmpdir"/orig -mas "$tmpdir"/mask "$tmpdir"/orig_brain
 if [[ "$Method" == "FAST" ]]; then
 
 	log_Msg "Run fsl_anat..."
-	${FSLDIR}/bin/fsl_anat -i "$tmpdir"/orig_brain -o "$tmpdir"/orig_brain --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${lowpass} --nocleanup -t $type $strongbiasflag
-	${FSLDIR}/bin/fslmaths "$tmpdir"/orig_brain.anat/${type}_biascorr "$tmpdir"/orig_brain_restore
-	${FSLDIR}/bin/fslmaths "$tmpdir"/orig -div "$tmpdir"/orig_brain.anat/${type}_fast_bias "$tmpdir"/orig_restore
+	${FSLDIR}/bin/fsl_anat -i "$tmpdir"/orig_brain -o "$tmpdir"/orig_brain --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${lowpass} --nocleanup -t $ImageType $strongbiasflag
+	${FSLDIR}/bin/fslmaths "$tmpdir"/orig_brain.anat/${ImageType}_biascorr "$tmpdir"/orig_brain_restore
+	${FSLDIR}/bin/fslmaths "$tmpdir"/orig -div "$tmpdir"/orig_brain.anat/${ImageType}_fast_bias "$tmpdir"/orig_restore
 
 elif [[ "$Method" == "ANTS" ]]; then
 
@@ -132,13 +130,13 @@ fi
 # run normalization
 log_Msg "Scaling restored image"
 
-if [[ "$type" == "T1" ]]; then
+if [[ "$ImageType" == "T1" ]]; then
 
 	fslmaths "$tmpdir"/orig_brain.anat/T1_fast_seg.nii.gz -thr 3 -uthr 3 -bin "$tmpdir"/wm.roi.nii.gz
 	mean=$(${FSLDIR}/bin/fslstats "$tmpdir"/orig_brain -k "$tmpdir"/wm.roi.nii.gz -m)
 	${FSLDIR}/bin/fslmaths "$tmpdir"/orig_restore -mul $ScaleFactorT1w -div $mean "$tmpdir"/orig_restore_scale -odt char
 
-elif [[ "$type" == "T2" ]]; then
+elif [[ "$ImageType" == "T2" ]]; then
 
 	${FREESURFER_HOME}/bin/mri_convert "$mask2".mgz "$tmpdir"/mask2.nii.gz --like "$tmpdir"/orig.nii.gz
 	mean=$(${FSLDIR}/bin/fslstats "$tmpdir"/orig_restore.nii.gz -k "$tmpdir"/mask2 -M)
