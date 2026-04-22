@@ -97,9 +97,8 @@ fi
 
 echo "$(basename $0) $@"
 
-if [ -z ${EnvironmentScript} ] ; then
-    EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
-fi
+EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
+
 source $EnvironmentScript
 
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
