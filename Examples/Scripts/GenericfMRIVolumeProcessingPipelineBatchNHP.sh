@@ -103,7 +103,7 @@ StructRes=0.5
 # Example values for Macaque:
 #   FinalfMRIResolution="1.25"
 #   TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
-#   WMProjAbs="1"
+#   FuncWMProjAbs="1"
 #   BrainScaleFactor="0.36"
 #   betspecieslabel="1"
 
@@ -130,7 +130,6 @@ source "$EnvironmentScript"
 
 # Set up species-specific environment variables
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StructRes"
-source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "0" "0"
 
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 #
@@ -140,7 +139,7 @@ source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "0" "0"
 #### fMRIVolume-relevant variables
 #FinalfMRIResolution="2"     # Target final resolution of fMRI data in mm
 #TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"  # Config for topup or "NONE" if not used
-#WMProjAbs="2"               # FreeSurfer wm-proj-abs value
+#FuncWMProjAbs="2"           # fMRI wm-proj-abs for FreeSurferBBR (override SetUpSPECIES.sh default)
 #betspecieslabel="1"          # Species label for bet4animal (0=smallest, 4=largest brain)
 #betfraction="0.3"            # Fractional intensity threshold for bet
 #
@@ -154,8 +153,11 @@ source "$HCPPIPEDIR"/FreeSurfer/custom/SetUpFSNHP.sh "$SPECIES" "0" "0"
 #FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf"
 #T1wTemplate, T1wTemplateBrain, T1wTemplate2mm, T2wTemplate, etc.
 #
-# If you want to override SetUpSPECIES.sh values, uncomment and edit the
-# relevant lines above after the source command.
+# If you want to override SetUpSPECIES.sh values for your dataset, uncomment
+# and edit the relevant lines above after the source command.
+# For example, to override the species default FuncWMProjAbs, add:
+#   FuncWMProjAbs="<your value>"
+# after the SetUpSPECIES.sh source line.
 
 # Export species-specific environment variables used by subscripts
 export betspecieslabel
@@ -431,7 +433,7 @@ for Subject in $Subjlist ; do
                 --usejacobian="$UseJacobian" \
                 --mctype="$MCType" \
                 --bbr-contrast="$BBRContrast" \
-                --wmprojabs="$WMProjAbs" \
+                --wmprojabs="$FuncWMProjAbs" \
                 --initworldmat="$InitWorldMat" \
                 --scannerpatientposition="$ScannerPatientPosition" \
                 --truepatientposition="$TruePatientPosition" \
@@ -466,7 +468,7 @@ for Subject in $Subjlist ; do
                 --usejacobian=$UseJacobian \
                 --mctype=$MCType \
                 --bbr-contrast=$BBRContrast \
-                --wmprojabs=$WMProjAbs \
+                --wmprojabs=$FuncWMProjAbs \
                 --initworldmat=$InitWorldMat \
                 --scannerpatientposition=$ScannerPatientPosition \
                 --truepatientposition=$TruePatientPosition \
