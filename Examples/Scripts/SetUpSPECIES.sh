@@ -40,6 +40,7 @@ if [[ "$SPECIES" == *Human* ]] ; then
 
     BrainScaleFactor="1"
     CorticalScaleFactor="1"
+    FuncWMProjAbs="2"            # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -85,6 +86,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
 
     BrainScaleFactor="1.25"
     CorticalScaleFactor="2"
+    FuncWMProjAbs="1"            # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -128,6 +130,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
 
     BrainScaleFactor="2"
     CorticalScaleFactor="3"
+    FuncWMProjAbs="0.7"          # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -279,6 +282,7 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
 
     BrainScaleFactor="5"
     CorticalScaleFactor="10"
+    FuncWMProjAbs="0.2"          # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="50"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -329,6 +333,7 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
 
     BrainScaleFactor="4"
     CorticalScaleFactor="5"
+    FuncWMProjAbs="0.3"          # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="40"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
