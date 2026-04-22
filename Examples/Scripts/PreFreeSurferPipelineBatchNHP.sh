@@ -169,7 +169,7 @@ for Subject in $Subjlist ; do
         echo "  WARNING: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. 
         Please prepare hcppipe_conf.txt.
         Alternatively, uncomment the lines in the Batch File, set appropriate values manually, and run again."
-
+    fi
         ## Structural MRI (sMRI) - multiple scans can be separated by a space (" ")
         #T1wInputImages="t1_1 t1_2"                                            # input T1w
         #T2wInputImages="t2_1 t2_2"                                            # input T2w
@@ -185,7 +185,6 @@ for Subject in $Subjlist ; do
         #GradientDistortionCoeffs="<path/to/gradient_coefficient.grad>"        # path to gradient coefficient. names (scanner): SC72C_Skyra (Connectom). AS82_Prisma (Prisma),  GC99_Skyra (Skyra)
         #StrucUnwarpDir=z                                                      # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
         #UsePhaseZero="FALSE"                                                  # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
-    fi
   
     if [[ $T1wSampleSpacing != "" && $T1wSampleSpacing != "NONE" && $T1wSampleSpacing != "None" && $T2wSampleSpacing != "" && $T2wSampleSpacing != "NONE" && $T2wSampleSpacing != "None" && $StrucSEUnwarpDir != "None" && $StrucSEUnwarpDir != "" ]] ; then
         if [[ -n $StrucTopupPositive && -n $StrucTopupNegative && -n $StrucSEDwellTime && "$StrucTopupPositive" != NONE ]] ; then
