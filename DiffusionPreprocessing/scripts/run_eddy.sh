@@ -153,6 +153,8 @@ opts_AddOptional '--extra-eddy-arg' 'extra_eddy_args' 'token' '(repeatable) Gene
 
 opts_AddOptional '--cuda-version' 'g_cuda_version' 'X.Y' " If using the GPU-enabled version of eddy then this option can be used to specify which eddy_cuda binary version to use. If specified, FSLDIR/bin/eddy_cudaX.Y will be used."
 
+opts_AddOptional '--species' 'SPECIES' 'String' "Species (Human, Chimp, RhesusMacaque, MacaqueMac30BS, CynoMacaque, SnowMacaque, Marmoset, NightMonkey). When non-Human, NHP-specific eddy flags are appended automatically." "Human"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -459,11 +461,19 @@ eddy_command+=("--cnr_maps"  #Hard-coded as an option to 'eddy', so we can run E
     "--fwhm=${fwhm_value}"
     "--topup=${topupdir}/topup_Pos_Neg_b0"
     "--out=${workingdir}/eddy_unwarped_images")
+# NHP data are often not perfectly shelled; bypass eddy's shell check
+if [[ "${SPECIES}" != "Human" ]]; then
+    eddy_command+=("--data_is_shelled")
+fi
 if ((! peas)); then
     eddy_command+=(--dont_peas)
 fi
 if [[ "${resamp_value}" != "" ]]; then
 	eddy_command+=("--resamp=${resamp_value}")
+	# LSR resampling on NHP requires --fep (eddy 6.0.5+ behavior)
+	if [[ "${SPECIES}" != "Human" && "${resamp_value}" == "lsr" ]]; then
+		eddy_command+=("--fep")
+	fi
 fi
 #another gpu-dependent option
 if [[ "${eddyExec}" == "${gpuEnabledEddy}" && "${ol_nstd_val}" != "" ]]; then
