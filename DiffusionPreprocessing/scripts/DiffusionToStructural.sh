@@ -38,6 +38,10 @@ DiffRes=$(getopt1 "--diffresol" "$@")                 # "$11"#Diffusion resoluti
 dof=$(getopt1 "--dof" "$@")                           # Degrees of freedom for registration to T1w (defaults to 6)
 T1wCross2LongXfm=$(getopt1 "--t1w-cross2long-xfm" "$@") # Additional transform for the longitudinal processing.
 
+# NHP options (defaults selected so Human path is unchanged)
+SPECIES=$(getopt1 "--species" "$@")                   # Human / RhesusMacaque / Marmoset / ... (default Human)
+WMProjAbs=$(getopt1 "--wmprojabs" "$@")               # Species-specific white-matter projection absolute distance (mm)
+FSBBRDIFF=$(getopt1 "--fsbbrdiff" "$@")               # TRUE | NONE — whether to run FreeSurfer bbregister on diffusion
 
 # Output Variables
 T1wOutputDirectory=$(getopt1 "--datadiffT1wdir" "$@") # "$12" #Path to T1w space diffusion data (for producing output)
@@ -46,6 +50,9 @@ QAImage=$(getopt1 "--QAimage" "$@")                   # "$14" #Temporary file fo
 
 # Set default option values
 dof=$(defaultopt $dof 6)
+SPECIES=$(defaultopt "$SPECIES" "Human")
+WMProjAbs=$(defaultopt "$WMProjAbs" "2")
+FSBBRDIFF=$(defaultopt "$FSBBRDIFF" "TRUE")
 
 IsLongitudinal=0
 if [ -n "$T1wCross2LongXfm" ]; then IsLongitudinal=1; fi
