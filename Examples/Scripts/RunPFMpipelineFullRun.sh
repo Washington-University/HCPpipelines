@@ -17,7 +17,7 @@ get_options() {
     local arguments=("$@")
 
     # initialize variables
-    StudyFolder="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final"
+    StudyFolder="${HOME}/data/HCPpipelines_ExampleData"
     Subjlist="100610@102311"
     EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
     GroupAverageName="S1200_MSMAll7T175"
