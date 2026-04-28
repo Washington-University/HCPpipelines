@@ -14,6 +14,9 @@ SelectBestB0=$4 #0 only the actual diffusion data was fed into eddy
                 #1 least distorted b0 was prepended to the eddy input
                 # Note: This numeric value is used within the script as a numeric that controls
                 # the number of volumes to skip, so it isn't just used as 0/1 "boolean".
+BetSpeciesLabel=${5:-0} #0 = Human (uses standard 'bet'), >=1 = NHP species code passed to bet4animal:
+                        #  1=Chimp, 2=Macaque (rhesus/cyno/etc), 3=Marmoset, >3=other small NHPs.
+                        #  Controls bet fraction (0.3/0.4/0.5/0.6) and bet4animal -z label.
 
 globalscriptsdir=${HCPPIPEDIR_Global}
 
@@ -176,6 +179,18 @@ ${FSLDIR}/bin/fslmaths ${datadir}/cnr_maps -mas ${datadir}/fov_mask ${datadir}/c
 # Remove negative intensity values (from eddy) from final data
 ${FSLDIR}/bin/fslmaths ${datadir}/data -thr 0 ${datadir}/data
 ${FSLDIR}/bin/fslroi ${datadir}/data ${datadir}/nodif 0 1
-${FSLDIR}/bin/bet ${datadir}/nodif ${datadir}/nodif_brain -m -f 0.1
+if [ "${BetSpeciesLabel}" -eq 0 ]; then
+	# Human: standard FSL bet
+	${FSLDIR}/bin/bet ${datadir}/nodif ${datadir}/nodif_brain -m -f 0.1
+else
+	# NHP: bet4animal with species-tuned fraction
+	case "${BetSpeciesLabel}" in
+		1) BetFraction=0.3 ;;
+		2) BetFraction=0.4 ;;
+		3) BetFraction=0.5 ;;
+		*) BetFraction=0.6 ;;
+	esac
+	${FSLDIR}/bin/bet4animal ${datadir}/nodif ${datadir}/nodif_brain -m -f ${BetFraction} -z ${BetSpeciesLabel}
+fi
 
 echo -e "\n END: eddy_postproc"
