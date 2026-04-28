@@ -246,46 +246,29 @@ DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
 DiffRes=$(printf "%0.2f" ${DiffRes})
 
 log_Msg "Running Diffusion to Structural Registration"
-if [[ "$SPECIES" == "Human" ]]; then
-	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-		--t1folder="${T1wFolder}" \
-		--session="${Session}" \
-		--workingdir="${outdir}/reg" \
-		--datadiffdir="${outdir}/data" \
-		--t1="${T1wImage}" \
-		--t1restore="${T1wRestoreImage}" \
-		--t1restorebrain="${T1wRestoreImageBrain}" \
-		--biasfield="${BiasField}" \
-		--brainmask="${FreeSurferBrainMask}" \
-		--datadiffT1wdir="${outdirT1w}" \
-		--regoutput="${RegOutput}" \
-		--QAimage="${QAImage}" \
-		--dof="${DegreesOfFreedom}" \
-		--gdflag=${GdFlag} \
-		--diffresol=${DiffRes} \
-		--t1w-cross2long-xfm="$T1wCross2LongXfm"
-else
-	# NHP: use DiffusionToStructuralNHP.sh with --fsbbrdiff and --wmprojabs
-	FSBBRDIFF="TRUE"
-	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructuralNHP.sh \
-		--t1folder="${T1wFolder}" \
-		--subject="${Session}" \
-		--workingdir="${outdir}/reg" \
-		--datadiffdir="${outdir}/data" \
-		--t1="${T1wImage}" \
-		--t1restore="${T1wRestoreImage}" \
-		--t1restorebrain="${T1wRestoreImageBrain}" \
-		--biasfield="${BiasField}" \
-		--brainmask="${FreeSurferBrainMask}" \
-		--datadiffT1wdir="${outdirT1w}" \
-		--regoutput="${RegOutput}" \
-		--QAimage="${QAImage}" \
-		--dof="${DegreesOfFreedom}" \
-		--gdflag="${GdFlag}" \
-		--diffresol="${DiffRes}" \
-		--fsbbrdiff="${FSBBRDIFF}" \
-		--wmprojabs="${DiffWMProjAbs}"
-fi
+# Unified dispatch: DiffusionToStructural.sh handles both Human and NHP
+# (gated by --species). NHP-only flags --fsbbrdiff / --wmprojabs are
+# always passed but ignored when species == Human.
+${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
+	--t1folder="${T1wFolder}" \
+	--session="${Session}" \
+	--workingdir="${outdir}/reg" \
+	--datadiffdir="${outdir}/data" \
+	--t1="${T1wImage}" \
+	--t1restore="${T1wRestoreImage}" \
+	--t1restorebrain="${T1wRestoreImageBrain}" \
+	--biasfield="${BiasField}" \
+	--brainmask="${FreeSurferBrainMask}" \
+	--datadiffT1wdir="${outdirT1w}" \
+	--regoutput="${RegOutput}" \
+	--QAimage="${QAImage}" \
+	--dof="${DegreesOfFreedom}" \
+	--gdflag=${GdFlag} \
+	--diffresol=${DiffRes} \
+	--t1w-cross2long-xfm="$T1wCross2LongXfm" \
+	--species="${SPECIES}" \
+	--wmprojabs="${DiffWMProjAbs}" \
+	--fsbbrdiff="TRUE"
 
 to_location="${outdirT1w}/eddylogs"
 from_directory="${outdir}/eddy"
