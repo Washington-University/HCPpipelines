@@ -143,6 +143,12 @@ opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the 
 #If set, longitudinal mode is triggered.
 opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. If set, longitudinal mode is triggered." ""
 
+#NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. Human, Chimp, RhesusMacaque, Mac30BS, CynoMacaque, Marmoset, NightMonkey" "Human"
+
+opts_AddOptional '--specieslabel' 'SpeciesLabel' 'number' "Species label for NHP sub-scripts (0=Human, 1=Chimp, 2=Macaque, etc.). Defaults to 0" "0"
+
+opts_AddOptional '--wmprojabs' 'DiffWMProjAbs' 'number' "White matter projection absolute depth. Defaults to 2" "2"
 
 opts_ParseArguments "$@"
 
@@ -181,6 +187,16 @@ validate_scripts() {
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh not found"
 	fi
 
+	# NHP sub-script validation
+	if [[ "$SPECIES" != "Human" ]]; then
+		if [[ ! -f "${HCPPIPEDIR_dMRI}"/eddy_postprocNHP.sh ]]; then
+			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/eddy_postprocNHP.sh not found"
+		fi
+		if [[ ! -f "${HCPPIPEDIR_dMRI}"/DiffusionToStructuralNHP.sh ]]; then
+			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/DiffusionToStructuralNHP.sh not found"
+		fi
+	fi
+
 	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
@@ -216,12 +232,19 @@ fi
 
 log_Msg "Running Eddy PostProcessing"
 # Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
-select_flag="0"
-if ((SelectBestB0)); then
-	select_flag="1"
-fi
-if (( ! IsLongitudinal )); then 
-    ${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+if [[ "$SPECIES" == "Human" ]]; then
+	select_flag="0"
+	if ((SelectBestB0)); then
+		select_flag="1"
+	fi
+	if (( ! IsLongitudinal )); then
+		${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+	fi
+else
+	# NHP: use eddy_postprocNHP.sh with SpeciesLabel
+	log_Msg "PATH=$PATH"
+	log_Msg "gradient_unwarp.py=$(which gradient_unwarp.py)"
+	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postprocNHP.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} 0 ${SpeciesLabel}
 fi
 
 # Establish variables that follow naming conventions
@@ -237,39 +260,80 @@ DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
 DiffRes=$(printf "%0.2f" ${DiffRes})
 
 log_Msg "Running Diffusion to Structural Registration"
-${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-    --t1folder="${T1wFolder}" \
-    --session="${Session}" \
-    --workingdir="${outdir}/reg" \
-    --datadiffdir="${outdir}/data" \
-    --t1="${T1wImage}" \
-    --t1restore="${T1wRestoreImage}" \
-    --t1restorebrain="${T1wRestoreImageBrain}" \
-    --biasfield="${BiasField}" \
-    --brainmask="${FreeSurferBrainMask}" \
-    --datadiffT1wdir="${outdirT1w}" \
-    --regoutput="${RegOutput}" \
-    --QAimage="${QAImage}" \
-    --dof="${DegreesOfFreedom}" \
-    --gdflag=${GdFlag} \
-    --diffresol=${DiffRes} \
-    --t1w-cross2long-xfm="$T1wCross2LongXfm"
+if [[ "$SPECIES" == "Human" ]]; then
+	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
+		--t1folder="${T1wFolder}" \
+		--session="${Session}" \
+		--workingdir="${outdir}/reg" \
+		--datadiffdir="${outdir}/data" \
+		--t1="${T1wImage}" \
+		--t1restore="${T1wRestoreImage}" \
+		--t1restorebrain="${T1wRestoreImageBrain}" \
+		--biasfield="${BiasField}" \
+		--brainmask="${FreeSurferBrainMask}" \
+		--datadiffT1wdir="${outdirT1w}" \
+		--regoutput="${RegOutput}" \
+		--QAimage="${QAImage}" \
+		--dof="${DegreesOfFreedom}" \
+		--gdflag=${GdFlag} \
+		--diffresol=${DiffRes} \
+		--t1w-cross2long-xfm="$T1wCross2LongXfm"
+else
+	# NHP: use DiffusionToStructuralNHP.sh with --fsbbrdiff and --wmprojabs
+	FSBBRDIFF="TRUE"
+	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructuralNHP.sh \
+		--t1folder="${T1wFolder}" \
+		--subject="${Session}" \
+		--workingdir="${outdir}/reg" \
+		--datadiffdir="${outdir}/data" \
+		--t1="${T1wImage}" \
+		--t1restore="${T1wRestoreImage}" \
+		--t1restorebrain="${T1wRestoreImageBrain}" \
+		--biasfield="${BiasField}" \
+		--brainmask="${FreeSurferBrainMask}" \
+		--datadiffT1wdir="${outdirT1w}" \
+		--regoutput="${RegOutput}" \
+		--QAimage="${QAImage}" \
+		--dof="${DegreesOfFreedom}" \
+		--gdflag="${GdFlag}" \
+		--diffresol="${DiffRes}" \
+		--fsbbrdiff="${FSBBRDIFF}" \
+		--wmprojabs="${DiffWMProjAbs}"
+fi
 
 to_location="${outdirT1w}/eddylogs"
 from_directory="${outdir}/eddy"
 log_Msg "Copying eddy log files to package location: ${to_location}"
 
-# Log files are any 'eddy' output that doesn't have a .nii extension
-from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
-
-${runcmd} mkdir -p ${to_location}
-for filename in ${from_files}; do
-	${runcmd} cp -p ${filename} ${to_location} || ${runcmd} cp ${filename} ${to_location}
-done
+if [[ "$SPECIES" == "Human" ]]; then
+	# Human: glob all eddy outputs except .nii files
+	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
+	${runcmd} mkdir -p ${to_location}
+	for filename in ${from_files}; do
+		${runcmd} cp -p ${filename} ${to_location} || ${runcmd} cp ${filename} ${to_location}
+	done
+else
+	# NHP: copy specific eddy log files
+	${runcmd} mkdir -p ${to_location}
+	for logfile in eddy_outlier_map eddy_outlier_n_sqr_stdev_map eddy_outlier_n_stdev_map \
+		eddy_outlier_report eddy_movement_rms eddy_restricted_movement_rms \
+		eddy_parameters eddy_post_eddy_shell_alignment_parameters; do
+		if [[ -f "${from_directory}/eddy_unwarped_images.${logfile}" ]]; then
+			${runcmd} cp "${from_directory}/eddy_unwarped_images.${logfile}" ${to_location}
+		fi
+	done
+fi
 
 ${runcmd} mkdir -p ${outdirT1w}/QC
-${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC || ${runcmd} cp ${outdir}/QC/* ${outdirT1w}/QC
-${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
+if [[ "$SPECIES" == "Human" ]]; then
+	${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC || ${runcmd} cp ${outdir}/QC/* ${outdirT1w}/QC
+	${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
+else
+	if [ "$(ls ${outdir}/QC/ 2>/dev/null)" != "" ]; then
+		${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC
+	fi
+	${runcmd} imcp ${outdir}/data/cnr_maps ${outdirT1w}/QC/cnr_maps
+fi
 
 log_Msg "Completed!"
 exit 0
