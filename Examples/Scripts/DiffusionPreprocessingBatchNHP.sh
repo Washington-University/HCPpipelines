@@ -20,6 +20,7 @@ Usage () {
 StudyFolder="${HOME}/projects/Pipelines_ExampleData"
 Subjlist="nhp_session1 nhp_session2"
 SPECIES="RhesusMacaque" # "Human", "Chimp", "MacaqueMac30BS", "CynoMacaque", "RhesusMacaque", "SnowMacaque", "Marmoset" or "NightMonkey"
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 # Parse command line arguments
 get_batch_options() {
@@ -74,9 +75,7 @@ echo "$(basename $0) $@"
 #  installed versions of: FSL, FreeSurfer, Connectome Workbench (wb_command), gradunwarp (HCP version)
 #  environment: HCPPIPEDIR, FSLDIR, FREESURFER_HOME, CARET7DIR, PATH for gradient_unwarp.py
 
-if [ -z "${EnvironmentScript}" ]; then
-    EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
-fi
+#Set up pipeline environment variables and software
 source "$EnvironmentScript"
 
 # Set up species-specific environment variables (BrainScaleFactor, resolution, etc.)
@@ -130,22 +129,21 @@ for Subject in $Subjlist ; do
         #   UseDWIPhaseZero          # TRUE/FALSE - add T2w as phase-zero volume for topup
         # ------------------------------------------------------------------------------
     else
-        echo "  WARNING: ${RawDataDir}/hcppipe_conf.txt not found."
+        echo "  NOTE: ${RawDataDir}/hcppipe_conf.txt not found."
         echo "  Please prepare hcppipe_conf.txt, or uncomment and edit the manual fallback block."
-
-        # ---- Manual fallback (uncomment and edit) ------------------------------------
-        #DiffPosData="DWI_dir99_RL_1 DWI_dir99_RL_2"   # space-separated file names under RawData/
-        #DiffNegData="DWI_dir99_LR_1 DWI_dir99_LR_2"   # opposite PE polarity
-        #DiffEchoSpacingSec="0.00078"                   # effective echo spacing in seconds
-        #DiffPEdir=1                                    # 1 for LR/RL, 2 for AP/PA
-        #GradientDistortionCoeffs="NONE"                # path to grad coefficient file or NONE
-        #DiffTruePatientPosition="HFSx"                 # e.g., sphinx head-first for NHP
-        #DiffScannerPatientPosition="HFS"               # scanner-reported orientation
-        #DiffTopupConfig=""                              # leave empty to use pipeline default
-        #DiffResamp=""                                   # eddy --resamp (e.g., jac or lsr); leave empty to omit
-        #UseDWIPhaseZero="FALSE"                        # TRUE to add T2w as phase-zero
-        # ------------------------------------------------------------------------------
     fi
+    # ---- Manual fallback (uncomment and edit) ------------------------------------
+    #DiffPosData="DWI_dir99_RL_1 DWI_dir99_RL_2"   # space-separated file names under RawData/
+    #DiffNegData="DWI_dir99_LR_1 DWI_dir99_LR_2"   # opposite PE polarity
+    #DiffEchoSpacingSec="0.00078"                   # effective echo spacing in seconds
+    #DiffPEdir=1                                    # 1 for LR/RL, 2 for AP/PA
+    #GradientDistortionCoeffs="NONE"                # path to grad coefficient file or NONE
+    #DiffTruePatientPosition="HFSx"                 # e.g., sphinx head-first for NHP
+    #DiffScannerPatientPosition="HFS"               # scanner-reported orientation
+    #DiffTopupConfig=""                              # leave empty to use pipeline default
+    #DiffResamp=""                                   # eddy --resamp (e.g., jac or lsr); leave empty to omit
+    #UseDWIPhaseZero="FALSE"                        # TRUE to add T2w as phase-zero
+    # ------------------------------------------------------------------------------
 
     # Build @-separated lists from space-separated file names under RawData/
     if [ -n "${DiffPosData:-}" ]; then
