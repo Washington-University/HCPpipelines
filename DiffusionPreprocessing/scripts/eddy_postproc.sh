@@ -23,19 +23,32 @@ globalscriptsdir=${HCPPIPEDIR_Global}
 eddydir=${workingdir}/eddy
 datadir=${workingdir}/data
 
-echo "Generating eddy QC report in ${workingdir}/QC"
-if [ -d "${workingdir}/QC" ]; then rm -r ${workingdir}/QC; fi
-qc_command=("${FSLDIR}/bin/eddy_quad")
-qc_command+=("${eddydir}/eddy_unwarped_images")
-qc_command+=(-idx "${eddydir}/index.txt")
-qc_command+=(-par "${eddydir}/acqparams.txt")
-qc_command+=(-m "${eddydir}/nodif_brain_mask.nii.gz")
-qc_command+=(-b "${eddydir}/Pos_Neg.bvals")
-qc_command+=(-g "${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs")
-qc_command+=(-o "${workingdir}/QC")
-qc_command+=(-f "${workingdir}/topup/topup_Pos_Neg_b0_field.nii.gz")
-qc_command+=(-v)
-"${qc_command[@]}"
+# NHP-only: LSR resampling produces no JacobianResampling marker. In that case
+# eddy has already combined Pos/Neg, so skip eddy_quad QC and copy through.
+if [ "${BetSpeciesLabel}" -ne 0 ] && [ ! -e "${eddydir}/${EddyJacFlag}" ]; then
+	echo "LSR resampling has been used. Eddy Output has already been combined. CombineDataFlag is ignored."
+	cp ${eddydir}/Pos.bval ${datadir}/bvals
+	cp ${eddydir}/Pos.bvec ${datadir}/bvecs_noRot
+	cp ${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs ${datadir}/bvecs_Rot_noLSR
+	cp ${eddydir}/eddy_unwarped_images.eddy_bvecs_for_SLR ${datadir}/bvecs
+	$FSLDIR/bin/imcp ${eddydir}/eddy_unwarped_images ${datadir}/data
+	mkdir -p ${workingdir}/QC
+	echo "Eddy QC report is not generated for LSR resampling"
+else
+	echo "Generating eddy QC report in ${workingdir}/QC"
+	if [ -d "${workingdir}/QC" ]; then rm -r ${workingdir}/QC; fi
+	qc_command=("${FSLDIR}/bin/eddy_quad")
+	qc_command+=("${eddydir}/eddy_unwarped_images")
+	qc_command+=(-idx "${eddydir}/index.txt")
+	qc_command+=(-par "${eddydir}/acqparams.txt")
+	qc_command+=(-m "${eddydir}/nodif_brain_mask.nii.gz")
+	qc_command+=(-b "${eddydir}/Pos_Neg.bvals")
+	qc_command+=(-g "${eddydir}/eddy_unwarped_images.eddy_rotated_bvecs")
+	qc_command+=(-o "${workingdir}/QC")
+	qc_command+=(-f "${workingdir}/topup/topup_Pos_Neg_b0_field.nii.gz")
+	qc_command+=(-v)
+	"${qc_command[@]}"
+fi
 
 #Prepare for next eddy Release
 #if [ ! -e ${eddydir}/${EddyJacFlag} ]; then
@@ -154,6 +167,11 @@ if [ ! $GdCoeffs = "NONE" ]; then
 	# Transform CNR maps
 	${CARET7DIR}/wb_command -volume-dilate ${warpedDir}/cnr_maps_warped.nii.gz $DilateDistance NEAREST ${warpedDir}/cnr_maps_dilated.nii.gz
 	${FSLDIR}/bin/applywarp --rel --interp=spline -i ${warpedDir}/cnr_maps_dilated -r ${warpedDir}/cnr_maps_dilated -w ${warpedDir}/fullWarp -o ${datadir}/cnr_maps
+	# NHP-only: spline interpolation can produce NaN at borders for low-SNR data;
+	# fall back to sinc interpolation if any NaN is present in cnr_maps
+	if [ "${BetSpeciesLabel}" -ne 0 ] && [[ $(${FSLDIR}/bin/fslstats ${datadir}/cnr_maps.nii.gz -m) =~ nan ]]; then
+		${FSLDIR}/bin/applywarp --rel --interp=sinc -i ${warpedDir}/cnr_maps_dilated -r ${warpedDir}/cnr_maps_dilated -w ${warpedDir}/fullWarp -o ${datadir}/cnr_maps
+	fi
 	${FSLDIR}/bin/imrm ${warpedDir}/cnr_maps_dilated
 
 	# Transform field of view mask (using conservative trilinear interpolation with high threshold)
