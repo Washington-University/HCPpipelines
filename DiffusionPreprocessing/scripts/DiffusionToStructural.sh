@@ -61,7 +61,15 @@ if [ -n "$T1wCross2LongXfm" ]; then IsLongitudinal=1; fi
 GlobalScripts=${HCPPIPEDIR_Global}
 
 T1wBrainImageFile=$(basename $T1wBrainImage)
-regimg="nodif"
+
+# NHP: dti_S0 (the b=0 prediction from dtifit) gives more robust registration
+# initialization than raw nodif on low-SNR data. Human keeps nodif.
+if [[ "$SPECIES" == "Human" ]]; then
+	regimg="nodif"
+else
+	${FSLDIR}/bin/dtifit -k "$DataDirectory"/data -b "$DataDirectory"/bvals -r "$DataDirectory"/bvecs -m "$DataDirectory"/nodif_brain_mask -o "$DataDirectory"/dti
+	regimg="dti_S0"
+fi
 
 if (( ! IsLongitudinal )); then 
 	${FSLDIR}/bin/imcp "$T1wBrainImage" "$WorkingDirectory"/"$T1wBrainImageFile"
