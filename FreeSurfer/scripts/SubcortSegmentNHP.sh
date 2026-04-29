@@ -51,12 +51,6 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 			vol="${vol}+"
 		done
 		cp brainmask.edit.mgz ${vol}.mgz
-		checkfile=brainmask.edit.mgz
-		if [ -e "$checkfile" ] ; then
-			if [ ! -w "$checkfile" ] ; then
-				log_Err_Abort "no permission to write $checkfile"
-			fi
-		fi
 
 		mv brainmask.edit.mgz brainmask.mgz
 		if [ -e brain.finalsurfs.edit.mgz ] ; then
@@ -65,20 +59,8 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 				vol="${vol}+"
 			done
 			cp brain.finalsurfs.edit.mgz ${vol}.mgz
-			checkfile=brain.finalsurfs.edit.mgz
-			if [ -e "$checkfile" ] ; then
-				if [ ! -w "$checkfile" ] ; then
-					log_Err_Abort "no permission to write $checkfile"
-				fi
-			fi
-			mri_mask -T 5 brain.finalsurfs.edit.mgz brainmask.mgz brain.finalsurfs.edit.mgz			
+			mri_mask -T 5 brain.finalsurfs.edit.mgz brainmask.mgz brain.finalsurfs.edit.mgz
 		else
-			checkfile=brain.finalsurfs.mgz
-			if [ -e "$checkfile" ] ; then
-				if [ ! -w "$checkfile" ] ; then
-					log_Err_Abort "no permission to write $checkfile"
-				fi
-			fi
 			mri_mask -T 5 brain.mgz brainmask.mgz brain.finalsurfs.mgz
 		fi
 
@@ -88,12 +70,6 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 	if [ -e brain.finalsurfs.edit.mgz ] ; then
 		log_Msg "Found brain.finalsurfs.edit.mgz. Use it as brain.finalsurfs.mgz"
 		if [ ! -e brain.finalsurfs.orig.mgz ] ; then
-			checkfile=brain.finalsurfs.mgz
-			if [ -e "$checkfile" ] ; then
-				if [ ! -w "$checkfile" ] ; then
-					log_Err_Abort "no permission to write $checkfile"
-				fi
-			fi
 			mv brain.finalsurfs.mgz brain.finalsurfs.orig.mgz
 		fi
 		vol="brain.finalsurfs.edit"
@@ -101,12 +77,6 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 			vol="${vol}+"
 		done
 		cp brain.finalsurfs.edit.mgz ${vol}.mgz
-		checkfile=brain.finalsurfs.mgz
-		if [ -e "$checkfile" ] ; then
-			if [ ! -w "$checkfile" ] ; then
-				log_Err_Abort "no permission to write $checkfile"
-			fi
-		fi
 		mv brain.finalsurfs.edit.mgz brain.finalsurfs.mgz
 	fi
 
@@ -114,12 +84,6 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 	## This is needed for suppressing 'insular/claustrum errors of white surfaces', and sub-genual
 	## 'insufficient inflation errors' of pial surfaces (see Autio et al., NeuroImage 2021)- TH 2017-2025
 	if [ ! -e aseg.presurf.edit.mgz ] ; then      # test if manually defined aseg exists
-		checkfile=aseg.presurf.mgz
-		if [ -e "$checkfile" ] ; then
-			if [ ! -w "$checkfile" ] ; then
-				log_Err_Abort "no permission to write $checkfile"
-			fi
-		fi
 		cp aseg.auto.mgz aseg.presurf.mgz
 		log_Msg "Replace claustrum, hippocampus, amygdala to white matter for creating aseg.cortex.mgz"
 		# aseg.cortex.mgz is required for making cortex.label
@@ -134,12 +98,6 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 			vol="${vol}+"
 		done
 		cp aseg.presurf.edit.mgz ${vol}.mgz
-		checkfile=aseg.presurf.mgz
-		if [ -e "$checkfile" ] ; then
-			if [ ! -w "$checkfile" ] ; then
-				log_Err_Abort "no permission to write $checkfile"
-			fi
-		fi
 		mv aseg.presurf.edit.mgz aseg.presurf.mgz
 	fi
 
@@ -194,12 +152,6 @@ cd "$SubjectDIR"/"$SubjectID"/mri
 			vol="${vol}+"
 		done
 		cp wm.edit.mgz ${vol}.mgz
-		checkfile=wm.mgz
-		if [ -e "$checkfile" ] ; then
-			if [ ! -w "$checkfile" ] ; then
-				log_Err_Abort "no permission to write $checkfile"
-			fi
-		fi
 		mv wm.edit.mgz wm.mgz
 	fi
 
