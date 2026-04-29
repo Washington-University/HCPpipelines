@@ -1,1 +1,0 @@
-mri_normalize -g 1 nu.mgz T1.mgz
