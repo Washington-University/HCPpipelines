@@ -151,7 +151,7 @@ fi
 log_Msg "Rescaling volumes"
 # ----------------------------------------------------------------------
 # Rescaling voxel size (note that data is not virtually resampled). Thus resampling type (e.g. trilinear vs nearest) is irrelevant.
-if [[ ${freesurfer_primary_version} = 6 && $(echo "$ScaleFactor < 6" | bc) = 1 ]] ; then  # brain is larger than the rat
+if ((freesurfer_primary_version >= 6)) && [[ $(echo "$ScaleFactor < 6" | bc) == 1 ]] ; then  # brain is larger than the rat
 	volsf="brain.finalsurfs.mgz rawavg.${t2_or_flair}.prenorm.mgz rawavg.${t2_or_flair}.norm.mgz "
 	volsu="aseg.presurf.mgz aseg.auto.mgz filled.mgz wm.mgz aparc+aseg.mgz aparc.a2009s+aseg.mgz ribbon.edit.mgz"
 	if [ "$T2wImage" != NONE ] ; then
@@ -183,7 +183,7 @@ cp ${mridir}/aseg.auto.mgz ${mridir}/wmparc.mgz
 # ----------------------------------------------------------------------
 log_Msg "Rescaling or copying surface data"
 # ----------------------------------------------------------------------
-if [[ ${freesurfer_primary_version} = 6 && $(echo "$ScaleFactor < 6" | bc) = 1 ]] ; then
+if ((freesurfer_primary_version >= 6)) && [[ $(echo "$ScaleFactor < 6" | bc) == 1 ]] ; then
 	surfs="white pial orig"
 else
 	surfs="white.preaparc orig"
