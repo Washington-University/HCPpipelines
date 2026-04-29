@@ -97,16 +97,6 @@ fmriname=""
 #structural image resolution
 StructRes=0.5
 
-# Species-specific variables
-# These are set by SetUpSPECIES.sh (sourced after EnvironmentScript).
-# Override here only if you need non-default values for your dataset.
-# Example values for Macaque:
-#   FinalfMRIResolution="1.25"
-#   TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
-#   FuncWMProjAbs="1"
-#   BrainScaleFactor="0.36"
-#   betspecieslabel="1"
-
 ########################################## END EDIT ##########################################
 
 # Use any command line specified options to override variable settings above
@@ -131,33 +121,30 @@ source "$EnvironmentScript"
 # Set up species-specific environment variables
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StructRes"
 
-# The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
+# The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines per-species
+# values. The example values below correspond to Macaque (matching the default
+# SPECIES="Macaque" above). Uncomment and edit any line to override the
+# SetUpSPECIES.sh default for your dataset.
 #
-#BrainScaleFactor="1"        # Brain scale factor relative to human (e.g. 0.36 for macaque)
-#CorticalScaleFactor="1"     # Cortical scale factor
+#BrainScaleFactor="2"          # Brain scale factor relative to human
+#CorticalScaleFactor="3"       # Cortical scale factor
 #
 #### fMRIVolume-relevant variables
-#FinalfMRIResolution="2"     # Target final resolution of fMRI data in mm
-#TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"  # Config for topup or "NONE" if not used
-#FuncWMProjAbs="2"           # fMRI wm-proj-abs for FreeSurferBBR (override SetUpSPECIES.sh default)
-#betspecieslabel="1"          # Species label for bet4animal (0=smallest, 4=largest brain)
-#betfraction="0.3"            # Fractional intensity threshold for bet
+#FinalfMRIResolution="1.2"     # Target final resolution of fMRI data in mm
+#TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf"  # Config for topup or "NONE" if not used
+#FuncWMProjAbs="0.7"           # fMRI wm-proj-abs for FreeSurferBBR
+#betspecieslabel="1"           # Species label for bet4animal (0=smallest, 4=largest brain)
+#betfraction="0.3"             # Fractional intensity threshold for bet
 #
 #### PreFreeSurfer-relevant variables (not used in fMRIVolume)
-#BrainSize="150"              # BrainSize in mm, distance between top of FOV and bottom of brain
-#betcenter="45,55,39"         # Comma separated voxel coordinates in T1wTemplate2mm
-#betradius="75"               # Brain radius for bet
-#betbiasfieldcor="FALSE"      # Whether to correct bias field for BET
-#bettop2center="86"           # Distance between top of FOV and center of brain
-#BiasFieldSmoothingSigma="5.0"
-#FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Human_2mm.cnf"
+#BrainSize="60"                # BrainSize in mm, distance between top of FOV and bottom of brain
+#betcenter="48,56,51"          # Comma separated voxel coordinates in T1wTemplate2mm
+#betradius="35"                # Brain radius for bet
+#betbiasfieldcor="TRUE"        # Whether to correct bias field for BET
+#bettop2center="30"            # Distance between top of FOV and center of brain
+#BiasFieldSmoothingSigma="3.5"
+#FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Macaque_1mm.cnf"
 #T1wTemplate, T1wTemplateBrain, T1wTemplate2mm, T2wTemplate, etc.
-#
-# If you want to override SetUpSPECIES.sh values for your dataset, uncomment
-# and edit the relevant lines above after the source command.
-# For example, to override the species default FuncWMProjAbs, add:
-#   FuncWMProjAbs="<your value>"
-# after the SetUpSPECIES.sh source line.
 
 # Export species-specific environment variables used by subscripts
 export betspecieslabel
