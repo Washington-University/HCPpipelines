@@ -38,6 +38,10 @@ DiffRes=$(getopt1 "--diffresol" "$@")                 # "$11"#Diffusion resoluti
 dof=$(getopt1 "--dof" "$@")                           # Degrees of freedom for registration to T1w (defaults to 6)
 T1wCross2LongXfm=$(getopt1 "--t1w-cross2long-xfm" "$@") # Additional transform for the longitudinal processing.
 
+# NHP options (defaults selected so Human path is unchanged)
+SPECIES=$(getopt1 "--species" "$@")                   # Human / RhesusMacaque / Marmoset / ... (default Human)
+WMProjAbs=$(getopt1 "--wmprojabs" "$@")               # Species-specific white-matter projection absolute distance (mm)
+FSBBRDIFF=$(getopt1 "--fsbbrdiff" "$@")               # TRUE | NONE — whether to run FreeSurfer bbregister on diffusion
 
 # Output Variables
 T1wOutputDirectory=$(getopt1 "--datadiffT1wdir" "$@") # "$12" #Path to T1w space diffusion data (for producing output)
@@ -46,6 +50,9 @@ QAImage=$(getopt1 "--QAimage" "$@")                   # "$14" #Temporary file fo
 
 # Set default option values
 dof=$(defaultopt $dof 6)
+SPECIES=$(defaultopt "$SPECIES" "Human")
+WMProjAbs=$(defaultopt "$WMProjAbs" "2")
+FSBBRDIFF=$(defaultopt "$FSBBRDIFF" "TRUE")
 
 IsLongitudinal=0
 if [ -n "$T1wCross2LongXfm" ]; then IsLongitudinal=1; fi
@@ -54,7 +61,15 @@ if [ -n "$T1wCross2LongXfm" ]; then IsLongitudinal=1; fi
 GlobalScripts=${HCPPIPEDIR_Global}
 
 T1wBrainImageFile=$(basename $T1wBrainImage)
-regimg="nodif"
+
+# NHP: dti_S0 (the b=0 prediction from dtifit) gives more robust registration
+# initialization than raw nodif on low-SNR data. Human keeps nodif.
+if [[ "$SPECIES" == "Human" ]]; then
+	regimg="nodif"
+else
+	${FSLDIR}/bin/dtifit -k "$DataDirectory"/data -b "$DataDirectory"/bvals -r "$DataDirectory"/bvecs -m "$DataDirectory"/nodif_brain_mask -o "$DataDirectory"/dti
+	regimg="dti_S0"
+fi
 
 if (( ! IsLongitudinal )); then 
 	${FSLDIR}/bin/imcp "$T1wBrainImage" "$WorkingDirectory"/"$T1wBrainImageFile"
@@ -66,12 +81,32 @@ if (( ! IsLongitudinal )); then
 	${FSLDIR}/bin/applywarp --rel --interp=spline -i "$DataDirectory"/"$regimg" -r "$T1wImage" --premat="$WorkingDirectory"/"$regimg"2T1w_initII.mat -o "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz
 	${FSLDIR}/bin/fslmaths "$WorkingDirectory"/"$regimg"2T1w_initII.nii.gz -div "$BiasField" "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz
 
+	# NHP-only: build extra bbregister options (--dti contact mode + species-tuned
+	# white-matter projection depth). Human keeps the existing --bold path.
+	fsbbropts=""
+	if [[ "$SPECIES" != "Human" ]]; then
+		fsbbropts="--dti "
+		if [ "$(echo "$WMProjAbs < 2" | bc)" = "1" ]; then
+			fsbbropts+="--wm-proj-abs $WMProjAbs --brute1max 2 --brute1delta 2 "
+		fi
+	fi
+
 	SUBJECTS_DIR="$FreeSurferSubjectFolder"
 	export SUBJECTS_DIR
-	# Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
-	${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
-	${FREESURFER_HOME}/bin/tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/diff2str_fs.mat
-	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
+	if [[ "$SPECIES" == "Human" || "$FSBBRDIFF" == "TRUE" ]]; then
+		# Use "hidden" bbregister DOF options (--6 (default), --9, or --12 are supported)
+		if [[ "$SPECIES" == "Human" ]]; then
+			${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --bold --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz
+		else
+			${FREESURFER_HOME}/bin/bbregister --s "$FreeSurferSubjectID" --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --surf white.deformed --init-reg "$FreeSurferSubjectFolder"/"$FreeSurferSubjectID"/mri/transforms/eye.dat --reg "$WorkingDirectory"/EPItoT1w.dat --${dof} --o "$WorkingDirectory"/"$regimg"2T1w.nii.gz ${fsbbropts}
+		fi
+		${FREESURFER_HOME}/bin/tkregister2 --noedit --reg "$WorkingDirectory"/EPItoT1w.dat --mov "$WorkingDirectory"/"$regimg"2T1w_restore_initII.nii.gz --targ "$T1wImage".nii.gz --fslregout "$WorkingDirectory"/diff2str_fs.mat
+		${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str.mat -concat "$WorkingDirectory"/diff2str_fs.mat "$WorkingDirectory"/"$regimg"2T1w_initII.mat
+	else
+		# NHP with FSBBRDIFF=NONE: skip FS bbregister, use FLIRT BBR result directly
+		# (recommended for low-quality data or fieldmap-corrected data — TH)
+		cp "$WorkingDirectory"/"$regimg"2T1w_initII.mat "$WorkingDirectory"/diff2str.mat
+	fi
 	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
 else
 	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str_long.mat -concat "$T1wCross2LongXfm" "$WorkingDirectory"/diff2str.mat	

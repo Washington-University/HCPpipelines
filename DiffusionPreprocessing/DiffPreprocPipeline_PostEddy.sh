@@ -187,16 +187,6 @@ validate_scripts() {
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh not found"
 	fi
 
-	# NHP sub-script validation
-	if [[ "$SPECIES" != "Human" ]]; then
-		if [[ ! -f "${HCPPIPEDIR_dMRI}"/eddy_postprocNHP.sh ]]; then
-			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/eddy_postprocNHP.sh not found"
-		fi
-		if [[ ! -f "${HCPPIPEDIR_dMRI}"/DiffusionToStructuralNHP.sh ]]; then
-			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/DiffusionToStructuralNHP.sh not found"
-		fi
-	fi
-
 	if [ ! -z "${error_msgs}" ]; then
 		show_usage
 		echo -e ${error_msgs}
@@ -232,19 +222,15 @@ fi
 
 log_Msg "Running Eddy PostProcessing"
 # Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
-if [[ "$SPECIES" == "Human" ]]; then
-	select_flag="0"
-	if ((SelectBestB0)); then
-		select_flag="1"
-	fi
-	if (( ! IsLongitudinal )); then
-		${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
-	fi
+# Unified dispatch: eddy_postproc.sh handles both Human and NHP (gated by BetSpeciesLabel)
+select_flag="0"
+if [[ "$SPECIES" == "Human" ]] && ((SelectBestB0)); then
+	select_flag="1"
+fi
+if [[ "$SPECIES" == "Human" ]] && (( IsLongitudinal )); then
+	: # skip eddy_postproc for longitudinal Human (existing behavior)
 else
-	# NHP: use eddy_postprocNHP.sh with SpeciesLabel
-	log_Msg "PATH=$PATH"
-	log_Msg "gradient_unwarp.py=$(which gradient_unwarp.py)"
-	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postprocNHP.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} 0 ${SpeciesLabel}
+	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag} ${SpeciesLabel}
 fi
 
 # Establish variables that follow naming conventions
@@ -260,46 +246,29 @@ DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
 DiffRes=$(printf "%0.2f" ${DiffRes})
 
 log_Msg "Running Diffusion to Structural Registration"
-if [[ "$SPECIES" == "Human" ]]; then
-	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-		--t1folder="${T1wFolder}" \
-		--session="${Session}" \
-		--workingdir="${outdir}/reg" \
-		--datadiffdir="${outdir}/data" \
-		--t1="${T1wImage}" \
-		--t1restore="${T1wRestoreImage}" \
-		--t1restorebrain="${T1wRestoreImageBrain}" \
-		--biasfield="${BiasField}" \
-		--brainmask="${FreeSurferBrainMask}" \
-		--datadiffT1wdir="${outdirT1w}" \
-		--regoutput="${RegOutput}" \
-		--QAimage="${QAImage}" \
-		--dof="${DegreesOfFreedom}" \
-		--gdflag=${GdFlag} \
-		--diffresol=${DiffRes} \
-		--t1w-cross2long-xfm="$T1wCross2LongXfm"
-else
-	# NHP: use DiffusionToStructuralNHP.sh with --fsbbrdiff and --wmprojabs
-	FSBBRDIFF="TRUE"
-	${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructuralNHP.sh \
-		--t1folder="${T1wFolder}" \
-		--subject="${Session}" \
-		--workingdir="${outdir}/reg" \
-		--datadiffdir="${outdir}/data" \
-		--t1="${T1wImage}" \
-		--t1restore="${T1wRestoreImage}" \
-		--t1restorebrain="${T1wRestoreImageBrain}" \
-		--biasfield="${BiasField}" \
-		--brainmask="${FreeSurferBrainMask}" \
-		--datadiffT1wdir="${outdirT1w}" \
-		--regoutput="${RegOutput}" \
-		--QAimage="${QAImage}" \
-		--dof="${DegreesOfFreedom}" \
-		--gdflag="${GdFlag}" \
-		--diffresol="${DiffRes}" \
-		--fsbbrdiff="${FSBBRDIFF}" \
-		--wmprojabs="${DiffWMProjAbs}"
-fi
+# Unified dispatch: DiffusionToStructural.sh handles both Human and NHP
+# (gated by --species). NHP-only flags --fsbbrdiff / --wmprojabs are
+# always passed but ignored when species == Human.
+${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
+	--t1folder="${T1wFolder}" \
+	--session="${Session}" \
+	--workingdir="${outdir}/reg" \
+	--datadiffdir="${outdir}/data" \
+	--t1="${T1wImage}" \
+	--t1restore="${T1wRestoreImage}" \
+	--t1restorebrain="${T1wRestoreImageBrain}" \
+	--biasfield="${BiasField}" \
+	--brainmask="${FreeSurferBrainMask}" \
+	--datadiffT1wdir="${outdirT1w}" \
+	--regoutput="${RegOutput}" \
+	--QAimage="${QAImage}" \
+	--dof="${DegreesOfFreedom}" \
+	--gdflag=${GdFlag} \
+	--diffresol=${DiffRes} \
+	--t1w-cross2long-xfm="$T1wCross2LongXfm" \
+	--species="${SPECIES}" \
+	--wmprojabs="${DiffWMProjAbs}" \
+	--fsbbrdiff="TRUE"
 
 to_location="${outdirT1w}/eddylogs"
 from_directory="${outdir}/eddy"

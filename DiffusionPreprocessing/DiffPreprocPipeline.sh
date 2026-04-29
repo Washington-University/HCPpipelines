@@ -372,9 +372,10 @@ validate_scripts() {
 		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
 	fi
 
-	# All sub-scripts (PreEddy, Eddy, PostEddy) are now unified
-	# NHP-specific sub-scripts (run_eddyNHP.sh, eddy_postprocNHP.sh, etc.) are
-	# validated within each unified sub-script when SPECIES != Human
+	# All sub-scripts (PreEddy, Eddy, PostEddy) are now unified.
+	# NHP support is provided through SPECIES-gated branches inside the unified
+	# scripts (run_eddy.sh, eddy_postproc.sh, DiffusionToStructural.sh) — there
+	# are no separate *NHP.sh variants to validate.
 
 	if [[ "${error_msgs}" != "" ]]; then
 		log_Err_Abort "${error_msgs}"
