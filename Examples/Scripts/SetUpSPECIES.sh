@@ -373,3 +373,7 @@ else
     echo "Warning: Not yet supported species: $SPECIES"
 
 fi
+
+#HACK: restore the outer tool name
+#since debug.shlib will be active by default (and therefore can trip inside the Batch script), set the log toolname back to the Batch script
+log_SetToolName "$(basename -- "$0")"
