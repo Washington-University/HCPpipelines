@@ -76,7 +76,11 @@ if [[ "$SPECIES" == *Human* ]] ; then
     GrayordinatesResolution="2" #should be either 1 (7T) or 2 (3T) for human. 
     InflateScale="1"
     FlatMapRootName="colin.cerebral"
-    
+
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="2"
+
 elif [[ "$SPECIES" == *Chimp* ]] ; then
 
     BrainScaleFactor="1.25"
@@ -114,7 +118,11 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     LowResMeshes="32@20" #Needs to match what is in PostFreeSurfer
     FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
     SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
-    GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human. 
+    GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human.
+
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="1"
 
 elif [[ "$SPECIES" == *Macaque* ]] ; then
 
@@ -263,6 +271,10 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     MSMSulcConf="MSMSulcStrainFinalconfMacaque"
     FlatMapRootName="$BrainTemplate"
 
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="0.7"
+
 elif [[ "$SPECIES" = Marmoset ]] ; then
 
     BrainScaleFactor="5"
@@ -309,6 +321,10 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
     FlatMapRootName="$BrainTemplate"
 
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="0.5"
+
 elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, Takuro Ikeda on Aug 2020
 
     BrainScaleFactor="4"
@@ -347,6 +363,10 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     GrayordinatesResolution="1.0" #Needs to match what is in PostFreeSurfer. 
     InflateScale="2.5"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
+
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="0.3"
 
 else
 
