@@ -204,36 +204,28 @@ for Subject in $Subjlist ; do
     if [ -e "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt" ] ; then
         source "${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt"
     else
-        echo "${SCRIPT_NAME}: hcppipe_conf.txt not found for ${Subject}, using inline defaults"
-        # Set these variables manually when hcppipe_conf.txt is not available.
-        # Sessions are separated by @ delimiters. Within each session, runs are space-delimited.
-        # Example for a single session with two fMRI runs:
-        #   Tasklist="rest1 task1"
-        #   Taskreflist="rest1_SBRef task1_SBRef"
-        #   TopupPositive="SE_AP SE_AP"
-        #   TopupNegative="SE_PA SE_PA"
-        #   PhaseEncodinglist="y y"
-        #   DwellTime="0.00058"
-        #   TruePatientPosition="HFS"
-        #   ScannerPatientPosition="HFS"
-        # Example for two sessions (separated by @):
-        #   Tasklist="rest1 task1@rest2 task2"
-        Tasklist=""
-        Taskreflist=""
-        TopupPositive=""
-        TopupNegative=""
-        PhaseEncodinglist=""
-        Fmriconcatlist=""
-        DwellTime=""
-        InitWorldMat=""
-        ScannerPatientPosition=""
-        TruePatientPosition=""
-        TopupPositive2=""
-        TopupNegative2=""
-        Gradient=""
-        MagnitudeInputName=""
-        PhaseInputName=""
+      echo "${SCRIPT_NAME}: hcppipe_conf.txt not found for ${Subject}, using inline defaults"
     fi
+    # Set these variables manually when hcppipe_conf.txt is not available.
+    # Sessions are separated by @ delimiters. Within each session, runs are space-delimited.
+    # Example for a single session with two fMRI runs:
+    #   Tasklist="rest1 task1"
+    # Example for two sessions (separated by @):
+    #   Tasklist="rest1 task1@rest2 task2"
+    #   Taskreflist="rest1_SBRef task1_SBRef"
+    #   TopupPositive="SE_AP SE_AP"
+    #   TopupNegative="SE_PA SE_PA"
+    #   PhaseEncodinglist="y y"
+    #   Fmriconcatlist=""
+    #   DwellTime="0.00058"
+    #   InitWorldMat=""
+    #   TruePatientPosition="HFS"
+    #   ScannerPatientPosition="HFS"
+    #   TopupPositive2=""
+    #   TopupNegative2=""
+    #   Gradient=""
+    #   MagnitudeInputName=""
+    #   PhaseInputName=""
 
     OrigTasklist="$Tasklist"
     OrigTaskreflist="$Taskreflist"
