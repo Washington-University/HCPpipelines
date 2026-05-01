@@ -65,6 +65,8 @@ if [ -n "${command_line_specified_subj}" ]; then
     Subjlist="${command_line_specified_subj}"
 fi
 
+#Set up pipeline environment variables and software
+source "$EnvironmentScript"
 
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --structres="$StructRes"
 
@@ -85,9 +87,6 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --str
 # Requirements for this script
 #  installed versions of: FSL, Connectome Workbench (wb_command)
 #  environment: HCPPIPEDIR, FSLDIR, CARET7DIR
-
-#Set up pipeline environment variables and software
-source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
