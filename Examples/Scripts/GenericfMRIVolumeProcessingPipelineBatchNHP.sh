@@ -133,7 +133,6 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 #FinalfMRIResolution="1.2"     # Target final resolution of fMRI data in mm
 #TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf"  # Config for topup or "NONE" if not used
 #FuncWMProjAbs="0.7"           # fMRI wm-proj-abs for FreeSurferBBR
-#betspecieslabel="1"           # Species label for bet4animal (0=smallest, 4=largest brain)
 #betfraction="0.2"             # Fractional intensity threshold for bet
 #
 #### PreFreeSurfer-relevant variables (not used in fMRIVolume)
