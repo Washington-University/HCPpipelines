@@ -146,9 +146,6 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 #FNIRTConfig="${HCPPIPEDIR_Config}/T1_2_NHP_NNP_Macaque_1mm.cnf"
 #T1wTemplate, T1wTemplateBrain, T1wTemplate2mm, T2wTemplate, etc.
 
-# Export species-specific environment variables used by subscripts
-export betspecieslabel
-
 # Log the originating call
 echo "$@"
 
