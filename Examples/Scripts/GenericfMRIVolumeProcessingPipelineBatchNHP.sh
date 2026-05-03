@@ -51,8 +51,8 @@ Subjlist="SubjectA"
 # Pipeline environment script
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
-# Species label (Macaque, MacaqueCyno, MacaqueRhesus, Marmoset, NightMonkey, Chimp, Human)
-SPECIES="Macaque"
+# Species label (MacaqueCyno, MacaqueRhesus, MacaqueSnow, Marmoset, NightMonkey, Chimp, Human)
+SPECIES="MacaqueRhesus"
 
 # BBR contrast for EPI to T1w registration (NONE, T1w, or T2w)
 #   NONE: no boundary-based registration
