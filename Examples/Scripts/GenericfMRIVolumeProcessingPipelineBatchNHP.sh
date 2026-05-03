@@ -139,7 +139,7 @@ source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --str
 #### PreFreeSurfer-relevant variables (not used in fMRIVolume)
 #BrainSize="60"                # BrainSize in mm, distance between top of FOV and bottom of brain
 #betcenter="48,56,51"          # Comma separated voxel coordinates in T1wTemplate2mm
-#betradius="35"                # Brain radius for bet
+#betradius="40"                # Brain radius for bet
 #betbiasfieldcor="TRUE"        # Whether to correct bias field for BET
 #bettop2center="30"            # Distance between top of FOV and center of brain
 #BiasFieldSmoothingSigma="3.5"
