@@ -122,8 +122,8 @@ source "$EnvironmentScript"
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StructRes"
 
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines per-species
-# values. The example values below correspond to Macaque (matching the default
-# SPECIES="Macaque" above). Uncomment and edit any line to override the
+# values. The example values below correspond to Rhesus Macaque (matching the default
+# SPECIES="MacaqueRhesus" above). Uncomment and edit any line to override the
 # SetUpSPECIES.sh default for your dataset.
 #
 #BrainScaleFactor="2"          # Brain scale factor relative to human
