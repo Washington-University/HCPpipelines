@@ -98,8 +98,6 @@ fi
 source $EnvironmentScript
 
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
-#HACK: work around the log tool name hack in SetUpSPECIES.sh
-log_SetToolName "$(basename -- "$0")"
 
 # Log the originating call
 echo "$@"
