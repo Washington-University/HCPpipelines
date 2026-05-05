@@ -214,7 +214,7 @@ if ~strcmp(BC,'NO')
 end
 
 if ~strcmp(inputweights,'NONE')
-  weights=load(inputweights);
+  weights=load(inputweights,'-ascii');
   for i=1:size(OUTBO.cdata,2)
       if ismember(i,weights)
           binaryweights(i)=1;

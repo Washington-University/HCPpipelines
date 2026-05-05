@@ -2,11 +2,11 @@
 set -eu
 
 pipedirguessed=0
-if [[ ""$HCPPIPEDIR:-"" == "" ]]
+if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -18,7 +18,7 @@ opts_SetScriptDescription "Run MSMSulc registration and save distortion outputs"
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
 opts_AddMandatory '--regname' 'RegName' 'my reg' "set a new registration name"
-opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "$MSMCONFIGDIR"/MSMSulcStrainFinalconf
+opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "${MSMCONFIGDIR:-}"/MSMSulcStrainFinalconf
 opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registration, L=Left, R=Right, default B=Both" "B"
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."

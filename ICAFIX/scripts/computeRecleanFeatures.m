@@ -32,7 +32,7 @@ SubjFolderlist=[StudyFolder '/' subj];
 for j=1:length(fMRINames)
     fMRIName=fMRINames{j};
 
-    sICA=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix']);
+    sICA=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'],'-ascii');
     num_comps=size(sICA,2);
 
     OrigFeatures=single(zeros(num_comps,186));
@@ -40,17 +40,17 @@ for j=1:length(fMRINames)
 
     MelodicFile=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'];
     if exist(MelodicFile,'file')
-        sICA=load(MelodicFile);
+        sICA=load(MelodicFile,'-ascii');
         if isfile([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt'])
             prob_file = importdata([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt']);
         elseif isfile([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_hp2000_thr10.txt'])
             prob_file = importdata([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_hp2000_thr10.txt']);
         end
         probability=prob_file.data(1:size(sICA,2),:);
-        Stats=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_ICstats']);
+        Stats=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_ICstats'],'-ascii');
         FeaturesFileTable=readtable([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv']); % can properly read files both w/ and w/o header; Context: pyfix has features.csv w/ header but legacy fix doesn't
         FeaturesFile=table2array(FeaturesFileTable); % convert table object to a matrix
-        Powerspectra=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_FTmix']);
+        Powerspectra=load([SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_FTmix'],'-ascii');
 
         % derive TR
         file_name=[SubjFolderlist '/MNINonLinear/Results/' fMRIName '/' fMRIName '_Atlas.dtseries.nii'];

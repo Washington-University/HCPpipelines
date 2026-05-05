@@ -368,7 +368,7 @@ function ReorientBBRandBCAvg()
         then
             tempfiles_create "$contrast$i"_reorient_XXXXXX.nii.gz tempreorient
             wb_command -volume-reorient "$input_file" RPI "$tempreorient"
-            wb_command -volume-resample "$tempreorient" "$tempreorient" CUBIC "$WD"/"$contrast$i"_dc.nii.gz "${gradxfmargs[@]}"
+            wb_command -volume-resample "$tempreorient" "$tempreorient" CUBIC "$WD"/"$contrast$i"_dc.nii.gz ${gradxfmargs[@]+"${gradxfmargs[@]}"}
             namelist+=("$contrast$i")
             if (( ! IsLongitudinal )); then echo "$input_file" >> "$input_list_file"; fi
         else

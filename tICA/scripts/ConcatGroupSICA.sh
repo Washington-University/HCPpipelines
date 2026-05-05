@@ -59,7 +59,14 @@ opts_ShowValues
 #FIXME: hardcoded naming conventions, move these to high level script when ready
 InputStats="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/sICA/iq_$sICAdim.wb_annsub.csv"
 
-OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$sICAdim"
+# if Group sICA hand classifications exists, use it to filter the group sICA components before running tICA
+HandSignalFile="${OutGroupFolder}/MNINonLinear/Results/${fMRIConcatName}/sICA/HandSignal.txt" 
+if [ -e "${HandSignalFile}" ]; then
+    tICADim=$(wc -w < "${HandSignalFile}")
+else
+    tICADim="$sICAdim"
+fi
+OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$tICADim"
 
 OutTCSName="$OutputFolder/sICA_TCS_$sICAdim.sdseries.nii"
 OutTCSMaskName="$OutputFolder/sICA_TCSMASK_$sICAdim.sdseries.nii"

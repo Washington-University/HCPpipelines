@@ -3,14 +3,14 @@ function AFI_GroupAverageCorrectedMaps(AvgIndCorrMyelinFile, AvgIndCorrMyelinAsy
     surfasymmnorm(AvgICorrMyelinMap, AvgIndCorrMyelinAsymmOutFile, 'Average Individual-corrected Myelin Asymmetry');
     clear AvgICorrMyelinMap;
     
-    FWHM = load(AFIStatsFile);
+    FWHM = load(AFIStatsFile,'-ascii');
     rAFI = cifti_read(rAFIFile);
-    CSFRegressors = load(CSFStatsFile);
+    CSFRegressors = load(CSFStatsFile,'-ascii');
     
     IndCorrAllMyelinMaps = cifti_read(IndCorrMyelinAllFile); %Partial.All.MyelinMap_IndCorr
-    
-    GoodVoltages = load(GoodVoltagesFile);
-    
+
+    GoodVoltages = load(GoodVoltagesFile,'-ascii');
+
     %selecting csf percentile to use
     Corr = zeros(1, size(CSFRegressors, 2));
     for i = 1:size(CSFRegressors, 2)

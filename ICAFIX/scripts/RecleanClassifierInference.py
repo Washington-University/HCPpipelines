@@ -12,6 +12,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.neighbors import KNeighborsClassifier
 
+from OnnxClassifierInterface import OnnxClassifier
+
 # available models
 models = [
     'RandomForest',
@@ -47,7 +49,9 @@ def main(args):
     for model_name in model_names:
         if model_name not in models:
             raise ValueError(f"{model_name} is not supported!")
-        models_to_use[model_name]=joblib.load(f'{trained_folder}/{model_name}.joblib')
+        # models_to_use[model_name]=joblib.load(f'{trained_folder}/{model_name}.joblib')
+        models_to_use[model_name]=OnnxClassifier(f'{trained_folder}/{model_name}.onnx')
+
 
     # load csv and remove the Row column
     df_feature=pd.read_csv(feature_file_path)
@@ -56,6 +60,7 @@ def main(args):
     
     predictions_dict={}
     for model_name in model_names:
+
         predictions = models_to_use[model_name].predict_proba(df_feature.values)
         predictions_dict[model_name]=predictions[:,1] # signal prediction
     

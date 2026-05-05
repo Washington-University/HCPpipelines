@@ -67,7 +67,7 @@ function identify_timepoints
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/data/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/data/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 #Space delimited list of subject IDs
 Subjlist=(HCA6002236 HCA6002237 HCA6002238) 
 EnvironmentScript="${StudyFolder}/scripts/SetUpHCPPipeline.sh"

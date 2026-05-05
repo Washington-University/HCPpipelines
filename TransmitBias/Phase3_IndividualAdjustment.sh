@@ -22,9 +22,9 @@ AFI - actual flip angle sequence with two different echo times, requires --afi-t
 
 B1Tx - b1 transmit sequence magnitude/phase pair, requires --group-corrected-myelin
 
-PseudoTransmit - use spin echo fieldmaps, SBRef, and a template transmit-corrected myelin map to derive empirical correction, requires --myelin-template, --group-uncorrected-myelin, and --reference-value"
-opts_AddOptional '--manual-receive' 'useRCfilesStr' 'TRUE or FALSE' "whether Phase1 used unprocessed scans to correct for not using PSN when acquiring scans" 'false'
+PseudoTransmit - use spin echo fieldmaps, SBRef, and a template transmit-corrected myelin map to derive empirical correction, requires --myelin-template, --group-uncorrected-myelin, and --pt-reference-value-file"
 opts_AddMandatory '--gmwm-template' 'GMWMtemplate' 'file' "file containing GM+WM volume ROI"
+opts_AddOptional '--manual-receive' 'useRCfilesStr' 'TRUE or FALSE' "whether Phase1 used unprocessed scans to correct for not using PSN when acquiring scans" 'false'
 
 #AFI or B1Tx
 opts_AddOptional '--group-corrected-myelin' 'GroupCorrected' 'file' "the group-corrected myelin file from AFI or B1Tx"

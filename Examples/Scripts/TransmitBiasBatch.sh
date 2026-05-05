@@ -3,7 +3,7 @@ set -eu
 
 #environment configuration
 queue="long.q"
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 #data location
 subjects=(123456 654321)

@@ -21,13 +21,15 @@ AFI - actual flip angle sequence with two different echo times, requires --afi-t
 
 B1Tx - b1 transmit sequence magnitude/phase pair, requires --transmit-group-name
 
-PseudoTransmit - use spin echo fieldmaps, SBRef, and a template transmit-corrected myelin map to derive empirical correction, --reference-value-out"
+PseudoTransmit - use spin echo fieldmaps, SBRef, and a template transmit-corrected myelin map to derive empirical correction, requires --reference-value-out"
 opts_AddMandatory '--group-average-name' 'GroupAverageName' 'name' "output folder (e.g. S900)"
-opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good B1Tx data (e.g. Partial)"
-opts_AddOptional '--manual-receive' 'useRCfilesStr' 'TRUE or FALSE' "whether Phase1 used unprocessed scans to correct for not using PSN when acquiring scans, default false" 'false'
 opts_AddMandatory '--gmwm-template-out' 'GMWMtemplate' 'file' "output file for GM+WM volume ROI"
 opts_AddMandatory '--average-myelin-out' 'myelinCiftiAvg' 'file' "output cifti file for group average of uncorrected myelin"
+opts_AddOptional '--manual-receive' 'useRCfilesStr' 'TRUE or FALSE' "whether Phase1 used unprocessed scans to correct for not using PSN when acquiring scans, default false" 'false'
 opts_AddOptional '--all-myelin-out' 'myelinCiftiAll' 'file' "output cifti file for concatenated uncorrected myelin"
+
+#AFI or B1Tx
+opts_AddOptional '--transmit-group-name' 'TransmitGroupName' 'name' "name for the subgroup of subjects that have good AFI or B1Tx data (e.g. Partial)"
 
 #AFI-specific
 opts_AddOptional '--afi-tr-one' 'AFITRone' 'number' "TR of first AFI frame"

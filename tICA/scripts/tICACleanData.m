@@ -150,7 +150,7 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
     inputConcat = inputConcat .* repmat(vnmean, 1, size(inputConcat, 2)); %Do correction in BC space because this is temporal regression
     tICAtcs = ciftiopen(Timeseries, wbcommand);
     tICAtcs.cdata = normalise(tICAtcs.cdata')';
-    Noise = load(NoiseList);
+    Noise = load(NoiseList,'-ascii');
     betaICA = ((pinv(tICAtcs.cdata') * demean(inputConcat')));
     cleanedData = inputConcat - (tICAtcs.cdata(Noise, :)' * betaICA(Noise, :))';
     %%split out by input runs

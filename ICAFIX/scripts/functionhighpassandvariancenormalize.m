@@ -139,7 +139,7 @@ singlerun = pdflag || (hp >= 0);
 
 %% Load the motion confounds, and the CIFTI (if single run) (don't need either if MR FIX)
 if singlerun
-    confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par']);
+    confounds=load([fmri hpstring '.ica/mc/prefiltered_func_data_mcf.par'],'-ascii');
     confounds=confounds(:,1:6);
     %% normalise function is in $HCPPIPEDIR/global/matlab/normalise.m
     confounds=normalise([confounds [zeros(1,size(confounds,2)); confounds(2:end,:)-confounds(1:end-1,:)] ]);
@@ -230,7 +230,7 @@ if VNhalfdim
     if dovol
         VN = ceil(size(cts, 2) / 2);
     else
-        VN = ceil(size(B0.cdata, 2) / 2);
+        VN = ceil(size(BO.cdata, 2) / 2);
     end
 end
 
@@ -277,10 +277,10 @@ if dovol
     fname=[fmri hpstring '_vnts.nii.gz'];
     ctsfull=zeros(ctsX*ctsY*ctsZ,ctsT, 'single');
     ctsfull(ctsmask,:)=cts;
-    save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),fname,'f',[1 1 1 1]);
+    save_avw(reshape(ctsfull,ctsX,ctsY,ctsZ,ctsT),fname,'f',[1 1 1 TR]);
     clear ctsfull;
     % N.B. Version of 'fslcpgeom' in FSL 6.0.0 requires a patch because it doesn't copy both the qform and sform faithfully
-    call_fsl(['fslcpgeom ' fmri '.nii.gz ' fname ' -d']); 
+    call_fsl(['fslcpgeom ' fmri '.nii.gz ' fname ' -d']);
 end
 % For CIFTI, we can use the extension to distinguish between VN maps (.dscalar) and VN'ed time series (.dtseries)
 if singlerun

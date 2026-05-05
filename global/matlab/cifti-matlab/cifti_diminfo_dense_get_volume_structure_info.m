@@ -24,7 +24,7 @@ function outinfo = cifti_diminfo_dense_get_volume_structure_info(diminfo, struct
     outinfo.voldims = diminfo.vol.dims;
     %sform in cifti struct is for 0-based indices
     outinfo.volsform1 = diminfo.vol.sform;
-    outinfo.volsform1(:, 4) = outinfo.volsform1 * [-1 -1 -1 1]'; %set the offset to the coordinates of the -1 -1 -1 0-based voxel, so that 1-based voxel indices give the correct coordinates
+    outinfo.volsform1(:, 4) = diminfo.vol.sform * [-1 -1 -1 1]'; %set the offset to the coordinates of the -1 -1 -1 0-based voxel, so that 1-based voxel indices give the correct coordinates
     for i = 1:length(diminfo.models)
         if strcmp(diminfo.models{i}.type, 'vox') && strcmp(diminfo.models{i}.struct, structure)
             %voxel indices in cifti struct are 0-based
@@ -37,6 +37,7 @@ function outinfo = cifti_diminfo_dense_get_volume_structure_info(diminfo, struct
                 outinfo.voxlist1 = outinfo.voxlist1 - repmat(lowcorner - 1, 1, size(outinfo.voxlist1, 2));
                 outinfo.voldims = (highcorner - lowcorner + 1)';
             end
+            outinfo.coordlist = outinfo.volsform1(1:3, :) * [outinfo.voxlist1; ones(1, size(outinfo.voxlist1, 2))];
             return;
         end
     end
