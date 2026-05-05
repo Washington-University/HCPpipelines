@@ -67,7 +67,7 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
   VariableSigmaFS5="8"                                        # FS5.3.0 HighResPial  
   MaxThicknessFS5="5"                                         # FS5.3.0 HighResPial    
   GreySigmaFS5="5"                                            # FS5.3.0 HighResPial
-  GCAdir="${HCPPIPEDIR_Templates}/ChimpYerkes29"
+  GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/ChimpYerkes29"
   GCA="RB_all_2008-03-26.gca"
   AvgCurvTif="average.curvature.filled.buckner40.tif"
 
@@ -245,7 +245,7 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then                         # tuned by TH
   GreySigmaFS5="5"                                            # FS5.3.0 HighResPial
   BrainTemplate="NightMonkeyRIKEN9"
   TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_Averagewmskeleton.nii.gz"
-  GCAdir="$HCPPIPEDIR/global/templates/NHP_NNP/${BrainTemplate}/fsaverage"
+  GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
   GCA="RB_all_2016-05-10.vc700.gca"
   GCASkull="RB_all_withskull_2016-05-10.gca"
   AvgCurvTif="average.curvature.filled.buckner40.tif"

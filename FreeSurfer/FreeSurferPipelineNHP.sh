@@ -192,7 +192,14 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
+#if NHP species, check that the user has downloaded the templates
+if [[ "$Species" != Human && ! -d "$HCPPIPEDIR_Templates/NHP_NNP" ]]
+then
+    log_Err_Abort "$HCPPIPEDIR_Templates/NHP_NNP folder not found.
 
+Please run $HCPPIPEDIR/global/scripts/download_NHP_Templates.sh first.
+"
+fi
 
 
 #check if existing_subject is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
