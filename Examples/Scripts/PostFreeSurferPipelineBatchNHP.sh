@@ -50,12 +50,12 @@ get_batch_options "$@"
 StudyFolder="${HOME}/projects/HCPPipelines_ExampleData" #Location of Session folders (named by subjectID)
 Subjlist="Macaque1 Macaque2" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-Species="RhesusMacaque"
+Species="MacaqueRhesus"
 #StructRes is mandatory
 StructRes="0.5"
 
 if [ -z "$Species" ]; then 
-    Species="RhesusMacaque"
+    Species="MacaqueRhesus"
 fi
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -71,17 +71,17 @@ source "$EnvironmentScript"
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$Species" --structres="$StructRes"
 
 #The following values are set in SetUpSPECIES.sh:
-# Example for chimp:
-# MyelinMappingFWHM="4" 
-# SurfaceSmoothingFWHM="4" 
-# CorrectionSigma=6
-# SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp"
-# GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp"
-# ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases_chimp/ChimpYerkes29.MyelinMap_BC.164k_fs_LR.dscalar.nii"
-# LowResMeshes="32@20" #Needs to match what is in PostFreeSurfer
-# FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
-# SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
-# GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human.
+# Example for MacaqueRhesus:
+# MyelinMappingFWHM="3" 
+# SurfaceSmoothingFWHM="2" 
+# CorrectionSigma=5
+# SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/NHP_NNP/Mac25Rhesus/standard_mesh_atlases"
+# GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/Mac25Rhesus/standard_mesh_atlases"
+# ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/Mac25Rhesus/standard_mesh_atlases/Mac25Rhesus_v5.Partial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
+# LowResMeshes="32@10" 
+# FinalfMRIResolution="1.2" #Needs to match what is in fMRIVolume
+# SmoothingFWHM="1.2" #Recommended to be roughly the voxel size
+# GrayordinatesResolution="1.2"  
 
 
 # Requirements for this script
@@ -107,23 +107,23 @@ QUEUE=""
 for Subject in $Subjlist ; do
     echo $Subject
 
-    #Input Variables
-    #SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
-    #GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/91282_Greyordinates"
-    #GrayordinatesResolutions="2" #Usually 2mm, if multiple delimit with @, must already exist in templates dir
+    #Input Variables    
+    #SurfaceAtlasDIR="${HCPPIPEDIR_Templates}/NHP_NNP/Mac25Rhesus/standard_mesh_atlases"
+    #GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/Mac25Rhesus/standard_mesh_atlases"
+    #GrayordinatesResolutions="1.2" #Usually 1.2mm, if multiple delimit with @, must already exist in templates dir
     HighResMesh="164" #Usually 164k vertices
     #LowResMeshes="32" #Usually 32k vertices, if multiple delimit with @, must already exist in templates dir
 
-    # These are values for humans from SetUpSpecies.sh:
+    # These are values for MacaqueRhesus from SetUpSpecies.sh:
     # CorrectionSigma=5
-    # MyelinMappingFWHM=4
-    # SurfaceSmoothingFWHM=7
-    # MSMSulcConf=MSMSulcStrainFinalconf
-    # FlatMapRootName=colin.cerebral
+    # MyelinMappingFWHM=3
+    # SurfaceSmoothingFWHM=2
+    # MSMSulcConf=MSMSulcStrainFinalconfMacaque
+    # FlatMapRootName=Mac25Rhesus
 
     SubcorticalGrayLabels="${HCPPIPEDIR_Config}/FreeSurferSubcorticalLabelTableLut.txt"
     FreeSurferLabels="${HCPPIPEDIR_Config}/FreeSurferAllLut.txt"
-    #ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
+    #ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/Mac25Rhesus/standard_mesh_atlases/Mac25Rhesus_v5.Partial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
     RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
     UseIndMean="YES"
     if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
