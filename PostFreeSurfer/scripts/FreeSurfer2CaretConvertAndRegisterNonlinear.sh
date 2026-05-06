@@ -386,8 +386,11 @@ for Hemisphere in L R ; do
 
             mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
 
-            if [[ -e "${AtlasSpaceFolder}/${NativeFolder}/${hemisphere}h.${Session}.${Hemisphere}.${wbname}.native.shape.gii" ]]; then
-                mv "$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            # minor output incompatibility between fs6 and fs7+
+            legacy_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            new_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii
+            if [[ -e "$new_native_shape" && ! -e "$legacy_native_shape" ]]; then
+                mv "$new_native_shape" "$legacy_native_shape"
             fi
 
             ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}

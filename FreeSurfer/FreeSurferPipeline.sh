@@ -28,6 +28,14 @@
 #
 #~ND~END~
 
+# Configure custom tools
+# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
+#   (the recon-all.v6.hires script and other scripts called by the recon-all.v6.hires script)
+#   are found on the PATH. If all such custom scripts are found, then we do nothing here.
+#   If any one of them is not found on the PATH, then we change the PATH so that the
+#   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
+
+
 #  Define Sources and pipe-dir
 # -----------------------------------------------------------------------------------
 
@@ -142,7 +150,7 @@ opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that 
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
-opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myeling extra recon-all parameter. Set to NONE to disable the use of this parameter.' "NONE"
+opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter. Set to 0.3 by default, set to 0 or "" to disable the use of this parameter.' "0.3"
 
 ## Copied from Diffusion for consistency. The comment there says: this is an extremely confusing flag should rework it to just use-gpu?
 opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to using the non-GPU version of recon-all i.e. False." "False"
@@ -207,7 +215,6 @@ fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
-
 ${HCPPIPEDIR}/show_version
 
 #processing code goes here
@@ -223,6 +230,32 @@ log_Check_Env_Var FREESURFER_HOME
 log_Msg "Platform Information Follows: "
 uname -a
 
+configure_custom_tools()
+{
+    local which_recon_all
+    local which_conf2hires
+    local which_longmc
+
+    which_recon_all=$(which recon-all.v6.hires || true)
+    which_conf2hires=$(which conf2hires || true)
+    which_longmc=$(which longmc || true)
+
+    if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
+        export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
+        log_Warn "We were not able to locate one of the following required tools:"
+        log_Warn "recon-all.v6.hires, conf2hires, or longmc"
+        log_Warn ""
+        log_Warn "To be able to run this script using the standard versions of these tools,"
+        log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
+        log_Warn ""
+        log_Warn "If you intended to use some other version of these tools, please configure"
+        log_Warn "your PATH before invoking this script, such that the tools you intended to"
+        log_Warn "use can be found on the PATH."
+        log_Warn ""
+        log_Warn "PATH set to: ${PATH}"
+    fi
+}
+
 # Show tool versions
 show_tool_versions()
 {
@@ -231,15 +264,29 @@ show_tool_versions()
     ${HCPPIPEDIR}/show_version
 
     # Show recon-all version
-    log_Msg "Showing recon-all version"
-    local which_recon_all=$(which recon-all || true)
-    log_Msg ${which_recon_all}
-    recon-all -version
+    if ((use_fs6)); then
+        # Show recon-all version
+        log_Msg "Showing recon-all.v6.hires version"
+        local which_recon_all=$(which recon-all.v6.hires || true)
+        log_Msg ${which_recon_all}
+        recon-all.v6.hires -version
 
-    # Show tkregister version
-    log_Msg "Showing tkregister2 version"
-    which tkregister2
-    tkregister2 -version
+        # Show tkregister version
+        log_Msg "Showing tkregister version"
+        which tkregister
+        tkregister -version
+    else
+        # Show recon-all version
+        log_Msg "Showing recon-all version"
+        local which_recon_all=$(which recon-all || true)
+        log_Msg ${which_recon_all}
+        recon-all -version
+
+        # Show tkregister version
+        log_Msg "Showing tkregister2 version"
+        which tkregister2
+        tkregister2 -version
+    fi
 
     # Show mri_concatenate_lta version
     log_Msg "Showing mri_concatenate_lta version"
@@ -281,28 +328,36 @@ validate_freesurfer_version()
     # break FreeSurfer version into components
     # primary, secondary, and tertiary
     # version X.Y.Z ==> X primary, Y secondary, Z tertiary
-    # freesurfer_version_array=(${freesurfer_version//./ })
+    freesurfer_version_array=(${freesurfer_version//./ })
 
-    # freesurfer_primary_version="${freesurfer_version_array[0]}"
-    # freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
+    freesurfer_primary_version="${freesurfer_version_array[0]}"
+    freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
 
-    # freesurfer_secondary_version="${freesurfer_version_array[1]}"
-    # freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
+    if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
+        # e.g. 4.y.z, 5.y.z
+        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
+    fi
 
-    # freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-    # freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
-
-    # if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-    #     # e.g. 4.y.z, 5.y.z
-    #     log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
-    # fi
+    # if using fs6, we are using custom tools
+    export use_fs6=FALSE
+    if ${freesurfer_primary_version} -eq 6; then
+        export use_fs6=TRUE
+        log_Msg "INFO: Using FreeSurfer 6 with custom tools"
+    else
+        log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
+    fi
 }
+
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
 
 # Show tool versions
 show_tool_versions
 
-# Validate version of FreeSurfer in use
-validate_freesurfer_version
+# Configure the use of FreeSurfer v6 custom tools
+if ((use_fs6)); then
+    configure_custom_tools
+fi
 
 #
 # Generate T1w in NIFTI format and in rawavg space
@@ -373,7 +428,12 @@ make_t2w_hires_nifti_file()
     # Then we need to move (resample) it to
     # the target volume and convert it to NIFTI format.
 
-    t2w_input_file="orig/${t2_or_flair}raw.mgz"
+    # naming seems to differ between fs6 and 7+
+    if ((use_fs6)); then
+        t2w_input_file="rawavg.${t2_or_flair}.prenorm.mgz"
+    else
+        t2w_input_file="orig/${t2_or_flair}raw.mgz"
+    fi
     target_volume="rawavg.mgz"
     t2w_output_file="T2w_hires.nii.gz"
 
@@ -481,7 +541,6 @@ log_Msg "gpu: ${gpu}"
 log_Msg "HighMyelin: ${HighMyelin}"
 
 if ((! existing_session)); then
-
     # If --existing-session is NOT set, AND PostFreeSurfer has been run, then
     # certain files need to be reverted to their PreFreeSurfer output versions
     if [ `imtest ${SessionDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
@@ -503,11 +562,15 @@ if ((! existing_session)); then
     fi
 fi
 
-# ----------------------------------------------------------------------
-log_Msg "Call recon-all"
-# ----------------------------------------------------------------------
+# recon_all --------------------------------------------------------------------
+if ((use_fs6)); then
+    log_Msg "Call custom recon-all: recon-all.v6.hires"
+    recon_all_cmd=(recon-all.v6.hires -subjid "$SessionID" -sd "$SessionDIR")
+else
+    log_Msg "Call recon-all"
+    recon_all_cmd=(recon-all -subjid "$SessionID" -sd "$SessionDIR")
+fi
 
-recon_all_cmd=(recon-all -subjid "$SessionID" -sd "$SessionDIR")
 if ((! existing_session)); then  # input volumes only necessary first time through
     recon_all_cmd+=(-all -i "$zero_threshold_T1wImage" -emregmask "$T1wImageBrain")
     if [ "${T2wImage}" != "" ]; then
@@ -544,7 +607,7 @@ if ((conf2hires)); then
 fi
 
 # HighMyelin
-if [[ "${HighMyelin}" != "NONE" ]]; then
+if [[ "${HighMyelin}" != "" ]]; then
     recon_all_cmd+=(-high-myelin "${HighMyelin}")
 fi
 
@@ -611,7 +674,11 @@ if [[ "${T2wImage}" != "" ]]; then
     fi
 
     log_Msg "...Create a registration between the original conformed space and the rawavg space"
-    tkregister_cmd="tkregister2"
+    if ((use_fs6)); then
+        tkregister_cmd="tkregister"
+    else
+        tkregister_cmd="tkregister2"
+    fi
     tkregister_cmd+=" --mov orig.mgz"
     tkregister_cmd+=" --targ rawavg.mgz"
     tkregister_cmd+=" --regheader"
@@ -644,7 +711,11 @@ if [[ "${T2wImage}" != "" ]]; then
     fi
 
     log_Msg "...Convert to FSL format"
-    tkregister_cmd="tkregister2"
+    if ((use_fs6)); then
+        tkregister_cmd="tkregister"
+    else
+        tkregister_cmd="tkregister2"
+    fi
     tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
     tkregister_cmd+=" --targ rawavg.mgz"
     tkregister_cmd+=" --reg Q.lta"
