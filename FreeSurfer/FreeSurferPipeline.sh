@@ -339,10 +339,13 @@ validate_freesurfer_version()
     fi
 
     # if using fs6, we are using custom tools
-    export use_fs6=FALSE
+    use_fs6=FALSE
     if ${freesurfer_primary_version} -eq 6; then
-        export use_fs6=TRUE
         log_Msg "INFO: Using FreeSurfer 6 with custom tools"
+        use_fs6=TRUE
+        # disable these parameters for FS6
+        gpu=FALSE
+        HighMyelin=""
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
     fi
@@ -537,8 +540,10 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
-log_Msg "gpu: ${gpu}"
-log_Msg "HighMyelin: ${HighMyelin}"
+if ((!use_fs6)); then
+    log_Msg "gpu: ${gpu}"
+    log_Msg "HighMyelin: ${HighMyelin}"
+fi
 
 if ((! existing_session)); then
     # If --existing-session is NOT set, AND PostFreeSurfer has been run, then
