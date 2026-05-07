@@ -174,7 +174,11 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 flair=$(opts_StringToBool "$flairString")
 existing_session=$(opts_StringToBool "$existing_sessionString")
 conf2hires=$(opts_StringToBool "$conf2hiresString")
-gpu=$(opts_StringToBool "$gpuString")
+if [[ "$gpuString" == "AUTO" ]]; then
+    gpu="AUTO"
+else
+    gpu=$(opts_StringToBool "$gpuString")
+fi
 
 # required by FS8
 export FS_ALLOW_DEEP=1
@@ -353,6 +357,12 @@ validate_freesurfer_version()
         HighMyelin=""
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
+        if [[ "${gpu}" == "AUTO" ]]; then
+            gpu=TRUE
+        fi
+        if [[ "${HighMyelin}" == "AUTO" ]]; then
+            HighMyelin="0.3"
+        fi
     fi
 }
 
