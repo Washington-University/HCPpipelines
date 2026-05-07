@@ -347,14 +347,15 @@ validate_freesurfer_version()
         log_Msg "INFO: Using FreeSurfer 6 with custom tools"
         use_fs6=TRUE
         # validate that unsupported parameters are not set for FS6
-        if ((gpu)); then
-            log_Err_Abort "FreeSurfer 6 does not support GPU-accelerated recon-all. Do not set --gpu=TRUE when using FS6."
-        fi
         if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
             log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
         fi
-        gpu=FALSE
         HighMyelin=""
+        if [[ "${gpu}" == "AUTO" ]]; then
+            gpu=FALSE
+        elif ((gpu)); then
+            log_Err_Abort "FreeSurfer 6 does not support GPU-accelerated recon-all. Do not set --gpu=TRUE when using FS6."
+        fi
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
         if [[ "${gpu}" == "AUTO" ]]; then
