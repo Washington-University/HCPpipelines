@@ -206,15 +206,14 @@ validate_freesurfer_version()
     freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
 
     if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-        # e.g. 4.y.z, 5.y.z
         log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
     fi
 
     # if using fs6, we are using custom tools
-    use_fs6=FALSE
-    if ${freesurfer_primary_version} -eq 6; then
+    use_fs6=0
+    if [[ ${freesurfer_primary_version} -eq 6 ]]; then
         log_Msg "INFO: Using FreeSurfer 6 with custom tools"
-        use_fs6=TRUE
+        use_fs6=1
         # validate that unsupported parameters are not set for FS6
         if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
             log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
