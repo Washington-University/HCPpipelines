@@ -150,10 +150,9 @@ opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that 
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
-opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. 0.3 by default, set to "" to disable the use of this parameter.' "0.3"
+opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disbaled for FS6.' "AUTO"
 
-## Copied from Diffusion for consistency. The comment there says: this is an extremely confusing flag should rework it to just use-gpu?
-opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to using the non-GPU version of recon-all i.e. False." "False"
+opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to True for FS7 and FS8 and False for FS6." "AUTO"
 
 opts_ParseArguments "$@"
 
@@ -343,7 +342,13 @@ validate_freesurfer_version()
     if ${freesurfer_primary_version} -eq 6; then
         log_Msg "INFO: Using FreeSurfer 6 with custom tools"
         use_fs6=TRUE
-        # disable these parameters for FS6
+        # validate that unsupported parameters are not set for FS6
+        if ((gpu)); then
+            log_Err_Abort "FreeSurfer 6 does not support GPU-accelerated recon-all. Do not set --gpu=TRUE when using FS6."
+        fi
+        if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
+            log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
+        fi
         gpu=FALSE
         HighMyelin=""
     else
@@ -540,10 +545,8 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
-if ((!use_fs6)); then
-    log_Msg "gpu: ${gpu}"
-    log_Msg "HighMyelin: ${HighMyelin}"
-fi
+log_Msg "gpu: ${gpu}"
+log_Msg "HighMyelin: ${HighMyelin}"
 
 if ((! existing_session)); then
     # If --existing-session is NOT set, AND PostFreeSurfer has been run, then

@@ -75,11 +75,11 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-if [ -n "$LogDir" ]; then 
+if [ -n "$LogDir" ]; then
   mkdir -p "$LogDir"
-  if [ -d "$LogDir" ]; then 
+  if [ -d "$LogDir" ]; then
     par_set_log_dir "$LogDir"
-  else 
+  else
     log_Err_Abort "Directory specified for logs $LogDir does not exist and cannot be created."
   fi
 fi
@@ -102,19 +102,63 @@ log_Check_Env_Var FREESURFER_HOME
 log_Msg "Platform Information Follows: "
 uname -a
 
+# Configure custom tools
+# - Determine if the PATH is configured so that the custom FreeSurfer v6 tools used by this script
+#   (the recon-all.v6.hires script and other scripts called by the recon-all.v6.hires script)
+#   are found on the PATH. If all such custom scripts are found, then we do nothing here.
+#   If any one of them is not found on the PATH, then we change the PATH so that the
+#   versions of these scripts found in ${HCPPIPEDIR}/FreeSurfer/custom are used.
+configure_custom_tools()
+{
+  local which_recon_all
+  local which_conf2hires
+  local which_longmc
+
+  which_recon_all=$(which recon-all.v6.hires || true)
+  which_conf2hires=$(which conf2hires || true)
+  which_longmc=$(which longmc || true)
+
+  if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
+    export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
+    log_Warn "We were not able to locate one of the following required tools:"
+    log_Warn "recon-all.v6.hires, conf2hires, or longmc"
+    log_Warn ""
+    log_Warn "To be able to run this script using the standard versions of these tools,"
+    log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
+    log_Warn ""
+    log_Warn "If you intended to use some other version of these tools, please configure"
+    log_Warn "your PATH before invoking this script, such that the tools you intended to"
+    log_Warn "use can be found on the PATH."
+    log_Warn ""
+    log_Warn "PATH set to: ${PATH}"
+  fi
+}
+
 # Show tool versions
 show_tool_versions()
 {
   # Show recon-all version
-  log_Msg "Showing recon-all version"
-  local which_recon_all=$(which recon-all)
-  log_Msg ${which_recon_all}
-  recon-all -version
-  
-  # Show tkregister version
-  log_Msg "Showing tkregister2 version"
-  which tkregister2
-  tkregister2 -version
+  if ((use_fs6)); then
+    log_Msg "Showing recon-all.v6.hires version"
+    local which_recon_all=$(which recon-all.v6.hires || true)
+    log_Msg ${which_recon_all}
+    recon-all.v6.hires -version
+
+    # Show tkregister version
+    log_Msg "Showing tkregister version"
+    which tkregister
+    tkregister -version
+  else
+    log_Msg "Showing recon-all version"
+    local which_recon_all=$(which recon-all)
+    log_Msg ${which_recon_all}
+    recon-all -version
+
+    # Show tkregister version
+    log_Msg "Showing tkregister2 version"
+    which tkregister2
+    tkregister2 -version
+  fi
 
   # Show mri_concatenate_lta version
   log_Msg "Showing mri_concatenate_lta version"
@@ -136,7 +180,7 @@ validate_freesurfer_version()
   if [ -z "${FREESURFER_HOME}" ]; then
     log_Err_Abort "FREESURFER_HOME must be set"
   fi
-  
+
   freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
 
   if [ -f "${freesurfer_version_file}" ]; then
@@ -151,44 +195,53 @@ validate_freesurfer_version()
   freesurfer_version=${freesurfer_version_string_array[5]}
   freesurfer_version=${freesurfer_version#v} # strip leading "v"
 
-  log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
 
-  # break FreeSurfer version into components
-  # primary, secondary, and tertiary
-  # version X.Y.Z ==> X primary, Y secondary, Z tertiary
-  freesurfer_version_array=(${freesurfer_version//./ })
+    log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
 
-  freesurfer_primary_version="${freesurfer_version_array[0]}"
-  freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
+    # break FreeSurfer version into components
+    # primary, secondary, and tertiary
+    # version X.Y.Z ==> X primary, Y secondary, Z tertiary
+    freesurfer_version_array=(${freesurfer_version//./ })
 
-  freesurfer_secondary_version="${freesurfer_version_array[1]}"
-  freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
+    freesurfer_primary_version="${freesurfer_version_array[0]}"
+    freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
 
-  freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-  freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
+    if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
+        # e.g. 4.y.z, 5.y.z
+        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
+    fi
 
-  if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-    # e.g. 4.y.z, 5.y.z
-    log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
-  fi
+    # if using fs6, we are using custom tools
+    use_fs6=FALSE
+    if ${freesurfer_primary_version} -eq 6; then
+        log_Msg "INFO: Using FreeSurfer 6 with custom tools"
+        use_fs6=TRUE
+    else
+        log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
+    fi
 }
+
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
 
 # Show tool versions
 show_tool_versions
 
-# Validate version of FreeSurfer in use
-validate_freesurfer_version
+# Configure the use of FreeSurfer v6 custom tools
+if ((use_fs6)); then
+    configure_custom_tools
+fi
 
 UseT2w=$(opts_StringToBool "$UseT2wString")
 
 #processing code goes here
 echo "parallel mode: $parallel_mode"
-if [ "$parallel_mode" != "FSLSUB" -a "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ]; then 
+if [ "$parallel_mode" != "FSLSUB" -a "$parallel_mode" != "NONE" -a "$parallel_mode" != "BUILTIN" ]; then
   log_Err_Abort "Unknown parallel mode $parallel_mode. Plese specify one of FSLSUB, BUILTIN, NONE"
 fi
 
 start_stage=0
-if [ -n "$StartStage" ]; then  
+if [ -n "$StartStage" ]; then
   case $StartStage in
     TEMPLATE) start_stage=0 ;;
     TIMEPOINTS) start_stage=1 ;;
@@ -196,7 +249,7 @@ if [ -n "$StartStage" ]; then
   esac
 fi
 end_stage=1
-if [ -n "$EndStage" ]; then  
+if [ -n "$EndStage" ]; then
   case $EndStage in
     TEMPLATE) end_stage=0 ;;
     TIMEPOINTS) end_stage=1 ;;
@@ -229,7 +282,7 @@ log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
 mkdir -p "${LongDIR}"
 
-if (( start_stage < 1 )); then 
+if (( start_stage < 1 )); then
 
   #prepare session folder structure
   for Session in ${Sessions} ; do
@@ -243,7 +296,11 @@ if (( start_stage < 1 )); then
   log_Msg "Creating the base template: ${TemplateID}"
   # ----------------------------------------------------------------------
 
-  recon_all_cmd="recon-all"
+  if ((use_fs6)); then
+    recon_all_cmd="recon-all.v6.hires"
+  else
+    recon_all_cmd="recon-all"
+  fi
   recon_all_cmd+=" -sd ${LongDIR}"
   recon_all_cmd+=" -base ${TemplateID}"
   for Session in ${Sessions} ; do
@@ -269,40 +326,44 @@ if (( start_stage < 1 )); then
   par_finalize_stage $parallel_mode $max_jobs
 fi
 
-if (( end_stage > 0 )); then 
+if (( end_stage > 0 )); then
   # ----------------------------------------------------------------------
   log_Msg "Running the longitudinal recon-all on each timepoint"
   # ----------------------------------------------------------------------
   for Session in ${Sessions} ; do
     log_Msg "Running longitudinal recon all for session: ${Session}"
-    recon_all_cmd="recon-all"
+    if ((use_fs6)); then
+      recon_all_cmd="recon-all.v6.hires"
+    else
+      recon_all_cmd="recon-all"
+    fi
     recon_all_cmd+=" -sd ${LongDIR}"
     recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
-    
+
     recon_all_cmd+=" $extra_reconall_args_long "
     T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
-    
-    if [ -f "$T2w" ]; then 
+
+    if [ -f "$T2w" ]; then
       recon_all_cmd+=" -T2 $T2w"
     else
         log_Msg "WARNING: No T2-weighted image $T2w, T2-weighted processing will not run."
     fi
-        
+
     T1w=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz
     emregmask=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz
-    
-    if [ -f "$emregmask" ]; then 
-      recon_all_cmd+=" -emregmask $emregmask" 
+
+    if [ -f "$emregmask" ]; then
+      recon_all_cmd+=" -emregmask $emregmask"
     else
       log_Msg "Required $emregmask file is missing"
-      exit -1      
+      exit -1
     fi
-            
+
     log_Msg "...recon_all_cmd: ${recon_all_cmd}"
     echo ${recon_all_cmd}
     par_add_job_to_stage $parallel_mode "$fslsub_queue" ${recon_all_cmd}
   done
-  
+
   #Finalize jobs in this stage.
   par_finalize_stage $parallel_mode $max_jobs
 fi
