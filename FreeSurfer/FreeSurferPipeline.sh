@@ -321,9 +321,8 @@ validate_freesurfer_version()
         log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
     fi
 
-    # strip out extraneous stuff from FreeSurfer version string
-    freesurfer_version_string_array=(${freesurfer_version_string//-/ })
-    freesurfer_version=${freesurfer_version_string_array[5]}
+    # extract X.Y.Z version robustly from build stamp (handles both FS6 and FS8 formats)
+    freesurfer_version=$(echo "${freesurfer_version_string}" | grep -oP 'v?\d+\.\d+\.\d+' | head -1)
     freesurfer_version=${freesurfer_version#v} # strip leading "v"
 
     log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"

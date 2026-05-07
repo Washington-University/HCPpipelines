@@ -175,26 +175,25 @@ show_tool_versions()
   which fslmaths
 }
 
+
 validate_freesurfer_version()
 {
-  if [ -z "${FREESURFER_HOME}" ]; then
-    log_Err_Abort "FREESURFER_HOME must be set"
-  fi
+    if [ -z "${FREESURFER_HOME}" ]; then
+        log_Err_Abort "FREESURFER_HOME must be set"
+    fi
 
-  freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
+    freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
 
-  if [ -f "${freesurfer_version_file}" ]; then
-    freesurfer_version_string=$(cat "${freesurfer_version_file}")
-    log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
-  else
-    log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
-  fi
+    if [ -f "${freesurfer_version_file}" ]; then
+        freesurfer_version_string=$(cat "${freesurfer_version_file}")
+        log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
+    else
+        log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
+    fi
 
-  # strip out extraneous stuff from FreeSurfer version string
-  freesurfer_version_string_array=(${freesurfer_version_string//-/ })
-  freesurfer_version=${freesurfer_version_string_array[5]}
-  freesurfer_version=${freesurfer_version#v} # strip leading "v"
-
+    # extract X.Y.Z version robustly from build stamp (handles both FS6 and FS8 formats)
+    freesurfer_version=$(echo "${freesurfer_version_string}" | grep -oP 'v?\d+\.\d+\.\d+' | head -1)
+    freesurfer_version=${freesurfer_version#v} # strip leading "v"
 
     log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
 
@@ -216,8 +215,24 @@ validate_freesurfer_version()
     if ${freesurfer_primary_version} -eq 6; then
         log_Msg "INFO: Using FreeSurfer 6 with custom tools"
         use_fs6=TRUE
+        # validate that unsupported parameters are not set for FS6
+        if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
+            log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
+        fi
+        HighMyelin=""
+        if [[ "${gpu}" == "AUTO" ]]; then
+            gpu=FALSE
+        elif ((gpu)); then
+            log_Err_Abort "FreeSurfer 6 does not support GPU-accelerated recon-all. Do not set --gpu=TRUE when using FS6."
+        fi
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
+        if [[ "${gpu}" == "AUTO" ]]; then
+            gpu=TRUE
+        fi
+        if [[ "${HighMyelin}" == "AUTO" ]]; then
+            HighMyelin="0.3"
+        fi
     fi
 }
 
