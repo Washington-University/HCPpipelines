@@ -256,6 +256,14 @@ do
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
                 --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}" \
                 --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg}
+            
+            #Cleanup temp WF files
+            if [[ "${NumWishart}" -gt 0 ]]
+            then
+                log_Msg "Cleaning up temporary Wishart filtered files"
+                rm -rf "${WFTempDir}"
+            fi
+            
             log_Msg "Running PROFUMO postprocessing"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
@@ -274,12 +282,7 @@ do
                 "${RESULTS_PATH}" \
                 "${REAL_REF_IMAGE}"
 
-            #Cleaning up temporary WF files
-            if [[ "${NumWishart}" -gt 0 ]]
-            then
-                log_Msg "Cleaning up temporary Wishart filtered files"
-                rm -rf "${WFTempDir}"
-            fi
+
             ;;
         (PostPROFUMO)
             log_Msg "Running PostPROFUMO step"
