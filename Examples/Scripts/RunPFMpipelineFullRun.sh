@@ -186,7 +186,7 @@ main() {
     LowDims="7@8@9@10@11@12@13@14@15@16@17@18@19@20@21"
 
     # Volume template file
-    VolumeTemplateCIFTI="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll7T175/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
+    VolumeTemplateCIFTI="${HOME}/data/HCPpipelines_ExampleData/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
  
     # PROFUMO settings
     ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
