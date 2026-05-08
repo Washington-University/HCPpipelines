@@ -121,8 +121,6 @@ then
     RegString="_$RegName"
 fi
 
-# Volume template file path
-# VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.2.dscalar.nii"
 
 for ((stepInd = startInd; stepInd <= stopAfterInd; ++stepInd))
 do
@@ -146,6 +144,7 @@ do
             fi
             
             ProfumoConfigToUse="${ProfumoConfig}"
+            # Applying WF
             if [[ "$NumWishart" -gt 0 ]]
             then
                 log_Msg "Running Wishart filtering with ${NumWishart} iterations before PROFUMO"
@@ -174,7 +173,7 @@ do
                         --pfm-dimension="$PFMdim" \
                         --matlab-run-mode="$MatlabMode"
                 done
-
+            # Create config file(location of files) for WF files
                 ProfumoConfigToUse="${WFTempDir}/wishart_dataLocations.json"
                 echo '{' > "$ProfumoConfigToUse"
                 for Subject in "${Subjlist[@]}"
@@ -190,11 +189,11 @@ do
                     done
 
                     perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"  
-                    echo -e "}," >> "$ProfumoConfigToUse"
+                    echo -e "\t}," >> "$ProfumoConfigToUse"
                 done
                 perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"
                 echo "}" >> "$ProfumoConfigToUse"
-                log_Msg "WF prefiltering complete"
+                log_Msg "WF complete"
             fi
 
             # Set up PROFUMO paths
@@ -274,7 +273,8 @@ do
                 "${PFM_PATH}" \
                 "${RESULTS_PATH}" \
                 "${REAL_REF_IMAGE}"
-            
+
+            #Cleaning up temporary WF files
             if [[ "${NumWishart}" -gt 0 ]]
             then
                 log_Msg "Cleaning up temporary Wishart filtered files"
