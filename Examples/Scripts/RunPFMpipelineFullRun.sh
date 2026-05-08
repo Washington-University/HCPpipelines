@@ -138,6 +138,7 @@ main() {
     # set the start step beginning from RunPROFUMO which is by default the first step
     StartStep="RunPROFUMO"
     StopStep="GroupPFMs"
+    NumWishart="5"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
     parLimit=-1
@@ -188,7 +189,7 @@ main() {
     VolumeTemplateCIFTI="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/S1200_MSMAll7T175/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
  
     # PROFUMO settings
-    ProfumoSingularity="/media/myelin/andrea/HCPpipelines/PFM/profumo_v2.sif" 
+    ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
     ProfumoConfig="${PFMFolder}/dataLocations.json"  
     TR="1.0"
     ProfumoThreads="14"
@@ -235,8 +236,8 @@ main() {
                                     --fmri-resolution="$fMRIResolution" \
                                     --low-res-mesh="$LowResMesh" \
                                     --runs-timepoints="$subjectExpectedTimepoints" \
-                                    --low-dims="$LowDims" \
                                     --fix-legacy-bias="$FixLegacyBiasString" \
+                                    --num-wishart="$NumWishart"\
                                     --scale-factor="$ScaleFactor" \
                                     --starting-step="$StartStep" \
                                     --stop-after-step="$StopStep" \
@@ -250,6 +251,7 @@ main() {
                                     --profumo-cov-model="$CovModel" \
                                     --profumo-multi-start-iterations="$nStarts" \
                                     --profumo-random-seed="$RandomSeed" \
+                                    --num-wishart="$NumWishart" \
                                     --ref-image="$RefImage" \
                                     --volume-template-file="$VolumeTemplateCIFTI"
     
