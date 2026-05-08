@@ -53,6 +53,7 @@ opts_AddOptional '--profumo-random-seed' 'RandomSeed' 'integer' "random seed for
 opts_AddOptional '--profumo-multi-start-iterations' 'MultiStartIterations' 'integer' "number of iterations of group-level spatial decomposition before inferring full model" '5'
 opts_AddOptional '--profumo-initial-maps' 'InitialMaps' 'path' "file to initialise the decomposition based on spatial maps"
 opts_AddOptional '--profumo-load-sequentially' 'LoadSequentially' 'YES or NO' "load data sequentially in PROFUMO (useful for memory management)" 'YES'
+opts_AddOptional '--num-wishart' 'NumWishart' 'integer' "number of Wishart filter iterations for prefiltering (0 to skip)" '0'
 
 #optional parameters
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
@@ -60,7 +61,6 @@ opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '
 #RSN regression specific parameters
 opts_AddOptional '--fix-legacy-bias' 'FixLegacyBias' 'YES or NO' 'whether the input data used legacy bias correction' 'NO'
 opts_AddOptional '--scale-factor' 'ScaleFactor' 'float' 'scale factor for RSN regression' '0.01'
-opts_AddOptional '--low-dims' 'LowDims' 'dims' "low ICA dimensions separated by @s for RSN regression" ''
 
 
 #general settings
@@ -145,6 +145,58 @@ do
                 log_Err_Abort "Reference image must be specified with --ref-image"
             fi
             
+            ProfumoConfigToUse="${ProfumoConfig}"
+            if [[ "$NumWishart" -gt 0 ]]
+            then
+                log_Msg "Running Wishart filtering with ${NumWishart} iterations before PROFUMO"
+                WFTempDir=$(mktemp -d "${PFMFolder}/WF_tmp.XXXXXX")
+                for Subject in "${Subjlist[@]}"
+                do
+                    mkdir -p "${WFTempDir}/${Subject}"
+                    inputList=""
+                    outputList=""
+                    for fMRIName in "${fMRINamesArray[@]}"
+                    do
+                        inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}.dtseries.nii"
+                        outputFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}_WF.dtseries.nii"
+                        if [[ -f "$inputFile" ]]
+                        then
+                            if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
+                            inputList+="$inputFile"
+                            outputList+="$outputFile"
+                        fi
+                    done
+                    log_Msg "Applying Wishart filter for subject $Subject"
+                    "$HCPPIPEDIR"/PFM/scripts/WishartFilter.sh \
+                        --input="$inputList" \
+                        --output="$outputList" \
+                        --num-wishart="$NumWishart" \
+                        --pfm-dimension="$PFMdim" \
+                        --matlab-run-mode="$MatlabMode"
+                done
+
+                ProfumoConfigToUse="${WFTempDir}/wishart_dataLocations.json"
+                echo '{' > "$ProfumoConfigToUse"
+                for Subject in "${Subjlist[@]}"
+                do
+                    echo -e "\t\"$Subject\": {" >> "$ProfumoConfigToUse"
+                    for fMRIName in "${fMRINamesArray[@]}"
+                    do
+                        WFFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}_WF.dtseries.nii"
+                        if [[ -f "$WFFile" ]]
+                        then
+                            echo -e "\t\t\"$fMRIName\": \"$WFFile\"," >> "$ProfumoConfigToUse"
+                        fi
+                    done
+
+                    perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"  
+                    echo -e "}," >> "$ProfumoConfigToUse"
+                done
+                perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"
+                echo "}" >> "$ProfumoConfigToUse"
+                log_Msg "WF prefiltering complete"
+            fi
+
             # Set up PROFUMO paths
             PFM_PATH="${PFMFolder}/Analysis.pfm"
             RESULTS_PATH="${PFMFolder}/Results.ppp"
@@ -178,18 +230,21 @@ do
             
             ## Rewrite input files with wb_command, as a failsafe to avoid SIMD buffer alignment issue in PROFUMO if 
             ## files were written with an older version of cifti-matlab with 8-byte instead of 16-byte alignment. 
-            cat "${ProfumoConfig}" | \
-                while IFS= read -r line; do
-                    if [[ "$line" != *'.nii"'* ]]; then continue;fi # Only process lines that contain .nii"
-                    filePath=$(echo "$line" | sed -E 's/^[[:space:]]*"[^"]*"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
-                    wb_command -file-convert -cifti-version-convert "$filePath" 2 "$filePath"
-                done           
-            
+            if [[ "${NumWishart}" -eq 0 ]]
+            then
+                cat "${ProfumoConfig}" | \
+                    while IFS= read -r line; do
+                        if [[ "$line" != *'.nii"'* ]]; then continue;fi # Only process lines that contain .nii"
+                        filePath=$(echo "$line" | sed -E 's/^[[:space:]]*"[^"]*"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+                        wb_command -file-convert -cifti-version-convert "$filePath" 2 "$filePath"
+                    done           
+            fi
+
             # log_Msg "Running PROFUMO decomposition with dimension ${PFMdim}"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
                 "${ProfumoSingularity}" \
-                /opt/profumo/C++/PROFUMO "${ProfumoConfig}" \
+                /opt/profumo/C++/PROFUMO "${ProfumoConfigToUse}" \
                 "${PFMdim}" "${PFM_PATH}" \
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
                 --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" \
@@ -197,7 +252,7 @@ do
             apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
                 "${ProfumoSingularity}" \
-                /opt/profumo/C++/PROFUMO "${ProfumoConfig}" \
+                /opt/profumo/C++/PROFUMO "${ProfumoConfigToUse}" \
                 "${PFMdim}" "${PFM_PATH}" \
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
                 --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}" \
@@ -220,7 +275,11 @@ do
                 "${RESULTS_PATH}" \
                 "${REAL_REF_IMAGE}"
             
-
+            if [[ "${NumWishart}" -gt 0 ]]
+            then
+                log_Msg "Cleaning up temporary Wishart filtered files"
+                rm -rf "${WFTempDir}"
+            fi
             ;;
         (PostPROFUMO)
             log_Msg "Running PostPROFUMO step"
@@ -241,9 +300,7 @@ do
         (RSNRegression)
             log_Msg "Running RSNRegression step"
             
-            # Set up template paths
-            LowDimTemplate="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/melodic_oIC_${PFMdim}.dscalar.nii"
-            
+            # Set up template paths            
             for Subject in "${Subjlist[@]}"
             do
                 if [[ "$ConcatName" != "" ]]
@@ -281,10 +338,8 @@ do
                     --subject="$Subject"
                     --subject-timeseries="$fMRINamesForSub" # "$fMRINamesForSub"
                     --surf-reg-name="$RegName"
-                    --low-ica-dims="$LowDims"
                     --low-res="$LowResMesh"
                     --proc-string="_$fMRIProcSTRING"
-                    --low-ica-template-name="$LowDimTemplate"
                     --method="dual"
                     --output-string="$OutputSTRING"
                     --output-spectra="$RunsXNumTimePoints"
