@@ -137,42 +137,42 @@ configure_custom_tools()
 # Show tool versions
 show_tool_versions()
 {
-  # Show recon-all version
-  if ((use_fs6)); then
-    log_Msg "Showing recon-all.v6.hires version"
-    local which_recon_all=$(which recon-all.v6.hires || true)
-    log_Msg ${which_recon_all}
-    recon-all.v6.hires -version
+    # Show recon-all version
+    if ((use_fs6)); then
+        log_Msg "Showing recon-all.v6.hires version"
+        local which_recon_all=$(which recon-all.v6.hires || true)
+        log_Msg ${which_recon_all}
+        recon-all.v6.hires -version
 
-    # Show tkregister version
-    log_Msg "Showing tkregister version"
-    which tkregister
-    tkregister -version
-  else
-    log_Msg "Showing recon-all version"
-    local which_recon_all=$(which recon-all)
-    log_Msg ${which_recon_all}
-    recon-all -version
+        # Show tkregister version
+        log_Msg "Showing tkregister version"
+        which tkregister
+        tkregister -version
+    else
+        log_Msg "Showing recon-all version"
+        local which_recon_all=$(which recon-all)
+        log_Msg ${which_recon_all}
+        recon-all -version
 
-    # Show tkregister version
-    log_Msg "Showing tkregister2 version"
-    which tkregister2
-    tkregister2 -version
-  fi
+        # Show tkregister version
+        log_Msg "Showing tkregister2 version"
+        which tkregister2
+        tkregister2 -version
+    fi
 
-  # Show mri_concatenate_lta version
-  log_Msg "Showing mri_concatenate_lta version"
-  which mri_concatenate_lta
-  mri_concatenate_lta -version
+    # Show mri_concatenate_lta version
+    log_Msg "Showing mri_concatenate_lta version"
+    which mri_concatenate_lta
+    mri_concatenate_lta -version
 
-  # Show mri_surf2surf version
-  log_Msg "Showing mri_surf2surf version"
-  which mri_surf2surf
-  mri_surf2surf -version
+    # Show mri_surf2surf version
+    log_Msg "Showing mri_surf2surf version"
+    which mri_surf2surf
+    mri_surf2surf -version
 
-  # Show fslmaths location
-  log_Msg "Showing fslmaths location"
-  which fslmaths
+    # Show fslmaths location
+    log_Msg "Showing fslmaths location"
+    which fslmaths
 }
 
 

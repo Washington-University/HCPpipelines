@@ -174,11 +174,6 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 flair=$(opts_StringToBool "$flairString")
 existing_session=$(opts_StringToBool "$existing_sessionString")
 conf2hires=$(opts_StringToBool "$conf2hiresString")
-if [[ "$gpuString" == "AUTO" ]]; then
-    gpu="AUTO"
-else
-    gpu=$(opts_StringToBool "$gpuString")
-fi
 
 # required by FS8
 export FS_ALLOW_DEEP=1
@@ -349,15 +344,20 @@ validate_freesurfer_version()
             log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
         fi
         HighMyelin=""
-        if [[ "${gpu}" == "AUTO" ]]; then
+        if [[ "${gpuString}" == "AUTO" ]]; then
             gpu=0
-        elif ((gpu)); then
-            log_Err_Abort "FreeSurfer 6 does not support GPU-accelerated recon-all. Do not set --gpu=TRUE when using FS6."
+        else
+            gpu=$(opts_StringToBool "$gpuString")
+            if ((gpu)); then
+                log_Err_Abort "This pipeline does not support GPU-acceleration with FreeSurfer 6. Do not set --gpu=TRUE when using FS6."
+            fi
         fi
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
-        if [[ "${gpu}" == "AUTO" ]]; then
+        if [[ "${gpuString}" == "AUTO" ]]; then
             gpu=1
+        else
+            gpu=$(opts_StringToBool "$gpuString")
         fi
         if [[ "${HighMyelin}" == "AUTO" ]]; then
             HighMyelin="0.3"
@@ -620,7 +620,7 @@ recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 # The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
 # to have the "final say" over a couple settings within recon-all
 if ((conf2hires)); then
-   recon_all_cmd+=(-conf2hires)
+    recon_all_cmd+=(-conf2hires)
 fi
 
 # HighMyelin
@@ -630,7 +630,7 @@ fi
 
 # gpu or not?
 if ((gpu)); then
-   recon_all_cmd+=(-gpu)
+    recon_all_cmd+=(-gpu)
 fi
 
 log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
