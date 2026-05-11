@@ -150,7 +150,7 @@ opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that 
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
-opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disbaled for FS6.' "AUTO"
+opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
 
 opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to True for FS7 and FS8 and False for FS6." "AUTO"
 
