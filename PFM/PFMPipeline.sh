@@ -165,7 +165,7 @@ do
                         fi
                     done
                     log_Msg "Applying Wishart filter for subject $Subject"
-                    "$HCPPIPEDIR"/PFM/scripts/WishartFilter.sh \
+                    "$HCPPIPEDIR"/PFM/scripts/ApplyWishartFilterPROFUMO.sh \
                         --input="$inputList" \
                         --output="$outputList" \
                         --num-wishart="$NumWishart" \
@@ -263,7 +263,7 @@ do
                 rm -rf "${WFTempDir}"
             fi            
             ;;
-            
+
         (PostPROFUMO)
             log_Msg "Running PROFUMO postprocessing"
             PFM_PATH="${PFMFolder}/Analysis.pfm"
