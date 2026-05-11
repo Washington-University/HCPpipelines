@@ -42,7 +42,6 @@ opts_AddMandatory '--ref-image' 'RefImage' 'path' "reference image for PROFUMO p
 opts_AddMandatory '--runs-timepoints' 'RunsXNumTimePoints' "total timepoints across runs" "total timepoints across runs"
 opts_AddMandatory '--concat-name' 'ConcatName' "concatenated fMRI name if using multi-run data" ''
 opts_AddMandatory '--volume-template-file' 'VolumeTemplateFile' "volume template file path" ''
-opts_AddMandatory '--fmri-resolution' 'fMRIResolution' "fMRI resolution string for template selection, like '2','1.60' or '2.40'" ''
 
 #PROFUMO specific parameters
 opts_AddOptional '--profumo-threads' 'ProfumoThreads' 'integer' "number of threads for PROFUMO" '25'
@@ -156,8 +155,8 @@ do
                     outputList=""
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}.dtseries.nii"
-                        outputFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}_WF.dtseries.nii"
+                        inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                        outputFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                         if [[ -f "$inputFile" ]]
                         then
                             if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
@@ -181,7 +180,7 @@ do
                     echo -e "\t\"$Subject\": {" >> "$ProfumoConfigToUse"
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        WFFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}_WF.dtseries.nii"
+                        WFFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                         if [[ -f "$WFFile" ]]
                         then
                             echo -e "\t\t\"$fMRIName\": \"$WFFile\"," >> "$ProfumoConfigToUse"
@@ -262,9 +261,15 @@ do
             then
                 log_Msg "Cleaning up temporary Wishart filtered files"
                 rm -rf "${WFTempDir}"
-            fi
+            fi            
+            ;;
             
+        (PostPROFUMO)
             log_Msg "Running PROFUMO postprocessing"
+            PFM_PATH="${PFMFolder}/Analysis.pfm"
+            RESULTS_PATH="${PFMFolder}/Results.ppp"
+            REAL_REF_IMAGE=$(readlink -f "${RefImage}")
+
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
                 "${ProfumoSingularity}" \
@@ -282,16 +287,13 @@ do
                 "${RESULTS_PATH}" \
                 "${REAL_REF_IMAGE}"
 
-
-            ;;
-        (PostPROFUMO)
             log_Msg "Running PostPROFUMO step"
             "$HCPPIPEDIR"/PFM/scripts/PostPROFUMO.sh \
                 --study-folder="$StudyFolder" \
                 --subject-list="$SubjlistRaw" \
                 --fmri-names="$fMRINames" \
                 --concat-name="$ConcatName" \
-                --proc-string="_Atlas_${RegName}_$fMRIProcSTRING" \
+                --proc-string="_Atlas${RegString}_${fMRIProcSTRING}" \
                 --output-fmri-name="$OutputfMRIName" \
                 --output-string="$OutputSTRING" \
                 --surf-reg-name="$RegName" \
@@ -314,7 +316,7 @@ do
                     fMRINamesForSub=""
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}.dtseries.nii" ]]
+                        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii" ]]
                         then
                             if [[ "$fMRINamesForSub" != "" ]]
                             then

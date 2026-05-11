@@ -190,7 +190,7 @@ main() {
     # PROFUMO settings
     ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
     ProfumoConfig="${PFMFolder}/dataLocations.json"  
-    TR="1.0"
+    TR="0.72"
     ProfumoThreads="14"
     DOFCorrection="0.5"
     CovModel="Subject"
@@ -232,7 +232,6 @@ main() {
                                     --pfm-folder="$PFMFolder" \
                                     --surf-reg-name="$RegName" \
                                     --concat-name="$ConcatName" \
-                                    --fmri-resolution="$fMRIResolution" \
                                     --low-res-mesh="$LowResMesh" \
                                     --runs-timepoints="$subjectExpectedTimepoints" \
                                     --fix-legacy-bias="$FixLegacyBiasString" \

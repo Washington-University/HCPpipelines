@@ -12,12 +12,12 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 g_matlab_default_mode=1
 
-opts_SetScriptDescription "applies Wishart filter to a single CIFTI file using icaDim"
+opts_SetScriptDescription "applies Wishart filter to CIFTI dtseries files for PROFUMO"
 
-opts_AddMandatory '--input' 'inputFile' 'file' "the input dtseries file"
-opts_AddMandatory '--output' 'outputFile' 'file' "the output wishart-filtered dtseries file"
-opts_AddMandatory '--num-wishart' 'numWisharts' 'integer' "how many wisharts to use in icaDim"
-opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "the PFM dimension to use for the low-dim template in icaDim"
+opts_AddMandatory '--input' 'inputFile' 'file' "comma-separated list of input dtseries files"
+opts_AddMandatory '--output' 'outputFile' 'file' "comma-separated list of output wishart-filtered dtseries files"
+opts_AddMandatory '--num-wishart' 'numWisharts' 'integer' "number of Wishart distributions to fit"
+opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g., 76, 92, 65)"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 
 0 = compiled MATLAB
