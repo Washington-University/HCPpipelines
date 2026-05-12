@@ -432,7 +432,7 @@ for Hemisphere in L R ; do
         mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
         if [ "$LongitudinalMode" == "NONE" ]; then
             cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/${Session}.HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf="$MSMSulcConf" --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/"$Session".HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
         elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
             #average surfaces from different timepoints
             average_cmd_args=()
@@ -445,7 +445,7 @@ for Hemisphere in L R ; do
             ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
 
             #run MSMSulc.sh on average surface
-            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf=${MSMCONFIGDIR}/${MSMSulcConf} --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/${Session}.HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf="$MSMSulcConf" --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/"$Session".HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
             #copy the registration result to each timepoint
             for timepoint in $LongitudinalTimepoints; do
                 experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
