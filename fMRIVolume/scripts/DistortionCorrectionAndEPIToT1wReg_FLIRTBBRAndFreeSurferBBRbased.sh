@@ -187,6 +187,10 @@ case $SPECIES in
 esac
 
 if (( $IsLongitudinal )); then
+    if [[ "$SPECIES" != "Human" ]]
+    then
+        log_Err_Abort "longitudinal mode is not supported for non-human species"
+    fi
     if [ ! -f "$T1wCross2LongXfm" ]; then
         log_Err_Abort "--t1w-cross2long-xfm must point to a valid file when --is-longitudinal is used"
     fi
@@ -289,7 +293,7 @@ case $DistortionCorrection in
 esac
 
 
-if (( ! IsLongitudinal )) || [[ "$SPECIES" != "Human" ]]; then # - for NHP TH 2017-2024
+if (( ! IsLongitudinal )); then
     mkdir -p $WD
 
     # Record the input options in a log file
