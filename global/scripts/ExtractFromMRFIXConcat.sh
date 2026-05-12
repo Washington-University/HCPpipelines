@@ -11,24 +11,8 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: extract a specified set of runs from an MR FIX
-    concatenated file and reconcatenate them.  Typically this is used to extract
-    the resting state runs from a combined task and resting state MR FIX run.
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
+#description of this script to use in usage
+opts_SetScriptDescription "extract a specified set of runs from an MR FIX concatenated file and reconcatenate them.  Typically this is used to extract the resting state runs from a combined task and resting state MR FIX run."
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
