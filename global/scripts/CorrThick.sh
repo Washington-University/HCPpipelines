@@ -2,7 +2,7 @@
 set -eu
 
 pipedirguessed=0
-if [[ ""$HCPPIPEDIR:-"" == "" ]]
+if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
 	pipedirguessed=1
 	#fix this if the script is more than one level below HCPPIPEDIR
