@@ -5,9 +5,31 @@ echo -e "\n START: run_topup"
 
 workingdir=$1
 topup_config_file=$2
-# Optional 3rd arg: SpeciesLabel (0=Human, 1=Chimp, 2=Macaque, 3=Marmoset, >3=other NHP)
-# When omitted or set to 0, runs the Human pathway (single-thread topup + bet -f 0.2)
-SpeciesLabel=${3:-0}
+# Optional 3rd arg: SPECIES (defaults to Human; matches PreFreeSurfer/FreeSurfer convention)
+SPECIES=${3:-Human}
+
+# Derive SpeciesLabel from SPECIES (same mapping as PreFreeSurfer/ACPCAlignment.sh)
+case $SPECIES in
+  *Human*)
+    SpeciesLabel="0"
+    ;;
+  *Chimp*)
+    SpeciesLabel="1"
+    ;;
+  *Macaque*)
+    SpeciesLabel="2"
+    ;;
+  Marmoset)
+    SpeciesLabel="3"
+    ;;
+  NightMonkey)
+    SpeciesLabel="4"
+    ;;
+  *)
+    SpeciesLabel=""
+    log_Err_Abort "Invalid species: '$SPECIES'. Must be one of: Human, Macaque, Rhesus, Chimp, NightMonkey, Marmoset."
+    ;;
+esac
 
 if [ "${SpeciesLabel}" = "0" ]; then
 	# Human pathway

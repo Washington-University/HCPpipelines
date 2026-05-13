@@ -476,7 +476,7 @@ if [[ "$SPECIES" == "Human" ]]; then
 	log_Msg "Running Topup"
 	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
 else
-	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topup (SpeciesLabel arg)
+	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topup (SPECIES arg)
 	log_Msg "Running Basic Preprocessing"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
@@ -494,7 +494,7 @@ else
 		cat ${outdir}/topup/acqparams.txt | tail -1 | awk '{print $1,$2,0,0.01}' >> ${outdir}/topup/acqparams.txt
 	fi
 
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig} ${SpeciesLabel}
+	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig} ${SPECIES}
 fi
 
 log_Msg "Completed!"
