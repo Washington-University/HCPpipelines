@@ -224,9 +224,6 @@ validate_scripts() {
 		if [[ ! -f "${HCPPIPEDIR_dMRI}"/basic_preproc.sh ]]; then
 			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc.sh not found"
 		fi
-		if [[ ! -f "${HCPPIPEDIR_dMRI}"/run_topupNHP.sh ]]; then
-			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topupNHP.sh not found"
-		fi
 	fi
 
 	if [[ "$error_msgs" != "" ]]; then
@@ -479,7 +476,7 @@ if [[ "$SPECIES" == "Human" ]]; then
 	log_Msg "Running Topup"
 	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
 else
-	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topupNHP
+	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topup (SpeciesLabel arg)
 	log_Msg "Running Basic Preprocessing"
 	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
@@ -497,7 +494,7 @@ else
 		cat ${outdir}/topup/acqparams.txt | tail -1 | awk '{print $1,$2,0,0.01}' >> ${outdir}/topup/acqparams.txt
 	fi
 
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topupNHP.sh ${outdir}/topup ${TopupConfig} ${SpeciesLabel}
+	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig} ${SpeciesLabel}
 fi
 
 log_Msg "Completed!"
