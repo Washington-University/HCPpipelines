@@ -39,10 +39,10 @@ NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
 NativeFolder="$NonlinearFolder"/Native
 
 #If the config file doesn't have a directory separator, treat it as relative to $MSMCONFIGDIR
-if [[ "$ConfFile" != */* ]]; then 
+if [[ "$ConfFile" != */* ]]; then
 	ConfFile="${MSMCONFIGDIR}/$ConfFile"
 fi
-if [ ! -f "$ConfFile" ]; then 
+if [[ ! -f "$ConfFile" ]]; then
 	log_Err_Abort "MSM config file $ConfFile does not exist"
 fi
 
