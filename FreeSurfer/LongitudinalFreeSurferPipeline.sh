@@ -59,6 +59,8 @@ opts_AddMandatory '--sessions' 'Sessions' 'sessions' "@ separated list of sessio
 opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitudinal template label"
 opts_AddOptional '--use-T2w' 'UseT2wString' 'boolean' "Set to 0/false/no for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" "recon-all seed value"
+opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
+opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to True for FS7 and FS8 and False for FS6." "AUTO"
 
 #parallel mode options.
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
@@ -219,15 +221,20 @@ validate_freesurfer_version()
             log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
         fi
         HighMyelin=""
-        if [[ "${gpu}" == "AUTO" ]]; then
-            gpu=FALSE
-        elif ((gpu)); then
-            log_Err_Abort "FreeSurfer 6 does not support GPU-accelerated recon-all. Do not set --gpu=TRUE when using FS6."
+        if [[ "${gpuString}" == "AUTO" ]]; then
+          gpu=0
+        else
+          gpu=$(opts_StringToBool "$gpuString")
+          if ((gpu)); then
+            log_Err_Abort "This pipeline does not support GPU-acceleration with FreeSurfer 6. Do not set --gpu=TRUE when using FS6."
+          fi
         fi
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
-        if [[ "${gpu}" == "AUTO" ]]; then
-            gpu=TRUE
+        if [[ "${gpuString}" == "AUTO" ]]; then
+          gpu=1
+        else
+          gpu=$(opts_StringToBool "$gpuString")
         fi
         if [[ "${HighMyelin}" == "AUTO" ]]; then
             HighMyelin="0.3"
@@ -330,6 +337,14 @@ if (( start_stage < 1 )); then
     recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
   fi
 
+  if [[ "${HighMyelin}" != "" ]]; then
+    recon_all_cmd+=" -high-myelin ${HighMyelin}"
+  fi
+
+  if ((gpu)); then
+    recon_all_cmd+=" -gpu"
+  fi
+
   #---------------------------------------------------------------------------------------
   log_Msg "Running the recon-all to generate common template"
   #---------------------------------------------------------------------------------------
@@ -375,6 +390,14 @@ if (( end_stage > 0 )); then
     else
       log_Msg "Required $emregmask file is missing"
       exit -1
+    fi
+
+    if [[ "${HighMyelin}" != "" ]]; then
+      recon_all_cmd+=" -high-myelin ${HighMyelin}"
+    fi
+
+    if ((gpu)); then
+      recon_all_cmd+=" -gpu"
     fi
 
     log_Msg "...recon_all_cmd: ${recon_all_cmd}"
