@@ -38,6 +38,14 @@ SurfaceTemplateFolder="$HCPPIPEDIR"/global/templates/standard_mesh_atlases
 NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
 NativeFolder="$NonlinearFolder"/Native
 
+#If the config file doesn't have a directory separator, treat it as relative to $MSMCONFIGDIR
+if [[ "$ConfFile" != */* ]]; then
+	ConfFile="${MSMCONFIGDIR}/$ConfFile"
+fi
+if [[ ! -f "$ConfFile" ]]; then
+	log_Err_Abort "MSM config file $ConfFile does not exist"
+fi
+
 #if user provided --refmesh but not --refdata, scream
 if [[ "$RefMesh" != "" && "$RefData" == "" ]]
 then
@@ -78,6 +86,7 @@ for Hemisphere in $Hemi ; do
 	ReferenceMesh="$(cd "$(dirname -- "$RefMesh")"; pwd)/${RefMeshFile/HEMISPHERE/$Hemisphere}"
 	RefDataFile=$(basename -- "$RefData")
 	ReferenceData="$(cd "$(dirname -- "$RefData")"; pwd)/${RefDataFile/HEMISPHERE/$Hemisphere}"
+
 	(
 		cd "$NativeFolder"/"$RegName"
 
