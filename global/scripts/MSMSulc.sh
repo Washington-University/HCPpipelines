@@ -68,6 +68,10 @@ mkdir -p "$NativeFolder"/"$RegName"
 #Loop through left and right hemispheres
 if [[ "$Hemi" == *B* ]]
 then
+	if [[ "$RefData" != *HEMISPHERE* || "$RefMesh" != *HEMISPHERE* ]]
+	then
+		log_Err_Abort "--refmesh and --refdata need to contain a literal 'HEMISPHERE' string for --hemi=$Hemi to work"
+	fi
 	Hemi="L R"
 fi
 

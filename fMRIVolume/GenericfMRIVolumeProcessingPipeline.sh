@@ -741,7 +741,7 @@ if [ "$RunMode" -lt 2 ] ; then
                 ln -sf ../../"$Session"/"${NameOffMRI}"/"$fname" "$fMRIFolderLong/$fname"
             #skip large files that will be generated
             elif [ "$fname" == "${NameOffMRI}_orig_nonlin.nii.gz" -o "$fname" == "${NameOffMRI}_nonlin.nii.gz" ]; then
-            	continue
+                continue
             else
                 cp -r "$fd" "$fMRIFolderLong/"
             fi
@@ -912,18 +912,18 @@ if [ "$RunMode" -lt 2 ] ; then
             fslreorient2std -m "$fMRIFolder"/"$ScoutName"_gdc_reorient.mat "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc  
             fslreorient2std -m "$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc   
             for vol in "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
-    	        fslreorient2std "$fMRIFolder"/"$vol" "$fMRIFolder"/"$vol"
+                fslreorient2std "$fMRIFolder"/"$vol" "$fMRIFolder"/"$vol"
             done
             if [ ! -z "$InitWorldMat" ] ; then
                 log_Msg "Apply init rigid-body transformation to sform"
                 for vol in "$ScoutName"_gdc  "$NameOffMRI"_gdc "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
                     ${CARET7DIR}/wb_command -nifti-information -print-header "$fMRIFolder"/"$vol".nii.gz | grep -A 3 "effective sform" | tail -n 3 | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' > "$fMRIFolder"/"$vol"_effectivesform.mat
                     echo "0 0 0 1" | awk '{printf "%.8f\t%.8f\t%.8f\t%.8f\n",$1,$2,$3,$4}' >> "$fMRIFolder"/"$vol"_effectivesform.mat
-         	        convert_xfm -omat "$fMRIFolder"/${vol}_newsform.mat -concat ${InitWorldMat} "$fMRIFolder"/"$vol"_effectivesform.mat
-    	            ${CARET7DIR}/wb_command -volume-set-space "$fMRIFolder"/"$vol".nii.gz "$fMRIFolder"/"$vol".nii.gz -sform $(cat "$fMRIFolder"/${vol}_newsform.mat | head -3)
+                    convert_xfm -omat "$fMRIFolder"/${vol}_newsform.mat -concat ${InitWorldMat} "$fMRIFolder"/"$vol"_effectivesform.mat
+                    ${CARET7DIR}/wb_command -volume-set-space "$fMRIFolder"/"$vol".nii.gz "$fMRIFolder"/"$vol".nii.gz -sform $(cat "$fMRIFolder"/${vol}_newsform.mat | head -3)
                     rm  "$fMRIFolder"/${vol}_newsform.mat "$fMRIFolder"/"$vol"_effectivesform.mat
                 done
-            fi 
+            fi
             convertwarp --relout --rel -w "$fMRIFolder"/"$ScoutName"_gdc_warp --postmat="$fMRIFolder"/"$ScoutName"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$ScoutName"_gdc_warp
             convertwarp --relout --rel -w "$fMRIFolder"/"$NameOffMRI"_gdc_warp --postmat="$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat -r "$fMRIFolder"/"$ScoutName"_gdc -o "$fMRIFolder"/"$NameOffMRI"_gdc_warp
         fi
@@ -967,8 +967,8 @@ if [ "$RunMode" -lt 2 ] ; then
             "$MotionMatrixPrefix" \
             "$MotionCorrectionType" \
             "$fMRIReferenceReg" \
-    		"$BrainScaleFactor" \
-    		"$SPECIES"
+            "$BrainScaleFactor" \
+            "$SPECIES"
     fi
 
 fi  # RunMode < 2 (end of GDC/MotionCorrection stage)
@@ -1021,7 +1021,7 @@ if [ "$RunMode" -lt 3 ] ; then
             --echodiff=${deltaTE} \
             --SEPhaseNeg=${SpinEchoPhaseEncodeNegative} \
             --SEPhasePos=${SpinEchoPhaseEncodePositive} \
-    	    --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
+            --SEPhaseNeg2=${SpinEchoPhaseEncodeNegative2} \
             --SEPhasePos2=${SpinEchoPhaseEncodePositive2} \
             --SEPhaseZero=${SpinEchoPhaseEncodeZero} \
             --SEPhaseZeroFSBrainmask=${SpinEchoPhaseEncodeZeroFSBrainmask} \
@@ -1104,7 +1104,7 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
         --wb-resample=${useWbResample} \
-		--species=${SPECIES}
+        --species=${SPECIES}
 
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
