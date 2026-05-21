@@ -133,6 +133,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
     T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
     T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
     isFLAIR=false
+	isT1wDivFLAIR=false
     if [ -e "${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" ] ; then
         T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
         T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
