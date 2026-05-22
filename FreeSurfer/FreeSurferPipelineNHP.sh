@@ -256,15 +256,14 @@ configure_custom_tools()
     local which_conf2hires
     local which_longmc
 
-    which_recon_all=$(which recon-all.v6.hiresNHP)
-    which_conf2hires=$(which conf2hiresNHP)
-    which_longmc=$(which longmc)
-    which_setupfsnhp=$(which SetUpFSNHP.sh)
+    which_recon_all=$(which recon-all.v6.hiresNHP || true)
+    which_conf2hires=$(which conf2hiresNHP || true)
+    which_longmc=$(which longmc || true)
 
-    if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_setupfsnhp}" = "" ||  "${which_longmc}" = "" ]] ; then
+    if [[ "${which_recon_all}" = "" || "${which_conf2hires}" == "" || "${which_longmc}" = "" ]] ; then
         export PATH="${HCPPIPEDIR}/FreeSurfer/custom:${PATH}"
         log_Warn "We were not able to locate one of the following required tools:"
-        log_Warn "recon-all.v6.hiresNHP, conf2hiresNHP, SetUpFSNHP.sh or longmc"
+        log_Warn "recon-all.v6.hiresNHP, conf2hiresNHP, or longmc"
         log_Warn ""
         log_Warn "To be able to run this script using the standard versions of these tools,"
         log_Warn "we added ${HCPPIPEDIR}/FreeSurfer/custom to the beginning of the PATH."
