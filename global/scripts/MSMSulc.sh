@@ -2,11 +2,11 @@
 set -eu
 
 pipedirguessed=0
-if [[ ""$HCPPIPEDIR:-"" == "" ]]
+if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -18,7 +18,7 @@ opts_SetScriptDescription "Run MSMSulc registration and save distortion outputs"
 opts_AddMandatory '--subject-dir' 'SubjectDir' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
 opts_AddMandatory '--regname' 'RegName' 'my reg' "set a new registration name"
-opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "$MSMCONFIGDIR"/MSMSulcStrainFinalconf
+opts_AddOptional '--msm-conf' 'ConfFile' 'conf file' "provide the name of the configuration file, default MSMSulcStrainFinalconf" "${MSMCONFIGDIR:-}"/MSMSulcStrainFinalconf
 opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registration, L=Left, R=Right, default B=Both" "B"
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
@@ -37,6 +37,14 @@ opts_ShowValues
 SurfaceTemplateFolder="$HCPPIPEDIR"/global/templates/standard_mesh_atlases
 NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
 NativeFolder="$NonlinearFolder"/Native
+
+#If the config file doesn't have a directory separator, treat it as relative to $MSMCONFIGDIR
+if [[ "$ConfFile" != */* ]]; then
+	ConfFile="${MSMCONFIGDIR}/$ConfFile"
+fi
+if [[ ! -f "$ConfFile" ]]; then
+	log_Err_Abort "MSM config file $ConfFile does not exist"
+fi
 
 #if user provided --refmesh but not --refdata, scream
 if [[ "$RefMesh" != "" && "$RefData" == "" ]]
@@ -60,6 +68,10 @@ mkdir -p "$NativeFolder"/"$RegName"
 #Loop through left and right hemispheres
 if [[ "$Hemi" == *B* ]]
 then
+	if [[ "$RefData" != *HEMISPHERE* || "$RefMesh" != *HEMISPHERE* ]]
+	then
+		log_Err_Abort "--refmesh and --refdata need to contain a literal 'HEMISPHERE' string for --hemi=$Hemi to work"
+	fi
 	Hemi="L R"
 fi
 
@@ -78,6 +90,7 @@ for Hemisphere in $Hemi ; do
 	ReferenceMesh="$(cd "$(dirname -- "$RefMesh")"; pwd)/${RefMeshFile/HEMISPHERE/$Hemisphere}"
 	RefDataFile=$(basename -- "$RefData")
 	ReferenceData="$(cd "$(dirname -- "$RefData")"; pwd)/${RefDataFile/HEMISPHERE/$Hemisphere}"
+
 	(
 		cd "$NativeFolder"/"$RegName"
 

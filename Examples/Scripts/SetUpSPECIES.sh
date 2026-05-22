@@ -40,6 +40,7 @@ if [[ "$SPECIES" == *Human* ]] ; then
 
     BrainScaleFactor="1"
     CorticalScaleFactor="1"
+    FuncWMProjAbs="2"            # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="150"              #BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -71,16 +72,21 @@ if [[ "$SPECIES" == *Human* ]] ; then
     GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
     ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/standard_mesh_atlases/Conte69.MyelinMap_BC.164k_fs_LR.dscalar.nii"
     LowResMeshes="32" #Needs to match what is in PostFreeSurfer
-    FinalfMRIResolution="2" #Needs to match what is in fMRIVolume
-    SmoothingFWHM="2" #Recommended to be roughly the voxel size
     GrayordinatesResolution="2" #should be either 1 (7T) or 2 (3T) for human. 
     InflateScale="1"
     FlatMapRootName="colin.cerebral"
+
+    #fMRIVolume
+    FinalfMRIResolution="2" #this setup script is only used by NHP, keep symmetry with NHP here
+
+    #fMRISurface
+    SmoothingFWHM="2" #Recommended to be roughly the voxel size
     
 elif [[ "$SPECIES" == *Chimp* ]] ; then
 
     BrainScaleFactor="1.25"
     CorticalScaleFactor="2"
+    FuncWMProjAbs="1"            # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -112,14 +118,19 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
     ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/ChimpYerkes29.MyelinMap_BC.164k_fs_LR.dscalar.nii"
     LowResMeshes="32@20" #Needs to match what is in PostFreeSurfer
-    FinalfMRIResolution="1.6" #Needs to match what is in fMRIVolume
-    SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
     GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human. 
+
+    #fMRIVolume
+    FinalfMRIResolution="1.6" #For convenience in NHP, use grayordinates resolution for volume processing
+
+    #fMRISurface
+    SmoothingFWHM="1.6" #Recommended to be roughly the voxel size
 
 elif [[ "$SPECIES" == *Macaque* ]] ; then
 
     BrainScaleFactor="2"
     CorticalScaleFactor="3"
+    FuncWMProjAbs="0.7"          # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="60"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -128,7 +139,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     TopupConfig="${HCPPIPEDIR_Config}/b02b0_macaque_fMRI.cnf" #Config for topup or "NONE" if not used
     BiasFieldSmoothingSigma="3.5"
 
-	is_valid_macaque_species=0
+    is_valid_macaque_species=0
 
     if [[ "$SPECIES" == *Mac30BS* ]] ; then     # Rhesus and Cyno hybrid template
 
@@ -153,7 +164,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/MacaqueRIKEN16.Parial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
 
-		is_valid_macaque_species=$((is_valid_macaque_species + 1))
+        is_valid_macaque_species=$((is_valid_macaque_species + 1))
 
     elif [[ "$SPECIES" == *Cyno* ]] ; then
 
@@ -179,7 +190,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/Mac25Cyno_v3.Partial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
 
-		is_valid_macaque_species=$((is_valid_macaque_species + 1))
+        is_valid_macaque_species=$((is_valid_macaque_species + 1))
 
     elif [[ "$SPECIES" == *Rhesus* ]] ; then
     
@@ -217,7 +228,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/Mac25Rhesus_v5.Partial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
 
-		is_valid_macaque_species=$((is_valid_macaque_species + 1))
+        is_valid_macaque_species=$((is_valid_macaque_species + 1))
 
     elif [[ "$SPECIES" == *Snow* ]] ; then
 
@@ -243,30 +254,35 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
         GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
         ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/MacaqueRIKEN16.Parial.MyelinMap_GroupCorr.164k_fs_LR.dscalar.nii"
 
-		is_valid_macaque_species=$((is_valid_macaque_species + 1))
+        is_valid_macaque_species=$((is_valid_macaque_species + 1))
     fi
 
-	if [ $is_valid_macaque_species != 1 ]; then
-		echo "Error: Invalid macaque species & template: $SPECIES. Please specify macaque species, such as RhesusMacaque, CynoMacaque, SnowMacaque. You can also use MacaqueMac30BS (Rhesus and Cyno hybrid template)."
-		exit 1
-	fi
+    if [ $is_valid_macaque_species != 1 ]; then
+        echo "Error: Invalid macaque species & template: $SPECIES. Please specify macaque species, such as RhesusMacaque, CynoMacaque, SnowMacaque. You can also use MacaqueMac30BS (Rhesus and Cyno hybrid template)."
+        exit 1
+    fi
 	
     #PostFreeSurferPipeLineBatch.sh
     MyelinMappingFWHM="3" # based on median cortical thickness of macaque
     SurfaceSmoothingFWHM="2" # 4 by default
     CorrectionSigma="5"
     LowResMeshes="32@10"        #Needs to match what is in PostFreesurfer
-    FinalfMRIResolution="1.2" #Needs to match what is in fMRIVolume. Changed from 1.25 to 1.2 to make low-resolution volume symmetrical between left and right with respect to the center - TH Mar 2025. 
-    SmoothingFWHM="1.2" #Recommended to be roughly the voxel size TH - changed from 1.25 to 1.2 Mar 2025
     GrayordinatesResolution="1.2" #Needs to match what is in PostFreeSurfer. 
     InflateScale="1"
     MSMSulcConf="MSMSulcStrainFinalconfMacaque"
     FlatMapRootName="$BrainTemplate"
 
+    #fMRIVolume
+    FinalfMRIResolution="1.2" #For convenience in NHP, use grayordinates resolution for volume processing
+
+    #fMRISurface
+    SmoothingFWHM="1.2" #Recommended to be roughly the voxel size TH - changed from 1.25 to 1.2 Mar 2025
+
 elif [[ "$SPECIES" = Marmoset ]] ; then
 
     BrainScaleFactor="5"
     CorticalScaleFactor="10"
+    FuncWMProjAbs="0.2"          # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="50"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -302,17 +318,22 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     SurfaceSmoothingFWHM="1" # 4 by default
     CorrectionSigma="3"
     LowResMeshes="32@10@4"        # Needs to match what is in PostFreeSurfer. The last two is used for dMRI & fMRI 
-    FinalfMRIResolution="0.8" #Needs to match what is in fMRIVolume
-    SmoothingFWHM="0.8" #Recommended to be roughly the voxel size
     GrayordinatesResolution="0.8" #Needs to match what is in PostFreeSurfer. 
     InflateScale="1"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
     FlatMapRootName="$BrainTemplate"
 
+    #fMRIVolume
+    FinalfMRIResolution="0.8" #For convenience in NHP, use grayordinates resolution for volume processing
+
+    #fMRISurface
+    SmoothingFWHM="0.8" #Recommended to be roughly the voxel size
+
 elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, Takuro Ikeda on Aug 2020
 
     BrainScaleFactor="4"
     CorticalScaleFactor="5"
+    FuncWMProjAbs="0.3"          # fMRI wm-proj-abs for FreeSurferBBR-based EPI-to-T1w registration
 
     #PreFreeSurferPipeLineBatch.sh
     BrainSize="40"               # BrainSize in mm, distance bewteen top of FOV and bottom of brain
@@ -342,14 +363,22 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     SurfaceSmoothingFWHM="1.5" # 4 by default 
     CorrectionSigma="4"
     LowResMeshes="32@10" #Needs to match what is in PostFreeSurfer
-    FinalfMRIResolution="1.0" #Needs to match what is in fMRIVolume
-    SmoothingFWHM="1.0" #Recommended to be roughly the voxel size
     GrayordinatesResolution="1.0" #Needs to match what is in PostFreeSurfer. 
     InflateScale="2.5"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
+
+    #fMRIVolume
+    FinalfMRIResolution="1.0" #For convenience in NHP, use grayordinates resolution for volume processing
+
+    #fMRISurface
+    SmoothingFWHM="1.0" #Recommended to be roughly the voxel size
 
 else
 
     echo "Warning: Not yet supported species: $SPECIES"
 
 fi
+
+#HACK: restore the outer tool name
+#since debug.shlib will be active by default (and therefore can trip inside the Batch script), set the log toolname back to the Batch script
+log_SetToolName "$(basename -- "$0")"
