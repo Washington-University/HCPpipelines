@@ -562,7 +562,6 @@ if (( ! IsLongitudinal )); then
                 ${FSLDIR}/bin/fslmaths ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -mas ${WD}/${T1wBrainImageFile}_mask_dil ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII
 
                 # fine tuning with FSL-BBR between fieldmap and T1w_acpc
-
                 if [ $BBRContrast = "T1w" ] ; then
                     # Note that BBR=T1w is done using brain outer boundary using flipped slope. Note that using grey/white boundary
                     # does not result in stable registration because blood USPIO concentration is significantly changes the
@@ -585,10 +584,8 @@ if (( ! IsLongitudinal )); then
                     ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -init ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -wmseg ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII_fast_wmseg -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope $BBRslope | awk 'NR==1 {print $1}' > ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat.mincost
 
                 elif [ $BBRContrast = "NONE" ] ; then
-
                     log_Msg "register scout to T1w with cost function of normmi"
                     ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -out ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII -nosearch
-
                 fi
 
                 # combine initial registraion (Fieldmap2T1w_acpc.mat) and fine tune registration (/${ScoutInputFileSE}_undistorted2T1w_init_TMP.mat) to generate second init registration
@@ -870,25 +867,9 @@ if (( ! IsLongitudinal )); then
             # 5/ Copy scout image
             cp ${ScoutInputName}.nii.gz ${WD}/Scout.nii.gz
 
-            # Test if T1w Brain is much larger, suggesting poor fieldmap-based brain extraction;
-            # check if NHP (FreeSurferNHP) — if so, create brain-extracted scout for registration
-            MagnitudeBrainSize=$(${FSLDIR}/bin/fslstats ${WD}/${T1wBrainImageFile} -V | cut -d " " -f 2)
-            if [ -e ${FreeSurferSubjectFolder}/${FreeSurferSubjectID}_1mm ] ; then
-                # NHP case: extract scout brain for registration
-                ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/Scout.nii.gz -ref ${T1wImage} -omat "$WD"/Scout2T1w.mat -out ${WD}/Scout2T1w.nii.gz -searchrx -30 30 -searchry -30 30 -searchrz -30 30
-                ${FSLDIR}/bin/convert_xfm -omat "$WD"/T1w2Scout.mat -inverse "$WD"/Scout2T1w.mat
-                ${FSLDIR}/bin/applywarp --interp=nn -i ${WD}/${T1wBrainImageFile} -r ${WD}/Scout.nii.gz --premat="$WD"/T1w2Scout.mat -o ${WD}/Scout_brain_mask.nii.gz
-                fslmaths ${WD}/Scout_brain_mask.nii.gz -bin ${WD}/Scout_brain_mask.nii.gz
-                fslmaths ${WD}/Scout.nii.gz -mas ${WD}/Scout_brain_mask.nii.gz ${WD}/Scout_brain.nii.gz
-
-                # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
-                # Use magnitude image registered to T1w as --fmapmag/--fmapmagbrain (same space as fieldmap after registration)
-                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout_brain.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/RealFmapMag2T1w --fmapmagbrain=${WD}/RealFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
-            else
-                # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
-                # Use magnitude image registered to T1w as --fmapmag/--fmapmagbrain (same space as fieldmap after registration)
-                ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/RealFmapMag2T1w --fmapmagbrain=${WD}/RealFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
-            fi
+            # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
+            # Use magnitude image registered to T1w as --fmapmag/--fmapmagbrain (same space as fieldmap after registration)
+            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/RealFmapMag2T1w --fmapmagbrain=${WD}/RealFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
 
             # 6/ Create spline interpolated output for scout to T1w + apply bias field correction
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}${ScoutExtension}_warp.nii.gz -o ${WD}/${ScoutInputFile}${ScoutExtension}_1vol.nii.gz
