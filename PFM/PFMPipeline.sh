@@ -53,6 +53,7 @@ opts_AddOptional '--profumo-multi-start-iterations' 'MultiStartIterations' 'inte
 opts_AddOptional '--profumo-initial-maps' 'InitialMaps' 'path' "file to initialise the decomposition based on spatial maps"
 opts_AddOptional '--profumo-load-sequentially' 'LoadSequentially' 'YES or NO' "load data sequentially in PROFUMO (useful for memory management)" 'YES'
 opts_AddOptional '--num-wishart' 'NumWishart' 'integer' "number of Wishart filter iterations for prefiltering (0 to skip)" '0'
+opts_AddOptional '--keep-wishart-files' 'KeepWishartFiles' 'YES or NO' "keep Wishart-filtered files after PROFUMO instead of deleting (default NO)" 'NO'
 
 #optional parameters
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
@@ -143,51 +144,70 @@ do
             fi
             
             ProfumoConfigToUse="${ProfumoConfig}"
-            # Applying WF
             if [[ "$NumWishart" -gt 0 ]]
             then
-                log_Msg "Running Wishart filtering with ${NumWishart} iterations before PROFUMO"
-                WFTempDir=$(mktemp -d "${PFMFolder}/WF_tmp.XXXXXX")
+                WFDir="${PFMFolder}/WishartFilter_WF${NumWishart}"
+                # Check if WF files already exist
+                wfComplete=true
                 for Subject in "${Subjlist[@]}"
                 do
-                    mkdir -p "${WFTempDir}/${Subject}"
-                    inputList=""
-                    outputList=""
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
                         inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                        outputFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                        if [[ -f "$inputFile" ]]
+                        wfFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                        if [[ -f "$inputFile" ]] && [[ ! -f "$wfFile" ]]
                         then
-                            if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
-                            inputList+="$inputFile"
-                            outputList+="$outputFile"
+                            wfComplete=false
+                            break 2
                         fi
                     done
-                    log_Msg "Applying Wishart filter for subject $Subject"
-                    "$HCPPIPEDIR"/PFM/scripts/WishartFilter.sh \
-                        --input="$inputList" \
-                        --output="$outputList" \
-                        --num-wishart="$NumWishart" \
-                        --pfm-dimension="$PFMdim" \
-                        --matlab-run-mode="$MatlabMode"
                 done
-            # Create config file(location of files) for WF files
-                ProfumoConfigToUse="${WFTempDir}/wishart_dataLocations.json"
+                
+                if $wfComplete
+                then
+                    log_Msg "WF files already exist in ${WFDir}"
+                else
+                    log_Msg "Running Wishart filtering with ${NumWishart} iterations"
+                    for Subject in "${Subjlist[@]}"
+                    do
+                        mkdir -p "${WFDir}/${Subject}"
+                        inputList=""
+                        outputList=""
+                        for fMRIName in "${fMRINamesArray[@]}"
+                        do
+                            inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                            outputFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                            if [[ -f "$inputFile" ]]
+                            then
+                                if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
+                                inputList+="$inputFile"
+                                outputList+="$outputFile"
+                            fi
+                        done
+                        log_Msg "Applying Wishart filter for subject $Subject"
+                        "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
+                            --input="$inputList" \
+                            --output="$outputList" \
+                            --num-wishart="$NumWishart" \
+                            --matlab-run-mode="$MatlabMode"
+                    done
+                fi
+                
+                # Build JSON pointing at WF files
+                ProfumoConfigToUse="${WFDir}/wishart_dataLocations.json"
                 echo '{' > "$ProfumoConfigToUse"
                 for Subject in "${Subjlist[@]}"
                 do
                     echo -e "\t\"$Subject\": {" >> "$ProfumoConfigToUse"
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        WFFile="${WFTempDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                        WFFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                         if [[ -f "$WFFile" ]]
                         then
                             echo -e "\t\t\"$fMRIName\": \"$WFFile\"," >> "$ProfumoConfigToUse"
                         fi
                     done
-
-                    perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"  
+                    perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"
                     echo -e "\t}," >> "$ProfumoConfigToUse"
                 done
                 perl -pi -e 'if (eof) { s/,$// }' "$ProfumoConfigToUse"
@@ -207,10 +227,9 @@ do
             if [[ -d "${PFMFolder}" ]]
             then
                 log_Warn "PFM output folder ${PFMFolder} already exists, clearing contents"
-                find "${PFMFolder}" -mindepth 1 -not -name "dataLocations.json" -delete
+                find "${PFMFolder}" -mindepth 1 -not -name "dataLocations.json" -not -path "*/WishartFilter_WF*" -delete
             fi
-            mkdir -p "${PFMFolder}"
-            
+
             # Build optional initialMaps argument
             InitialMapsArg=""
             if [[ -n "${InitialMaps}" && -f "${InitialMaps}" ]]
@@ -226,8 +245,7 @@ do
                 LoadSequentiallyArg="--loadSequentially"
             fi
             
-            ## Rewrite input files with wb_command, as a failsafe to avoid SIMD buffer alignment issue in PROFUMO if 
-            ## files were written with an older version of cifti-matlab with 8-byte instead of 16-byte alignment. 
+            # files were written with an older version of cifti-matlab with 8-byte instead of 16-byte alignment. 
             if [[ "${NumWishart}" -eq 0 ]]
             then
                 cat "${ProfumoConfig}" | \
@@ -256,12 +274,18 @@ do
                 --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}" \
                 --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg}
             
-            #Cleanup temp WF files
-            if [[ "${NumWishart}" -gt 0 ]]
+            #Cleanup WF files
+            if [[ "$NumWishart" -gt 0 ]]
             then
-                log_Msg "Cleaning up temporary Wishart filtered files"
-                rm -rf "${WFTempDir}"
-            fi            
+                KeepWishartBool=$(opts_StringToBool "$KeepWishartFiles")
+                if ((KeepWishartBool))
+                then
+                    log_Msg "Keeping Wishart filtered files in ${WFDir}"
+                else
+                    log_Msg "Cleaning up Wishart filtered files"
+                    rm -rf "${WFDir}"
+                fi
+            fi          
             ;;
             
         (PostPROFUMO)

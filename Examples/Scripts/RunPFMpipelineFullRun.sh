@@ -139,6 +139,7 @@ main() {
     StartStep="RunPROFUMO"
     StopStep="GroupPFMs"
     NumWishart="5"
+    KeepWishartFiles="YES"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
     parLimit=-1
@@ -244,6 +245,7 @@ main() {
                                     --profumo-config="$ProfumoConfig" \
                                     --profumo-singularity="$ProfumoSingularity" \
                                     --profumo-tr="$TR" \
+                                    --keep-wishart-files="$KeepWishartFiles" \
                                     --profumo-threads="$ProfumoThreads" \
                                     --profumo-dof-correction="$DOFCorrection" \
                                     --profumo-cov-model="$CovModel" \

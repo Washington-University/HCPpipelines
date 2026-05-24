@@ -17,7 +17,6 @@ opts_SetScriptDescription "applies Wishart filter to CIFTI dtseries files for PR
 opts_AddMandatory '--input' 'inputFile' 'file' "comma-separated list of input dtseries files"
 opts_AddMandatory '--output' 'outputFile' 'file' "comma-separated list of output wishart-filtered dtseries files"
 opts_AddMandatory '--num-wishart' 'numWisharts' 'integer' "number of Wishart distributions to fit"
-opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g., 76, 92, 65)"
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 
 0 = compiled MATLAB
@@ -53,7 +52,7 @@ esac
 
 this_script_dir=$(dirname "$0")
 
-matlab_argarray=("$inputFile" "$outputFile" "$numWisharts" "$PFMdim")
+matlab_argarray=("$inputFile" "$outputFile" "$numWisharts")
 
 case "$MatlabMode" in
     (0)
@@ -76,7 +75,7 @@ case "$MatlabMode" in
             addpath('$HCPPIPEDIR/global/matlab');
             addpath('$this_script_dir');
             addpath('$HCPCIFTIRWDIR');
-            WishartFilter($matlab_args);"
+            ApplyWFProfumo($matlab_args);"
 
         log_Msg "running matlab code: $matlabcode"
         "${matlab_interpreter[@]}" <<<"$matlabcode"
