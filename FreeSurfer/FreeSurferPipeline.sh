@@ -368,13 +368,13 @@ validate_freesurfer_version()
 # Validate version of FreeSurfer in use
 validate_freesurfer_version
 
-# Show tool versions
-show_tool_versions
-
 # Configure the use of FreeSurfer v6 custom tools
 if ((use_fs6)); then
     configure_custom_tools
 fi
+
+# Show tool versions
+show_tool_versions
 
 #
 # Generate T1w in NIFTI format and in rawavg space
