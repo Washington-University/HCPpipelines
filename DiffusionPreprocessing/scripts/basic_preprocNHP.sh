@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-scriptName="basic_preproc.sh"
+scriptName="basic_preprocNHP.sh"
 echo -e "\n START: ${scriptName}"
 
 workingdir=$1
@@ -29,7 +29,7 @@ elif [ ${PEdir} -eq 2 ]; then  #PA/AP phase encoding
 	basePos="PA"
 	baseNeg="AP"
 else
-	echo -e "\n ${scriptName}: ERROR: basic_preproc: Unrecognized PEdir: ${PEdir}"
+	echo -e "\n ${scriptName}: ERROR: basic_preprocNHP: Unrecognized PEdir: ${PEdir}"
 fi
 
 
@@ -275,6 +275,6 @@ mv ${rawdir}/Pos_Neg.bvecs ${eddydir}
 mv ${rawdir}/Pos.bv?? ${eddydir}
 mv ${rawdir}/Neg.bv?? ${eddydir}
 
-echo -e "\n END: basic_preproc"
+echo -e "\n END: basic_preprocNHP"
 
 
