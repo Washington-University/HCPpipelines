@@ -221,8 +221,8 @@ validate_scripts() {
 
 	# NHP sub-script validation (only when SPECIES != Human)
 	if [[ "$SPECIES" != "Human" ]]; then
-		if [[ ! -f "${HCPPIPEDIR_dMRI}"/basic_preproc.sh ]]; then
-			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc.sh not found"
+		if [[ ! -f "${HCPPIPEDIR_dMRI}"/basic_preprocNHP.sh ]]; then
+			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preprocNHP.sh not found"
 		fi
 	fi
 
@@ -478,7 +478,7 @@ if [[ "$SPECIES" == "Human" ]]; then
 else
 	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topup (SPECIES arg)
 	log_Msg "Running Basic Preprocessing"
-	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
+	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preprocNHP.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
 
 	log_Msg "Running Topup"
 	# Add T2w as a phase-zero volume if available and requested - TH Jan 2023
