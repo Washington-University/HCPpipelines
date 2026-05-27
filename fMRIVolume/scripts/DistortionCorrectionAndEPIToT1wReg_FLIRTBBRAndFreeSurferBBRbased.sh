@@ -677,6 +677,10 @@ if (( ! IsLongitudinal )); then
             ;;
 
         ${TOPUP_MISMATCHED_METHOD_OPT})
+            if [[ "$SPECIES" != "Human" ]] ; then
+                log_Warn "The ${TOPUP_MISMATCHED_METHOD_OPT} distortion correction method was developed and tested only for human data processing. Use with non-human species ('$SPECIES') is not validated and may produce unexpected results."
+            fi
+            # TOOD: implement properly for NHP, see the method above
 
             # -----------------------------------------------
             # -- Mismatched Spin Echo Field Maps for fMRI  --
