@@ -342,7 +342,7 @@ for Hemisphere in L R ; do
 
             mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
 
-            # minor output incompatibility between fs6 and fs7+
+            # mris_convert in fs7+ adds an extra '?h.' to the front of the file name in the converted output
             legacy_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
             new_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii
             if [[ -e "$new_native_shape" && ! -e "$legacy_native_shape" ]]; then
