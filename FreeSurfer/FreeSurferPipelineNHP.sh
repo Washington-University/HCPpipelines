@@ -535,21 +535,18 @@ if ((! existing_subject)) ; then
 	# If --existing-subject is NOT set, AND PostFreeSurfer has been run, then
 	# certain files need to be restored to their PreFreeSurfer output versions
 	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
-		log_Msg "restore PreFreeSurfer resampling"	
+		log_Msg "restore PreFreeSurfer resampling"
 		${HCPPIPEDIR_FS}/RestorePreFreeSurferResamplingNHP.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
 		imrm ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}
 	fi
-fi
-
-if [ "${existing_subject}" = "TRUE" ] ; then
-
+else
 	if [ -e "$SubjectDIR"/"$SubjectID"_scaled ] ; then
 		rm -rf "$SubjectDIR"/"$SubjectID" 
 		mv "$SubjectDIR"/"$SubjectID"_scaled "$SubjectDIR"/"$SubjectID"
 	fi
 	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
 		if [ $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/T1w/T1w_acpc_dc_restore.nii.gz -nt $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/T1w/T1w_acpc_dc_restore_scaled.nii.gz ] ; then
-			log_Msg "restore PreFreeSurfer resampling"	
+			log_Msg "restore PreFreeSurfer resampling"
 			${HCPPIPEDIR_FS}/RestorePreFreeSurferResamplingNHP.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
 		fi
 		imrm ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}
