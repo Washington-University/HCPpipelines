@@ -60,7 +60,6 @@ opts_AddMandatory '--longitudinal-template' 'TemplateID' 'template-id' "Longitud
 opts_AddOptional '--use-T2w' 'UseT2wString' 'boolean' "Set to 0/false/no for no T2-weighted processing [1]" "1"
 opts_AddOptional '--seed' 'recon_all_seed' "Seed" "recon-all seed value"
 opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
-opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to True for FS7 and FS8 and False for FS6." "AUTO"
 
 #parallel mode options.
 opts_AddOptional '--parallel-mode' 'parallel_mode' 'string' "parallel mode, one of FSLSUB, BUILTIN, NONE [NONE]" 'NONE'
@@ -221,21 +220,8 @@ validate_freesurfer_version()
             log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
         fi
         HighMyelin=""
-        if [[ "${gpuString}" == "AUTO" ]]; then
-          gpu=0
-        else
-          gpu=$(opts_StringToBool "$gpuString")
-          if ((gpu)); then
-            log_Err_Abort "This pipeline does not support GPU-acceleration with FreeSurfer 6. Do not set --gpu=TRUE when using FS6."
-          fi
-        fi
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
-        if [[ "${gpuString}" == "AUTO" ]]; then
-          gpu=1
-        else
-          gpu=$(opts_StringToBool "$gpuString")
-        fi
         if [[ "${HighMyelin}" == "AUTO" ]]; then
             HighMyelin="0.3"
         fi
@@ -338,6 +324,8 @@ if (( start_stage < 1 )); then
   log_Msg "Creating the base template: ${TemplateID}"
   # ----------------------------------------------------------------------
 
+  # note that -conf2hires option is not supported for longitudinal base template as of Freesurfer 6,
+  # although it is supported for longitudinal timepoints
   if ((use_fs6)); then
     recon_all_cmd="recon-all.v6.hires"
   else
@@ -356,10 +344,6 @@ if (( start_stage < 1 )); then
 
   if [[ "${HighMyelin}" != "" ]]; then
     recon_all_cmd+=" -high-myelin ${HighMyelin}"
-  fi
-
-  if ((gpu)); then
-    recon_all_cmd+=" -gpu"
   fi
 
   #---------------------------------------------------------------------------------------
@@ -388,7 +372,7 @@ if (( end_stage > 0 )); then
       recon_all_cmd="recon-all"
     fi
     recon_all_cmd+=" -sd ${LongDIR}"
-    recon_all_cmd+=" -long ${Session} ${TemplateID} -all"
+    recon_all_cmd+=" -long ${Session} ${TemplateID} -all -conf2hires"
 
     recon_all_cmd+=" $extra_reconall_args_long "
     T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
@@ -412,11 +396,6 @@ if (( end_stage > 0 )); then
     if [[ "${HighMyelin}" != "" ]]; then
       recon_all_cmd+=" -high-myelin ${HighMyelin}"
     fi
-
-    if ((gpu)); then
-      recon_all_cmd+=" -gpu"
-    fi
-
     log_Msg "...recon_all_cmd: ${recon_all_cmd}"
     echo ${recon_all_cmd}
     par_add_job_to_stage $parallel_mode "$fslsub_queue" ${recon_all_cmd}

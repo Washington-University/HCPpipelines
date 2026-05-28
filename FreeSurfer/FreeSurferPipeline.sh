@@ -152,8 +152,6 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacySty
 
 opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
 
-opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the GPU-enabled version of recon-all. Defaults to True for FS7 and FS8 and False for FS6." "AUTO"
-
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -344,21 +342,8 @@ validate_freesurfer_version()
             log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
         fi
         HighMyelin=""
-        if [[ "${gpuString}" == "AUTO" ]]; then
-            gpu=0
-        else
-            gpu=$(opts_StringToBool "$gpuString")
-            if ((gpu)); then
-                log_Err_Abort "This pipeline does not support GPU-acceleration with FreeSurfer 6. Do not set --gpu=TRUE when using FS6."
-            fi
-        fi
     else
         log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
-        if [[ "${gpuString}" == "AUTO" ]]; then
-            gpu=1
-        else
-            gpu=$(opts_StringToBool "$gpuString")
-        fi
         if [[ "${HighMyelin}" == "AUTO" ]]; then
             HighMyelin="0.3"
         fi
@@ -554,7 +539,6 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
-log_Msg "gpu: ${gpu}"
 log_Msg "HighMyelin: ${HighMyelin}"
 
 if ((! existing_session)); then
@@ -626,11 +610,6 @@ fi
 # HighMyelin
 if [[ "${HighMyelin}" != "" ]]; then
     recon_all_cmd+=(-high-myelin "${HighMyelin}")
-fi
-
-# gpu or not?
-if ((gpu)); then
-    recon_all_cmd+=(-gpu)
 fi
 
 log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
