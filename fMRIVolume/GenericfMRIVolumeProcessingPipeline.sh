@@ -40,7 +40,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
-REAL_FIELDMAP_METHOD_OPT="REAL_FIELDMAP"
+PRECOMPUTED_FIELDMAP_METHOD_OPT="PRECOMPUTED_FIELDMAP"
 NONE_METHOD_OPT="NONE"
 ON_SCANNER_METHOD_OPT="OnScanner"
 
@@ -94,11 +94,11 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              NOTE: Less accurate than '${SPIN_ECHO_METHOD_OPT}' when SE and fMRI parameters
              differ substantially (especially PE direction axis or limited SE spatial coverage).
 
-        '${REAL_FIELDMAP_METHOD_OPT}'
+        '${PRECOMPUTED_FIELDMAP_METHOD_OPT}'
              use a pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0
              images, UKB style). The fieldmap is registered to T1w space and used directly
              for distortion correction via epi_reg. No phase images or deltavTE are needed.
-             Requires --inrealfmap.
+             Requires --precomputedfmap.
 
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapcombined argument).
@@ -146,9 +146,9 @@ opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times
 
 opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)" '' '--fmap'
 
-opts_AddOptional '--inrealfmap' 'RealFieldMap' 'file' "pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${REAL_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'file' "pre-computed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
-opts_AddOptional '--inrealfmapmag' 'RealFieldMapMag' 'file' "magnitude image in the same space as --inrealfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. Mutually exclusive with --inrealfmapdwi. --inrealfmapmag is required for --dcmethod=${REAL_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--precomputedfmapmag' 'PrecomputedFieldMapMag' 'file' "magnitude image in the same space as --precomputedfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. --precomputedfmapmag is required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
 # OTHER OPTIONS:
 
@@ -440,12 +440,12 @@ case "$DistortionCorrection" in
         fi
         ;;
 
-    ${REAL_FIELDMAP_METHOD_OPT})
-        if [ -z ${RealFieldMap} ]; then
-            log_Err_Abort "--inrealfmap must be specified with --dcmethod=${DistortionCorrection}"
+    ${PRECOMPUTED_FIELDMAP_METHOD_OPT})
+        if [ -z ${PrecomputedFieldMap} ]; then
+            log_Err_Abort "--precomputedfmap must be specified with --dcmethod=${DistortionCorrection}"
         fi
-        if [[ -z "$RealFieldMapMag" ]]; then
-            log_Err_Abort "--dcmethod=${DistortionCorrection} requires --inrealfmapmag for fieldmap-to-T1w registration"
+        if [[ -z "$PrecomputedFieldMapMag" ]]; then
+            log_Err_Abort "--dcmethod=${DistortionCorrection} requires --precomputedfmapmag for fieldmap-to-T1w registration"
         fi
         ;;
 
@@ -1096,11 +1096,11 @@ if [ "$RunMode" -lt 3 ] ; then
             --preregistertool=${PreregisterTool} \
             --seechospacing=${SEEchoSpacing} \
             --seunwarpdir=${SEUnwarpDir} \
-            --realfmap=${RealFieldMap} \
-            --realfmapmag=${RealFieldMapMag} \
+            --precomputedfmap=${PrecomputedFieldMap} \
+            --precomputedfmapmag=${PrecomputedFieldMapMag} \
             --is-longitudinal="$IsLongitudinal" \
             --t1w-cross2long-xfm="$T1wCross2LongXfm" \
-            --bbr-contrast=${BBRContrast}   \
+            --bbr-contrast=${BBRContrast} \
             --wmprojabs=${WMProjAbs} \
             --scannerpatientposition=${ScannerPatientPosition} \
             --truepatientposition=${TruePatientPosition} \

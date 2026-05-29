@@ -17,7 +17,7 @@ GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
 TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
-REAL_FIELDMAP_METHOD_OPT="REAL_FIELDMAP"
+PRECOMPUTED_FIELDMAP_METHOD_OPT="PRECOMPUTED_FIELDMAP"
 NONE_METHOD_OPT="NONE"
 
 # --------------------------------------------------------------------------------
@@ -101,9 +101,9 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
         '${PHILIPS_METHOD_OPT}'
              use Philips specific Gradient Echo Field Maps for SDC
 
-        '${REAL_FIELDMAP_METHOD_OPT}'
+        '${PRECOMPUTED_FIELDMAP_METHOD_OPT}'
              use a pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on
-             diffusion B0 images, UKB style). Requires --realfmap and --realfmapmag.
+             diffusion B0 images, UKB style). Requires --precomputedfmap and --precomputedfmapmag.
 
         '${NONE_METHOD_OPT}'
              do not use any SDC"
@@ -147,9 +147,9 @@ opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'spacing (seconds)' "effectiv
 
 opts_AddOptional '--seunwarpdir' 'SEUnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction of SE fieldmaps according to the *voxel* axes. Required for --method=${TOPUP_MISMATCHED_METHOD_OPT}. Can differ from --unwarpdir."
 
-opts_AddOptional '--realfmap' 'RealFieldMap' 'image' "pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --method=${REAL_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'image' "pre-computed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --method=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
-opts_AddOptional '--realfmapmag' 'RealFieldMapMag' 'image' "magnitude image in the same space as --realfmap (e.g., a b=0 volume from the diffusion acquisition). Used for registration to T1w. Mutually exclusive with --realfmapdwi. At least one of --realfmapmag or --realfmapdwi should be provided for --method=${REAL_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--precomputedfmapmag' 'PrecomputedFieldMapMag' 'image' "magnitude image in the same space as --precomputedfmap (e.g., a b=0 volume from the diffusion acquisition). Used for registration to T1w. Should be provided for --method=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
 # NHP-specific options
 opts_AddOptional '--bbr-contrast' 'BBRContrast' "NONE or T1w or T2w" "BBR registration method. Use T1w for MION data, T2w for BOLD fMRI (default), or NONE to skip BBR. Only used when --species is not Human." "T2w"
@@ -302,7 +302,7 @@ log_Msg "START"
 #ScoutExtension must initialize for both cross-sectional and longitudinal modes.
 
 case $DistortionCorrection in
-    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${TOPUP_MISMATCHED_METHOD_OPT} | ${REAL_FIELDMAP_METHOD_OPT} )
+    ${FIELDMAP_METHOD_OPT} | ${SIEMENS_METHOD_OPT} | ${GE_HEALTHCARE_LEGACY_METHOD_OPT} | ${GE_HEALTHCARE_METHOD_OPT} | ${PHILIPS_METHOD_OPT} | ${SPIN_ECHO_METHOD_OPT} | ${TOPUP_MISMATCHED_METHOD_OPT} | ${PRECOMPUTED_FIELDMAP_METHOD_OPT} )
         ScoutExtension="_undistorted"
     ;;
     ${NONE_METHOD_OPT})
@@ -830,7 +830,7 @@ if (( ! IsLongitudinal )); then
 
             ;;
 
-        ${REAL_FIELDMAP_METHOD_OPT})
+        ${PRECOMPUTED_FIELDMAP_METHOD_OPT})
 
             # -----------------------------------------------------------
             # -- Pre-computed Real Fieldmap (UKB style)       --
@@ -844,13 +844,13 @@ if (( ! IsLongitudinal )); then
 
             # 1/ Convert fieldmap from Hz to rad/s (FUGUE/epi_reg expect rad/s)
             log_Msg "Converting fieldmap from Hz to rad/s"
-            ${FSLDIR}/bin/fslmaths ${RealFieldMap} -mul 6.2832 ${WD}/FieldMap_rads_orig -odt float
+            ${FSLDIR}/bin/fslmaths ${PrecomputedFieldMap} -mul 6.2832 ${WD}/FieldMap_rads_orig -odt float
 
             # 2/ Register fieldmap to T1w space using magnitude image (in exact registration with fieldmap)
             log_Msg "Registering fieldmap to T1w space via magnitude image"
-            ${FSLDIR}/bin/imcp ${RealFieldMapMag} ${WD}/RealFmapMag
-            ${FSLDIR}/bin/bet ${WD}/RealFmapMag ${WD}/RealFmapMag_brain -f 0.35 -m
-            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/RealFmapMag_brain -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/fmap2T1w.mat -out ${WD}/RealFmapMag2T1w -searchrx -30 30 -searchry -30 30 -searchrz -30 30
+            ${FSLDIR}/bin/imcp ${PrecomputedFieldMapMag} ${WD}/PrecomputedFmapMag
+            ${FSLDIR}/bin/bet ${WD}/PrecomputedFmapMag ${WD}/PrecomputedFmapMag_brain -f 0.35 -m
+            ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/PrecomputedFmapMag_brain -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/fmap2T1w.mat -out ${WD}/PrecomputedFmapMag2T1w -searchrx -30 30 -searchry -30 30 -searchrz -30 30
 
             # Apply registration to the actual fieldmap (rad/s)
             ${FSLDIR}/bin/flirt -in ${WD}/FieldMap_rads_orig -ref ${T1wImage} -applyxfm -init ${WD}/fmap2T1w.mat -out ${WD}/FieldMap_rads2T1w
@@ -873,7 +873,7 @@ if (( ! IsLongitudinal )); then
 
             # register scout to T1w using fieldmap (fieldmap already in T1w space, so --nofmapreg)
             # Use magnitude image registered to T1w as --fmapmag/--fmapmagbrain (same space as fieldmap after registration)
-            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/RealFmapMag2T1w --fmapmagbrain=${WD}/RealFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
+            ${HCPPIPEDIR_Global}/epi_reg_dof --dof=${dof} --epi=${WD}/Scout.nii.gz --t1=${T1wImage} --t1brain=${WD}/${T1wBrainImageFile} --out=${WD}/${ScoutInputFile}${ScoutExtension} --fmap=${WD}/FieldMap.nii.gz --fmapmag=${WD}/PrecomputedFmapMag2T1w --fmapmagbrain=${WD}/PrecomputedFmapMag2T1w --echospacing=${EchoSpacing} --pedir=${UnwarpDir} --nofmapreg
 
             # 6/ Create spline interpolated output for scout to T1w + apply bias field correction
             ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${T1wImage} -w ${WD}/${ScoutInputFile}${ScoutExtension}_warp.nii.gz -o ${WD}/${ScoutInputFile}${ScoutExtension}_1vol.nii.gz
