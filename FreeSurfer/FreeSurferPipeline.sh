@@ -148,6 +148,8 @@ opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatab
 
 opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
 
+opts_AddOptional '--hires' 'hiresString' 'TRUE/FALSE' "Indicates that the script should include -hires as an argument to recon-all.  By default, -hires is not included." "FALSE"
+
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
 opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
@@ -172,6 +174,7 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 flair=$(opts_StringToBool "$flairString")
 existing_session=$(opts_StringToBool "$existing_sessionString")
 conf2hires=$(opts_StringToBool "$conf2hiresString")
+hires=$(opts_StringToBool "$hiresString")
 
 # required by FS8
 export FS_ALLOW_DEEP=1
@@ -539,7 +542,13 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
+log_Msg "hires: ${hires}"
 log_Msg "HighMyelin: ${HighMyelin}"
+
+# conf2hires and hires are mutually exclusive
+if ((conf2hires)) && ((hires)); then
+    log_Err_Abort "The --conf2hires and --hires flags are mutually exclusive.  Please only set one to true.  By default -conf2hires is set to true and -hires is set to false."
+fi
 
 if ((! existing_session)); then
     # If --existing-session is NOT set, AND PostFreeSurfer has been run, then
@@ -601,10 +610,13 @@ fi
 #add any extra args
 recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 
-# The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
+# The -conf2hires/-hires flag should come after the ${extra_reconall_args[@]} array, since it needs
 # to have the "final say" over a couple settings within recon-all
 if ((conf2hires)); then
     recon_all_cmd+=(-conf2hires)
+fi
+if ((hires)); then
+    recon_all_cmd+=(-hires)
 fi
 
 # HighMyelin
