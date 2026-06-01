@@ -274,30 +274,13 @@ log_Msg "Preparing the folder structure"
 
 extra_reconall_args_base=""
 extra_reconall_args_long=""
-bootstrap_t2w_image=""
 
 
 if (( UseT2w )); then
-  IFS='@' read -r -a SessionsArray <<< "${Sessions}"
-  session_count=${#SessionsArray[@]}
-
-  if (( session_count > 1 )); then
-    # Build a common T2w reference for multiple sessions.
-    "$HCPPIPEDIR/FreeSurfer/scripts/MakeAverageT2w.sh" "$StudyFolder" "$SubjectID" "$Sessions" "$TemplateID"
-    bootstrap_t2w_image="${StudyFolder}/${SubjectID}.long.${TemplateID}/T2w/bootstrap_average.nii.gz"
-  else
-    # With one session, use that session's T2w directly.
-    bootstrap_t2w_image="${StudyFolder}/${SessionsArray[0]}/T1w/T2w_acpc_dc_restore.nii.gz"
-  fi
-
-  # FreeSurfer 7+ does not allow T2/FLAIR args when creating the longitudinal base image.
-  if ((use_fs6)); then
-    extra_reconall_args_base="-T2pial -T2 ${bootstrap_t2w_image}"
-  else
-    log_Msg "INFO: Selected bootstrap T2w image: ${bootstrap_t2w_image}"
-    log_Msg "INFO: Skipping -T2/-T2pial for base creation because FreeSurfer ${freesurfer_primary_version} does not allow T2/FLAIR in -base stage."
-  fi
-
+  # recon-all only accepts single T2-weighted image for surface creation,
+  # so we make average T2-weighted image across timepoints to avoid timepoint-specific bias.
+  "$HCPPIPEDIR/FreeSurfer/scripts/MakeAverageT2w.sh" "$StudyFolder" "$SubjectID" "$Sessions" "$TemplateID"
+  extra_reconall_args_base="-T2pial -T2 ${StudyFolder}/${SubjectID}.long.${TemplateID}/T2w/bootstrap_average.nii.gz"
   extra_reconall_args_long="-T2pial"
 fi
 
