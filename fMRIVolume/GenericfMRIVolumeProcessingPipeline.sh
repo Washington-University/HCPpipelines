@@ -39,6 +39,8 @@ GE_HEALTHCARE_LEGACY_METHOD_OPT="GEHealthCareLegacyFieldMap"
 GE_HEALTHCARE_METHOD_OPT="GEHealthCareFieldMap"
 PHILIPS_METHOD_OPT="PhilipsFieldMap"
 SPIN_ECHO_METHOD_OPT="TOPUP"
+TOPUP_MISMATCHED_METHOD_OPT="TOPUP_MISMATCHED"
+PRECOMPUTED_FIELDMAP_METHOD_OPT="PRECOMPUTED_FIELDMAP"
 NONE_METHOD_OPT="NONE"
 ON_SCANNER_METHOD_OPT="OnScanner"
 
@@ -83,6 +85,21 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              use a pair of Spin Echo EPI images ('Spin Echo Field Maps') acquired with
              opposing polarity for SDC
 
+        '${TOPUP_MISMATCHED_METHOD_OPT}'
+             use a pair of Spin Echo EPI images ('Spin Echo Field Maps') for SDC when
+             SE fieldmaps have different acquisition parameters (echo spacing, resolution,
+             PE direction, matrix) than the fMRI data. Requires --seechospacing and
+             --seunwarpdir in addition to the standard SE parameters. This should be the
+             polarity of the positive SE image.
+             NOTE: Less accurate than '${SPIN_ECHO_METHOD_OPT}' when SE and fMRI parameters
+             differ substantially (especially PE direction axis or limited SE spatial coverage).
+
+        '${PRECOMPUTED_FIELDMAP_METHOD_OPT}'
+             use a pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0
+             images, UKB style). The fieldmap is registered to T1w space and used directly
+             for distortion correction via epi_reg. No phase images or deltavTE are needed.
+             Requires --precomputedfmap.
+
         '${GE_HEALTHCARE_LEGACY_METHOD_OPT}'
              use GE HealthCare Legacy specific Gradient Echo Field Maps for SDC (field map in Hz and magnitude iimage n a single NIfTI file via, --fmapcombined argument).
              This option is maintained for backward compatibility.
@@ -117,6 +134,10 @@ opts_AddOptional '--SEPhaseZero' 'SpinEchoPhaseEncodeZero' 'file' "zero-phase SE
 
 opts_AddOptional '--topupconfig' 'TopupConfig' 'file' "Which topup config file to use"
 
+opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'number' "effective echo spacing of SE fieldmaps in seconds. Required for --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}."
+
+opts_AddOptional '--seunwarpdir' 'SEUnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction of SE fieldmaps according to the *voxel* axes. Required for --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}. Can differ from --unwarpdir."
+
 opts_AddOptional '--fmapmag' 'MagnitudeInputName' 'file' "field map magnitude images (@-separated)"
 
 opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in radians (Siemens/Philips) or in Hz (GE HealthCare)"
@@ -124,6 +145,10 @@ opts_AddOptional '--fmapphase' 'PhaseInputName' 'file' "fieldmap phase images in
 opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times for fieldmap, in milliseconds"
 
 opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)" '' '--fmap'
+
+opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'file' "pre-computed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
+
+opts_AddOptional '--precomputedfmapmag' 'PrecomputedFieldMapMag' 'file' "magnitude image in the same space as --precomputedfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. --precomputedfmapmag is required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
 # OTHER OPTIONS:
 
@@ -340,6 +365,24 @@ case "$DistortionCorrection" in
         fi
         ;;
 
+    ${TOPUP_MISMATCHED_METHOD_OPT})
+        if [ -z ${SpinEchoPhaseEncodeNegative} ]; then
+            log_Err_Abort "--SEPhaseNeg must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${SpinEchoPhaseEncodePositive} ]; then
+            log_Err_Abort "--SEPhasePos must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${TopupConfig} ]; then
+            log_Err_Abort "--topupconfig must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${SEEchoSpacing} ]; then
+            log_Err_Abort "--seechospacing must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [ -z ${SEUnwarpDir} ]; then
+            log_Err_Abort "--seunwarpdir must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        ;;
+
     ${FIELDMAP_METHOD_OPT}|${SIEMENS_METHOD_OPT})
         if [ -z ${MagnitudeInputName} ]; then
             log_Err_Abort "--fmapmag must be specified with --dcmethod=${DistortionCorrection}"
@@ -397,6 +440,15 @@ case "$DistortionCorrection" in
         fi
         ;;
 
+    ${PRECOMPUTED_FIELDMAP_METHOD_OPT})
+        if [ -z ${PrecomputedFieldMap} ]; then
+            log_Err_Abort "--precomputedfmap must be specified with --dcmethod=${DistortionCorrection}"
+        fi
+        if [[ -z "$PrecomputedFieldMapMag" ]]; then
+            log_Err_Abort "--dcmethod=${DistortionCorrection} requires --precomputedfmapmag for fieldmap-to-T1w registration"
+        fi
+        ;;
+
     ${NONE_METHOD_OPT}|${ON_SCANNER_METHOD_OPT})
         # Do nothing
         ;;
@@ -441,7 +493,7 @@ fi
 UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
 
 JacobianDefault="true"
-if [[ $DistortionCorrection != "${SPIN_ECHO_METHOD_OPT}" ]]
+if [[ $DistortionCorrection != "${SPIN_ECHO_METHOD_OPT}" && $DistortionCorrection != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
 then
     #because the measured fieldmap can cause the warpfield to fold over, default to doing nothing about any jacobians
     JacobianDefault="false"
@@ -552,9 +604,9 @@ case "$BiasCorrection" in
         UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
         ;;
     SEBASED)
-        if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" ]]
+        if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
         then
-            log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT}"
+            log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
         fi
         UseBiasFieldMNI="$sebasedBiasFieldMNI"
         ;;
@@ -909,8 +961,8 @@ if [ "$RunMode" -lt 2 ] ; then
 
         else # assume orientaion information of input volumes is correct and reorient to the conventional orientation (RPI)
             log_Msg "Reorient to std"
-            fslreorient2std -m "$fMRIFolder"/"$ScoutName"_gdc_reorient.mat "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc  
-            fslreorient2std -m "$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc   
+            fslreorient2std -m "$fMRIFolder"/"$ScoutName"_gdc_reorient.mat "$fMRIFolder"/"$ScoutName"_gdc "$fMRIFolder"/"$ScoutName"_gdc
+            fslreorient2std -m "$fMRIFolder"/"$NameOffMRI"_gdc_reorient.mat "$fMRIFolder"/"$NameOffMRI"_gdc "$fMRIFolder"/"$NameOffMRI"_gdc
             for vol in "$NameOffMRI"_gdc_warp_jacobian "$ScoutName"_gdc_warp_jacobian ; do
                 fslreorient2std "$fMRIFolder"/"$vol" "$fMRIFolder"/"$vol"
             done
@@ -1002,7 +1054,6 @@ if [ "$RunMode" -lt 3 ] ; then
 
     if [ $fMRIReference = "NONE" ] ; then
         log_Msg "EPI Distortion Correction and EPI to T1w Registration"
-
         if [ -e ${DCFolder} -a ${IsLongitudinal} == "0" ] ; then
             ${RUN} rm -r ${DCFolder}
         fi
@@ -1043,9 +1094,13 @@ if [ "$RunMode" -lt 3 ] ; then
             --biascorrection=${BiasCorrection} \
             --usejacobian=${UseJacobian} \
             --preregistertool=${PreregisterTool} \
+            --seechospacing=${SEEchoSpacing} \
+            --seunwarpdir=${SEUnwarpDir} \
+            --precomputedfmap=${PrecomputedFieldMap} \
+            --precomputedfmapmag=${PrecomputedFieldMapMag} \
             --is-longitudinal="$IsLongitudinal" \
             --t1w-cross2long-xfm="$T1wCross2LongXfm" \
-            --bbr-contrast=${BBRContrast}   \
+            --bbr-contrast=${BBRContrast} \
             --wmprojabs=${WMProjAbs} \
             --scannerpatientposition=${ScannerPatientPosition} \
             --truepatientposition=${TruePatientPosition} \
@@ -1134,8 +1189,11 @@ then
         ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/${fMRIReference}_PhaseTwo_gdc_dc ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
         ${FSLDIR}/bin/imcp ${ReferenceResultsFolder}/${fMRIReference}_PhaseTwo_gdc_dc ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
     fi
+fi
 
-    #create MNINonLinear final fMRI resolution bias field outputs
+#create MNINonLinear final fMRI resolution bias field outputs (for TOPUP and TOPUP_MISMATCHED methods)
+if [[ ${DistortionCorrection} == "${SPIN_ECHO_METHOD_OPT}" || ${DistortionCorrection} == "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
+then
     if [[ ${BiasCorrection} == "SEBASED" ]]
     then
         if [ "$fMRIReference" = "NONE" ]; then
