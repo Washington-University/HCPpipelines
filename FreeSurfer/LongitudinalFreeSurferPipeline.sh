@@ -356,6 +356,7 @@ for Session in ${Sessions} ; do
   rm -f "${TemplateT1wDir}/${Session}"
   LongSession=${Session}.long.${TemplateID}
   LongSessionT1wDir="$StudyFolder/${LongSession}/T1w"
+  rm -rf "$LongSessionT1wDir"
   mkdir -p "$LongSessionT1wDir"
   mv "${TemplateT1wDir}/${LongSession}" "${LongSessionT1wDir}"/
 done
