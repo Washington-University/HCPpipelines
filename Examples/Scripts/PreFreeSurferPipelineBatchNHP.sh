@@ -237,7 +237,7 @@ for Subject in $Subjlist ; do
     TruePatientPosition=${StrucTruePatientPosition:-HFS}
     ScannerPatientPosition=${StrucScannerPatientPosition:-HFS}
 
-# ${FSLDIR}/bin/fsl_sub ${QUEUE} ${LOG} \
+ ${FSLDIR}/bin/fsl_sub ${QUEUE} ${LOG} \
     ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
         --path="$StudyFolder" \
         --subject="$Subject" \
