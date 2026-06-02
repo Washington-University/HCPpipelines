@@ -219,13 +219,6 @@ validate_scripts() {
 		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topup.sh not found"
 	fi
 
-	# NHP sub-script validation (only when SPECIES != Human)
-	if [[ "$SPECIES" != "Human" ]]; then
-		if [[ ! -f "${HCPPIPEDIR_dMRI}"/basic_preprocNHP.sh ]]; then
-			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preprocNHP.sh not found"
-		fi
-	fi
-
 	if [[ "$error_msgs" != "" ]]; then
 		log_Err_Abort "$error_msgs"
 	fi
@@ -443,59 +436,53 @@ if [[ ${Paired_flag} == 0 && ${SelectBestB0} == 0 ]]; then
 	log_Err_Abort "This will work, provided that --combine-data-flag=2 is used"
 fi
 
-if [[ "$SPECIES" == "Human" ]]; then
-	# Human: intensity normalisation + select-best-b0 or sequence-based b0 extraction
-	log_Msg "Running Intensity Normalisation"
-	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
+# Intensity normalisation + select-best-b0 or sequence-based b0 extraction.
+# Same path for all species; NHP-specific behaviour is handled via $SPECIES inside run_topup.sh
+# and the optional T2w phase-zero block below (gated by --usephasezero).
+log_Msg "Running Intensity Normalisation"
+${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 
-	if ((SelectBestB0)); then
-		log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
-		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
-	else
-		log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
-		${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
-	fi
-
-	if ((EnsureEvenSlices)); then
-		dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
-		if [[ $(isodd "$dimz") == 1 ]]; then
-			echo "Removing one slice from data to get even number of slices"
-			for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
-				${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
-				${runcmd} ${FSLDIR}/bin/imrm ${outdir}/topup/${filename}
-				${runcmd} ${FSLDIR}/bin/immv ${outdir}/topup/${filename}_tmp ${outdir}/topup/${filename}
-			done
-			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/eddy/Pos_Neg ${outdir}/eddy/Pos_Neg_tmp 0 -1 0 -1 1 -1
-			${runcmd} ${FSLDIR}/bin/imrm ${outdir}/eddy/Pos_Neg
-			${runcmd} ${FSLDIR}/bin/immv ${outdir}/eddy/Pos_Neg_tmp ${outdir}/eddy/Pos_Neg
-		else
-			echo "Skipping slice removal, because data already has an even number of slices"
-		fi
-	fi
-
-	log_Msg "Running Topup"
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
+if ((SelectBestB0)); then
+	log_Msg "Running basic preprocessing in preparation of topup (using least distorted b0's)"
+	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_best_b0.sh ${outdir} ${ro_time} ${PEdir} ${b0maxbval}
 else
-	# NHP: basic_preproc (combined) + optional T2w phase-zero + run_topup (SPECIES arg)
-	log_Msg "Running Basic Preprocessing"
-	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preprocNHP.sh ${outdir} ${echospacing} ${PEdir} ${b0dist} ${b0maxbval}
-
-	log_Msg "Running Topup"
-	# Add T2w as a phase-zero volume if available and requested - TH Jan 2023
-	if ((UsePhaseZero)) && [[ $(${FSLDIR}/bin/imtest ${StudyFolder}/${Session}/T2w/T2w.nii.gz) == 1 ]]; then
-		T2wImage=${StudyFolder}/${Session}/T2w/T2w.nii.gz
-		# Use scanner coordinate for initial registration between T2w and dMRI - TH Jan 2023
-		${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${outdir}/topup/T2w2dMRI.mat ${T2wImage} ${outdir}/topup/Pos_b0.nii.gz
-		${FSLDIR}/bin/flirt -in ${T2wImage} -ref ${outdir}/topup/Pos_b0.nii.gz -applyxfm -init ${outdir}/topup/T2w2dMRI.mat -o ${outdir}/topup/Zero.nii.gz
-		${FSLDIR}/bin/immv ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0
-		${FSLDIR}/bin/fslmerge -t ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0 ${outdir}/topup/Zero
-		${FSLDIR}/bin/fslmaths ${outdir}/topup/Pos_Neg_b0 -inm 10000 ${outdir}/topup/Pos_Neg_b0
-		cp ${outdir}/topup/acqparams.txt ${outdir}/topup/acqparams_NoZero.txt
-		cat ${outdir}/topup/acqparams.txt | tail -1 | awk '{print $1,$2,0,0.01}' >> ${outdir}/topup/acqparams.txt
-	fi
-
-	${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig} ${SPECIES}
+	log_Msg "Running basic preprocessing in preparation of topup (using uniformly interspaced b0)"
+	${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_sequence.sh ${outdir} ${ro_time} ${PEdir} ${b0dist} ${b0maxbval}
 fi
+
+if ((EnsureEvenSlices)); then
+	dimz=$(${FSLDIR}/bin/fslval ${outdir}/topup/Pos_b0 dim3)
+	if [[ $(isodd "$dimz") == 1 ]]; then
+		echo "Removing one slice from data to get even number of slices"
+		for filename in Pos_Neg_b0 Pos_b0 Neg_b0 ; do
+			${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/topup/${filename} ${outdir}/topup/${filename}_tmp 0 -1 0 -1 1 -1
+			${runcmd} ${FSLDIR}/bin/imrm ${outdir}/topup/${filename}
+			${runcmd} ${FSLDIR}/bin/immv ${outdir}/topup/${filename}_tmp ${outdir}/topup/${filename}
+		done
+		${runcmd} ${FSLDIR}/bin/fslroi ${outdir}/eddy/Pos_Neg ${outdir}/eddy/Pos_Neg_tmp 0 -1 0 -1 1 -1
+		${runcmd} ${FSLDIR}/bin/imrm ${outdir}/eddy/Pos_Neg
+		${runcmd} ${FSLDIR}/bin/immv ${outdir}/eddy/Pos_Neg_tmp ${outdir}/eddy/Pos_Neg
+	else
+		echo "Skipping slice removal, because data already has an even number of slices"
+	fi
+fi
+
+log_Msg "Running Topup"
+# NHP only: optionally add T2w as a phase-zero volume if available and requested - TH Jan 2023
+# (never runs for Human, regardless of --usephasezero)
+if [[ "$SPECIES" != "Human" ]] && ((UsePhaseZero)) && [[ $(${FSLDIR}/bin/imtest ${StudyFolder}/${Session}/T2w/T2w.nii.gz) == 1 ]]; then
+	T2wImage=${StudyFolder}/${Session}/T2w/T2w.nii.gz
+	# Use scanner coordinate for initial registration between T2w and dMRI - TH Jan 2023
+	${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${outdir}/topup/T2w2dMRI.mat ${T2wImage} ${outdir}/topup/Pos_b0.nii.gz
+	${FSLDIR}/bin/flirt -in ${T2wImage} -ref ${outdir}/topup/Pos_b0.nii.gz -applyxfm -init ${outdir}/topup/T2w2dMRI.mat -o ${outdir}/topup/Zero.nii.gz
+	${FSLDIR}/bin/immv ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0
+	${FSLDIR}/bin/fslmerge -t ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0 ${outdir}/topup/Zero
+	${FSLDIR}/bin/fslmaths ${outdir}/topup/Pos_Neg_b0 -inm 10000 ${outdir}/topup/Pos_Neg_b0
+	cp ${outdir}/topup/acqparams.txt ${outdir}/topup/acqparams_NoZero.txt
+	cat ${outdir}/topup/acqparams.txt | tail -1 | awk '{print $1,$2,0,0.01}' >> ${outdir}/topup/acqparams.txt
+fi
+
+${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig} ${SPECIES}
 
 log_Msg "Completed!"
 
