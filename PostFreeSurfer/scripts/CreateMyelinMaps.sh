@@ -100,7 +100,7 @@ esac
 log_Msg "RegName: ${RegName}"
 
 NonHumanSpecies=0
-if [ "$Species" != "human" ]; then NonHumanSpecies=1; fi
+if [ "$Species" != "Human" ]; then NonHumanSpecies=1; fi
 
 # -- check for presence of T2w image
 if [ -z "$IsLongitudinal" ]; then IsLongitudinal=0; fi
