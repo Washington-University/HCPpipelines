@@ -105,7 +105,7 @@ get_options() {
     echo "   GroupAverageName: ${GroupAverageName}"
     echo "   RegName: ${RegName}"
     echo "   MatlabMode: ${MatlabMode}"
-    echo "-- ${scriptName}: Specified Command-Line Options: -- End --"
+    echo "-- ${scriptName}: Specified Command-Line Options: -- End --"ß
 }
 
 
@@ -139,7 +139,7 @@ main() {
     StartStep="RunPROFUMO"
     StopStep="GroupPFMs"
     NumWishart="5"
-    KeepWishartFiles="YES"
+    KeepWishartFiles="NO"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
     parLimit=-1
@@ -205,7 +205,7 @@ main() {
     for Subject in $(echo $Subjlist | tr "@" "\n"); do
         echo -e "\t\"$Subject\": {" >> $ProfumoConfig
         for fMRIName in $(echo $fMRINames | tr "@" "\n"); do
-            runFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_${RegName}_${fMRIProcSTRING}.dtseries.nii"
+            runFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
             if [[ -e $runFile ]]; then
                 echo -e "\t\t\"$fMRIName\": \"$runFile\"," >> $ProfumoConfig
             fi
@@ -217,7 +217,7 @@ main() {
     echo "}" >> $ProfumoConfig
 
     # PFM pipeline execution
-    echo "Starting PFM postprocessing pipeline..."
+    echo "Starting PFM postprocessing pipeline"
     echo "Data type: ${OutputfMRIName}"
     echo "PFM dimension: ${PFMdim}"
 
@@ -251,7 +251,6 @@ main() {
                                     --profumo-cov-model="$CovModel" \
                                     --profumo-multi-start-iterations="$nStarts" \
                                     --profumo-random-seed="$RandomSeed" \
-                                    --num-wishart="$NumWishart" \
                                     --ref-image="$RefImage" \
                                     --volume-template-file="$VolumeTemplateCIFTI"
     

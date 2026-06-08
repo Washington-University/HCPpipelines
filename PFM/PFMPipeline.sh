@@ -88,7 +88,7 @@ IFS='@' read -a Subjlist <<<"$SubjlistRaw"
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
 FixLegacyBiasBool=$(opts_StringToBool "$FixLegacyBias")
-
+KeepWishartBool=$(opts_StringToBool "$KeepWishartFiles")
 if ! [[ "$parLimit" == "-1" || "$parLimit" =~ [1-9][0-9]* ]]
 then
     log_Err_Abort "--parallel-limit must be a positive integer or -1, provided value: '$parLimit'"
@@ -171,25 +171,61 @@ do
                     for Subject in "${Subjlist[@]}"
                     do
                         mkdir -p "${WFDir}/${Subject}"
-                        inputList=""
-                        outputList=""
-                        for fMRIName in "${fMRINamesArray[@]}"
-                        do
-                            inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                            outputFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                            if [[ -f "$inputFile" ]]
+                        
+                        if [[ "$ConcatName" != "" ]]
+                        then
+                            # Use already concatenated file
+                            concatFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                            concatOutFile="${WFDir}/${Subject}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                            
+                            if [[ -f "$concatFile" ]]
                             then
-                                if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
-                                inputList+="$inputFile"
-                                outputList+="$outputFile"
+                                log_Msg "Applying Wishart filter to concat file for subject $Subject"
+                                "$HCPPIPEDIR"/PFM/scripts/ApplyWishartFilterProfumo.sh \
+                                    --input="$concatFile" \
+                                    --output="$concatOutFile" \
+                                    --num-wishart="$NumWishart" \
+                                    --matlab-run-mode="$MatlabMode"
+                                
+                                # Split back into individual runs 
+                                cumTP=0
+                                for fMRIName in "${fMRINamesArray[@]}"ßß
+                                do
+                                    origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    if [[ -f "$origFile" ]]
+                                    then
+                                        nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
+                                        startIdx=$((cumTP + 1))
+                                        endIdx=$((cumTP + nTP))
+                                        outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                                        wb_command -cifti-merge "$outFile" -direction ROW \
+                                            -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
+                                        cumTP=$endIdx
+                                    fi
+                                done
                             fi
-                        done
-                        log_Msg "Applying Wishart filter for subject $Subject"
-                        "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
-                            --input="$inputList" \
-                            --output="$outputList" \
-                            --num-wishart="$NumWishart" \
-                            --matlab-run-mode="$MatlabMode"
+                        else
+                            # No concat file then pass individual runs
+                            inputList=""
+                            outputList=""
+                            for fMRIName in "${fMRINamesArray[@]}"
+                            do
+                                inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                outputFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                                if [[ -f "$inputFile" ]]
+                                then
+                                    if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
+                                    inputList+="$inputFile"
+                                    outputList+="$outputFile"
+                                fi
+                            done
+                            log_Msg "Applying Wishart filter for subject $Subject"
+                            "$HCPPIPEDIR"/PFM/scripts/ApplyWishartFilterProfumo.sh \
+                                --input="$inputList" \
+                                --output="$outputList" \
+                                --num-wishart="$NumWishart" \
+                                --matlab-run-mode="$MatlabMode"
+                        fi
                     done
                 fi
                 
@@ -277,7 +313,6 @@ do
             #Cleanup WF files
             if [[ "$NumWishart" -gt 0 ]]
             then
-                KeepWishartBool=$(opts_StringToBool "$KeepWishartFiles")
                 if ((KeepWishartBool))
                 then
                     log_Msg "Keeping Wishart filtered files in ${WFDir}"

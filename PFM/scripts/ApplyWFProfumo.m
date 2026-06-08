@@ -5,10 +5,12 @@ function ApplyWishartFilterProfumo(inputFiles, outputFiles, numWisharts)
 
     allData = [];
     tpCounts = [];
+    runMeans = {};
     for i = 1:length(inList)
         cii = ciftiopen(strtrim(inList{i}), 'wb_command');
         tpCounts(i) = size(cii.cdata, 2);
-        allData = [allData cii.cdata];
+        runMeans{i} = mean(cii.cdata, 2);
+        allData = [allData (cii.cdata - runMeans{i})];
     end
 
     Out = icaDim(allData, 0, 1, -1, numWisharts);
@@ -17,7 +19,7 @@ function ApplyWishartFilterProfumo(inputFiles, outputFiles, numWisharts)
     for i = 1:length(outList)
         endTP = startTP + tpCounts(i) - 1;
         cii = ciftiopen(strtrim(inList{i}), 'wb_command');
-        cii.cdata = Out.data(:, startTP:endTP);
+        cii.cdata = Out.data(:, startTP:endTP) + runMeans{i};
         ciftisave(cii, strtrim(outList{i}), 'wb_command');
         startTP = endTP + 1;
     end
