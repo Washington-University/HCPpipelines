@@ -105,7 +105,7 @@ get_options() {
     echo "   GroupAverageName: ${GroupAverageName}"
     echo "   RegName: ${RegName}"
     echo "   MatlabMode: ${MatlabMode}"
-    echo "-- ${scriptName}: Specified Command-Line Options: -- End --"ß
+    echo "-- ${scriptName}: Specified Command-Line Options: -- End --"
 }
 
 
