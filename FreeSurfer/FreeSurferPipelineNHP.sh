@@ -705,7 +705,7 @@ if [ "$RunMode" -lt 2 ] ; then
         fi
         rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
     else
-            T2Type="NONE"		
+        T2Type="NONE"
     fi
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd[*]} ${recon_all_initrun[*]} ${extra_reconall_args[*]}"
@@ -852,11 +852,14 @@ if [ "$RunMode" -lt 5 ]; then
     if [[ "${T2wImage}" != "" ]] ; then
         if ((flair || t1wdivflair)) ; then
             recon_all_pial="-FLAIRpial"
+			T2Type=FLAIR
         else
             recon_all_pial="-T2pial"
+			T2Type=T2
         fi
     else
         recon_all_pial=""
+		T2Type="NONE"
     fi
 
 	mridir=${SubjectDIR}/${SubjectID}/mri
