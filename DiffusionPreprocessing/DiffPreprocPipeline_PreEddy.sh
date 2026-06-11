@@ -195,25 +195,19 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 #  Validate necessary scripts exist before running anything
 #
 validate_scripts() {
-	local error_msgs=""
-
 	for extension in norm_intensity sequence best_b0; do
 		if [[ ! -f "${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh" ]]; then
-			error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh not found"
+			log_Err_Abort "${HCPPIPEDIR_dMRI}/basic_preproc_${extension}.sh not found"
 		fi
 	done
 
 	if [[ ! -f "${HCPPIPEDIR_dMRI}"/run_topup.sh ]]; then
-		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/run_topup.sh not found"
-	fi
-
-	if [[ "$error_msgs" != "" ]]; then
-		log_Err_Abort "$error_msgs"
+		log_Err_Abort "${HCPPIPEDIR_dMRI}/run_topup.sh not found"
 	fi
 }
 
 # Validate scripts
-validate_scripts "$@"
+validate_scripts
 
 #
 # Function Description

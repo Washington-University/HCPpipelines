@@ -339,27 +339,21 @@ fi
 #  Validate necessary scripts exist before starting to run anything
 #
 validate_scripts() {
-	local error_msgs=""
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
+    fi
 
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
-	fi
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
+    fi
 
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
-	fi
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/scripts/run_eddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/scripts/run_eddy.sh not found"
+    fi
 
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/scripts/run_eddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/scripts/run_eddy.sh not found"
-	fi
-
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
-	fi
-
-	if [[ "${error_msgs}" != "" ]]; then
-		log_Err_Abort "${error_msgs}"
-	fi
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
+    fi
 }
 
 #
@@ -367,7 +361,7 @@ validate_scripts() {
 #  Main processing of script
 
 # Validate scripts
-validate_scripts "$@"
+validate_scripts
 
 if (( ! IsLongitudinal )); then
     log_Msg "Invoking Pre-Eddy Steps"
