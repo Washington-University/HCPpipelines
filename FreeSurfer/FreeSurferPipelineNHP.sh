@@ -532,10 +532,7 @@ if ((! existing_subject)) ; then
 		${HCPPIPEDIR_FS}/RestorePreFreeSurferResamplingNHP.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
 		imrm ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}
 	fi
-fi
-
-if [ "${existing_subject}" = "TRUE" ] ; then
-
+else
 	if [ -e "$SubjectDIR"/"$SubjectID"_scaled ] ; then
 		rm -rf "$SubjectDIR"/"$SubjectID"
 		mv "$SubjectDIR"/"$SubjectID"_scaled "$SubjectDIR"/"$SubjectID"
@@ -647,8 +644,6 @@ extra_reconall_args+=(-expert "$SubjectDIR"/"$SubjectID".expert.opts -xopts-over
 log_Msg "recon-all log: $SubjectDIR/$SubjectID/scripts/recon-all.log"
 LF="$SubjectDIR"/"$SubjectID"/scripts/recon-all.log
 
-
-
 if [ "$RunMode" -lt 2 ] ; then
 	if ((! existing_subject)) ; then
 
@@ -690,24 +685,22 @@ if [ "$RunMode" -lt 2 ] ; then
 	    recon_all_initrun+=(-i "$(remove_ext "$T1wImage")_scaled.nii.gz"
 	    -emregmask "$(remove_ext "$T1wImageBrain")_scaled.nii.gz")
 	fi
-    # By default, refine pial surfaces using T2 (if T2w image provided).
-    # If for some other reason the -T2pial flag needs to be excluded from recon-all,
-    # this can be accomplished using --extra-reconall-arg=-noT2pial
-    if [[ "${T2wImage}" != "" ]] ; then
-        if ((flair || t1wdivflair)) ; then
-            recon_all_pial="-FLAIRpial"
-            recon_all_initrun+=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
-            T2Type=FLAIR
+	# By default, refine pial surfaces using T2 (if T2w image provided).
+	# If for some other reason the -T2pial flag needs to be excluded from recon-all,
+	# this can be accomplished using --extra-reconall-arg=-noT2pial
+	if [[ "${T2wImage}" != "" ]] ; then
+		if ((flair || t1wdivflair)) ; then
+			recon_all_initrun+=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
+			T2Type=FLAIR
 		else
-            recon_all_pial="-T2pial"
-            recon_all_initrun+=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
-            T2Type=T2
-        fi
-        rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
-    else
-            recon_all_pial=""
-            T2Type="NONE"
-    fi
+			recon_all_initrun+=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
+			T2Type=T2
+		fi
+		rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
+	else
+		recon_all_pial=""
+		T2Type="NONE"
+	fi
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd[*]} ${recon_all_initrun[*]} ${extra_reconall_args[*]}"
 	"${recon_all_cmd[@]}" "${recon_all_initrun[@]}" "${extra_reconall_args[@]}"
@@ -849,6 +842,19 @@ if [ "$RunMode" -lt 4 ]; then
 fi
 
 if [ "$RunMode" -lt 5 ]; then
+
+    if [[ "${T2wImage}" != "" ]] ; then
+        if ((flair || t1wdivflair)) ; then
+            recon_all_pial="-FLAIRpial"
+			T2Type=FLAIR
+        else
+            recon_all_pial="-T2pial"
+			T2Type=T2
+        fi
+    else
+        recon_all_pial=""
+		T2Type="NONE"
+    fi
 
 	mridir=${SubjectDIR}/${SubjectID}/mri
 

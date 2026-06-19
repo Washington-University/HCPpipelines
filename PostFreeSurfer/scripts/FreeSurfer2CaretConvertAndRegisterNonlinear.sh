@@ -460,9 +460,9 @@ for Hemisphere in L R ; do
                 cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/MNINonLinear/$NativeFolder/
 
                 #copy the output of MSMSulc to each of the timepoint native folders
-                for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.long.${LongitudinalTemplate}.*${RegName}.*; do
+                for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.*${RegName}.*; do
                     file_base=$(basename $file)
-                    new_file=${file_base/${Session}.long.$LongitudinalTemplate/$timepoint.long.$LongitudinalTemplate}
+                    new_file=${file_base/${Session}/$timepoint.long.$LongitudinalTemplate}
                     cp $file $experiment_root/MNINonLinear/$NativeFolder/$new_file
                 done
             done

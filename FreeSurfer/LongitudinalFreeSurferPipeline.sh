@@ -290,17 +290,18 @@ log_Msg "extra_reconall_args_base: $extra_reconall_args_base"
 log_Msg "extra_reconall_args_long: $extra_reconall_args_long"
 log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 
-LongDIR="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
-mkdir -p "${LongDIR}"
+TemplateT1wDir="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
+mkdir -p "${TemplateT1wDir}"
 
 if (( start_stage < 1 )); then
 
   #prepare session folder structure
   for Session in ${Sessions} ; do
     Source="${StudyFolder}/${Session}/T1w/${Session}"
-    Target="${LongDIR}/${Session}"
+    Target="${TemplateT1wDir}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
-    ln -sf ${Source} ${Target}
+    #symlinks review: changed from absolute to relative.
+    ( cd "${TemplateT1wDir}" && ln -sf "../../${Session}/T1w/$Session" "$Session" )
   done
 
   # ----------------------------------------------------------------------
@@ -320,6 +321,13 @@ if (( start_stage < 1 )); then
     recon_all_cmd+=" -tp ${Session}"
   done
   recon_all_cmd+=" -all"
+
+  if ((use_fs6)); then
+    recon_all_cmd="recon-all.v6.hires"
+  else
+    recon_all_cmd="recon-all"
+  fi
+  recon_all_cmd+=" -sd ${TemplateT1wDir}"
 
   if [ ! -z "${recon_all_seed}" ]; then
     recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
@@ -354,7 +362,7 @@ if (( end_stage > 0 )); then
     else
       recon_all_cmd="recon-all"
     fi
-    recon_all_cmd+=" -sd ${LongDIR}"
+    recon_all_cmd+=" -sd ${TemplateT1wDir}"
     recon_all_cmd+=" -long ${Session} ${TemplateID} -all -conf2hires"
 
     recon_all_cmd+=" $extra_reconall_args_long "
@@ -387,6 +395,19 @@ if (( end_stage > 0 )); then
   #Finalize jobs in this stage.
   par_finalize_stage $parallel_mode $max_jobs
 fi
+
+#clean up symlinks and organize longitudinal session folder structure
+for Session in ${Sessions} ; do
+  rm -f "${TemplateT1wDir}/${Session}"
+  LongSession=${Session}.long.${TemplateID}
+  LongSessionT1wDir="$StudyFolder/${LongSession}/T1w"
+  rm -rf "$LongSessionT1wDir"
+  mkdir -p "$LongSessionT1wDir"
+  mv "${TemplateT1wDir}/${LongSession}" "${LongSessionT1wDir}"/
+done
+
+#this symlink isn't used downstream
+rm -f "${TemplateT1wDir}/fsaverage"
 
 # ----------------------------------------------------------------------
 log_Msg "Completed main functionality"

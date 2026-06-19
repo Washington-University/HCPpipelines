@@ -29,6 +29,12 @@ BrainExtract="INVIVO"
 StrucRes="0.8" # species specific config. 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
 StrucUnwarpDir=""
 
+#just the queue name
+QUEUE=""
+#QUEUE="hcp_priority.q"
+#set to 1 to run on the same machine as the batch, one at a time, instead of queuing
+RunLocal=0
+
 # Parse command line arguments
 get_batch_options() {
     local arguments=("$@")
@@ -69,6 +75,9 @@ get_batch_options() {
                 StrucUnwarpDir=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
+            --runlocal)
+                RunLocal=1
+                index=$(( index + 1 ))
             *)
                 echo ""
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -217,7 +226,7 @@ for Subject in $Subjlist ; do
 
     if [ -z "$GradientDistortionCoeffs" ] ; then
         GradientDistortionCoeffs="NONE"               #Location of Coeffs file or "NONE" to skip
-	fi
+    fi
 
     BiasFieldSmoothingSigma="${BiasFieldSmoothingSigma:-5}"  # Useally set to 5. "NONE" if not used
 
@@ -237,8 +246,16 @@ for Subject in $Subjlist ; do
     TruePatientPosition=${StrucTruePatientPosition:-HFS}
     ScannerPatientPosition=${StrucScannerPatientPosition:-HFS}
 
-# ${FSLDIR}/bin/fsl_sub ${QUEUE} ${LOG} \
-    ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
+    if ((RunLocal)) || [[ "$QUEUE" == "" ]]
+    then
+        echo "About to locally run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
+
+    "${queuing_command[@]}" "$HCPPIPEDIR"/PreFreeSurfer/PreFreeSurferPipeline.sh \
         --path="$StudyFolder" \
         --subject="$Subject" \
         --t1="$T1wInputImages" \
@@ -279,7 +296,7 @@ for Subject in $Subjlist ; do
         --betradius=${betradius} \
         --betfraction=${betfraction} \
         --bettop2center=${bettop2center} \
-		--betbiasfieldcor=${betbiasfieldcor}
+        --betbiasfieldcor=${betbiasfieldcor}
       
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 

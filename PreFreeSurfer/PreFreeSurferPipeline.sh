@@ -454,7 +454,15 @@ if [ ! -e ${AtlasSpaceFolder}/xfms ] ; then
     mkdir -p ${AtlasSpaceFolder}/xfms/
 fi
 
-# log_Msg "POSIXLY_CORRECT="${POSIXLY_CORRECT} #NOT DEFINED ANYWHERE ELSE DO WE NEED THIS?
+#check if queueing system has requested strict posix, because we don't test that way
+log_Msg "POSIXLY_CORRECT=${POSIXLY_CORRECT:-}"
+
+#basic sanity check for the likely case of running the pipeline without downloading NHP templates
+if [[ "$SPECIES" != Human && ! -f "$T1wTemplate" ]]
+then
+    log_Err "Non-human T1w template $T1wTemplate not found"
+    log_Err_Abort "You may need to run '$HCPPIPEDIR/global/scripts/download_NHP_templates.sh' first"
+fi
 
 if [ "$CustomBrain" = "ORIGMASK" ] ; then
 

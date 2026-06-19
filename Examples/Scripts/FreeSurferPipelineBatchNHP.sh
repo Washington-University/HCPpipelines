@@ -27,6 +27,7 @@ StudyFolder="${HOME}/projects/Pipelines_ExampleData"
 Subjlist="nhp_session1 nhp_session2"
 SPECIES="MacaqueRhesus"
 RunMode="Default"
+ExistingSubject="FALSE" #Use TRUE when processing hand edits
 T2wType="T2w"
 StrucRes="0.5" # structural resolution in mm (must match PreFreeSurfer setting)
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
@@ -167,6 +168,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t1wdivflair="$isT1wDivFLAIR" \
         --species="$SPECIES" \
         --scale-factor="$BrainScaleFactor" \
+		--existing-subject="$ExistingSubject" \
         --runmode="$RunMode"
 
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
@@ -180,6 +182,7 @@ for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
         --t1wdivflair="$isT1wDivFLAIR" \
         --species="$SPECIES" \
         --scale-factor="$BrainScaleFactor" \
+		--existing-subject="$ExistingSubject" \
         --runmode="$RunMode" 
     echo ". ${EnvironmentScript}"
 
