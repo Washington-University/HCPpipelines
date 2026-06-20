@@ -315,19 +315,12 @@ if (( start_stage < 1 )); then
   else
     recon_all_cmd="recon-all"
   fi
-  recon_all_cmd+=" -sd ${LongDIR}"
+  recon_all_cmd+=" -sd ${TemplateT1wDir}"
   recon_all_cmd+=" -base ${TemplateID}"
   for Session in ${Sessions} ; do
     recon_all_cmd+=" -tp ${Session}"
   done
   recon_all_cmd+=" -all"
-
-  if ((use_fs6)); then
-    recon_all_cmd="recon-all.v6.hires"
-  else
-    recon_all_cmd="recon-all"
-  fi
-  recon_all_cmd+=" -sd ${TemplateT1wDir}"
 
   if [ ! -z "${recon_all_seed}" ]; then
     recon_all_cmd+=" -norandomness -rng-seed ${recon_all_seed}"
