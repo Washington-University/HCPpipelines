@@ -75,20 +75,37 @@ cmd_lta=()
 
 IFS='@' read -a SessionsArray <<<"$Sessions"
 
-for session in "${SessionsArray[@]}"; do
-    cmd_mov+=("$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz")
-    cmd_lta+=("$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta")
-done
+nSessions=${#SessionsArray[@]}
+if (( nSessions < 1 )); then 
+    log_Err_Abort "At least one longitudinal session is required"
 
-echo "${cmd_mov[@]}"
+elif (( nSessions > 1 )); then #normal case.
+    for session in "${SessionsArray[@]}"; do
+        cmd_mov+=("$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz")
+        cmd_lta+=("$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta")
+    done
 
-cmd+=(--mov "${cmd_mov[@]}")
-cmd+=(--template "$TemplateDir/T2w/bootstrap_average.nii.gz" --iscale --satit)
-cmd+=(--lta "${cmd_lta[@]}")
+    echo "${cmd_mov[@]}"
 
-mkdir -p "$TemplateDir/T2w/xfms"
+    cmd+=(--mov "${cmd_mov[@]}")
+    cmd+=(--template "$TemplateDir/T2w/bootstrap_average.nii.gz" --iscale --satit)
+    cmd+=(--lta "${cmd_lta[@]}")
 
-echo "${cmd[@]}"
-"${cmd[@]}"
+    mkdir -p "$TemplateDir/T2w/xfms"
 
+    echo "${cmd[@]}"
+    "${cmd[@]}"
+
+else #exactly one session, use single T2w to create template.
+    session=${SessionsArray[0]}
+    mgz="$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz"
+    nii="$StudyFolder/$session/T2w/T2w.nii.gz"
+    mkdir -p "$TemplateDir/T2w/xfms"
+    cp -f "$nii" "$TemplateDir/T2w/bootstrap_average.nii.gz"
+    tmp=$(mktemp identity_fslXXX.mat)
+    trap 'rm -f "$tmp"' EXIT
+    printf '1 0 0 0\n0 1 0 0\n0 0 1 0\n0 0 0 1\n' > "$tmp"
+    lta_convert --infsl "$tmp" --src "$mgz" --trg "$nii" \
+        --outlta "$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta"
+fi
 log_Msg "Completed MakeAverageT2w.sh"
