@@ -651,13 +651,15 @@ extra_reconall_args+=(-expert "$SubjectDIR"/"$SubjectID".expert.opts -xopts-over
 log_Msg "recon-all log: $SubjectDIR/$SubjectID/scripts/recon-all.log"
 LF="$SubjectDIR"/"$SubjectID"/scripts/recon-all.log
 
+#define this variable early, even if we don't need it, in case of RunMode skipping the step that creates it
+zero_threshold_T1wImage=$(remove_ext "$T1wImage")_zero_threshold.nii.gz
+
 if [ "$RunMode" -lt 2 ] ; then
 	if ((! existing_subject)) ; then
 
 		# ----------------------------------------------------------------------
 		log_Msg "Thresholding T1w image to eliminate negative voxel values"
 		# ----------------------------------------------------------------------
-		zero_threshold_T1wImage=$(remove_ext ${T1wImage})_zero_threshold.nii.gz
 		log_Msg "...This produces a new file named: ${zero_threshold_T1wImage}"
 
 		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
