@@ -153,7 +153,7 @@ opts_AddOptional '--conf2hires' 'conf2hires' 'TRUE/FALSE' "Indicates that the sc
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
 # NHP options
-opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhesus|MacaqueSnow|NightMonkey|Marmoset' "Species type (required).  Controls species-specific processing parameters" 
+opts_AddMandatory '--species' 'Species' 'Human|Chimp|MacaqueCyno|MacaqueRhesus|MacaqueSnow|NightMonkey|Marmoset' "Species type (required).  Controls species-specific processing parameters"
 
 opts_AddOptional '--runmode' 'RunMode' 'Default|FSinit|FSbrainseg|FSsurfinit|FShires|FSFinish' "specify from which step to resume the processing instead of starting from the beginning. Value must be one of: Default, FSinit, FSbrainseg, FSsurfinit, FShires, FSFinish (default: Default)" "Default"
 
@@ -202,7 +202,7 @@ Please run $HCPPIPEDIR/global/scripts/download_NHP_Templates.sh first.
 fi
 
 
-#check if existing_subject is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
+#check if existing_subject is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -273,7 +273,7 @@ configure_custom_tools()
         log_Warn "use can be found on the PATH."
         log_Warn ""
         log_Warn "PATH set to: ${PATH}"
-    fi    
+    fi
     PipelineScripts=${HCPPIPEDIR}/FreeSurfer/scripts
 }
 
@@ -289,7 +289,7 @@ show_tool_versions()
     local which_recon_all=$(which recon-all.v6.hiresNHP)
     log_Msg ${which_recon_all}
     recon-all.v6.hiresNHP -version
-    
+
     # Show tkregister version
     log_Msg "Showing tkregister2 version"
     which tkregister2
@@ -315,7 +315,7 @@ validate_freesurfer_version()
     if [ -z "${FREESURFER_HOME}" ] ; then
         log_Err_Abort "FREESURFER_HOME must be set"
     fi
-    
+
     freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
 
     if [ -f "${freesurfer_version_file}" ] ; then
@@ -325,9 +325,8 @@ validate_freesurfer_version()
         log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
     fi
 
-    # strip out extraneous stuff from FreeSurfer version string
-    freesurfer_version_string_array=(${freesurfer_version_string//-/ })
-    freesurfer_version=${freesurfer_version_string_array[5]}
+    # extract X.Y.Z version robustly from build stamp (handles both FS6 and FS8 formats)
+    freesurfer_version=$(echo "${freesurfer_version_string}" | grep -oP 'v?\d+\.\d+\.\d+' | head -1)
     freesurfer_version=${freesurfer_version#v} # strip leading "v"
 
     log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
@@ -340,15 +339,9 @@ validate_freesurfer_version()
     freesurfer_primary_version="${freesurfer_version_array[0]}"
     freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
 
-    freesurfer_secondary_version="${freesurfer_version_array[1]}"
-    freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
-
-    freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-    freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
-
-    if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-        # e.g. 4.y.z, 5.y.z
-        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP-NHP.sh if you want to continue using FreeSurfer 5.3)"
+    if [[ $(( ${freesurfer_primary_version} )) -ne 6 ]]; then
+        # e.g. 7.y.z, 8.y.z
+        log_Err_Abort "Only FreeSurfer version 6 is currently supported for NHP processing. Detected version: ${freesurfer_version}"
     fi
 }
 
@@ -541,7 +534,7 @@ if ((! existing_subject)) ; then
 	fi
 else
 	if [ -e "$SubjectDIR"/"$SubjectID"_scaled ] ; then
-		rm -rf "$SubjectDIR"/"$SubjectID" 
+		rm -rf "$SubjectDIR"/"$SubjectID"
 		mv "$SubjectDIR"/"$SubjectID"_scaled "$SubjectDIR"/"$SubjectID"
 	fi
 	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
@@ -572,7 +565,7 @@ fi
 # expert options for recon-all
 rm -f "$SubjectDIR"/"$SubjectID".expert.opts
 
-for cmd in mri_normalize mri_segment mri_fill mris_inflate1 mris_inflate2 mris_smooth mris_make_surfaces mris_register bbregister; do    
+for cmd in mri_normalize mri_segment mri_fill mris_inflate1 mris_inflate2 mris_smooth mris_make_surfaces mris_register bbregister; do
 	cmd_args=${cmd}_args
 	if [[ "${!cmd_args+${!cmd_args}}" != "" ]] ; then
 		log_Msg "expert opts: $cmd ${!cmd_args+${!cmd_args}}"
@@ -638,7 +631,7 @@ if [ -n "${MaxThickness:-}" ] ; then
 fi
 if [ "${CopyBiasFromConf:-}" = "TRUE" ] ; then
 	c2hxopts+=" --copy-bias-from-conf"
-fi	
+fi
 if ((t1wdivflair)) ; then
 	c2hxopts+=" --T1wDivFLAIR"
 fi
@@ -665,10 +658,10 @@ if [ "$RunMode" -lt 2 ] ; then
 		fslmaths ${T1wImage} -thr 0 ${zero_threshold_T1wImage}
 
 		## This section scales them so that FreeSurfer 6 can work properly in scaled space. The data will be
-		## rescaled to the original space by a script, RescaleVolumeAndSurfaceNHP.sh, after FS was finished - TH 2017-2023 
-		log_Msg "Scale T1w brain volume"		
+		## rescaled to the original space by a script, RescaleVolumeAndSurfaceNHP.sh, after FS was finished - TH 2017-2023
+		log_Msg "Scale T1w brain volume"
 		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "${zero_threshold_T1wImage}" "$ScaleFactor" $(remove_ext ${T1wImage})_scaled "$SubjectDIR"/xfms/real2fs.world.mat
-		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled 
+		${HCPPIPEDIR}/global/scripts/ScaleVolumeNHP.sh "$T1wImageBrain" "$ScaleFactor" $(remove_ext ${T1wImageBrain})_scaled
 
 		if [[ "${T2wImage}" != "" ]] ; then
 			log_Msg "Scale T2w volume"
@@ -680,35 +673,36 @@ if [ "$RunMode" -lt 2 ] ; then
 	# ----------------------------------------------------------------------
 	log_Msg "Call custom recon-all: recon-all.v6.hires"
 	# ----------------------------------------------------------------------
-	
+
 	if [ -e "$SubjectDIR"/"$SubjectID" ] ; then
 		rm -rf "$SubjectDIR"/"$SubjectID"
 	fi
 	if [ -e "$SubjectDIR"/"$SubjectID""$ScaleSuffix" ] ; then
 		rm -rf "$SubjectDIR"/"$SubjectID""$ScaleSuffix"
 	fi
-	
+
 	recon_all_initrun=(-motioncor)
 	if ((! existing_subject))
 	then
 	    recon_all_initrun+=(-i "$(remove_ext "$T1wImage")_scaled.nii.gz"
 	    -emregmask "$(remove_ext "$T1wImageBrain")_scaled.nii.gz")
 	fi
-    # By default, refine pial surfaces using T2 (if T2w image provided).
-    # If for some other reason the -T2pial flag needs to be excluded from recon-all, 
-    # this can be accomplished using --extra-reconall-arg=-noT2pial
-    if [[ "${T2wImage}" != "" ]] ; then
-        if ((flair || t1wdivflair)) ; then
-            recon_all_initrun+=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
-            T2Type=FLAIR
+	# By default, refine pial surfaces using T2 (if T2w image provided).
+	# If for some other reason the -T2pial flag needs to be excluded from recon-all,
+	# this can be accomplished using --extra-reconall-arg=-noT2pial
+	if [[ "${T2wImage}" != "" ]] ; then
+		if ((flair || t1wdivflair)) ; then
+			recon_all_initrun+=(-FLAIR "$(remove_ext "$T2wImage")_scaled.nii.gz")
+			T2Type=FLAIR
 		else
-            recon_all_initrun+=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
-            T2Type=T2
-        fi
-        rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
-    else
-        T2Type="NONE"
-    fi
+			recon_all_initrun+=(-T2 "$(remove_ext "$T2wImage")_scaled.nii.gz")
+			T2Type=T2
+		fi
+		rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
+	else
+		recon_all_pial=""
+		T2Type="NONE"
+	fi
 
 	log_Msg "...recon_all_cmd: ${recon_all_cmd[*]} ${recon_all_initrun[*]} ${extra_reconall_args[*]}"
 	"${recon_all_cmd[@]}" "${recon_all_initrun[@]}" "${extra_reconall_args[@]}"
@@ -738,7 +732,7 @@ if [ "$RunMode" -lt 3 ] ; then
 
 		if [ "$SkullStripMethod" = PreFS ] ; then
 
-			DilateDistance=1 
+			DilateDistance=1
 
 			cmd=(mri_convert "$mridir"/brainmask.conf.mgz "$mridir"/brainmask.conf.nii.gz)
 			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
@@ -754,7 +748,7 @@ if [ "$RunMode" -lt 3 ] ; then
 
 			cmd=(mri_mask "$mridir"/T1.mgz "$mridir"/brainmask.bin.mgz "$mridir"/brainmask.mgz)
 			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
-			
+
 			cmd=(rm "$mridir"/brainmask.bin.nii.gz "$mridir"/brainmask.conf.nii.gz "$mridir"/brainmask.conf.bin.nii.gz "$mridir"/brainmask.bin.mgz)
 			echo -e "$(date)\n#===============================\n${cmd[*]}\n" |& tee -a "$LF"; "${cmd[@]}" |& tee -a "$LF"
 
@@ -843,7 +837,7 @@ if [ "$RunMode" -lt 4 ]; then
 	else
 			FILL="-fill"
 	fi
-	
+
 	log_Msg "...fourth recon-all steps with edited filled.mgz"
     #don't quote $FILL, we don't want to pass an empty string
 	"${recon_all_cmd[@]}" $FILL -tessellate -smooth1 -inflate1 -qsphere -fix -white -smooth2 -inflate2 -curvHK -sphere -surfreg -avgcurvtifpath "$GCAdir" -avgcurvtif "$AvgCurvTif" -jacobian_white -cortparc "${extra_reconall_args[@]}"
@@ -865,7 +859,7 @@ if [ "$RunMode" -lt 5 ]; then
     fi
 
 	mridir=${SubjectDIR}/${SubjectID}/mri
- 
+
 	## if brain.finalsurfs.edit.mgz is found, it is used as brain.finalsurfs.mgz - TH 2024
 	if [ -e ${mridir}/brain.finalsurfs.edit.mgz ] ; then
 		log_Msg "Found ${mridir}/brain.finalsurfs.edit.mgz. Replace brain.finalsurfs.mgz with it"
@@ -942,7 +936,7 @@ if [ "$RunMode" -lt 6 ]; then
 		log_Msg "CurvStat, CortParc etc for Human"
 		${recon_all_cmd} -curvstats -avgcurv -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 -pctsurfcon -hyporelabel -aparc2aseg -apas2aseg -segstats -wmparc -balabels
 	fi
-	
+
 	if [ "${existing_subject}" != "TRUE" ] ; then
 		# ----------------------------------------------------------------------
 		log_Msg "Clean up file: ${zero_threshold_T1wImage}"
@@ -1039,16 +1033,16 @@ if [ "$RunMode" -lt 6 ]; then
 	# ----------------------------------------------------------------------
 
 	pushd ${mridir}
-	
+
 	export SUBJECTS_DIR="$SubjectDIR"
-	
+
 	reg=$mridir/transforms/orig2rawavg.dat
 	# generate registration between conformed and hires based on headers
 	# Note that the convention of tkregister2 is that the resulting $reg is the registration
-	# matrix that maps from the "--targ" space into the "--mov" space. 
-	
+	# matrix that maps from the "--targ" space into the "--mov" space.
+
 	tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
-	
+
 	#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.
 	#The ?h.pial.deformed surfaces are used for USPIO fMRI registration - TH 2024
 	for hemi in lh rh; do
@@ -1056,9 +1050,9 @@ if [ "$RunMode" -lt 6 ]; then
 			mri_surf2surf --s ${SubjectID} --sval-xyz "$surf" --reg "$reg" --tval-xyz ${mridir}/rawavg.mgz --tval "$surf".deformed --surfreg "$surf" --hemi "$hemi"
 		done
 	done
-	
+
 	popd
-	
+
 	# ----------------------------------------------------------------------
 	log_Msg "Generating QC file"
 	# ----------------------------------------------------------------------
@@ -1066,7 +1060,7 @@ if [ "$RunMode" -lt 6 ]; then
 	make_t1w_hires_nifti_file "${mridir}"
 
 	if [[ "${T2wImage}" != "" ]] ; then
-	
+
 		make_t2w_hires_nifti_file "${mridir}"
 
 		make_t1wxt2w_qc_file "${mridir}"
