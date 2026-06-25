@@ -60,7 +60,7 @@ end
 if ~exist(TE,'file')
   error('%s does not exist!',TE)
 end
-TE=load(TE);
+TE = load(TE,'-ascii');
 if ~isvector(TE) || ~isnumeric(TE)
   error('TE isn''t a numeric vector, check inputs!')
 end
@@ -216,7 +216,7 @@ end % switch
 
 % do nonlinear fit, initialized by linear
 if strcmp(T2starMethod,'nonlinear')
-  Y = exp(Y); % undo log transform from log-linear initalization
+  Y = exp(Y); % undo log transform from log-linear initialization
   X = double(permute(X,[4 5 1:3]));% put operative dims first to avoid squeezing
   Y = double(permute(Y,[4 1:3]));% non-linear fit needs double
 

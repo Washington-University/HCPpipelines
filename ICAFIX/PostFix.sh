@@ -122,7 +122,7 @@ esac
 # ------------------------------------------------------------------------------
 #  Create symlinks, but only if file doesn't already exist in ResultsFolder
 # ------------------------------------------------------------------------------
-
+# symlinks review: relative, ok
 create_symlink_if_appropriate() {
     
     local file="${1}"
@@ -320,7 +320,7 @@ ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${ICAFolder}/melodic_oIC.dtseri
 # Remove the intermediate .dtseries versions of the melodic maps
 rm ${ICAFolder}/melodic_oIC_vol.dtseries.nii ${ICAFolder}/melodic_oIC.dtseries.nii
 
-log_Msg "Create scaler series of ICA timecourses"
+log_Msg "Create scalar series of ICA timecourses"
 ${CARET7DIR}/wb_command -cifti-create-scalar-series ${ICAs} ${ICAs}.sdseries.nii -transpose -name-file ${ComponentList} -series SECOND 0 ${TR}
 
 # TimC: step=1/length-of-time-course-in-seconds=1/NumTimePoints*TR
@@ -363,6 +363,7 @@ cat "${TemplateSceneSingleScreen}" | sed s/SubjectID/${Subject}/g | sed s/fMRINa
 # need to be preserved (but with a warning generated)!
 # If file exists as a symlink, force creation of a new symlink pointing to the FIXFolder files
 file=ReclassifyAsSignal.txt
+#symlinks review: relative links created by this function, ok
 create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
 file=ReclassifyAsNoise.txt
 create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"

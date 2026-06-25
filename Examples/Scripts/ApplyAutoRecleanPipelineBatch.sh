@@ -2,9 +2,9 @@
 #set -xv
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData"
+DEFAULT_STUDY_FOLDER="${HOME}/data/HCPpipelines_ExampleData"
 DEFAULT_SUBJECT_LIST="100307 100610"
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
 
 #
@@ -12,7 +12,7 @@ DEFAULT_RUN_LOCAL="FALSE"
 #	Get the command line options for this script
 #
 # Global Output Variables
-#	${StudyFolder}			- Path to folder containing all subjects data in subdirectories named 
+#	${StudyFolder}			- Path to folder containing all subjects data in subdirectories named
 #							  for the subject id
 #	${Subjlist}				- Space delimited list of subject IDs
 #	${EnvironmentScript}	- Script to source to setup pipeline environment
@@ -111,16 +111,18 @@ main() {
 
 	# set list of fMRI
 	fMRINames="rfMRI_REST1_RL@rfMRI_REST1_LR@rfMRI_REST2_LR@rfMRI_REST2_RL"
-  
+
 	# specify the name of concatenated folder
 	# if run Multi-Run specify ConcatNames as null string
 	MRConcatfMRIName="rfMRI_REST"
 
 	# set highpass
 	highpass=2000
-	
+
 	# set resolution
-	fMRIResolution="2"
+	GrayordinatesResolution="2"
+	MappingSmoothFWHM="2"
+	FinalfMRIResolution="2"
 
 	#run in singularity
 	PythonSingularity="/path/to/singularity.img"
@@ -161,8 +163,9 @@ main() {
 		--fmri-names="$fMRINames" \
 		--mrfix-concat-name="$MRConcatfMRIName" \
 		--fix-high-pass="$highpass" \
-		--fmri-resolution="$fMRIResolution" \
-		--subject-expected-timepoints="$subjectExpectedTimepoints" \
+		--grayordinatesres="$GrayordinatesResolution" \
+		--smoothingFWHM="$MappingSmoothFWHM" \
+		--fmrires="$FinalfMRIResolution" \
 		--low-res="$LowResMesh" \
 		--python-singularity="$PythonSingularity" \
 		--python-singularity-mount-path="$PythonSingularityMountPath" \

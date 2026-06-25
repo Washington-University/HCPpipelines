@@ -127,9 +127,9 @@ fi
 opts_SetScriptDescription "Runs the FreeSurfer HCP pipeline on data processed by prefreesurfer"
 
 # Show usage information
-opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --path input to create full path to root directory for all outputs generated as path/session" "--subject"
+opts_AddMandatory '--session' 'SessionID' 'session' "Session ID (required).  Used with --session-dir input to create full path to root directory for all outputs generated as path/session" "--subject"
 
-opts_AddOptional '--session-dir' 'SessionDIR' 'session' 'path to session directory required, unless --existing-session is set' "--subject-dir"
+opts_AddMandatory '--session-dir' 'SessionDIR' 'session' 'path to session directory required' "--subjectDIR" "--subject-dir"
 
 opts_AddOptional '--t1w-image' 'T1wImage' "T1" 'path to T1w image required, unless --existing-session is set' "" "--t1"
 
@@ -706,6 +706,18 @@ if [ "${return_code}" != "0" ]; then
 fi
 
 mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi rh
+return_code=$?
+if [ "${return_code}" != "0" ]; then
+    log_Err_Abort "mri_surf2surf command for right hemisphere failed with return_code: ${return_code}"
+fi
+#TSC: make pial.deformed also
+mri_surf2surf --s ${SessionID} --sval-xyz pial --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval pial.deformed --surfreg pial --hemi lh
+return_code=$?
+if [ "${return_code}" != "0" ]; then
+    log_Err_Abort "mri_surf2surf command for left hemisphere failed with return_code: ${return_code}"
+fi
+
+mri_surf2surf --s ${SessionID} --sval-xyz pial --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval pial.deformed --surfreg pial --hemi rh
 return_code=$?
 if [ "${return_code}" != "0" ]; then
     log_Err_Abort "mri_surf2surf command for right hemisphere failed with return_code: ${return_code}"

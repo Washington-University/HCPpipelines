@@ -4,10 +4,10 @@ This directory contains various files related to resampling surface data, creati
 
 The following are the fs_LR standard spheres:
 
-fsaverage.L_LR.spherical_std.164k_fs_LR.surf.gii
+L.sphere.164k_fs_LR.surf.gii or fsaverage.L_LR.spherical_std.164k_fs_LR.surf.gii
 L.sphere.59k_fs_LR.surf.gii
 L.sphere.32k_fs_LR.surf.gii
-fsaverage.R_LR.spherical_std.164k_fs_LR.surf.gii
+R.sphere.164k_fs_LR.surf.gii or fsaverage.R_LR.spherical_std.164k_fs_LR.surf.gii
 R.sphere.59k_fs_LR.surf.gii
 R.sphere.32k_fs_LR.surf.gii
 

@@ -35,8 +35,9 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"       # also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"         # Debugging functions
+source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 g_matlab_default_mode=1
 
 #description to use in usage - syntax of parameters is now explained automatically
@@ -48,7 +49,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder that contains al
 opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'meshnum' "high resolution mesh node count (in thousands), like '164' for 164k_fs_LR"
 opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshnum@meshnum@...' "low resolution mesh node counts (in thousands) delimited by @, like '32@59' for 32k_fs_LR and 59_k_fs_LR"
-opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll_InitalReg'"
+opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll_InitialReg'"
 opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name strings corresponding to maps that are not myelin maps, e.g. 'sulc@curvature@corrThickness@thickness'"
 opts_AddMandatory '--smoothing-fwhm' 'SmoothingFWHM' 'number' "Smoothing FWHM that matches what was used in the fMRISurface pipeline"
 opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass' '--highpass'
@@ -110,13 +111,13 @@ mrFIXExtractDoVolBool=$(opts_StringToBool "$mrFIXExtractDoVol")
 Caret7_Command="${CARET7DIR}/wb_command"
 log_Msg "Caret7_Command: ${Caret7_Command}"
 
-LowResMeshes=`echo ${LowResMeshes} | sed 's/@/ /g'`
+LowResMeshes=$(echo ${LowResMeshes} | sed 's/@/ /g')
 log_Msg "After delimiter substitution, LowResMeshes: ${LowResMeshes}"
 
-DeDriftRegFiles=`echo "$DeDriftRegFiles" | sed s/"@"/" "/g`
+DeDriftRegFiles=$(echo "$DeDriftRegFiles" | sed s/"@"/" "/g)
 log_Msg "After delimiter substitution, DeDriftRegFiles: ${DeDriftRegFiles}"
 
-Maps=`echo "$Maps" | sed s/"@"/" "/g`
+Maps=$(echo "$Maps" | sed s/"@"/" "/g)
 log_Msg "After delimiter substitution, Maps: ${Maps}"
 
 #these elses result in empty when given the empty string, make NONE do the same
@@ -124,7 +125,7 @@ if [[ "${MyelinMaps}" == "NONE" ]] ; then
 	MyelinMaps=""
 	MyelinMapsArray=()
 else
-	MyelinMaps=`echo "$MyelinMaps" | sed s/"@"/" "/g`
+	MyelinMaps=$(echo "$MyelinMaps" | sed s/"@"/" "/g)
 	IFS=' ' read -a MyelinMapsArray <<< "${MyelinMaps}"
 fi
 log_Msg "After delimiter substitution, MyelinMaps: ${MyelinMaps}"
@@ -240,10 +241,10 @@ log_Msg "Concat Reg"
 for Hemisphere in L R ; do
 	if [ $Hemisphere = "L" ] ; then 
 		Structure="CORTEX_LEFT"
-		DeDriftRegFile=`echo ${DeDriftRegFiles} | cut -d " " -f 1`
+		DeDriftRegFile=$(echo ${DeDriftRegFiles} | cut -d " " -f 1)
 	elif [ $Hemisphere = "R" ] ; then 
 		Structure="CORTEX_RIGHT"
-		DeDriftRegFile=`echo ${DeDriftRegFiles} | cut -d " " -f 2`
+		DeDriftRegFile=$(echo ${DeDriftRegFiles} | cut -d " " -f 2)
 	fi 
 
 	log_Msg "Hemisphere: ${Hemisphere}"
@@ -295,13 +296,13 @@ ${Caret7_Command} -set-map-name ${NativeFolder}/${Subject}.StrainR_${OutputRegNa
 ${Caret7_Command} -cifti-palette ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dscalar.nii MODE_USER_SCALE ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dscalar.nii -pos-user 0 1 -neg-user 0 -1 -interpolate true -palette-name ROY-BIG-BL -disp-pos true -disp-neg true -disp-zero false
 rm ${NativeFolder}/${Subject}.StrainR_${OutputRegName}.native.dtseries.nii
 
-DownSampleFolder=`echo ${DownSampleFolderNames} | cut -d " " -f 1`
+DownSampleFolder=$(echo ${DownSampleFolderNames} | cut -d " " -f 1)
 log_Msg "DownSampleFolder: ${DownSampleFolder}"
 
-DownSampleT1wFolder=`echo ${DownSampleT1wFolderNames} | cut -d " " -f 1`
+DownSampleT1wFolder=$(echo ${DownSampleT1wFolderNames} | cut -d " " -f 1)
 log_Msg "DownSampleT1wFolder: ${DownSampleT1wFolder}"
 
-LowResMesh=`echo ${LowResMeshes} | cut -d " " -f 1`
+LowResMesh=$(echo ${LowResMeshes} | cut -d " " -f 1)
 log_Msg "LowResMesh: ${LowResMesh}"
 
 # Supports multiple lowres meshes
@@ -316,8 +317,8 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 		i=1
 		for LowResMesh in ${LowResMeshes} ; do
 			if [ ${LowResMesh} = ${Mesh} ] ; then
-				Folder=`echo ${DownSampleFolderNames} | cut -d " " -f ${i}`
-				DownSampleT1wFolder=`echo ${DownSampleT1wFolderNames} | cut -d " " -f ${i}`
+				Folder=$(echo ${DownSampleFolderNames} | cut -d " " -f ${i})
+				DownSampleT1wFolder=$(echo ${DownSampleT1wFolderNames} | cut -d " " -f ${i})
 			fi
 			Scale="1"
 			i=$(($i+1))
@@ -403,7 +404,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 		# Normalize vertex areas mean to 1 for other analyses
 		log_Msg "Normalize vertex areas mean to 1 for other analyses"
 		${Caret7_Command} -cifti-create-dense-scalar ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii -left-metric ${DownSampleT1wFolder}/${Subject}.L.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.shape.gii -roi-left ${Folder}/${Subject}.L.atlasroi.${Mesh}k_fs_LR.shape.gii -right-metric ${DownSampleT1wFolder}/${Subject}.R.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.shape.gii -roi-right ${Folder}/${Subject}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
-		VAMean=`${Caret7_Command} -cifti-stats ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii -reduce MEAN`
+		VAMean=$(${Caret7_Command} -cifti-stats ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii -reduce MEAN)
 		${Caret7_Command} -cifti-math "VA / ${VAMean}" ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va_norm.${Mesh}k_fs_LR.dscalar.nii -var VA ${DownSampleT1wFolder}/${Subject}.midthickness_${OutputRegName}_va.${Mesh}k_fs_LR.dscalar.nii
 	fi
 
@@ -437,7 +438,7 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 			# BC the other types of given myelin maps
 			${Caret7_Command} -cifti-math "Var - Bias" ${NativeFolder}/${Subject}.${MyelinMap}_BC_${OutputRegName}.native.dscalar.nii -var Var ${NativeFolder}/${Subject}.${MyelinMap}.native.dscalar.nii -var Bias ${NativeFolder}/${Subject}.BiasField_${OutputRegName}.native.dscalar.nii
 		fi
-		MyelinMapsToUse+="${MyelinMap}_BC "
+		MyelinMapsToUse+="${MyelinMap} ${MyelinMap}_BC "
 	done
 	
 	log_Debug_Msg "Point 2.0"
@@ -505,12 +506,19 @@ for fMRIName in ${fixNames[@]+"${fixNames[@]}"} ${dontFixNames[@]+"${dontFixName
 		log_Msg "Hemisphere: ${Hemisphere}"
 		log_Msg "Structure: ${Structure}"
 
-		${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
-		${Caret7_Command} -metric-dilate ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii 30 ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -nearest
-		${Caret7_Command} -metric-mask ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
+		#use temporary files that will be deleted even if the pipeline errors out
+		tempfiles_create DeDrift_"$Subject"_"$fMRIName"_resampleFromNative_XXXXXX.func.gii resampletemp
+		tempfiles_add "$resampletemp"_smooth"$SmoothingFWHM".func.gii
+		
+		${Caret7_Command} -metric-resample ${ResultsFolder}/${fMRIName}/${fMRIName}.${Hemisphere}.native.func.gii ${NativeFolder}/${Subject}.${Hemisphere}.sphere.${OutputRegName}.native.surf.gii ${DownSampleFolder}/${Subject}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii ADAP_BARY_AREA "$resampletemp" -area-surfs ${NativeT1wFolder}/${Subject}.${Hemisphere}.midthickness.native.surf.gii ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii -current-roi ${NativeFolder}/${Subject}.${Hemisphere}.roi.native.shape.gii
+		${Caret7_Command} -metric-dilate "$resampletemp" ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii 30 "$resampletemp" -nearest
+		${Caret7_Command} -metric-mask "$resampletemp" ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii "$resampletemp"
 		Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
-		${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii ${ResultsFolder}/${fMRIName}/${fMRIName}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii ${Sigma} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-		${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii COLUMN -metric ${Structure} ${ResultsFolder}/${fMRIName}/${fMRIName}_s${SmoothingFWHM}_${OutputRegName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.func.gii
+		${Caret7_Command} -metric-smoothing ${DownSampleT1wFolder}/${Subject}.${Hemisphere}.midthickness_${OutputRegName}.${LowResMesh}k_fs_LR.surf.gii "$resampletemp" ${Sigma} "$resampletemp"_smooth"$SmoothingFWHM".func.gii -roi ${DownSampleFolder}/${Subject}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+		${Caret7_Command} -cifti-replace-structure ${ResultsFolder}/${fMRIName}/${fMRIName}_Atlas_${OutputRegName}.dtseries.nii COLUMN -metric ${Structure} "$resampletemp"_smooth"$SmoothingFWHM".func.gii
+		
+		#these temporaries may be big, don't just leave them in /tmp until the end of the script
+		rm -f "$resampletemp" "$resampletemp"_smooth"$SmoothingFWHM".func.gii
 	done
 done
 
@@ -586,7 +594,7 @@ do
 		"${extract_cmd[@]}"
 	done
 
-	if ((mrFIXExtractDoVolBool))
+	if ((mrFIXExtractDoVolBool && ${#mrFIXExtractConcatNamesArr[@]} > 0)) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
 	then
 		# Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
 		cp "$StudyFolder/$Subject/MNINonLinear/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
@@ -605,3 +613,4 @@ do
 done
 
 log_Msg "Completing main functionality"
+

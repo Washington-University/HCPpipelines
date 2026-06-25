@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -125,12 +125,18 @@ for Subject in $Subjlist ; do
   # propagated to the final output, *and* these pairs will be averaged to yield a single
   # volume per pair. This reduces file size by 2x (and thence speeds subsequent processing) and
   # avoids having volumes with different SNR features/ residual distortions.
-  # [This behavior can be changed through the hard-coded 'CombineDataFlag' variable in the 
-  # DiffPreprocPipeline_PostEddy.sh script if necessary].
-  
+  # [This behavior can be changed via the --combine-data-flag if necessary].
+
+  #Fully paired data
   PosData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_RL.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_RL.nii.gz"
   NegData="${RawDataDir}/${SubjectID}_3T_DWI_dir95_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir96_LR.nii.gz@${RawDataDir}/${SubjectID}_3T_DWI_dir97_LR.nii.gz"
-  
+  CombineDataFlag=1
+
+  #b0s only paired
+  #PosData="${RawDataDir}/Diffusion6b0_PA.nii.gz"
+  #NegData="${RawDataDir}/Diffusion64DWI6b0_AP.nii.gz"
+  #CombineDataFlag=2
+
   # "Effective" Echo Spacing of dMRI image (now specified in seconds for the dMRI processing)
   # EchoSpacing = 1/(BWPPPE * ReconMatrixPE)
   #   where BWPPPE is the "BandwidthPerPixelPhaseEncode" = DICOM field (0019,1028) for Siemens, and
@@ -160,6 +166,7 @@ for Subject in $Subjlist ; do
       --path="${StudyFolder}" --subject="${SubjectID}" \
       --echospacing-seconds="${EchoSpacingSec}" --PEdir="${PEdir}" \
       --gdcoeffs="${Gdcoeffs}" \
+      --combine-data-flag=${CombineDataFlag} \
       --printcom="$PRINTCOM"
 
 done

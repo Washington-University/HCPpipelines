@@ -14,7 +14,7 @@ set -eu
 #Devops:
 #1. Make a new release branch, like "release-5.6.0"
 #2. Edit global/scripts/versioning/base.txt to the new version number, like "v5.6.0", and then copy it to global/scripts/versioning/candidate.txt
-#3. Recompile the matlab code unless you are sure this isn't needed (as of oct 2022, use R2017b, ensure your startup.m doesn't do anything when isdeployed() returns true)
+#3. Recompile the matlab code unless you are sure this isn't needed (as of nov 2024, use R2022b, ensure your startup.m doesn't do anything when isdeployed() or ismcc() returns true)
 #4. Commit, make an RC tag, like "v5.6.0-rc.1", push the branch and the tag
 #5. To get an RC version to pretend it is the actual release, set and export HCPPIPE_HIDE_RC to be the same as the contents of base.txt (like "v5.6.0")
 #6. Build container, run processing

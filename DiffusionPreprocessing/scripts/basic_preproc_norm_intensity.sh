@@ -42,7 +42,7 @@ for entry in ${rawdir}/${basePos}_[0-9]*.nii* ${rawdir}/${baseNeg}_[0-9]*.nii*; 
 		echo "${scriptName}: Posbvals i: ${i}"
 		cnt=$($FSLDIR/bin/zeropad $mcnt 4)
 		echo "${scriptName}: cnt: ${cnt}"
-		if [ $i -lt ${b0maxbval} ]; then
+		if [[ "$(echo "$i < $b0maxbval" | bc)" == 1* ]]; then
 			echo "${scriptName}: About to fslroi ${basename}_mean ${basename}_b0_${cnt} ${mcnt} 1"
 			$FSLDIR/bin/fslroi ${basename}_mean ${basename}_b0_${cnt} ${mcnt} 1
 		fi

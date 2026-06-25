@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -97,13 +97,13 @@ HighPass="0"
 fMRIProcSTRING="_Atlas_hp0_clean"
 MSMAllTemplates="${HCPPIPEDIR}/global/templates/MSMAll"
 MyelinTargetFile="${MSMAllTemplates}/Q1-Q6_RelatedParcellation210.MyelinMap_BC_MSMAll_2_d41_WRN_DeDrift.32k_fs_LR.dscalar.nii"
-RegName="MSMAll_InitalReg"
+RegName="MSMAll_InitialReg"
 HighResMesh="164"
 LowResMesh="32"
 InRegName="MSMSulc"
 MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 Octave
 
-fMRINames=`echo ${fMRINames} | sed 's/ /@/g'`
+fMRINames=$(echo ${fMRINames} | sed 's/ /@/g')
 
 for Subject in $Subjlist ; do
     echo "    ${Subject}"

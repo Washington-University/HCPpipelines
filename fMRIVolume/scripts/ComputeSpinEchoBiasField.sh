@@ -64,13 +64,16 @@ ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE.nii.gz -mas ${T1wFolder}/brainmask_fs.nii.
 
 #${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain.nii.gz -thr 1.25 -uthr 2.2 ${WD}/SEdivGRE_brain_thr.nii.gz #perhaps a bit too aggressive
 Median=`${Caret7_Command} -volume-stats ${WD}/SEdivGRE_brain.nii.gz -roi ${WD}/SEdivGRE_brain.nii.gz -reduce MEDIAN`
-STDev=`fslstats ${WD}/SEdivGRE_brain.nii.gz -S`
-Lower=`echo "${Median}-${STDev}/3" | bc -l`
-Upper=`echo "${Median}+${STDev}/3" | bc -l`
-echo "Median=${Median}, STDev=${STDev}, Lower=${Lower}, Upper=${Upper}"
-fslmaths ${WD}/SEdivGRE_brain.nii.gz -thr ${Lower} -uthr ${Upper} ${WD}/SEdivGRE_brain_thr.nii.gz
+#STDev=`fslstats ${WD}/SEdivGRE_brain.nii.gz -S` #not aggressive enough for many datasets
+#Lower=`echo "${Median}-${STDev}/3" | bc -l` #not aggressive enough for many datasets
+#Upper=`echo "${Median}+${STDev}/3" | bc -l` #not aggressive enough for many datasets
+#echo "Median=${Median}, STDev=${STDev}, Lower=${Lower}, Upper=${Upper}" #not aggressive enough for many datasets
+Lower="0"
+Upper=`echo "${Median}*2" | bc -l` 
+echo "Median=${Median}, Lower=${Lower}, Upper=${Upper}"
+fslmaths ${WD}/SEdivGRE_brain.nii.gz -thr ${Lower} -uthr ${Upper} -ero ${WD}/SEdivGRE_brain_thr.nii.gz #erode consistently
 
-fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -ero -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM ${WD}/${fMRIName}_pseudo_transmit_raw.nii.gz
+fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM -dilM ${WD}/${fMRIName}_pseudo_transmit_raw.nii.gz
 
 ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -bin ${WD}/SEdivGRE_brain_thr_roi.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/SEdivGRE_brain_thr.nii.gz -s 5 ${WD}/SEdivGRE_brain_thr_s5.nii.gz
@@ -86,7 +89,7 @@ ${FSLDIR}/bin/fslmaths ${WD}/GRE.nii.gz -mas ${T1wFolder}/brainmask_fs.nii.gz -d
 #${FSLDIR}/bin/fslmaths ${WD}/SE_BCdivGRE_brain.nii.gz -uthr 0.5 -bin ${WD}/Dropouts.nii.gz
 ${FSLDIR}/bin/fslmaths ${WD}/SE_BCdivGRE_brain.nii.gz -uthr 0.6 -bin ${WD}/Dropouts.nii.gz #Adjust to 60% SE signal to compensate for above change that slightly penalizes dropout finding
 ${FSLDIR}/bin/fslmaths ${WD}/Dropouts.nii.gz -dilD -s ${Sigma} ${WD}/${fMRIName}_dropouts.nii.gz
-${FSLDIR}/bin/fslmaths ${WD}/Dropouts.nii.gz -binv ${WD}/Dropouts_inv.nii.gz
+${FSLDIR}/bin/fslmaths ${WD}/Dropouts.nii.gz -binv -ero ${WD}/Dropouts_inv.nii.gz #Add an erosion to reduce partial volume dropout
 
 ${Caret7_Command} -volume-label-import ${T1wFolder}/wmparc.nii.gz ${SubCorticalLUT} ${WD}/SubcorticalGreyMatter.nii.gz -discard-others -drop-unused-labels
 ${FSLDIR}/bin/fslmaths ${WD}/SubcorticalGreyMatter.nii.gz -bin ${WD}/SubcorticalGreyMatter.nii.gz

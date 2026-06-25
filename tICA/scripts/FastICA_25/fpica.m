@@ -246,7 +246,7 @@ switch lower(initState)
                     fprintf('Warning: initial guess only for first %d components. Using random initial guess for others.\n', size(guess,2));
                 end
                 guess(:, size(guess, 2) + 1:numOfIC) = ...
-                    rand(size(whiteningMatrix,2),numOfIC-size(guess,2))-.5; %Edited for error when using a smaller than dim inital guess, size(whiteningMatrix,2) was vectorSize
+                    rand(size(whiteningMatrix,2),numOfIC-size(guess,2))-.5; %Edited for error when using a smaller than dim initial guess, size(whiteningMatrix,2) was vectorSize
             elseif size(guess,2)>numOfIC
                 guess=guess(:,1:numOfIC);
                 fprintf('Warning: Initial guess too large. The excess column are dropped.\n');

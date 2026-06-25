@@ -1,0 +1,31 @@
+# (approximate) resolution (in mm) of warp basis for the different sub-sampling levels, default 10
+--warpres=12.8,6.4,3.2,1.6,0.8
+# sub-sampling scheme, default 1
+--subsamp=2,2,2,1,1
+# FWHM (in mm) of gaussian smoothing kernel, default 8
+--fwhm=6.4,3.2,1.6,0,0
+# Max # of non-linear iterations, default 5
+--miter=20,20,30,30,20
+# Weight of regularisation, default depending on --ssqlambda and --regmod switches. See user documetation.
+#--lambda=1e-11,1e-10,1e-09,1e-08,1e-07
+# IK's opitimization
+#--lambda=5e-11,5e-10,5e-09,5e-08,5e-07
+--lambda=1e-12,1e-11,1e-10,1e-9,1e-8
+# If set (=1), lambda is weighted by current ssq, default 1
+--ssqlambda=1
+# Estimate movements if set, default 1 (true)
+--estmov=1,1,1,1,1
+# Minimisation method 0=Levenberg-Marquardt, 1=Scaled Conjugate Gradient, default 0 (LM)
+--minmet=0,0,0,0,0
+# Model for regularisation of warp-field [membrane_energy bending_energy], default bending_energy
+--regmod=bending_energy
+# Order of spline, 2->Qadratic spline, 3->Cubic spline. Default=3
+--splineorder=3
+# Precision for representing Hessian, double or float. Default double
+--numprec=double
+# Image interpolation model, linear or spline. Default spline
+--interp=spline
+# If set (=1), the images are individually scaled to a common mean, default 0 (false)
+--scale=1
+# If set (=1), the calculations are done in a different grid, default 1 (true)
+--regrid=1

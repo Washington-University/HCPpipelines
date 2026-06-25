@@ -34,9 +34,9 @@ source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check process
 
 opts_SetScriptDescription "Run fMRISurface processing"
 
-opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all subject" "--path"
+opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all session" "--path"
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--session' 'Session' 'session ID' "" '--subject'
 
 opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'name (prefix) to use for the output'
 
@@ -53,6 +53,8 @@ opts_AddOptional '--regname' 'RegName' 'string' "The surface registeration name,
 opts_AddOptional '--fmri-qc' 'QCMode' 'YES OR NO OR ONLY' "Controls whether to generate a QC scene and snapshots (default=YES). ONLY executes *just* the QC script, skipping everything else (e.g., for previous data)" "YES"
 
 opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to do goodVoxel procedure (default = YES)" "YES"
+
+opts_AddOptional '--species' 'Species' 'e.g. Human, etc.' "Species [Human]" "Human"
 
 opts_ParseArguments "$@"
 
@@ -126,8 +128,8 @@ DownSampleFolder="fsaverage_LR${LowResMesh}k"
 ROIFolder="ROIs"
 OutputAtlasDenseTimeseries="${NameOffMRI}_Atlas"
 
-AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
-T1wFolder="$Path"/"$Subject"/"$T1wFolder"
+AtlasSpaceFolder="$Path"/"$Session"/"$AtlasSpaceFolder"
+T1wFolder="$Path"/"$Session"/"$T1wFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ROIFolder="$AtlasSpaceFolder"/"$ROIFolder"
 
@@ -142,26 +144,26 @@ if ((doProcessing)); then
     log_Msg "Make fMRI Ribbon"
     log_Msg "mkdir -p ${ResultsFolder}/RibbonVolumeToSurfaceMapping"
     mkdir -p "$ResultsFolder"/RibbonVolumeToSurfaceMapping
-    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}" "${doGoodVoxels}"
+    "$PipelineScripts"/RibbonVolumeToSurfaceMapping.sh "$ResultsFolder"/RibbonVolumeToSurfaceMapping "$ResultsFolder"/"$NameOffMRI" "$Session" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$AtlasSpaceFolder"/"$NativeFolder" "${RegName}" "${doGoodVoxels}"
 
     #Surface Smoothing
     log_Msg "Surface Smoothing"
-    "$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Subject" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
+    "$PipelineScripts"/SurfaceSmoothing.sh "$ResultsFolder"/"$NameOffMRI" "$Session" "$AtlasSpaceFolder"/"$DownSampleFolder" "$LowResMesh" "$SmoothingFWHM"
 
     #Subcortical Processing
     log_Msg "Subcortical Processing"
-    "$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution"
+    "$PipelineScripts"/SubcorticalProcessing.sh "$AtlasSpaceFolder" "$ROIFolder" "$FinalfMRIResolution" "$ResultsFolder" "$NameOffMRI" "$SmoothingFWHM" "$GrayordinatesResolution" "$Species"
 
     #Generation of Dense Timeseries
     log_Msg "Generation of Dense Timeseries"
-    "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Subject" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
+    "$PipelineScripts"/CreateDenseTimeseries.sh "$AtlasSpaceFolder"/"$DownSampleFolder" "$Session" "$LowResMesh" "$ResultsFolder"/"$NameOffMRI" "$SmoothingFWHM" "$ROIFolder" "$ResultsFolder"/"$OutputAtlasDenseTimeseries" "$GrayordinatesResolution"
 fi
 
 if ((doQC)); then
     log_Msg "Generating fMRI QC scene and snapshots"
     "$PipelineScripts"/GenerateFMRIScenes.sh \
         --study-folder="$Path" \
-        --subject="$Subject" \
+        --session="$Session" \
         --fmriname="$NameOffMRI" \
         --output-folder="$ResultsFolder/fMRIQC"
 fi

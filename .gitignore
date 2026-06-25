@@ -14,4 +14,8 @@
 
 # nfs temporaries
 .nfs*
-/Supplemental
+
+#NHP templates - these are a lot of files, some of which are large (because the gca format isn't compressed), and are a separate download
+/global/templates/NHP_NNP/
+/global/templates/NHP_NNP_Templates*.zip
+

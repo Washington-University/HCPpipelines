@@ -59,14 +59,14 @@
 # Output path specifiers
 #
 # * <code>${StudyFolder}</code> is an input parameter
-# * <code>${Subject}</code> is an input parameter
+# * <code>${Session}</code> is an input parameter
 #
 # Main output directories
 #
-# * <code>DiffFolder=${StudyFolder}/${Subject}/Diffusion</code>
-# * <code>T1wDiffFolder=${StudyFolder}/${Subject}/T1w/Diffusion</code>
+# * <code>DiffFolder=${StudyFolder}/${Session}/Diffusion</code>
+# * <code>T1wDiffFolder=${StudyFolder}/${Session}/T1w/Diffusion</code>
 #
-# All outputs are within the directory: <code>${StudyFolder}/${Subject}</code>
+# All outputs are within the directory: <code>${StudyFolder}/${Session}</code>
 #
 # The full list of output directories are the following
 #
@@ -78,7 +78,7 @@
 # * <code>$T1wDiffFolder</code>
 #
 # Also assumes that T1 preprocessing has been carried out with results in
-# <code>${StudyFolder}/${Subject}/T1w</code>
+# <code>${StudyFolder}/${Session}/T1w</code>
 #
 # <!-- References -->
 #
@@ -174,17 +174,17 @@ DEFAULT_DEGREES_OF_FREEDOM=6
 # Perform the steps of the HCP Diffusion Preprocessing Pipeline
 opts_SetScriptDescription "Perform the steps of the HCP Diffusion Preprocessing Pipeline"
 
-opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to subject's data folder" 
+opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 
-opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject-id"
+opts_AddMandatory '--session' 'Session' 'session ID' "" "--subject"
 
-opts_AddMandatory '--PEdir' 'PEdir' 'Path' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA"
+opts_AddOptional '--PEdir' 'PEdir' '1 or 2' "Phase encoding direction specifier: 1=LR/RL, 2=AP/PA. Required in cross-sectional mode. Not used in longitudinal mode."
 
-opts_AddMandatory '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "An @ symbol separated list of data with 'positive' phase  encoding direction; e.g., data_RL1@data_RL2@...data_RLn, or data_PA1@data_PA2@...data_PAn"
+opts_AddOptional '--posData' 'PosInputImages' 'data_RL1@data_RL2@...data_RLn' "An @ symbol separated list of data with 'positive' phase  encoding direction; e.g., data_RL1@data_RL2@...data_RLn, or data_PA1@data_PA2@...data_PAn. Mandatory for cross-sectional mode, not used in longitudinal mode."
 
-opts_AddMandatory '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn"
+opts_AddOptional '--negData' 'NegInputImages' 'data_LR1@data_LR2@...data_LRn' "An @ symbol separated list of data with 'negative' phase encoding direction; e.g., data_LR1@data_LR2@...data_LRn, or data_AP1@data_AP2@...data_APn. Mandatory for cross-sectional mode, not used in longitudinal mode."
 
-opts_AddOptional '--echospacing-seconds' 'echospacingsec' 'Number in sec' "Echo spacing in seconds, REQUIRED (or deprecated millisec option)"
+opts_AddOptional '--echospacing-seconds' 'echospacingsec' 'Number in sec' "Echo spacing in seconds, REQUIRED in cross-sectional mode (or deprecated millisec option). Not used in longitudinal mode."
 opts_AddOptional '--echospacing' 'echospacing' 'Number in millisec' "DEPRECATED: please use --echospacing-seconds"
 
 opts_AddMandatory '--gdcoeffs' 'GdCoeffs' 'Path' "Path to file containing coefficients that describe spatial variations of the scanner gradients. Applied *after* 'eddy'. Use --gdcoeffs=NONE if not available."
@@ -211,7 +211,7 @@ To get an argument like '-flag value' (where there is no '=' between the flag an
   --extra-eddy-arg=-flag --extra-eddy-arg=value"
 
 ## This is an extremely confusing flag should rework it to just use-gpu?
-opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. True." "True"
+opts_AddOptional '--gpu' 'gpuString' 'Boolean' "Specify whether to use the non-GPU-enabled version of eddy. Defaults to using the GPU-enabled version of eddy i.e. True. Not used in longitudinal mode." "True"
 
 opts_AddOptional '--cuda-version' 'cuda_version' 'X.Y' " If using the GPU-enabled version of eddy then this option can be used to specify which eddy_cuda binary version to use. If specified, FSLDIR/bin/eddy_cudaX.Y will be used."
 
@@ -222,6 +222,9 @@ opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified val
 Defaults to 1" "1"
 
 opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the commands that would be executed instead of  actually running them. --printcom=echo is intended to  be used for testing purposes'
+#longitudinal options
+opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'Boolean' "Specifies whether this is run on a longitudinal timepoint" "False"
+opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
 
 opts_ParseArguments "$@"
 
@@ -249,15 +252,26 @@ then
     TopupConfig="${HCPPIPEDIR_Config}/b02b0.cnf"
 fi
 
-#resolve echo spacing being required and exclusivity
-if [[ "$echospacing" == "" && "$echospacingsec" == "" ]]
-then
-    log_Err_Abort "You must specify --echospacing-seconds or --echospacing"
-fi
+IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
 
-if [[ "$echospacing" != "" && "$echospacingsec" != "" ]]
-then
-    log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
+if (( IsLongitudinal == 0 )); then 
+    if [ -z "$PEdir" -o -z "$PosInputImages" -o -z "$NegInputImages" ]; then 
+        log_Err_Abort "--PEdir, --posData, --negData must be specified in cross-sectional mode"
+    fi
+    #resolve echo spacing being required and exclusivity
+    if [[ "$echospacing" == "" && "$echospacingsec" == "" ]]
+    then
+        log_Err_Abort "You must specify --echospacing-seconds or --echospacing"
+    fi
+
+    if [[ "$echospacing" != "" && "$echospacingsec" != "" ]]
+    then
+        log_Err_Abort "You must not specify both --echospacing-seconds and --echospacing"
+    fi
+else
+    if [ -n "$gpuString" ]; then 
+        log_Warn "--gpu is not used in longitudinal mode"
+    fi
 fi
 
 #internally, PreEddy script expects milliseconds
@@ -307,33 +321,39 @@ if ((SelectBestB0)); then
     fi
 fi
 
+#parse longitudinal arguments
+T1wCross2LongXfm=""
+
+if (( IsLongitudinal )); then
+    if [ ! -d "$StudyFolder/$SessionLong" ]; then
+        log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
+    fi
+    T1wCross2LongXfm=$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
+    if [ ! -f "$T1wCross2LongXfm" ]; then
+        log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
+    fi
+fi
 
 #
 # Function Description
 #  Validate necessary scripts exist before starting to run anything
 #
 validate_scripts() {
-	local error_msgs=""
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
+    fi
 
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh not found"
-	fi
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
+    fi
 
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh not found"
-	fi
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/scripts/run_eddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/scripts/run_eddy.sh not found"
+    fi
 
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/scripts/run_eddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/scripts/run_eddy.sh not found"
-	fi
-
-	if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]]; then
-		error_msgs+="\nERROR: HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
-	fi
-
-	if [[ "${error_msgs}" != "" ]]; then
-		log_Err_Abort "${error_msgs}"
-	fi
+    if [[ ! -f "${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh ]]; then
+        log_Err_Abort "$HCPPIPEDIR/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh not found"
+    fi
 }
 
 #
@@ -341,55 +361,71 @@ validate_scripts() {
 #  Main processing of script
 
 # Validate scripts
-validate_scripts "$@"
+validate_scripts
 
-log_Msg "Invoking Pre-Eddy Steps"
-pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
-    "--path=${StudyFolder}"
-    "--subject=${Subject}"
-    "--dwiname=${DWIName}"
-    "--PEdir=${PEdir}"
-    "--posData=${PosInputImages}"
-    "--negData=${NegInputImages}"
-    "--echospacing=${echospacingmilli}"
-    "--b0maxbval=${b0maxbval}"
-    "--topup-config-file=${TopupConfig}"
-    "--printcom=${runcmd}"
-    "--select-best-b0=${SelectBestB0}"
-    "--ensure-even-slices=${EnsureEvenSlices}")
+if (( ! IsLongitudinal )); then
+    log_Msg "Invoking Pre-Eddy Steps"
+    pre_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PreEddy.sh"
+        "--path=${StudyFolder}"
+        "--session=${Session}"
+        "--dwiname=${DWIName}"
+        "--PEdir=${PEdir}"
+        "--posData=${PosInputImages}"
+        "--negData=${NegInputImages}"
+        "--echospacing=${echospacingmilli}"
+        "--b0maxbval=${b0maxbval}"
+        "--topup-config-file=${TopupConfig}"
+        "--printcom=${runcmd}"
+        "--select-best-b0=${SelectBestB0}"
+        "--ensure-even-slices=${EnsureEvenSlices}"
+        "--combine-data-flag=${CombineDataFlag}")
 
-log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
-"${pre_eddy_cmd[@]}"
+    log_Msg "pre_eddy_cmd: ${pre_eddy_cmd[*]}"
+    "${pre_eddy_cmd[@]}"
 
-log_Msg "Invoking Eddy Step"
-eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
-    --path="$StudyFolder"
-    --subject="$Subject"
-    --dwiname="$DWIName"
-    --printcom="$runcmd"
-    --gpu="$gpu"
-    --cuda-version="$cuda_version")
-for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
-do
-    eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
-done
+    log_Msg "Invoking Eddy Step"
+    eddy_cmd=("${HCPPIPEDIR}"/DiffusionPreprocessing/DiffPreprocPipeline_Eddy.sh
+        --path="$StudyFolder"
+        --session="$Session"
+        --dwiname="$DWIName"
+        --printcom="$runcmd"
+        --gpu="$gpu"
+        --cuda-version="$cuda_version")
+    for extra_eddy_arg in ${extra_eddy_args[@]+"${extra_eddy_args[@]}"}
+    do
+        eddy_cmd+=(--extra-eddy-arg="$extra_eddy_arg")
+    done
 
-log_Msg "eddy_cmd: ${eddy_cmd[*]}"
-"${eddy_cmd[@]}"
+    log_Msg "eddy_cmd: ${eddy_cmd[*]}"
+    "${eddy_cmd[@]}"
+else #copy cross-sectional output to longitudinal session
+    log_Msg "Longitudinal mode, copying cross-sectional output of Pre-Eddy and Eddy steps to longitudinal session"
+    cp -rf "$StudyFolder/$Session/Diffusion" "$StudyFolder/$SessionLong/Diffusion"
+    cp -rf "$StudyFolder/$Session/T1w/Diffusion" "$StudyFolder/$SessionLong/T1w/Diffusion"
+fi
+
+#PostEddy step must be run on longitudinal session rather than copied from cross-sectional.
+if (( IsLongitudinal )); then Session="$SessionLong"; fi
 
 log_Msg "Invoking Post-Eddy Steps"
 post_eddy_cmd=("${HCPPIPEDIR}/DiffusionPreprocessing/DiffPreprocPipeline_PostEddy.sh"
     "--path=${StudyFolder}"
-    "--subject=${Subject}"
+    "--session=${Session}"
     "--dwiname=${DWIName}"
     "--gdcoeffs=${GdCoeffs}"
     "--dof=${DegreesOfFreedom}"
     "--combine-data-flag=${CombineDataFlag}"
     "--printcom=${runcmd}"
-    "--select-best-b0=${SelectBestB0}")
+    "--select-best-b0=${SelectBestB0}"
+    "--t1w-cross2long-xfm=${T1wCross2LongXfm}")
 
 log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 "${post_eddy_cmd[@]}"
+
+# Clean up diffusion files in raw space for longitudinal runs
+if (( IsLongitudinal )); then 
+    rm -rf "${StudyFolder}/${DWIName}"
+fi
 
 log_Msg "Completed!"
 exit 0

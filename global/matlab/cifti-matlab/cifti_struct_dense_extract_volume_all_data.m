@@ -45,7 +45,7 @@ function [outdata, outsform1, outroi] = cifti_struct_dense_extract_volume_all_da
     if otherlength == 1 %don't loop if we don't need to
         outdata(indlist) = cifti.cdata(volinfo.ciftilist);
     else
-        tempframe = zeros(voldims, 'single');
+        tempframe = zeros(volinfo.voldims, 'single');
         %need a dimension after the ind2sub result, so loop
         for i = 1:otherlength
             if dimension == 1

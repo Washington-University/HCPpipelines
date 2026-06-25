@@ -18,7 +18,7 @@ function cifti_write_from_template(ciftitemplate, data, filename, varargin)
     %   'start', 'step', and 'unit' to set the contents of the series map.
     %
     %   You can also specify any option pairs that cifti_write accepts.
-    [options, template_varargs] = myargparse(varargin, {'stacklevel', 'disableprovenance', 'keepmetadata'}, true); %stacklevel is an implementation detail, don't add to help
+    [options, template_varargs] = myargparse(varargin, {'stacklevel', 'disableprovenance', 'keepmetadata', 'otherexts'}, true); %stacklevel is an implementation detail, don't add to help
     if isempty(options.stacklevel)
         options.stacklevel = 2; %note the '+ 1' in the cifti_write call, so that this function can be switched with cifti_write even in advanced situations
     end
@@ -28,7 +28,7 @@ function cifti_write_from_template(ciftitemplate, data, filename, varargin)
     end
     filetype = filename((periods(1) + 1):(periods(2) - 1));
     try
-        cifti_write(cifti_struct_create_from_template(ciftitemplate, data, filetype, template_varargs{:}), filename, 'stacklevel', options.stacklevel + 1, 'disableprovenance', options.disableprovenance, 'keepmetadata', options.keepmetadata);
+        cifti_write(cifti_struct_create_from_template(ciftitemplate, data, filetype, template_varargs{:}), filename, 'stacklevel', options.stacklevel + 1, 'disableprovenance', options.disableprovenance, 'keepmetadata', options.keepmetadata, 'otherexts', options.otherexts);
     catch excinfo
         if strcmp(excinfo.identifier, 'cifti:extension')
             error(['cifti file name "' filename '" uses a cifti extension that is not supported by this function']);
