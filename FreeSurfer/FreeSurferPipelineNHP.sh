@@ -947,7 +947,7 @@ if [ "$RunMode" -lt 6 ]; then
 		# ----------------------------------------------------------------------
 		log_Msg "Clean up file: ${zero_threshold_T1wImage}"
 		# ----------------------------------------------------------------------
-		rm ${zero_threshold_T1wImage}
+		rm -f "$zero_threshold_T1wImage"
 
 	fi
 
