@@ -1,5 +1,5 @@
 #!/bin/echo This script should not be run directly:
-
+log_Level="${log_Level:-INFO}"   # DEBUG / INFO / WARN / ERROR
 #use 'source $HCPPIPEDIR/global/scripts/log.shlib "$@"' to log the full command line originally run on error or abort
 if (($# > 0))
 then
@@ -89,6 +89,9 @@ log_ClearShowFunctionName
 log_Msg()
 {
 	# capture parameters specifying message to output
+	if [[ "${log_Level}" == "ERROR" ]]; then
+        return
+    fi
 	local parameters="$*"
 
 	# get current date and time

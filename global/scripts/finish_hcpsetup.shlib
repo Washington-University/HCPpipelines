@@ -13,6 +13,7 @@ export HCPPIPEDIR_Config=${HCPPIPEDIR}/global/config
 # (variables set locally within scripts as needed)
 # but retained for now, just to be safe
 export HCPPIPEDIR_PreFS=${HCPPIPEDIR}/PreFreeSurfer/scripts
+export HCPPIPEDIR_MMORF=${HCPPIPEDIR}/MMORF/scripts
 export HCPPIPEDIR_FS=${HCPPIPEDIR}/FreeSurfer/scripts
 export HCPPIPEDIR_PostFS=${HCPPIPEDIR}/PostFreeSurfer/scripts
 export HCPPIPEDIR_fMRISurf=${HCPPIPEDIR}/fMRISurface/scripts
