@@ -168,7 +168,7 @@ sed -e "s|{{Reference1}}|$Reference|g" \
     -e "s|{{DTI}}|$Diffusion/data_tensor|g" \
     -e "s|{{DTIref}}|$DTIref|g" \
     -e "s|{{DTIrefMask}}|$DTIrefMask|g" \
-    -e "s|{{HCPPIPEDIR}}|$HCPPIPEDIR|g" \
+    -e "s|{{FSLDIR}}|$FSLDIR|g" \
     -e "s|{{DTImask}}|$DTImask|g" \
     "$template" > "$output"
 verbose_echo " --> running mmorf"
