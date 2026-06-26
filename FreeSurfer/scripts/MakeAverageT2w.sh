@@ -107,8 +107,7 @@ else #exactly one session, use single T2w to create template.
     nii="$StudyFolder/$session/T2w/T2w.nii.gz"
     mkdir -p "$TemplateDir/T2w/xfms"
     cp -f "$nii" "$TemplateDir/T2w/bootstrap_average.nii.gz"
-    tmp=$(mktemp identity_fslXXX.mat)
-    trap 'rm -f "$tmp"' EXIT
+    tempfiles_create identity_fsl_XXXXXX.mat tmp
     printf '1 0 0 0\n0 1 0 0\n0 0 1 0\n0 0 0 1\n' > "$tmp"
     lta_convert --infsl "$tmp" --src "$mgz" --trg "$nii" \
         --outlta "$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta"
