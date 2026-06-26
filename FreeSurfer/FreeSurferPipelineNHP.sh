@@ -345,14 +345,14 @@ validate_freesurfer_version()
     fi
 }
 
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
+
 # Configure the use of FreeSurfer v6 custom tools
 configure_custom_tools
 
 # Show tool versions
 show_tool_versions
-
-# Validate version of FreeSurfer in use
-validate_freesurfer_version
 
 #
 # Generate T1w in NIFTI format and in rawavg space
