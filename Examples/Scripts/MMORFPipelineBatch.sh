@@ -60,7 +60,7 @@ for Session in "${Sessionlist}"; do
         set -e  # fail fast inside subshell
 
         ${CAPTURE} \
-        ${HCPPIPEDIR_MMORF}/AtlastRegistrationToMMORF.sh \
+        ${HCPPIPEDIR}/MMORF/AtlastRegistrationToMMORF.sh \
           --workingdir="${AtlasSpaceFolder}" \
           --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
           --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
