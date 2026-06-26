@@ -97,6 +97,11 @@ elif (( nSessions > 1 )); then #normal case.
     "${cmd[@]}"
 
 else #exactly one session, use single T2w to create template.
+# This reflects a subtle difference in the longitudinal handling of the 'base creation for a single-session.
+# BUT, the T2 gets interpolated already at least once anyway (to register to the T1),
+# so there is always at least 1 interpolation applied to the T2.
+# Plus, to the extent there is a difference, it is only in the creation of the 'base', and not
+# in the longitudinal processing of the individual time points themselves.
     session=${SessionsArray[0]}
     mgz="$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz"
     nii="$StudyFolder/$session/T2w/T2w.nii.gz"
