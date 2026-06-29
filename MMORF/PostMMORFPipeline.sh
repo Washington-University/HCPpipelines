@@ -48,18 +48,18 @@ for subj in $Subjectlist; do
     argList+=("$T1wFolder")                 # ${3}
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
-    argList+=("$T1wRestoreImage")           # ${8}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-    argList+=("$T2wRestoreImage")           # ${9}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-    argList+=("$HighResMesh")               # ${11}
-    argList+=("$LowResMeshes")              # ${12}
-    argList+=("$AtlasTransform")            # ${13}
-    argList+=("$InverseAtlasTransform")     # ${14}
-    argList+=("$AtlasSpaceT1wImage")        # ${15}
-    argList+=("$AtlasSpaceT2wImage")        # ${16}
-    argList+=("$T1wImageBrainMask")         # ${17}
-    argList+=("$RegName")                   # ${18}
-    argList+=("$RegNameOrig")                   # ${18}
-    argList+=("$InflateExtraScale")         # ${19}
+    argList+=("$T1wRestoreImage")           # ${6}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
+    argList+=("$T2wRestoreImage")           # ${7}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
+    argList+=("$HighResMesh")               # ${8}
+    argList+=("$LowResMeshes")              # ${9}
+    argList+=("$AtlasTransform")            # ${10}
+    argList+=("$InverseAtlasTransform")     # ${11}
+    argList+=("$AtlasSpaceT1wImage")        # ${12}
+    argList+=("$AtlasSpaceT2wImage")        # ${13}
+    argList+=("$T1wImageBrainMask")         # ${14}
+    argList+=("$RegName")                   # ${15}
+    argList+=("$RegNameOrig")                   # ${16}
+    argList+=("$InflateExtraScale")         # ${17}
     
     "$PipelineScripts"/PostMMORF.sh "${argList[@]}"
 
