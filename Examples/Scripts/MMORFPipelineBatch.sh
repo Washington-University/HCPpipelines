@@ -28,6 +28,6 @@ ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh \
   --runlocally="false" \
   --Host=$Host \
   --CHPCHeader=$CHPCHeader \
-  --LocalHost=$LocalHost \ 
+  --LocalHost=$LocalHost \
   --mount-point=$mountpoint \
   --ClusterHomeDirectory=$ClusterHomeDirectory"
