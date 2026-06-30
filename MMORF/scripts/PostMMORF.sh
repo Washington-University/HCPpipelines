@@ -399,7 +399,7 @@ resample_cifti_to_mesh() {
     fi
 
     local GREYORD
-    GREYORD="${HCPPIPEDIR}/global/templates/AtlasROI_${Mesh}.dscalar.nii"
+    GREYORD="${HCPPIPEDIR}/global/templates/surface_ciftis/atlasroi_${Mesh}.dscalar.nii"
 
     ${CARET7DIR}/wb_command -cifti-resample \
         "$InCifti" COLUMN \
