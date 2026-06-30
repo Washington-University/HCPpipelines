@@ -124,7 +124,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
     exit 1
   fi
 
-  AvgCurvTif="average.curvature.filled.buckner40.tif"
+  AvgCurvTif="average.curvature.2023-06-06.tif"
 
   # conf2hires () {
   T1normSigma=""
