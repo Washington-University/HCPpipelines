@@ -19,6 +19,7 @@ ClusterHomeDirectory="" # Fill in with your home directory on the cluster
 
 ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh \
   --StudyFolder="${StudyFolder}" \
+  --max-jobs="${MAX_JOBS}" \
   --Sessionlist="${Sessionlist}" \
   --t1-template="${T1wTemplate}" \
   --t2-template="${T2wTemplate}" \
