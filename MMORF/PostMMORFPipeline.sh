@@ -16,7 +16,6 @@ for subj in $Subjectlist; do
     ExperimentRoot=$subj
     T1wImage="T1w_acpc_dc"
     T1wFolder="T1w" #Location of T1w images
-    T2wFolder="T2w" #Location of T1w images
     T2wImage="T2w_acpc_dc"
     AtlasSpaceFolder="MMORFNonLinear"
     NativeFolder="Native"
@@ -34,7 +33,6 @@ for subj in $Subjectlist; do
 
 
     T1wFolder="$StudyFolder"/"$ExperimentRoot"/"$T1wFolder"
-    T2wFolder="$StudyFolder"/"$ExperimentRoot"/"$T2wFolder"
     AtlasSpaceFolder="$StudyFolder"/"$ExperimentRoot"/"$AtlasSpaceFolder"
     FreeSurferFolder="$T1wFolder"/"$FreeSurferFolder"
     AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
@@ -49,8 +47,7 @@ for subj in $Subjectlist; do
     argList+=("$AtlasSpaceFolder")          # ${4}
     argList+=("$NativeFolder")              # ${5}
     argList+=("$T1wRestoreImage")           # ${6}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-    argList+=("$T2wRestoreImage")           # ${7}  Called T2wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-    argList+=("$HighResMesh")               # ${8}
+    argList+=("$T2wRestoreImage")           # ${7}  
     argList+=("$LowResMeshes")              # ${9}
     argList+=("$AtlasTransform")            # ${10}
     argList+=("$InverseAtlasTransform")     # ${11}
