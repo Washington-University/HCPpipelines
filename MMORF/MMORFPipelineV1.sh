@@ -1,0 +1,70 @@
+#!/bin/bash 
+
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
+# ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
+
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
+opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders' ""
+opts_AddMandatory '--session' 'Session' 'Session ID to process' ""
+opts_AddMandatory '--t1-template' 'T1wTemplate' 'Path to the T1w template image' ""
+opts_AddMandatory '--t2-template' 'T2wTemplate' 'Path to the T2w template image' ""
+opts_AddMandatory '--ref-mask' 'refmask' 'Path to the reference mask image' ""
+opts_AddMandatory '--diffusion-ref' 'DiffusionRef' 'Path to the diffusion reference image' ""
+opts_AddMandatory '--dti-mask' 'DTIMask' 'Path to the DTI mask image' ""
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
+
+T1wImage="T1w"
+T1wFolderName="T1w"
+T2wImage="T2w"
+T2wFolderName="T2w"
+AtlasSpaceFolderName="MMORFNonLinear"
+
+
+
+
+    T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
+    AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
+    T1wFolder_T2wImageWithPath_acpc_dc="${T1wFolder}/${T2wImage}_acpc_dc"
+    Diffusion="${T1wFolder}/Diffusion"
+
+
+    echo "Launching MMORF registration for session ${Session}"
+
+
+        ${HCPPIPEDIR}/MMORF/scripts/MMORFV1.sh \
+          --workingdir="${AtlasSpaceFolder}" \
+          --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
+          --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
+          --ref="${T1wTemplate}" \
+          --ref2="${T2wTemplate}" \
+          --refmask="${refmask}" \
+          --Diffusion="${Diffusion}" \
+          --DTImask="${Diffusion}/nodif_brain_mask.nii.gz" \
+          --DTIref="${DiffusionRef}" \
+          --DTIrefmask="${DTIMask}" \
+
+    
