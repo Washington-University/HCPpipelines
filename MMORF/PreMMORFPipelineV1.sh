@@ -55,7 +55,7 @@ AtlasSpaceFolderName="MMORFNonLinear"
     echo "Launching MMORF registration for session ${Session}"
 
 
-${HCPPIPEDIR}/MMORF/scripts/AtlastRegistrationToMMORF.sh \
+${HCPPIPEDIR}/MMORF/scripts/PreMMORFFilePrepV1.sh \
         --workingdir="${AtlasSpaceFolder}" \
         --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
         --brainmask_fs="${T1wFolder}/brainmask_fs.nii.gz" \
