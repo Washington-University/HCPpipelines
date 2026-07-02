@@ -35,74 +35,25 @@ source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Tool for non-linearly registering DTI, T1w, T2w to MMORF space. Need to have T1w, T2w in the same space"
 
-opts_AddMandatory '--t1' 'T1wImage' 'image' 't1w image'
 
+#Used
 opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'
 
-opts_AddMandatory '--t1restbrain' 'T1wRestoreBrain' 'image' 'bias corrected brain extracted t1w image'
-
-opts_AddMandatory '--t2' 'T2wImage' 't2w image' 't2w image'
-
-opts_AddMandatory '--t2rest' 'T2wRestore' 'image' 'bias corrected t2w image'
-
-opts_AddMandatory '--t2restbrain' 'T2wRestoreBrain' 'image' 'bias corrected, brain extracted t2w image'
-
+#Used
 opts_AddMandatory '--brainmask_fs' 'brainmask_fs' 'mask' 'Brainmask for t1w or t2w image'
 
+#Used
 opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
 
-#opts_AddMandatory '--refbrain' 'ReferenceBrain' 'image' 'reference brain image'
 
-opts_AddMandatory '--ref2' 'Reference2' 'image' 'reference image 2'
-
-#opts_AddMandatory '--ref2brain' 'Reference2Brain' 'image' 'reference image brain 2'
-
-opts_AddMandatory '--refmask' 'ReferenceMask' 'mask' 'reference brain mask'
-
+#Used
 opts_AddMandatory "--Diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
-opts_AddMandatory "--DTImask" "DTImask" "image" "Mask for DTI"
 
-
-opts_AddMandatory '--DTIref' 'DTIref' 'mask' 'reference for DTI'
-
-
-opts_AddMandatory '--DTIrefmask' 'DTIrefMask' 'mask' 'reference brain mask for DTI'
-
-opts_AddMandatory '--owarp' 'OutputTransform' 'number' 'output warp'
-
-opts_AddMandatory '--oinvwarp' 'OutputInvTransform' 'inverse' 'output inverse warp'
-
-opts_AddMandatory '--ot1' 'OutputT1wImage' 'image' 'output t1w to MNI'
-
-opts_AddMandatory '--ot1rest' 'OutputT1wImageRestore' 'image' 'output bias corrected t1w to MNI'
-
-opts_AddMandatory '--ot1restbrain' 'OutputT1wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t1w to MNI'
-
-opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' 'output t2w to MNI'
-
-opts_AddMandatory '--ot2rest' 'OutputT2wImageRestore' 'image' 'output bias corrected t2w to MNI'
-
-opts_AddMandatory '--ot2restbrain' 'OutputT2wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t2w to MNI'
-
-opts_AddMandatory '--runlocally' 'runlocally' 'bool' 'If there is local GPU and is powerful enough'
-
-
-
-##optional args
-opts_AddOptional '--ref1mm' 'Reference1mm' 'image' 'reference 1mm image' "${HCPPIPEDIR_Templates}/MMORF_T1_1mm.nii.gz"
-
+#Used
 opts_AddOptional '--workingdir' 'WD' 'path' 'working directory' "."
 
-opts_AddOptional '--mountPoint' 'mountPoint' 'mount point for CHPC' ""
 
-opts_AddOptional '--Host' 'Host' 'Host for CHPC access' ""
-
-opts_AddOptional '--CHPCHeader' 'CHPCHeader' 'The header to generate the .sh file' ""
-
-opts_AddOptional '--LocalHost' 'LocalHost' 'The name of the local machine we are mounting to, make sure sshfs is set up.' ""
-
-opts_AddOptional "--ClusterHomeDirectory" "ClusterHomeDirectory" "The directory of Cluster Home" ""
 
 
 opts_ParseArguments "$@"
