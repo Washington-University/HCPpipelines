@@ -18,16 +18,6 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
-#Helper function here to correct for temp_dir for mountpoint. This has to be done. After experimenting, CHPC only allows read+write in using temp directory mounts.
-#No short cut can be exploted here.
-emit() {
-    local line="$1"
-    if [[ "$line" == ${mountPoint}/* ]]; then
-        printf '%s\n' "\$temp_dir/${line#${mountPoint}/}"
-    else
-        printf '%s\n' "$line"
-    fi
-}
 
 opts_SetScriptDescription "Post MMORF Pipeline"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders' ""
