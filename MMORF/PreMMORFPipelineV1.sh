@@ -18,14 +18,6 @@ fi
 
 #Helper function here to correct for temp_dir for mountpoint. This has to be done. After experimenting, CHPC only allows read+write in using temp directory mounts.
 #No short cut can be exploted here.
-emit() {
-    local line="$1"
-    if [[ "$line" == ${mountPoint}/* ]]; then
-        printf '%s\n' "\$temp_dir/${line#${mountPoint}/}"
-    else
-        printf '%s\n' "$line"
-    fi
-}
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
@@ -35,6 +27,13 @@ opts_AddMandatory '--session' 'Session' 'Subject ID' ""
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'Path to the T1w template image' ""
 
 opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
 
 T1wImage="T1w"
 T1wFolderName="T1w"

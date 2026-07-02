@@ -1,5 +1,21 @@
-set -uo pipefail
-# Load helpers
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
+# ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
+
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
@@ -10,7 +26,15 @@ opts_AddMandatory '--t2-template' 'T2wTemplate' 'Path to the T2w template image'
 opts_AddMandatory '--ref-mask' 'refmask' 'Path to the reference mask image' ""
 opts_AddMandatory '--diffusion-ref' 'DiffusionRef' 'Path to the diffusion reference image' ""
 opts_AddMandatory '--dti-mask' 'DTIMask' 'Path to the DTI mask image' ""
+opts_AddMandatory '--templateini' 'TemplateIni' 'Path to the template initialization file' ""
 opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
 
 T1wImage="T1w"
 T1wFolderName="T1w"
@@ -47,4 +71,5 @@ AtlasSpaceFolderName="MMORFNonLinear"
           --DTImask="${Diffusion}/nodif_brain_mask.nii.gz" \
           --DTIref="${DiffusionRef}" \
           --DTIrefmask="${DTIMask}" \
+          --templateini="${TemplateIni}"
    
