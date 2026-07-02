@@ -1,7 +1,34 @@
-set -uo pipefail
-# Load helpers
-source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+#!/bin/bash 
+
+# Requirements for this script
+#  installed versions of: FSL
+#  environment: HCPPIPEDIR, FSLDIR
+
+# ------------------------------------------------------------------------------
+#  Usage Description Function
+# ------------------------------------------------------------------------------
+
+set -eu
+
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
+
+#Helper function here to correct for temp_dir for mountpoint. This has to be done. After experimenting, CHPC only allows read+write in using temp directory mounts.
+#No short cut can be exploted here.
+emit() {
+    local line="$1"
+    if [[ "$line" == ${mountPoint}/* ]]; then
+        printf '%s\n' "\$temp_dir/${line#${mountPoint}/}"
+    else
+        printf '%s\n' "$line"
+    fi
+}
+
 opts_SetScriptDescription "Post MMORF Pipeline"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders' ""
 opts_AddMandatory '--subject' 'subj' 'subject ID' ""
@@ -11,6 +38,14 @@ opts_AddMandatory '--RegName' 'RegName' 'Registration name' "MSMAll"
 opts_AddMandatory '--RegNameOrig' 'RegNameOrig' 'Registration name for original' "MSMSulc"
 opts_AddMandatory '--InflateExtraScale' 'InflateExtraScale' 'Inflate extra scale' "1"
 opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
+
 
 ExperimentRoot=$subj
 T1wImage="T1w_acpc_dc"
