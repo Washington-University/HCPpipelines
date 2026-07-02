@@ -16,6 +16,9 @@ LocalHost="" # Fill in with your local host name.
 mountpoint="" # Fill in with your mount point for the cluster, this should be the directory where your remote is mounting to
 ClusterHomeDirectory="" # Fill in with your home directory on the cluster
 #####################################
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+source "${EnvironmentScript}"
 
 ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh \
   --StudyFolder="${StudyFolder}" \
