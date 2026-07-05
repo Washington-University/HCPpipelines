@@ -279,7 +279,7 @@ if [[ "$SPECIES" == "Human" ]]; then
 	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
 	${runcmd} mkdir -p ${to_location}
 	for filename in ${from_files}; do
-		${runcmd} cp -p ${filename} ${to_location} || ${runcmd} cp ${filename} ${to_location}
+		${runcmd} cp -pf "$filename" "$to_location" &> /dev/null || ${runcmd} cp -f "$filename" "$to_location"
 	done
 else
 	# NHP: copy specific eddy log files
@@ -295,11 +295,11 @@ fi
 
 ${runcmd} mkdir -p ${outdirT1w}/QC
 if [[ "$SPECIES" == "Human" ]]; then
-	${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC || ${runcmd} cp ${outdir}/QC/* ${outdirT1w}/QC
+	${runcmd} cp -pf "$outdir"/QC/* "$outdirT1w"/QC &> /dev/null || ${runcmd} cp -f "$outdir"/QC/* "$outdirT1w"/QC
 	${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
 else
 	if [ "$(ls ${outdir}/QC/ 2>/dev/null)" != "" ]; then
-		${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC
+		${runcmd} cp -pf "$outdir"/QC/* "$outdirT1w"/QC &> /dev/null || ${runcmd} cp -f "$outdir"/QC/* "$outdirT1w"/QC
 	fi
 	${runcmd} imcp ${outdir}/data/cnr_maps ${outdirT1w}/QC/cnr_maps
 fi
