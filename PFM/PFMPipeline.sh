@@ -181,7 +181,7 @@ do
                             if [[ -f "$concatFile" ]]
                             then
                                 log_Msg "Applying Wishart filter to concat file for subject $Subject"
-                                "$HCPPIPEDIR"/PFM/scripts/ApplyWishartFilterProfumo.sh \
+                                "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
                                     --input="$concatFile" \
                                     --output="$concatOutFile" \
                                     --num-wishart="$NumWishart" \
@@ -189,7 +189,7 @@ do
                                 
                                 # Split back into individual runs 
                                 cumTP=0
-                                for fMRIName in "${fMRINamesArray[@]}"ßß
+                                for fMRIName in "${fMRINamesArray[@]}"
                                 do
                                     origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                     if [[ -f "$origFile" ]]
@@ -263,7 +263,8 @@ do
             if [[ -d "${PFMFolder}" ]]
             then
                 log_Warn "PFM output folder ${PFMFolder} already exists, clearing contents"
-                find "${PFMFolder}" -mindepth 1 -not -name "dataLocations.json" -not -path "*/WishartFilter_WF*" -delete
+                find "${PFMFolder}" -mindepth 1 -not -name "dataLocations.json" -not -name ".*" -not -path "*/WishartFilter_WF*" -delete 2>/dev/null || true
+                # ignore errors due to nfs silly renamed files, or similar
             fi
 
             # Build optional initialMaps argument
@@ -295,6 +296,7 @@ do
             # log_Msg "Running PROFUMO decomposition with dimension ${PFMdim}"
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
+                --env PYTHONNOUSERSITE=1 \
                 "${ProfumoSingularity}" \
                 /opt/profumo/C++/PROFUMO "${ProfumoConfigToUse}" \
                 "${PFMdim}" "${PFM_PATH}" \
@@ -303,6 +305,7 @@ do
                 --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg}
             apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
+                --env PYTHONNOUSERSITE=1 \
                 "${ProfumoSingularity}" \
                 /opt/profumo/C++/PROFUMO "${ProfumoConfigToUse}" \
                 "${PFMdim}" "${PFM_PATH}" \
@@ -329,8 +332,17 @@ do
             RESULTS_PATH="${PFMFolder}/Results.ppp"
             REAL_REF_IMAGE=$(readlink -f "${RefImage}")
 
+            # Remove any existing Results.ppp directory (and ++ variants created by re-runs)
+            # so postprocess_results.py writes fresh output to Results.ppp
+            if [[ -d "${PFMFolder}/Results.ppp" ]]
+            then
+                log_Warn "Results.ppp folder ${PFMFolder}/Results.ppp(+) already exists, clearing before postprocessing"
+                rm -rf "${PFMFolder}"/Results.ppp* 2>/dev/null || true # ignore errors due to nfs silly renamed files, or similar
+            fi
+
             echo  apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
+                --env PYTHONNOUSERSITE=1 \
                 "${ProfumoSingularity}" \
                 /opt/fsl/fslpython/envs/profumo/bin/python3 /opt/profumo/Python/postprocess_results.py \
                 --web-report \
@@ -339,6 +351,7 @@ do
                 "${REAL_REF_IMAGE}"
             apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
+                --env PYTHONNOUSERSITE=1 \
                 "${ProfumoSingularity}" \
                 /opt/fsl/fslpython/envs/profumo/bin/python3 /opt/profumo/Python/postprocess_results.py \
                 --web-report \
