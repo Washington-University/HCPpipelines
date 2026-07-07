@@ -2,6 +2,7 @@
 set -eu
 
 ## Guess HCPPIPEDIR if not set
+pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1

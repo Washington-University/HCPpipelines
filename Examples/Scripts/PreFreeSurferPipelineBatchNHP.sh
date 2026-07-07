@@ -20,6 +20,7 @@ Usage () {
 
 # ==== User-editable section ====
 # Edit these variables before running
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" # Pipeline environment script
 StudyFolder="${HOME}/projects/Pipelines_ExampleData"
 Subjlist="nhp_session1 nhp_session2"
 SPECIES="RhesusMacaque" # "Chimp", "MacaqueMac30BS", "CynoMacaque", "RhesusMacaque" ,"SnowMacaque", "Marmoset" or "NightMonkey"
@@ -27,6 +28,12 @@ RunMode="Default"
 BrainExtract="INVIVO"
 StrucRes="0.8" # species specific config. 0.8 or 0.7 for Human, 0.5 or 0.3 for Macaque, 0.2 for Marmoset.
 StrucUnwarpDir=""
+
+#just the queue name
+QUEUE=""
+#QUEUE="hcp_priority.q"
+#set to 1 to run on the same machine as the batch, one at a time, instead of queuing
+RunLocal=0
 
 # Parse command line arguments
 get_batch_options() {
@@ -68,6 +75,9 @@ get_batch_options() {
                 StrucUnwarpDir=${argument#*=}
                 index=$(( index + 1 ))
                 ;;
+            --runlocal)
+                RunLocal=1
+                index=$(( index + 1 ))
             *)
                 echo ""
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -97,15 +107,9 @@ fi
 
 echo "$(basename $0) $@"
 
-if [ -z ${EnvironmentScript} ] ; then
-    EnvironmentScript="$HCPPIPEDIR/Examples/Scripts/SetUpHCPPipeline.sh"
-fi
-source $EnvironmentScript
+source "$EnvironmentScript"
 
 source "$HCPPIPEDIR"/Examples/Scripts/SetUpSPECIES.sh --species="$SPECIES" --structres="$StrucRes"
-#HACK: work around the log tool name hack in SetUpSPECIES.sh
-#since debug.shlib will be active by default, set the log toolname back to the Batch script
-log_SetToolName "$(basename -- "$0")"
 
 # The script ${HCPPIPEDIR}/Examples/Scripts/SetUpSPECIES.sh defines:
 
@@ -166,26 +170,24 @@ for Subject in $Subjlist ; do
         # ------------------------------------------------------------------------------
 
     else
-        echo "  WARNING: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. 
-        Please prepare hcppipe_conf.txt.
-        Alternatively, uncomment the lines in the Batch File, set appropriate values manually, and run again."
-
-        ## Structural MRI (sMRI) - multiple scans can be separated by a space (" ")
-        #T1wInputImages="t1_1 t1_2"                                            # input T1w
-        #T2wInputImages="t2_1 t2_2"                                            # input T2w
-        # optional variables of sMRI
-        #StrucTruePatientPosition=HFS                                          # HFS: head-first-supine (default) or HFSx: head-first sphinx or FFSx: foot-first sphinx
-        #StrucScannerPatientPosition=HFS                                       # scanner's patient position in the DICOM, HFS (default) or HFP or FFS or FFP
-        #T1wSampleSpacing=".00000710000000000000"                              # readout time in [sec] (optional for B0 distortion correction)
-        #T2wSampleSpacing=".00000210000000000000"                              # readout time in [sec] (optional for B0 distortion correction)
-        #StrucTopupNegative="SEField_1_AP"                                     # negative phase encoding directions (LR or AP) (optional for B0 distortion correction)
-        #StrucTopupPositive="SEField_1_PA"                                     # positive phase encoding directions (RL or PA) (optional for B0 distortion correction)
-        #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
-        #StrucSEUnwarpDir="y"                                                  # phase encoding direction for topup SEField data (optional for B0 distortion correction)
-        #GradientDistortionCoeffs="<path/to/gradient_coefficient.grad>"        # path to gradient coefficient. names (scanner): SC72C_Skyra (Connectom). AS82_Prisma (Prisma),  GC99_Skyra (Skyra)
-        #StrucUnwarpDir=z                                                      # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
-        #UsePhaseZero="FALSE"                                                  # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
+        echo "  NOTE: ${StudyFolder}/${Subject}/RawData/hcppipe_conf.txt not found. 
+        Please prepare hcppipe_conf.txt, or uncomment the lines in the Batch file and set appropriate values."
     fi
+    ## Structural MRI (sMRI) - multiple scans can be separated by a space (" ")
+    #T1wInputImages="t1_1 t1_2"                                            # input T1w
+    #T2wInputImages="t2_1 t2_2"                                            # input T2w
+    # optional variables of sMRI
+    #StrucTruePatientPosition=HFS                                          # HFS: head-first-supine (default) or HFSx: head-first sphinx or FFSx: foot-first sphinx
+    #StrucScannerPatientPosition=HFS                                       # scanner's patient position in the DICOM, HFS (default) or HFP or FFS or FFP
+    #T1wSampleSpacing=".00000710000000000000"                              # readout time in [sec] (optional for B0 distortion correction)
+    #T2wSampleSpacing=".00000210000000000000"                              # readout time in [sec] (optional for B0 distortion correction)
+    #StrucTopupNegative="SEField_1_AP"                                     # negative phase encoding directions (LR or AP) (optional for B0 distortion correction)
+    #StrucTopupPositive="SEField_1_PA"                                     # positive phase encoding directions (RL or PA) (optional for B0 distortion correction)
+    #StrucSEDwellTime=".00062999983620004258"                              # dwell time in [sec] for fMRI (optional for B0 distortion correction)
+    #StrucSEUnwarpDir="y"                                                  # phase encoding direction for topup SEField data (optional for B0 distortion correction)
+    #GradientDistortionCoeffs="<path/to/gradient_coefficient.grad>"        # path to gradient coefficient. names (scanner): SC72C_Skyra (Connectom). AS82_Prisma (Prisma),  GC99_Skyra (Skyra)
+    #StrucUnwarpDir=z                                                      # B0 unwarp direction, z (FH) for sagittal scan typical for human, z- (HF) for coronal scans typical for NHP
+    #UsePhaseZero="FALSE"                                                  # Indicates whether to add T2-weighted image as a phase zero volume (If it is TRUE, set SpinEchoPhaseEncodeZero to ${T2wFolder}/T2w), for dark-CSF T2w contrast acquisition types (e.g., FLAIR)
   
     if [[ $T1wSampleSpacing != "" && $T1wSampleSpacing != "NONE" && $T1wSampleSpacing != "None" && $T2wSampleSpacing != "" && $T2wSampleSpacing != "NONE" && $T2wSampleSpacing != "None" && $StrucSEUnwarpDir != "None" && $StrucSEUnwarpDir != "" ]] ; then
         if [[ -n $StrucTopupPositive && -n $StrucTopupNegative && -n $StrucSEDwellTime && "$StrucTopupPositive" != NONE ]] ; then
@@ -224,7 +226,7 @@ for Subject in $Subjlist ; do
 
     if [ -z "$GradientDistortionCoeffs" ] ; then
         GradientDistortionCoeffs="NONE"               #Location of Coeffs file or "NONE" to skip
-	fi
+    fi
 
     BiasFieldSmoothingSigma="${BiasFieldSmoothingSigma:-5}"  # Useally set to 5. "NONE" if not used
 
@@ -244,8 +246,16 @@ for Subject in $Subjlist ; do
     TruePatientPosition=${StrucTruePatientPosition:-HFS}
     ScannerPatientPosition=${StrucScannerPatientPosition:-HFS}
 
-# ${FSLDIR}/bin/fsl_sub ${QUEUE} ${LOG} \
-    ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh \
+    if ((RunLocal)) || [[ "$QUEUE" == "" ]]
+    then
+        echo "About to locally run ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/PreFreeSurfer/PreFreeSurferPipeline.sh"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
+
+    "${queuing_command[@]}" "$HCPPIPEDIR"/PreFreeSurfer/PreFreeSurferPipeline.sh \
         --path="$StudyFolder" \
         --subject="$Subject" \
         --t1="$T1wInputImages" \
@@ -286,7 +296,7 @@ for Subject in $Subjlist ; do
         --betradius=${betradius} \
         --betfraction=${betfraction} \
         --bettop2center=${bettop2center} \
-		--betbiasfieldcor=${betbiasfieldcor}
+        --betbiasfieldcor=${betbiasfieldcor}
       
     # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 

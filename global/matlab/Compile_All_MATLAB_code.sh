@@ -153,6 +153,11 @@ main()
 	log_Msg "Compiling global script MATLAB code"
 	log_Msg "----------------------------------------"
 	"${HCPPIPEDIR}"/global/scripts/Compile_MATLAB_code.sh
+
+	log_Msg "----------------------------------------"
+	log_Msg "Compiling global script MATLAB code"
+	log_Msg "----------------------------------------"
+	"${HCPPIPEDIR}"/fMRIStats/scripts/Compile_MATLAB_code.sh
 }
 
 # ------------------------------------------------------------------------------

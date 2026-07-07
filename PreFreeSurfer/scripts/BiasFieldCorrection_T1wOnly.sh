@@ -29,7 +29,7 @@ opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
 
 opts_AddMandatory '--T1brain' 'T1wBrain' 'image' "input T1 brain"
 
-#optional args 
+#optional args
 opts_AddOptional '--obias' 'oBias' 'image' "output bias field image"
 
 opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1 image"
@@ -39,6 +39,8 @@ opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output correcte
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias field smoothing Sigma (Default 20)" "20"
 
 opts_AddOptional '--strongbias' 'StrongBias' 'flag' "use stronger bias field correction" "FALSE"
+
+opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
 
 opts_ParseArguments "$@"
 
@@ -106,13 +108,13 @@ fi
 # Use existing brain mask if one is provided
 
 if [ ! -z ${T1wBrain} ] ; then
-  ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain  
+  ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain
   verbose_echo " --> masked T1_biascorr.nii.gz using ${T1wBrain}"
 fi
 
 # Copy data out if output targets provided
 
-if [ ! -z ${OutputT1wRestoredImage} ] ; then 
+if [ ! -z ${OutputT1wRestoredImage} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr ${OutputT1wRestoredImage}
   verbose_echo " --> Copied T1_biascorr.nii.gz to ${OutputT1wRestoredImage}.nii.gz"
 fi
@@ -120,7 +122,7 @@ fi
 if [ ! -z ${OutputT1wRestoredBrainImage} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr_brain ${OutputT1wRestoredBrainImage}
   verbose_echo " --> Copied T1_biascorr_brain.nii.gz to ${OutputT1wRestoredBrainImage}.nii.gz"
-fi 
+fi
 
 if [ ! -z ${oBias} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_fast_bias ${oBias}

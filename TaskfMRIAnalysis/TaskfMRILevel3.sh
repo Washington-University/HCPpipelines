@@ -279,6 +279,7 @@ for Analysis in ${Analyses} ; do
 	        echo "ERROR: ${copedir} does not exist"
 	        exit -1
 	      fi
+        #symlinks review: absolute link, needs attention.
         ln -s ${copedir} ${LevelThreeFEATDir}/${Analysis}/${i}/${j}
       else
 	      echo "ERROR: $Analysis not a valid analysis mode"

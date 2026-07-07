@@ -12,11 +12,10 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 
-g_matlab_default_mode=1
+g_matlab_default_mode=0
 
 opts_SetScriptDescription "computes fMRI statistics including mTSNR, fCNR, and percent BOLD"
 
-#arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects" '--path'
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject ID (e.g. 100610)"
 opts_AddMandatory '--concat-names' 'ConcatNames' 'string' "@-separated list of fMRI concat names (e.g. tfMRI_ALLTASKS), if single-run FIX is used, this list must be exactly 1 element long"
@@ -267,6 +266,8 @@ do
       done
 
       matlabcode="
+        addpath('$HCPCIFTIRWDIR');
+        addpath('$HCPPIPEDIR/global/matlab');
         addpath('$HCPPIPEDIR/fMRIStats/scripts');
         fMRIStats($matlab_args);"
 
@@ -292,7 +293,11 @@ if [[ -z "$fMRINames" ]]; then
     matlab_args="'$CIFTIOutput'"
     matlab_args+=", 'Caret7_Command', '$Caret7_Command'"
 
-    matlabcode="addpath('$HCPPIPEDIR/fMRIStats/scripts');fMRIStats_SummaryCSV($matlab_args);"
+    matlabcode="
+      addpath('$HCPCIFTIRWDIR');
+      addpath('$HCPPIPEDIR/global/matlab');
+      addpath('$HCPPIPEDIR/fMRIStats/scripts');
+      fMRIStats_SummaryCSV($matlab_args);"
     case "$MatlabMode" in
       (0)
         matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats_SummaryCSV.sh" "$MATLAB_COMPILER_RUNTIME" "$CIFTIOutput" "$Caret7_Command")
@@ -302,6 +307,7 @@ if [[ -z "$fMRINames" ]]; then
       (1 | 2)
         log_Msg "running matlab code: $matlabcode"
         "${matlab_interpreter[@]}" <<<"$matlabcode"
+        echo
         ;;
     esac
   done
@@ -407,7 +413,11 @@ else  # Single-run FIX processing - average across individual runs then create s
   matlab_args="'$AveragedCIFTIOutput'"
   matlab_args+=", 'Caret7_Command', '$Caret7_Command'"
 
-  matlabcode="addpath('$HCPPIPEDIR/fMRIStats/scripts');fMRIStats_SummaryCSV($matlab_args);"
+  matlabcode="
+    addpath('$HCPCIFTIRWDIR');
+    addpath('$HCPPIPEDIR/global/matlab');
+    addpath('$HCPPIPEDIR/fMRIStats/scripts');
+    fMRIStats_SummaryCSV($matlab_args);"
   case "$MatlabMode" in
     (0)
       matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats_SummaryCSV.sh" "$MATLAB_COMPILER_RUNTIME" "$AveragedCIFTIOutput" "$Caret7_Command")
