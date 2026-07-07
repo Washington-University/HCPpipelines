@@ -52,6 +52,7 @@ fi
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
+source "${HCPPIPEDIR}/global/scripts/fs_version.shlib"      # Provides validate_freesurfer_version
 
 #process legacy syntax and repeatable arguments
 if (($# > 0))
@@ -302,59 +303,29 @@ show_tool_versions()
     which fslmaths
 }
 
-validate_freesurfer_version()
-{
-    if [ -z "${FREESURFER_HOME}" ]; then
-        log_Err_Abort "FREESURFER_HOME must be set"
-    fi
-
-    freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
-
-    if [ -f "${freesurfer_version_file}" ]; then
-        freesurfer_version_string=$(cat "${freesurfer_version_file}")
-        log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
-    else
-        log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
-    fi
-
-    # extract X.Y.Z version robustly from build stamp (handles both FS6 and FS8 formats)
-    freesurfer_version=$(echo "${freesurfer_version_string}" | grep -oP 'v?\d+\.\d+\.\d+' | head -1)
-    freesurfer_version=${freesurfer_version#v} # strip leading "v"
-
-    log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
-
-    # break FreeSurfer version into components
-    # primary, secondary, and tertiary
-    # version X.Y.Z ==> X primary, Y secondary, Z tertiary
-    freesurfer_version_array=(${freesurfer_version//./ })
-
-    freesurfer_primary_version="${freesurfer_version_array[0]}"
-    freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
-
-    if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
-    fi
-
-    # if using fs6, we are using custom tools
-    use_fs6=0
-    if [[ ${freesurfer_primary_version} -eq 6 ]]; then
-        log_Msg "INFO: Using FreeSurfer 6 with custom tools"
-        use_fs6=1
-        # validate that unsupported parameters are not set for FS6
-        if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
-            log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
-        fi
-        HighMyelin=""
-    else
-        log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
-        if [[ "${HighMyelin}" == "AUTO" ]]; then
-            HighMyelin="0.3"
-        fi
-    fi
-}
-
 # Validate version of FreeSurfer in use
 validate_freesurfer_version
+
+if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
+    log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
+fi
+
+# if using fs6, we are using custom tools
+use_fs6=0
+if [[ ${freesurfer_primary_version} -eq 6 ]]; then
+    log_Msg "INFO: Using FreeSurfer 6 with custom tools"
+    use_fs6=1
+    # validate that unsupported parameters are not set for FS6
+    if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
+        log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
+    fi
+    HighMyelin=""
+else
+    log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
+    if [[ "${HighMyelin}" == "AUTO" ]]; then
+        HighMyelin="0.3"
+    fi
+fi
 
 # Configure the use of FreeSurfer v6 custom tools
 if ((use_fs6)); then

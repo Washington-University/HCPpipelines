@@ -21,53 +21,18 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/fs_version.shlib"   # Provides validate_freesurfer_version
 
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
 # ------------------------------------------------------------------------------
-validate_freesurfer_version ()
-{
-	if [ -z "${FREESURFER_HOME}" ] ; then
-		log_Err_Abort "FREESURFER_HOME must be set"
-	fi
-	
-	freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
-
-	if [ -f "${freesurfer_version_file}" ] ; then
-		freesurfer_version_string=$(cat "${freesurfer_version_file}")
-		log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
-	else
-		log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
-	fi
-
-	# strip out extraneous stuff from FreeSurfer version string
-	freesurfer_version_string_array=(${freesurfer_version_string//-/ })
-	freesurfer_version=${freesurfer_version_string_array[5]}
-	freesurfer_version=${freesurfer_version#v} # strip leading "v"
-
-	log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
-
-	# break FreeSurfer version into components
-	# primary, secondary, and tertiary
-	# version X.Y.Z ==> X primary, Y secondary, Z tertiary
-	freesurfer_version_array=(${freesurfer_version//./ })
-
-	freesurfer_primary_version="${freesurfer_version_array[0]}"
-	freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
-
-	freesurfer_secondary_version="${freesurfer_version_array[1]}"
-	freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
-
-	freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-	freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
-
-	if [[ $(( ${freesurfer_primary_version} )) -lt 5 ]] ; then
-		# e.g. 4.y.z, 5.y.z
-		log_Err_Abort "FreeSurfer version 5.3.0 or greater is required."
-	fi
-}
 validate_freesurfer_version
+
+if [[ $(( ${freesurfer_primary_version} )) -lt 5 ]] ; then
+	# e.g. 4.y.z, 5.y.z
+	log_Err_Abort "FreeSurfer version 5.3.0 or greater is required."
+fi
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR

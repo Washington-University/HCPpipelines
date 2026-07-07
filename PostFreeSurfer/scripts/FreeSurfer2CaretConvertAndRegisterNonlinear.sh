@@ -15,6 +15,7 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/fs_version.shlib"         # Provides validate_freesurfer_version
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -90,6 +91,11 @@ fi
 
 GrayordinatesResolutions=${GrayordinatesResolutions//@/ }
 log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
+
+# Determine the FreeSurfer version that produced these surfaces, as recorded in
+# the subject's build-stamp.txt (not the currently-loaded FREESURFER_HOME). Some
+# operations below depend on the FreeSurfer version used to generate the data.
+validate_freesurfer_version "$T1wFolder"/scripts/build-stamp.txt
 
 #Make some folders for this and later scripts
 if [ ! -e "$T1wFolder"/"$NativeFolder" ] ; then
@@ -350,7 +356,11 @@ for Hemisphere in L R ; do
             fi
 
             ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}
-            ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            # FreeSurfer 6 and earlier use the opposite sign convention for these
+            # metrics; FreeSurfer 7+ already stores them with the expected sign.
+            if (( freesurfer_primary_version <= 6 )); then
+                ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            fi
             ${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -map 1 "$Session"_"$Hemisphere"_"$mapname"
             ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
         done
