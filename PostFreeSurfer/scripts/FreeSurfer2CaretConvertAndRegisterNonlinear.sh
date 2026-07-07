@@ -5,13 +5,13 @@ set -eu
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-pipedirguessed=0 
-if [[ "${HCPPIPEDIR:-}" == "" ]] 
-then 
-    pipedirguessed=1 
-    #fix this if the script is more than one level below HCPPIPEDIR 
-    export HCPPIPEDIR="$(dirname -- "$0")/../.." 
-fi 
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
@@ -69,9 +69,9 @@ opts_AddOptional '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "li
 
 opts_ParseArguments "$@"
 
-if ((pipedirguessed)) 
-then 
-    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh" 
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
 #display the parsed/default values
@@ -80,9 +80,9 @@ opts_ShowValues
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
 
-if [[ "$LongitudinalMode" == "TEMPLATE" ]]; then 
+if [[ "$LongitudinalMode" == "TEMPLATE" ]]; then
 
-    if [ -z "$LongitudinalTemplate" -o -z "$LongitudinalTimepoints" ]; then 
+    if [ -z "$LongitudinalTemplate" -o -z "$LongitudinalTimepoints" ]; then
         log_Err_Abort "--longitudinal-template and --longitudinal-timepoints are required if --longitudinal-mode=TEMPLATE"
     fi
     LongitudinalTimepoints="${LongitudinalTimepoints//@/ }"
@@ -95,7 +95,7 @@ log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
 # Determine the FreeSurfer version that produced these surfaces, as recorded in
 # the subject's build-stamp.txt (not the currently-loaded FREESURFER_HOME). Some
 # operations below depend on the FreeSurfer version used to generate the data.
-validate_freesurfer_version "$T1wFolder"/scripts/build-stamp.txt
+validate_freesurfer_version "$T1wFolder"/"$Session"/scripts/build-stamp.txt
 
 #Make some folders for this and later scripts
 if [ ! -e "$T1wFolder"/"$NativeFolder" ] ; then
@@ -382,7 +382,7 @@ for Hemisphere in L R ; do
         for Map in aparc aparc.a2009s ; do #Remove BA because it doesn't convert properly
             if [ -e "$FreeSurferFolder"/label/"$hemisphere"h."$Map".annot ] ; then
                 mris_convert --annot "$FreeSurferFolder"/label/"$hemisphere"h."$Map".annot "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii
-                if (( NonHumanSpecies )); then 
+                if (( NonHumanSpecies )); then
                     # Cortical area of aparc is defined by cortical label in FreeSurfer. The following
                     # two commands adapt FS-based cortical label (?h.cortex.label) to those of HCP (atlasroi) - TH Sep 2025
                     ${CARET7DIR}/wb_command -label-dilate "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii 10 "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii
@@ -744,14 +744,14 @@ if (( NonHumanSpecies )); then
     # cortical gray and subcortical white matter segments
     for Hemisphere in L R ; do
         ${CARET7DIR}/wb_command -create-signed-distance-volume "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".pial.native.surf.gii "$T1wFolder"/wmparc_1mm.nii.gz "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz
-        fslmaths "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz -mul -1 -thr 0 -bin "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz 
+        fslmaths "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz -mul -1 -thr 0 -bin "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz
     done
-    # subcortical grey matter 
+    # subcortical grey matter
     ${CARET7DIR}/wb_command -volume-label-import "$T1wFolder"/wmparc_1mm.nii.gz ${SubcorticalGrayLabels} "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -discard-others
     # cerebellar white matter and ventricles
-    for label in 7 46 4 5 14 15 43 44 ; do 
+    for label in 7 46 4 5 14 15 43 44 ; do
         fslmaths "$T1wFolder"/wmparc_1mm.nii.gz -thr $label -uthr $label -add "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
-    done	
+    done
     # create tuned brainmask
     fslmaths "$T1wFolder"/pial.L_1mm.nii.gz -add "$T1wFolder"/pial.R_1mm.nii.gz -add "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
     ${CARET7DIR}/wb_command -volume-fill-holes "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
