@@ -349,10 +349,12 @@ for Hemisphere in L R ; do
             mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
 
             # mris_convert in fs7+ adds an extra '?h.' to the front of the file name in the converted output
-            legacy_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
             new_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii
-            if [[ -e "$new_native_shape" && ! -e "$legacy_native_shape" ]]; then
+            if [[ -e "$new_native_shape" ]]; then
+                legacy_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+                rm "$legacy_native_shape"
                 mv "$new_native_shape" "$legacy_native_shape"
+                log_Msg "Renamed $new_native_shape to $legacy_native_shape to remove extra 'lh.' or 'rh.' prefix added by mris_convert in FreeSurfer 7+"
             fi
 
             ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}
