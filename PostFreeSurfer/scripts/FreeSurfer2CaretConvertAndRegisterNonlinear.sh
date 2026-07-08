@@ -359,7 +359,10 @@ for Hemisphere in L R ; do
             # FreeSurfer 6 and earlier use the opposite sign convention for these
             # metrics; FreeSurfer 7+ already stores them with the expected sign.
             if (( freesurfer_primary_version <= 6 )); then
+                log_Msg "Inverting sign of $AtlasSpaceFolder/$NativeFolder/$Session.$Hemisphere.$wbname.native.shape.gii to match the HCP convention"
                 ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            else
+                log_Msg "Not inverting sign of $AtlasSpaceFolder/$NativeFolder/$Session.$Hemisphere.$wbname.native.shape.gii because FreeSurfer version is 7 or later"
             fi
             ${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -map 1 "$Session"_"$Hemisphere"_"$mapname"
             ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
