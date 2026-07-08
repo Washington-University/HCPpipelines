@@ -38,7 +38,6 @@ if [ -z "${HCPPIPEDIR}" ]; then
 fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@" 
 source "${HCPPIPEDIR}/global/scripts/opts.shlib"                 # Command line option functions
 
 opts_ShowVersionIfRequested "$@"
@@ -98,19 +97,17 @@ elif (( nSessions > 1 )); then #normal case.
     "${cmd[@]}"
 
 else #exactly one session, use single T2w to create template.
-# This reflects a subtle difference in the longitudinal handling of the 'base creation for a single-session.
-# BUT, the T2 gets interpolated already at least once anyway (to register to the T1),
-# so there is always at least 1 interpolation applied to the T2.
-# Plus, to the extent there is a difference, it is only in the creation of the 'base', and not
-# in the longitudinal processing of the individual time points themselves.
+    # This reflects a subtle difference in the longitudinal handling of the 'base creation for a single-session.
+    # BUT, the T2 gets interpolated already at least once anyway (to register to the T1),
+    # so there is always at least 1 interpolation applied to the T2.
+    # Plus, to the extent there is a difference, it is only in the creation of the 'base', and not
+    # in the longitudinal processing of the individual time points themselves.
     session=${SessionsArray[0]}
     mgz="$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz"
     nii="$StudyFolder/$session/T2w/T2w.nii.gz"
     mkdir -p "$TemplateDir/T2w/xfms"
     cp -f "$nii" "$TemplateDir/T2w/bootstrap_average.nii.gz"
-    tempfiles_create identity_fsl_XXXXXX.mat tmp
-    printf '1 0 0 0\n0 1 0 0\n0 0 1 0\n0 0 0 1\n' > "$tmp"
-    lta_convert --infsl "$tmp" --src "$mgz" --trg "$nii" \
+    lta_convert --infsl $FSLDIR/etc/flirtsch/ident.mat --src "$mgz" --trg "$nii" \
         --outlta "$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta"
 fi
 log_Msg "Completed MakeAverageT2w.sh"
