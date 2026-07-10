@@ -97,7 +97,7 @@ elif (( nSessions > 1 )); then #normal case.
     "${cmd[@]}"
 
 else #exactly one session, use single T2w to create template.
-    # This reflects a subtle difference in the longitudinal handling of the 'base creation for a single-session.
+    # This reflects a subtle difference in the longitudinal handling of the 'base' creation for a single-session.
     # BUT, the T2 gets interpolated already at least once anyway (to register to the T1),
     # so there is always at least 1 interpolation applied to the T2.
     # Plus, to the extent there is a difference, it is only in the creation of the 'base', and not
