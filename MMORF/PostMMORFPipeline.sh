@@ -12,7 +12,7 @@ fi
 
 
 opts_SetScriptDescription "Post MMORF Pipeline"
-opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders'
+opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
 opts_AddMandatory '--subject' 'subj' 'subject ID' "(e.g. 100610)"
 opts_AddOptional '--hiresmesh' 'HighResMesh' 'High resolution mesh, default 164' '164'
 opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'Low resolution meshes delimited by @, like 32@59'

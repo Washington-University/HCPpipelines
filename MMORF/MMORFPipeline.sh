@@ -47,7 +47,7 @@ AtlasSpaceFolderName="MMORFNonLinear"
     echo "Launching MMORF registration for session ${Session}"
 
 
-        ${HCPPIPEDIR}/MMORF/scripts/MMORFV1.sh \
+        ${HCPPIPEDIR}/MMORF/scripts/MMORF.sh \
           --workingdir="${AtlasSpaceFolder}" \
           --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
           --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
