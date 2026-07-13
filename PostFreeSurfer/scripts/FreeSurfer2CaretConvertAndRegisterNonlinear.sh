@@ -352,7 +352,9 @@ for Hemisphere in L R ; do
             new_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii
             if [[ -e "$new_native_shape" ]]; then
                 legacy_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
-                rm "$legacy_native_shape"
+                if [[ -e "$legacy_native_shape" ]]; then
+                    rm "$legacy_native_shape"
+                fi
                 mv "$new_native_shape" "$legacy_native_shape"
                 log_Msg "Renamed $new_native_shape to $legacy_native_shape to remove extra 'lh.' or 'rh.' prefix added by mris_convert in FreeSurfer 7+"
             fi
