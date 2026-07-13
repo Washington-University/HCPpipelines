@@ -1,13 +1,5 @@
 #!/bin/bash 
 
-# Requirements for this script
-#  installed versions of: FSL
-#  environment: HCPPIPEDIR, FSLDIR
-
-# ------------------------------------------------------------------------------
-#  Usage Description Function
-# ------------------------------------------------------------------------------
-
 set -eu
 
 pipedirguessed=0

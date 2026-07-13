@@ -1,13 +1,4 @@
 #!/bin/bash 
-
-# Requirements for this script
-#  installed versions of: FSL
-#  environment: HCPPIPEDIR, FSLDIR
-
-# ------------------------------------------------------------------------------
-#  Usage Description Function
-# ------------------------------------------------------------------------------
-
 set -eu
 
 pipedirguessed=0
@@ -18,17 +9,6 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
-#Helper function here to correct for temp_dir for mountpoint. This has to be done. After experimenting, CHPC only allows read+write in using temp directory mounts.
-#No short cut can be exploted here.
-emit() {
-    local line="$1"
-    if [[ "$line" == ${mountPoint}/* ]]; then
-        printf '%s\n' "\$temp_dir/${line#${mountPoint}/}"
-    else
-        printf '%s\n' "$line"
-    fi
-}
-
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
@@ -36,25 +16,11 @@ source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 opts_SetScriptDescription "Tool for non-linearly registering DTI, T1w, T2w to MMORF space. Need to have T1w, T2w in the same space"
 
 
-#Used
 opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'
-
-#Used
 opts_AddMandatory '--brainmask_fs' 'brainmask_fs' 'mask' 'Brainmask for t1w or t2w image'
-
-#Used
 opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
-
-
-#Used
 opts_AddMandatory "--Diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
-
-
-#Used
 opts_AddOptional '--workingdir' 'WD' 'path' 'working directory' "."
-
-
-
 
 opts_ParseArguments "$@"
 

@@ -17,8 +17,8 @@ for Session in ${Sessionlist}; do
     echo "Launching MMORF registration for session ${Session}"
     $FSLDIR/bin/fsl_sub \
     -q ${QUEUE} \
-    ${HCPPIPEDIR}/MMORF/PreMMORFPipelineV1.sh \
+    ${HCPPIPEDIR}/MMORF/PreMMORFPipeline.sh \
     --study-folder="${StudyFolder}" \
-    --session="${Session}" \
+    --subject="${Session}" \
     --t1-template="${T1wTemplate}"
 done

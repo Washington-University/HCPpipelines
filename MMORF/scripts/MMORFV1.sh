@@ -1,9 +1,5 @@
+#!/bin/bash 
 set -uo pipefail
-# Load helpers
-#####Several advantages for this design#####
-##Does not need to create an extra file
-##The defaults are all sectioned. Thus if you want to change defaults, you can create another one with different parameters and use if to add to arglist##
-##If you want to do multiple tensors for some reason or add extra scalars, it is relatively easy to change this code##
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
