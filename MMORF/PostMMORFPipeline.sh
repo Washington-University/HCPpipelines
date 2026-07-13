@@ -20,13 +20,13 @@ fi
 
 
 opts_SetScriptDescription "Post MMORF Pipeline"
-opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders' ""
-opts_AddMandatory '--subject' 'subj' 'subject ID' ""
-opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'High resolution mesh' ""
-opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'Low resolution meshes deliminated by @' ""
-opts_AddMandatory '--RegName' 'RegName' 'Registration name' "MSMAll"
-opts_AddMandatory '--RegNameOrig' 'RegNameOrig' 'Registration name for original' "MSMSulc"
-opts_AddMandatory '--InflateExtraScale' 'InflateExtraScale' 'Inflate extra scale' "1"
+opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders'
+opts_AddMandatory '--subject' 'subj' 'subject ID' "(e.g. 100610)"
+opts_AddOptional '--hiresmesh' 'HighResMesh' 'High resolution mesh, default 164' '164'
+opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'Low resolution meshes delimited by @, like 32@59'
+opts_AddOptional '--regname' 'RegName' 'Registration name, default MSMAll' "MSMAll"
+opts_AddOptional '--regnameorig' 'RegNameOrig' 'Registration name for original, default MSMSulc' "MSMSulc"
+opts_AddOptional '--inflatescale' 'InflateExtraScale' 'Additional scaling beyond linear to deal with a lowres mesh greater than 32k, default 1 (linear)' "1"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
