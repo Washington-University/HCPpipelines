@@ -13,13 +13,13 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
-opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders' ""
-opts_AddMandatory '--session' 'Session' 'Session ID to process' ""
-opts_AddMandatory '--t1-template' 'T1wTemplate' 'Path to the T1w template image' ""
-opts_AddMandatory '--t2-template' 'T2wTemplate' 'Path to the T2w template image' ""
-opts_AddMandatory '--ref-mask' 'refmask' 'Path to the reference mask image' ""
-opts_AddMandatory '--diffusion-ref' 'DiffusionRef' 'Path to the diffusion reference image' ""
-opts_AddMandatory '--dti-mask' 'DTIMask' 'Path to the DTI mask image' ""
+opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
+opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
+opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w template image"
+opts_AddMandatory '--t2-template' 'T2wTemplate' 'Image' "Path to the T2w template image"
+opts_AddMandatory '--ref-mask' 'refmask' 'Image' "Path to the reference mask image"
+opts_AddMandatory '--diffusion-ref' 'DiffusionRef' 'Image' "Path to the diffusion reference image"
+opts_AddMandatory '--dti-mask' 'DTIMask' 'Image' "Path to the DTI mask image"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
