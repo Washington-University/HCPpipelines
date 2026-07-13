@@ -64,17 +64,21 @@ tensor_default_args=(
 )
 
 arglist=()
-arglist+=(--img_warp_space ${Reference1})
-arglist+=(${warp_default_args[@]})
-arglist+=(--img_ref_scalar ${Reference1})
-arglist+=(--img_mov_scalar ${T1wRestore})
-arglist+=(${scalar_default_args[@]})
-arglist+=(--img_ref_scalar ${Reference2})
-arglist+=(--img_mov_scalar ${T2wRestore})
-arglist+=(${scalar_default_args[@]})
-arglist+=(--img_ref_tensor ${DTIref})
-arglist+=(--img_mov_tensor ${DTI})
-arglist+=(${tensor_default_args[@]})
+arglist+=(--img_warp_space ${Reference1}
+          ${warp_default_args[@]}
+        )
+arglist+=(--img_ref_scalar ${Reference1}
+          --img_mov_scalar ${T1wRestore}
+          ${scalar_default_args[@]}
+        )
+arglist+=(--img_ref_scalar ${Reference2}
+          --img_mov_scalar ${T2wRestore}
+          ${scalar_default_args[@]}
+        )
+arglist+=(--img_ref_tensor ${DTIref}
+          --img_mov_tensor ${DTI}
+          ${tensor_default_args[@]}
+        )
 arglist+=(--warp_out ${WD}/xfms/mov_to_ref_mm_warp)
 arglist+=(--jac_det_out ${WD}/xfms/mov_to_ref_mm_jac)
 arglist+=(--bias_out ${WD}/xfms/mov_to_ref_mm_bias)

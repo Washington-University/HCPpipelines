@@ -46,8 +46,6 @@ fi
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
-log_Check_Env_Var MSMBINDIR
-log_Check_Env_Var MSMCONFIGDIR
 
 # ------------------------------------------------------------------------------
 #  Gather and show positional parameters
