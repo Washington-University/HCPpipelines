@@ -13,11 +13,11 @@ source "${EnvironmentScript}"
 
 for subj in $Subjectlist; do
     ${HCPPIPEDIR}/MMORF/PostMMORFPipeline.sh \
-    --StudyFolder="${StudyFolder}" \
+    --study-folder="${StudyFolder}" \
     --session="${subj}" \
     --t1-template="${T1wTemplate}" \
     --highresmesh="${highResMesh}" \
-    --lowresmeshes="${lowResMeshes}" \
+    --lowresmesh="${lowResMeshes}" \
     --regname="${regName}" \
     --regnameorig="${regNameOrig}" \
     --inflatescale="${inflateExtraScale}"
