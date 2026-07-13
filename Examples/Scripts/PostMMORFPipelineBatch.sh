@@ -1,7 +1,7 @@
-#bin/bash
-
+#!/bin/bash
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Subjectlist="100307 100610"
+T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
 highResMesh='164'
 lowResMeshes='32@79'
 regName="MSMAll"
@@ -14,11 +14,12 @@ source "${EnvironmentScript}"
 for subj in $Subjectlist; do
     ${HCPPIPEDIR}/MMORF/PostMMORFPipeline.sh \
     --StudyFolder="${StudyFolder}" \
-    --subject="${subj}" \
-    --high-res-mesh="${highResMesh}" \
-    --low-res-meshes="${lowResMeshes}" \
-    --RegName="${regName}" \
-    --RegNameOrig="${regNameOrig}" \
-    --InflateExtraScale="${inflateExtraScale}"
+    --session="${subj}" \
+    --t1-template="${T1wTemplate}" \
+    --highresmesh="${highResMesh}" \
+    --lowresmeshes="${lowResMeshes}" \
+    --regname="${regName}" \
+    --regnameorig="${regNameOrig}" \
+    --inflatescale="${inflateExtraScale}"
 done
 
