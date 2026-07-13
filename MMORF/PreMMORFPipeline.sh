@@ -9,9 +9,6 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
-#Helper function here to correct for temp_dir for mountpoint. This has to be done. After experimenting, CHPC only allows read+write in using temp directory mounts.
-#No short cut can be exploted here.
-
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
@@ -34,11 +31,6 @@ T2wImage="T2w"
 T2wFolderName="T2w"
 AtlasSpaceFolderName="MMORFNonLinear"
 
-
-
-# ==========================
-# Loop over sessions
-# ==========================
 
     T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
     AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
