@@ -13,9 +13,9 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
-opts_AddMandatory '--study-folder' 'StudyFolder' 'Path to the study folder containing session folders' ""
-opts_AddMandatory '--session' 'Session' 'Subject ID' ""
-opts_AddMandatory '--t1-template' 'T1wTemplate' 'Path to the T1w template image' ""
+opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
+opts_AddMandatory '--session' 'Session' 'subject ID' '(e.g. 100610)'
+opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w template image"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
