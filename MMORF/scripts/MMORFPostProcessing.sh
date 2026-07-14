@@ -79,7 +79,7 @@ verbose_echo " --> Computing warp"
 ${FSLDIR}/bin/invwarp -w "${OutputTransform}" -o ${OutputInvTransform} -r ${Reference1mm} 
 
 # T1w set of warped outputs (brain/whole-head + restored/orig)
-verbose_echo " --> Generarting T1w set of warped outputs"
+verbose_echo " --> Generating T1w set of warped outputs"
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImage}
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestore}
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestoreBrain}
