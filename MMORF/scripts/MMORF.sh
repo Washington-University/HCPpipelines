@@ -68,23 +68,23 @@ tensor_default_args=(
 )
 
 arglist=()
-arglist+=(--img_warp_space ${Reference1}
-          ${warp_default_args[@]}
+arglist+=(--img_warp_space "${Reference1}"
+          "${warp_default_args[@]}"
         )
-arglist+=(--img_ref_scalar ${Reference1}
-          --img_mov_scalar ${T1wRestore}
-          ${scalar_default_args[@]}
+arglist+=(--img_ref_scalar "${Reference1}"
+          --img_mov_scalar "${T1wRestore}"
+          "${scalar_default_args[@]}"
         )
-arglist+=(--img_ref_scalar ${Reference2}
-          --img_mov_scalar ${T2wRestore}
-          ${scalar_default_args[@]}
+arglist+=(--img_ref_scalar "${Reference2}"
+          --img_mov_scalar "${T2wRestore}"
+          "${scalar_default_args[@]}"
         )
-arglist+=(--img_ref_tensor ${DTIref}
-          --img_mov_tensor ${DTI}
-          ${tensor_default_args[@]}
+arglist+=(--img_ref_tensor "${DTIref}"
+          --img_mov_tensor "${DTI}"
+          "${tensor_default_args[@]}"
         )
-arglist+=(--warp_out ${WD}/xfms/mov_to_ref_mm_warp)
-arglist+=(--jac_det_out ${WD}/xfms/mov_to_ref_mm_jac)
-arglist+=(--bias_out ${WD}/xfms/mov_to_ref_mm_bias)
+arglist+=(--warp_out "${WD}"/xfms/mov_to_ref_mm_warp)
+arglist+=(--jac_det_out "${WD}"/xfms/mov_to_ref_mm_jac)
+arglist+=(--bias_out "${WD}"/xfms/mov_to_ref_mm_bias)
 
 ${FSLDIR}/bin/mmorf "${arglist[@]}"
