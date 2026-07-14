@@ -6,7 +6,7 @@ if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
     pipedirguessed=1
     #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -31,17 +31,16 @@ T2wImage="T2w"
 T2wFolderName="T2w"
 AtlasSpaceFolderName="MMORFNonLinear"
 
+T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
+AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
+Diffusion="${T1wFolder}/Diffusion"
 
-    T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
-    AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
-    Diffusion="${T1wFolder}/Diffusion"
-
-    echo "Launching Pre MMORF registration for session ${Session}"
+echo "Launching Pre MMORF registration for session ${Session}"
 
 
 ${HCPPIPEDIR}/MMORF/scripts/PreMMORFFilePrep.sh \
-        --workingdir="${AtlasSpaceFolder}" \
-        --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
-        --brainmask_fs="${T1wFolder}/brainmask_fs.nii.gz" \
-        --ref="${T1wTemplate}" \
-        --Diffusion="${Diffusion}" \
+    --workingdir="${AtlasSpaceFolder}" \
+    --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
+    --brainmask_fs="${T1wFolder}/brainmask_fs.nii.gz" \
+    --ref="${T1wTemplate}" \
+    --Diffusion="${Diffusion}" \

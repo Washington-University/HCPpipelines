@@ -34,27 +34,27 @@ AtlasSpaceFolderName="MMORFNonLinear"
 
 
 
-    T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
-    AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
-    T1wFolder_T2wImageWithPath_acpc_dc="${T1wFolder}/${T2wImage}_acpc_dc"
-    Diffusion="${T1wFolder}/Diffusion"
+T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
+AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
+T1wFolder_T2wImageWithPath_acpc_dc="${T1wFolder}/${T2wImage}_acpc_dc"
+Diffusion="${T1wFolder}/Diffusion"
 
 
-        ${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessing.sh \
-          --workingdir="${AtlasSpaceFolder}" \
-          --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
-          --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
-          --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
-          --t2="${T1wFolder_T2wImageWithPath_acpc_dc}" \
-          --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
-          --t2restbrain="${T1wFolder}/${T2wImage}_acpc_dc_restore_brain" \
-          --ref="${T1wTemplate}" \
-          --Diffusion="${Diffusion}" \
-          --owarp="${AtlasSpaceFolder}/xfms/acpc_dc2mmorf.nii.gz" \
-          --oinvwarp="${AtlasSpaceFolder}/xfms/mmorf2acpc_dc.nii.gz" \
-          --ot1="${AtlasSpaceFolder}/${T1wImage}" \
-          --ot1rest="${AtlasSpaceFolder}/${T1wImage}_restore" \
-          --ot1restbrain="${AtlasSpaceFolder}/${T1wImage}_restore_brain" \
-          --ot2="${AtlasSpaceFolder}/${T2wImage}" \
-          --ot2rest="${AtlasSpaceFolder}/${T2wImage}_restore" \
-          --ot2restbrain="${AtlasSpaceFolder}/${T2wImage}_restore_brain" \
+${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessing.sh \
+    --workingdir="${AtlasSpaceFolder}" \
+    --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
+    --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
+    --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
+    --t2="${T1wFolder_T2wImageWithPath_acpc_dc}" \
+    --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
+    --t2restbrain="${T1wFolder}/${T2wImage}_acpc_dc_restore_brain" \
+    --ref="${T1wTemplate}" \
+    --Diffusion="${Diffusion}" \
+    --owarp="${AtlasSpaceFolder}/xfms/acpc_dc2mmorf.nii.gz" \
+    --oinvwarp="${AtlasSpaceFolder}/xfms/mmorf2acpc_dc.nii.gz" \
+    --ot1="${AtlasSpaceFolder}/${T1wImage}" \
+    --ot1rest="${AtlasSpaceFolder}/${T1wImage}_restore" \
+    --ot1restbrain="${AtlasSpaceFolder}/${T1wImage}_restore_brain" \
+    --ot2="${AtlasSpaceFolder}/${T2wImage}" \
+    --ot2rest="${AtlasSpaceFolder}/${T2wImage}_restore" \
+    --ot2restbrain="${AtlasSpaceFolder}/${T2wImage}_restore_brain" \
