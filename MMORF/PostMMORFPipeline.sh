@@ -38,8 +38,8 @@ ${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessingConvert.sh \
 ${HCPPIPEDIR}/MMORF/scripts/PostMMORFConvert.sh \
     --study-folder="${StudyFolder}" \
     --subject="${Session}" \
-    --high-res-mesh="${HighResMesh}" \
-    --low-res-meshes="${lowResMeshes}" \
+    --hiresmesh="${HighResMesh}" \
+    --lowresmesh="${lowResMeshes}" \
     --regname="${regName}" \
     --regnameorig="${regNameOrig}" \
     --inflatescale="${inflateExtraScale}"

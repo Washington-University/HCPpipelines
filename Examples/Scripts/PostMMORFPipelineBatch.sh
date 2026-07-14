@@ -16,7 +16,7 @@ for subj in $Subjectlist; do
     --study-folder="${StudyFolder}" \
     --session="${subj}" \
     --t1-template="${T1wTemplate}" \
-    --highresmesh="${highResMesh}" \
+    --hiresmesh="${highResMesh}" \
     --lowresmesh="${lowResMeshes}" \
     --regname="${regName}" \
     --regnameorig="${regNameOrig}" \
