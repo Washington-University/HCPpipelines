@@ -101,11 +101,6 @@ else
   verbose_echo " ... skipping T2w processing"
 fi
 
-verbose_green_echo "---> Finished Atlas Registration to MMORF"
-verbose_echo " "
-
-##Clean up##
-verbose_echo "Clean up starting"
 rm -rf "${WD}/TMP"
 
 log_Msg "END: AtlasRegistration to MMORF"
