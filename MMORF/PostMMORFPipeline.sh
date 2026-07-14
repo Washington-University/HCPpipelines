@@ -30,6 +30,9 @@ fi
 
 opts_ShowValues
 
+    echo "Launching Post MMORF registration for session ${Session}"
+
+
 ${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessingConvert.sh \
     --study-folder="${StudyFolder}" \
     --session="${Session}" \

@@ -36,7 +36,7 @@ AtlasSpaceFolderName="MMORFNonLinear"
     AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
     Diffusion="${T1wFolder}/Diffusion"
 
-    echo "Launching MMORF registration for session ${Session}"
+    echo "Launching Pre MMORF registration for session ${Session}"
 
 
 ${HCPPIPEDIR}/MMORF/scripts/PreMMORFFilePrep.sh \

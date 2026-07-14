@@ -40,8 +40,6 @@ AtlasSpaceFolderName="MMORFNonLinear"
     Diffusion="${T1wFolder}/Diffusion"
 
 
-    echo "Launching MMORF registration for session ${Session}"
-
         ${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessing.sh \
           --workingdir="${AtlasSpaceFolder}" \
           --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
