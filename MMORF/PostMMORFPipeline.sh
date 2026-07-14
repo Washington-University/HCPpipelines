@@ -30,16 +30,16 @@ fi
 
 opts_ShowValues
 
-${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessingPipeline.sh \
+${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessingConvert.sh \
     --study-folder="${StudyFolder}" \
     --session="${Session}" \
     --t1-template="${T1wTemplate}"
 
-${HCPPIPEDIR}/MMORF/scripts/PostMMORFPipeline.sh \
-    --StudyFolder="${StudyFolder}" \
+${HCPPIPEDIR}/MMORF/scripts/PostMMORFConvert.sh \
+    --study-folder="${StudyFolder}" \
     --subject="${Session}" \
-    --high-res-mesh="${highResMesh}" \
+    --high-res-mesh="${HighResMesh}" \
     --low-res-meshes="${lowResMeshes}" \
-    --RegName="${regName}" \
-    --RegNameOrig="${regNameOrig}" \
-    --InflateExtraScale="${inflateExtraScale}"
+    --regname="${regName}" \
+    --regnameorig="${regNameOrig}" \
+    --inflatescale="${inflateExtraScale}"
