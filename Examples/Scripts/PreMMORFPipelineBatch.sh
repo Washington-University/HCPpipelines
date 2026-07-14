@@ -1,5 +1,5 @@
 #!/bin/bash 
-###Mandatory Arguments###
+
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Sessionlist="100307 100610"
 T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
