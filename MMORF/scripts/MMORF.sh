@@ -24,6 +24,16 @@ opts_AddMandatory '--t2rest' 'T2wRestore' 'image' 'bias corrected t2w image'
 opts_AddMandatory "--Diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
 opts_ParseArguments "$@"
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+
+log_Check_Env_Var FSLDIR
+
 
 DTI=${Diffusion}/data_tensor.nii.gz
 brainmaskedited=$WD/TMP/brainmask_fs_transformed.nii.gz
