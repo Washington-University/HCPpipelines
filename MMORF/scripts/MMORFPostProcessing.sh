@@ -74,7 +74,7 @@ opts_ShowValues
 log_Check_Env_Var FSLDIR
 
 verbose_echo "--> Computing combined warp"
-${FSLDIR}/bin/convertwarp -m "${WD}/xfms/acpc2MMORFLinear.mat" -w "${WD}/xfms/mov_to_ref_mm_warp" -r "${Reference1mm}" -o "${OutputTransform}" --rel --relout 
+${FSLDIR}/bin/convertwarp -m "${Output}/xfms/acpc2MMORFLinear.mat" -w "${Output}/xfms/mov_to_ref_mm_warp" -r "${Reference1mm}" -o "${OutputTransform}" --rel --relout 
 
 # Input and reference spaces are the same, using normal reference because of tractography
 verbose_echo " --> Computing warp"
@@ -88,9 +88,9 @@ ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} 
 ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrain} ${OutputT1wImageRestoreBrain}
 
 verbose_echo " --> Generating DTI set of warped outputs"
-${FSLDIR}/bin/vecreg --interp=spline -i "${Diffusion}/data_tensor.nii.gz" --premat="${WD}/xfms/acpc2MMORFLinear.mat" -w "${WD}/xfms/mov_to_ref_mm_warp" -r "${Reference}" -o "${WD}/Diffusion/data_tensor.nii.gz" 
-${FSLDIR}/bin/fslmaths "${WD}/Diffusion/data_tensor.nii.gz" -tensor_decomp "${WD}/Diffusion/data"
-rm "${WD}/Diffusion/data.nii.gz"
+${FSLDIR}/bin/vecreg --interp=spline -i "${Diffusion}/data_tensor.nii.gz" --premat="${Output}/xfms/acpc2MMORFLinear.mat" -w "${Output}/xfms/mov_to_ref_mm_warp" -r "${Reference}" -o "${Output}/Diffusion/data_tensor.nii.gz" 
+${FSLDIR}/bin/fslmaths "${Output}/Diffusion/data_tensor.nii.gz" -tensor_decomp "${Output}/Diffusion/data"
+rm "${Output}/Diffusion/data.nii.gz"
 
 # T2w set of warped outputs (brain/whole-head + restored/orig)
 if [ ! "${T2wImage}" = "NONE" ] ; then
@@ -103,17 +103,17 @@ else
   verbose_echo " ... skipping T2w processing"
 fi
 
-rm -rf "${WD}/TMP"
+rm -rf "${Output}/TMP"
 
 log_Msg "END: AtlasRegistration to MMORF"
-echo " END: `date`" >> $WD/xfms/log.txt
+echo " END: `date`" >> $Output/xfms/log.txt
 
 ########################################## QA STUFF ##########################################
 
-#if [ -e $WD/xfms/qa.txt ] ; then rm -f $WD/xfms/qa.txt ; fi
-#echo "cd `pwd`" >> $WD/xfms/qa.txt
-#echo "# Check quality of alignment with MNI image" >> $WD/MMORF/qa.txt
-#echo "fslview ${Reference} ${OutputT1wImageRestore}" >> $WD/MMORF/qa.txt
-#echo "fslview ${Reference} ${OutputT2wImageRestore}" >> $WD/MMORF/qa.txt
+#if [ -e $Output/xfms/qa.txt ] ; then rm -f $Output/xfms/qa.txt ; fi
+#echo "cd `pOutput`" >> $Output/xfms/qa.txt
+#echo "# Check quality of alignment with MNI image" >> $Output/MMORF/qa.txt
+#echo "fslview ${Reference} ${OutputT1wImageRestore}" >> $Output/MMORF/qa.txt
+#echo "fslview ${Reference} ${OutputT2wImageRestore}" >> $Output/MMORF/qa.txt
 
 ##############################################################################################
