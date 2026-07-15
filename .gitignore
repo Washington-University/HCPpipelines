@@ -19,3 +19,8 @@
 /global/templates/NHP_NNP/
 /global/templates/NHP_NNP_Templates*.zip
 
+#Model weights for areal classifier - large files
+/ArealClassifier/data/arena_v1/
+/ArealClassifier/data/arena_v2/
+/ArealClassifier/data/mlp_classifier/
+/ArealClassifier/data/HCP_MMP_ROIs/

@@ -1,5 +1,5 @@
 function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, varargin)
-    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputZMM' 'OutputVolBeta' 'OutputVolZ' 'OutputVolZMM' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma' 'WF'});
+    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputVolBeta' 'OutputVolZ' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma' 'WF'});
     
     %InputFile - text file containing filenames of timeseries to concatenate
     %InputVNFile - text file containing filenames of the variance maps of each input
@@ -19,10 +19,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     %VolGoodBCFile - same as GoodBCFile, but volume data
     %SpectraParams - string, <num>@<tsfile>@<spectrafile> - number of samples, and output filenames for spectra analysis
     %OutputZ - filename for output of (approximate) Z stat maps
-    %OutputZMM - filename for output of mixture model corrected Z stat maps
     %OutputVolBeta - same as OutputBeta, but volume data
     %OutputVolZ - same as OutputZ, but volume data
-    %OutputVolZMM - same as OutputZMM, but volume data    
     %SurfString - string, <leftsurf>@<rightsurf>, surfaces to use in weighted method for smoothing the alignment quality map
     %ScaleFactor - string representation of a number, multiply the input data by this factor before processing (to convert grand mean 10,000 data to % bold, use 0.01)
     %WRSmoothingSigma - string representation of a number, when using 'weighted' method, smooth the alignment quality map with this sigma (default 14, tuned for human data)
@@ -147,13 +145,13 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         clear vnvolsum;
     end
     
-    if strcmp(Method,'weighted') || strcmp(Method,'dual') || strcmp(Method,'tICA_weighted') 
+    if strcmp(Method,'weighted') || strcmp(Method,'dual') || strcmp(Method,'tICA_weighted') || strcmp(Method,'PFM_weighted') 
         GroupMapcii = ciftiopen(optional.GroupMaps, wbcommand);
         weightscii = ciftiopen(optional.VAWeightsName, wbcommand); %normalized vertex areas, voxels are all 1s
         AreaWeights = weightscii.cdata;
     end
     switch Method
-        case {'weighted', 'tICA_weighted'}
+        case {'weighted', 'tICA_weighted', 'PFM_weighted'}
             if strcmp(optional.WRSmoothingSigma, '')
                 error '"weighted" method requires WRSmoothingSigma to be specified'
             end
@@ -212,7 +210,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 NODEts = (NODEts ./ TCSRunVarSub) .* repmat(sICAtcsvars, 1, size(TCSRunVarSub, 2)); %Making all runs contribute equally improves tICA decompositions
                 NODEts(~isfinite(NODEts)) = 0;
 
-                A = load(optional.tICAMM,'-ascii');
+                A = load(optional.tICAMM);
 
                 if size(A,1) ~= size(NODEts,1)
                     error('Mixing matrix to be used does not match dimensions of the sICA components');
@@ -248,7 +246,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             %betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
             [betaICA, inputConcat, DOF] = temporalRegression(inputConcat,NODEts,WF);
         otherwise
-            error(['unrecognized method: "' Method '", use "weighted", "tICA_weighted", "dual", or "single"']);
+            error(['unrecognized method: "' Method '", use "weighted", "tICA_weighted", "PFM_weighted", "dual", or "single"']);
     end
     
     NODEtsnorm = normalise(NODEts);
@@ -299,16 +297,11 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         pN = pinv(NODEtsnorm); dpN = diag(pN * pN')';
         t = double(betaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
         Z = zeros(size(t));
-        %Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)
-        %Z(t < 0) = max(norminv(tcdf(t(t < 0), dof)), -38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)
-        Z=((dof+0.125)./(dof+1.125)) .* sqrt((dof+19/12).*log(1+(t./(dof+1./12).*t))) .* sign(t); %Bailey's transformation of t to z (https://rdrr.io/bioc/limma/man/zscoreT.html), which works for large values 
+        Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5);
+        Z(t < 0) = max(norminv(tcdf(t(t < 0), dof)), -38.5);
         Z(isnan(Z)) = 0;
         outTemplate.cdata = Z;
         ciftisavereset(outTemplate, optional.OutputZ, wbcommand);
-        % mixtureModel(optional.OutputZ,optional.OutputZMM);
-        if ~strcmp(optional.OutputZMM, '')
-            my_system(['''' getenv('HCPPIPEDIR') '''/global/scripts/mixtureModel.sh --input='''  optional.OutputZ ''' --output=''' optional.OutputZMM '''']);
-        end
     end
     
     %volume outputs
@@ -336,16 +329,11 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             residuals = demean(volInputConcat, 2) - VolbetaICA * NODEtsnorm';
             t = double(VolbetaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
             Z = zeros(size(t));
-            %Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)
-            %Z(t < 0) = max(norminv(tcdf(t(t < 0), dof)), -38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)
-            Z=((dof+0.125)./(dof+1.125)) .* sqrt((dof+19/12).*log(1+(t./(dof+1./12).*t))) .* sign(t); %Bailey's transformation of t to z (https://rdrr.io/bioc/limma/man/zscoreT.html), which works for large values 
+            Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5);
+            Z(t < 0) = max(norminv(tcdf(t(t < 0), dof)), -38.5);
             Z(isnan(Z)) = 0;
             outVolTemplate.cdata = Z;
             ciftisavereset(outVolTemplate, optional.OutputVolZ, wbcommand);
-            % mixtureModel(optional.OutputVolZ,optional.OutputVolZMM);
-            if ~strcmp(optional.OutputVolZMM, '')
-                my_system(['''' getenv('HCPPIPEDIR') '''/global/scripts/mixtureModel.sh --input='''  optional.OutputVolZ ''' --output=''' optional.OutputVolZMM '''']);
-            end
         end
     end
 end

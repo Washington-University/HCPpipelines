@@ -51,6 +51,7 @@ opts_AddMandatory '--classifier-training' 'TrainedFolder' 'path' "classifier tra
 opts_AddMandatory '--classifier-version' 'ClassifierVersion' 'string' "either the matlab version 'MATLAB' or the python version 'ARENA_v1', 'ARENA_v2'"
 # opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity" "$HCPPIPEDIR/ArealClassifier/singularity/hcp_python_singularity.simg"
 opts_AddOptional '--only-inference' 'OnlyInferenceString' 'YES or NO' "whether to use for inference only, default NO" 'NO'
+opts_AddOptional '--force-download-weight' 'ForceDownloadWeightString' 'YES or NO' "whether force redownload model weights, default NO" 'NO'
 
 #FIXME: compiled matlab not implemented
 opts_AddOptional '--matlab-run-mode' 'matlab_mode' '0, 1, 2' "defaults to 1
@@ -68,6 +69,7 @@ fi
 opts_ShowValues
 
 OnlyInference=$(opts_StringToBool "$OnlyInferenceString")
+ForceDownloadWeight=$(opts_StringToBool "$ForceDownloadWeightString")
 
 case "$matlab_mode" in
     (0)
@@ -90,6 +92,30 @@ if [[ "$ClassifierVersion" == "MATLAB" || "$ClassifierVersion" == "ARENA_v1" || 
     log_Msg "ClassifierVersion is ${ClassifierVersion}."
 else
     log_Err_Abort "ClassifierVersion must be one of the followings, 'MATLAB', 'ARENA_v1', 'ARENA_v2' but gets ${ClassifierVersion}"
+fi
+
+# download HCP_MMP_ROIs if necessary
+filecount_HCP_MMP_ROIs=$(find "$HCPPIPEDIR"/ArealClassifier/data/HCP_MMP_ROIs -maxdepth 1 -type f | wc -l)
+if [[ "$filecount_HCP_MMP_ROIs" -lt 2024 || "$ForceDownloadWeight" -ne 0 ]]; then
+    "$HCPPIPEDIR"/global/scripts/download_areal_classifier_dependencies.sh "MMP_ROIs"
+fi
+
+# download model weights if necessary
+if [ "$ClassifierVersion" == "MATLAB" ]; then
+    filecount_model_weights=$(find "$HCPPIPEDIR"/ArealClassifier/data/mlp_classifier -maxdepth 1 -type f | wc -l)
+    if [[ "$filecount_model_weights" -lt 368 || "$ForceDownloadWeight" -ne 0 ]]; then
+        "$HCPPIPEDIR"/global/scripts/download_areal_classifier_dependencies.sh "MATLAB"
+    fi
+elif [ "$ClassifierVersion" == "ARENA_v1" ]; then
+    filecount_model_weights=$(find "$HCPPIPEDIR"/ArealClassifier/data/arena_v1 -maxdepth 1 -type d | wc -l)
+    if [[ "$filecount_model_weights" -lt 361 || "$ForceDownloadWeight" -ne 0 ]]; then
+        "$HCPPIPEDIR"/global/scripts/download_areal_classifier_dependencies.sh "ARENA_v1"
+    fi
+elif [ "$ClassifierVersion" == "ARENA_v2" ]; then
+    filecount_model_weights=$(find "$HCPPIPEDIR"/ArealClassifier/data/arena_v2 -maxdepth 1 -type d | wc -l)
+    if [[ "$filecount_model_weights" -lt 371 || "$ForceDownloadWeight" -ne 0 ]]; then
+        "$HCPPIPEDIR"/global/scripts/download_areal_classifier_dependencies.sh "ARENA_v2"
+    fi
 fi
 
 # # check if python singularity is needed
