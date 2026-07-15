@@ -19,8 +19,8 @@ opts_SetScriptDescription "Tool for non-linearly registering DTI, T1w, T2w to MM
 opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'
 opts_AddMandatory '--brainmask_fs' 'brainmask_fs' 'mask' 'Brainmask for t1w or t2w image'
 opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
-opts_AddMandatory "--Diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
-opts_AddOptional '--workingdir' 'WD' 'path' 'working directory' "."
+opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
+opts_AddOptional '--outputfolder' 'Output' 'path' 'target folder for output' "."
 
 opts_ParseArguments "$@"
 
@@ -46,28 +46,28 @@ verbose_echo " "
 verbose_red_echo " ===> Running Atlas Registration to MMORF"
 verbose_echo " "
 
-mkdir -p $WD
-mkdir -p $WD/xfms
-mkdir -p $WD/Diffusion
+mkdir -p $Output
+mkdir -p $Output/xfms
+mkdir -p $Output/Diffusion
 
 # Record the input options in a log file
-echo "$0 $@" >> $WD/xfms/log.txt
-echo "PWD = `pwd`" >> $WD/xfms/log.txt
-echo "date: `date`" >> $WD/xfms/log.txt
-echo " " >> $WD/xfms/log.txt
+echo "$0 $@" >> $Output/xfms/log.txt
+echo "POutput = `pOutput`" >> $Output/xfms/log.txt
+echo "date: `date`" >> $Output/xfms/log.txt
+echo " " >> $Output/xfms/log.txt
 
 ########################################## DO WORK ##########################################
 
 
 ##I should filter it here.
-${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${WD}/TMP" "${FSLDIR}"
+${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${Output}/TMP" "${FSLDIR}"
 
 
 
 
 #transform brain mask to fit with the MMORF alogrithm
-${FSLDIR}/bin/fslmaths ${brainmask_fs} -mul 7 -add 1 -div 8 "${WD}/TMP/brainmask_fs_transformed.nii.gz"
+${FSLDIR}/bin/fslmaths ${brainmask_fs} -mul 7 -add 1 -div 8 "${Output}/TMP/brainmask_fs_transformed.nii.gz"
 
 # Linear then non-linear registration to MMORF
 verbose_echo " --> Linear then non-linear registration to MMORF"
-${FSLDIR}/bin/flirt -interp spline -in ${T1wRestore} -ref ${Reference} -omat "${WD}/xfms/acpc2MMORFLinear.mat" -out "${WD}/xfms/${T1wRestoreBasename}_to_MMORFLinear"
+${FSLDIR}/bin/flirt -interp spline -in ${T1wRestore} -ref ${Reference} -omat "${Output}/xfms/acpc2MMORFLinear.mat" -out "${Output}/xfms/${T1wRestoreBasename}_to_MMORFLinear"

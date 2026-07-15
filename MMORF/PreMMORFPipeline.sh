@@ -43,4 +43,4 @@ ${HCPPIPEDIR}/MMORF/scripts/PreMMORFFilePrep.sh \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --brainmask_fs="${T1wFolder}/brainmask_fs.nii.gz" \
     --ref="${T1wTemplate}" \
-    --Diffusion="${Diffusion}" \
+    --diffusion="${Diffusion}" \
