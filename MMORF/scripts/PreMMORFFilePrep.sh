@@ -20,7 +20,7 @@ opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'
 opts_AddMandatory '--brainmask_fs' 'brainmask_fs' 'mask' 'Brainmask for t1w or t2w image'
 opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
 opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
-opts_AddOptional '--outputfolder' 'Output' 'path' 'target folder for output' "."
+opts_AddMandatory '--outputfolder' 'Output' 'path' 'target folder for output'
 
 opts_ParseArguments "$@"
 

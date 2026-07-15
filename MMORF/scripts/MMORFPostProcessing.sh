@@ -32,7 +32,7 @@ opts_AddMandatory '--t2restbrain' 'T2wRestoreBrain' 'image' 'bias corrected, bra
 opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
 
 
-opts_AddMandatory "--Diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
+opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
 opts_AddMandatory '--owarp' 'OutputTransform' 'number' 'output warp'
 
