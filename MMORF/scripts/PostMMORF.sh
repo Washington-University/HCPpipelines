@@ -124,15 +124,11 @@ MNINonLinearFolder="$StudyFolder"/"$Session"/"MNINonLinear"
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
 
-#if [ ! -e "$AtlasSpaceFolder"/Results ] ; then
-#    mkdir "$AtlasSpaceFolder"/Results
-#fi
+
 if [ ! -e "$AtlasSpaceFolder"/"$NativeFolder" ] ; then
     mkdir "$AtlasSpaceFolder"/"$NativeFolder"
 fi
-#if [ ! -e "$AtlasSpaceFolder"/fsaverage ] ; then
-#    mkdir "$AtlasSpaceFolder"/fsaverage
-#fi
+
 for LowResMesh in ${LowResMeshes} ; do
     if [ ! -e "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k ] ; then
         mkdir "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k

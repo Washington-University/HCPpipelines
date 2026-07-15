@@ -38,24 +38,26 @@ opts_AddMandatory '--owarp' 'OutputTransform' 'number' 'output warp'
 
 opts_AddMandatory '--oinvwarp' 'OutputInvTransform' 'inverse' 'output inverse warp'
 
-opts_AddMandatory '--ot1' 'OutputT1wImage' 'image' 'output t1w to MNI'
+opts_AddMandatory '--ot1' 'OutputT1wImage' 'image' 'output t1w to MMORF'
 
-opts_AddMandatory '--ot1rest' 'OutputT1wImageRestore' 'image' 'output bias corrected t1w to MNI'
+opts_AddMandatory '--ot1rest' 'OutputT1wImageRestore' 'image' 'output bias corrected t1w to MMORF'
 
-opts_AddMandatory '--ot1restbrain' 'OutputT1wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t1w to MNI'
+opts_AddMandatory '--ot1restbrain' 'OutputT1wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t1w to MMORF'
 
-opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' 'output t2w to MNI'
+opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' 'output t2w to MMORF'
 
-opts_AddMandatory '--ot2rest' 'OutputT2wImageRestore' 'image' 'output bias corrected t2w to MNI'
+opts_AddMandatory '--ot2rest' 'OutputT2wImageRestore' 'image' 'output bias corrected t2w to MMORF'
 
-opts_AddMandatory '--ot2restbrain' 'OutputT2wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t2w to MNI'
+opts_AddMandatory '--ot2restbrain' 'OutputT2wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t2w to MMORF'
+
+opts_AddMandatory '--outputfolder' 'Output' 'path' 'target folder for output'
+
 
 
 
 ##optional args
 opts_AddOptional '--ref1mm' 'Reference1mm' 'image' 'reference 1mm image' "${HCPPIPEDIR_Templates}/MMORF_T1_1mm.nii.gz"
 
-opts_AddOptional '--workingdir' 'WD' 'path' 'working directory' "."
 
 
 opts_ParseArguments "$@"
