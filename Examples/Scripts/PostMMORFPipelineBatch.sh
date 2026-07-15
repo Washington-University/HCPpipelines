@@ -10,9 +10,19 @@ inflateExtraScale='1'
 EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 source "${EnvironmentScript}"
+QUEUE=""
 
 for subj in $Subjectlist; do
-    ${HCPPIPEDIR}/MMORF/PostMMORFPipeline.sh \
+    echo "${subj}"
+    if [[ "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/MMORF/PostMMORFPipeline.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/MMORF/PostMMORFPipeline.sh"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
+    
+    "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/PostMMORFPipeline.sh \
         --study-folder="${StudyFolder}" \
         --session="${subj}" \
         --t1-template="${T1wTemplate}" \

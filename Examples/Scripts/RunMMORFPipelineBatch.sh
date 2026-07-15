@@ -15,10 +15,16 @@ source "${EnvironmentScript}"
 QUEUE=""
 
 for Session in ${Sessionlist}; do
-    echo "Launching MMORF registration for session ${Session}"
-    $FSLDIR/bin/fsl_sub \
-    -q ${QUEUE} \
-    ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh \
+    echo "${Session}"
+    if [[ "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+    fi
+    
+    "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh \
     --study-folder="${StudyFolder}" \
     --session="${Session}" \
     --t1-template="${T1wTemplate}" \
