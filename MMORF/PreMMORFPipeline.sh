@@ -39,7 +39,7 @@ echo "Launching Pre MMORF registration for session ${Session}"
 
 
 ${HCPPIPEDIR}/MMORF/scripts/PreMMORFFilePrep.sh \
-    --workingdir="${AtlasSpaceFolder}" \
+    --outputfolder="${AtlasSpaceFolder}" \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --brainmask_fs="${T1wFolder}/brainmask_fs.nii.gz" \
     --ref="${T1wTemplate}" \

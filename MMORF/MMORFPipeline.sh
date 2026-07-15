@@ -46,13 +46,13 @@ echo "Launching MMORF registration for session ${Session}"
 
 
 ${HCPPIPEDIR}/MMORF/scripts/MMORF.sh \
-    --workingdir="${AtlasSpaceFolder}" \
+    --outputfolder="${AtlasSpaceFolder}" \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
     --ref="${T1wTemplate}" \
     --ref2="${T2wTemplate}" \
     --refmask="${refmask}" \
-    --Diffusion="${Diffusion}" \
+    --diffusion="${Diffusion}" \
     --DTImask="${Diffusion}/nodif_brain_mask.nii.gz" \
     --DTIref="${DiffusionRef}" \
     --DTIrefmask="${DTIMask}" \
