@@ -348,23 +348,21 @@ for Hemisphere in L R ; do
 
             mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
 
-            # mris_convert in fs7+ adds an extra '?h.' to the front of the file name in the converted output
-            new_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii
-            if [[ -e "$new_native_shape" ]]; then
-                legacy_native_shape="$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
-                mv -f "$new_native_shape" "$legacy_native_shape"
-                log_Msg "Renamed $new_native_shape to $legacy_native_shape to remove extra 'lh.' or 'rh.' prefix added by mris_convert in FreeSurfer 7+"
+            # mris_convert in fs7+ here adds an extra 'lh.' or 'rh.' to the front of the file name in the converted output
+            if (( freesurfer_primary_version > 6 )); then
+                mv -f "$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
             fi
 
             ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}
-            # FreeSurfer 6 and earlier use the opposite sign convention for these
-            # metrics; FreeSurfer 7+ already stores them with the expected sign.
+
+            # FreeSurfer 6 and earlier use the opposite sign convention for these metrics; FreeSurfer 7+ already stores them with the expected sign.
             if (( freesurfer_primary_version <= 6 )); then
                 log_Msg "Inverting sign of $AtlasSpaceFolder/$NativeFolder/$Session.$Hemisphere.$wbname.native.shape.gii to match the HCP convention"
                 ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
             else
                 log_Msg "Not inverting sign of $AtlasSpaceFolder/$NativeFolder/$Session.$Hemisphere.$wbname.native.shape.gii because FreeSurfer version is 7 or later"
             fi
+
             ${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -map 1 "$Session"_"$Hemisphere"_"$mapname"
             ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
         done
