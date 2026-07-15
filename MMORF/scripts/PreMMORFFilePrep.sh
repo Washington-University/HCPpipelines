@@ -13,7 +13,7 @@ fi
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 
-opts_SetScriptDescription "Tool for non-linearly registering DTI, T1w, T2w to MMORF space. Need to have T1w, T2w in the same space"
+opts_SetScriptDescription "Tool for preparing MMORF registration. Need to have T1w, T2w in the same space"
 
 
 opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'

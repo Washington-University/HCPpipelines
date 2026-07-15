@@ -11,7 +11,7 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
+opts_SetScriptDescription "Run MMORF registration"
 opts_AddMandatory '--outputfolder' 'Output' 'path' 'target folder for output' "."
 opts_AddMandatory '--refmask' 'ReferenceMask' 'mask' 'reference brain mask'
 opts_AddMandatory '--DTIref' 'DTIref' 'mask' 'reference for DTI'

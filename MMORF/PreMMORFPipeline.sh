@@ -11,7 +11,7 @@ fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-opts_SetScriptDescription "Run MMORF registration for multiple sessions in parallel"
+opts_SetScriptDescription "Wrapper for preparing for MMORF registration"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
 opts_AddMandatory '--subject' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'image' 'Path to the T1w template image'
