@@ -304,7 +304,7 @@ def process_roi(args):
     )
     with threadpool_limits(limits=1, user_api="blas"):
         t_m = t - np.matmul(coeff[0 : len(coeff) - 1], curv_matrix)
-    index = np.where(region == j)
+    index = np.where(region == j)[0][0]
     t_corr = float(t_m[index])
 
     return coeff, coeff_norm, t_corr
