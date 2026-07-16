@@ -40,11 +40,6 @@ T1wRestoreBasename=`basename $T1wRestoreBasename`;
 #T1wRestoreBrainBasename=`remove_ext $T1wRestoreBrain`;
 #T1wRestoreBrainBasename=`basename $T1wRestoreBrainBasename`;
 
-log_Msg "START: AtlasRegistration to MNMORF"
-
-verbose_echo " "
-verbose_red_echo " ===> Running Atlas Registration to MMORF"
-verbose_echo " "
 
 mkdir -p $Output
 mkdir -p $Output/xfms
