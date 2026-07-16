@@ -24,7 +24,7 @@ for Session in ${Sessionlist}; do
     fi
     
     "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/PreMMORFPipeline.sh \
-    --study-folder="${StudyFolder}" \
-    --subject="${Session}" \
-    --t1-template="${T1wTemplate}"
+        --study-folder="${StudyFolder}" \
+        --subject="${Session}" \
+        --t1-template="${T1wTemplate}"
 done
