@@ -25,11 +25,11 @@ for Session in ${Sessionlist}; do
     fi
     
     "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/MMORFPipeline.sh \
-    --study-folder="${StudyFolder}" \
-    --session="${Session}" \
-    --t1-template="${T1wTemplate}" \
-    --t2-template="${T2wTemplate}" \
-    --ref-mask="${refmask}" \
-    --diffusion-ref="${DiffusionRef}" \
-    --dti-mask="${DTIMask}"
+        --study-folder="${StudyFolder}" \
+        --session="${Session}" \
+        --t1-template="${T1wTemplate}" \
+        --t2-template="${T2wTemplate}" \
+        --ref-mask="${refmask}" \
+        --diffusion-ref="${DiffusionRef}" \
+        --dti-mask="${DTIMask}"
 done
