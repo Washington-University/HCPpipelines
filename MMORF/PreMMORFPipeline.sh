@@ -25,6 +25,9 @@ fi
 
 opts_ShowValues
 
+log_Check_Env_Var FSLDIR
+
+
 T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
@@ -38,9 +41,37 @@ Diffusion="${T1wFolder}/Diffusion"
 echo "Launching Pre MMORF registration for session ${Session}"
 
 
-${HCPPIPEDIR}/MMORF/scripts/PreMMORFFilePrep.sh \
-    --outputfolder="${AtlasSpaceFolder}" \
-    --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
-    --brainmask_fs="${T1wFolder}/brainmask_fs.nii.gz" \
-    --ref="${T1wTemplate}" \
-    --diffusion="${Diffusion}" \
+brainmask_fs=${T1wFolder}/brainmask_fs.nii.gz
+T1wRestore=${T1wFolder}/${T1wImage}_acpc_dc_restore
+
+
+
+T1wRestoreBasename=`remove_ext $T1wRestore`;
+T1wRestoreBasename=`basename $T1wRestoreBasename`;
+#T1wRestoreBrainBasename=`remove_ext $T1wRestoreBrain`;
+#T1wRestoreBrainBasename=`basename $T1wRestoreBrainBasename`;
+
+
+mkdir -p "$AtlasSpaceFolder"
+mkdir -p "$AtlasSpaceFolder/xfms"
+mkdir -p "$AtlasSpaceFolder/Diffusion"
+
+# Record the input options in a log file
+echo "$0 $@" >> "$AtlasSpaceFolder/xfms/log.txt"
+echo "Pwd = `pwd`" >> "$AtlasSpaceFolder/xfms/log.txt"
+echo "date: `date`" >> "$AtlasSpaceFolder/xfms/log.txt"
+echo " " >> "$AtlasSpaceFolder/xfms/log.txt
+
+
+
+${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpaceFolder}/TMP" "${FSLDIR}"
+
+
+
+
+#transform brain mask to fit with the MMORF alogrithm
+${FSLDIR}/bin/fslmaths ${brainmask_fs} -mul 7 -add 1 -div 8 "${AtlasSpaceFolder}/TMP/brainmask_fs_transformed.nii.gz"
+
+# Linear registration to MMORF
+verbose_echo " --> Linear registration to MMORF"
+${FSLDIR}/bin/flirt -interp spline -in ${T1wRestore} -ref ${T1wTemplate} -omat "${AtlasSpaceFolder}/xfms/acpc2MMORFLinear.mat" -out "${AtlasSpaceFolder}/xfms/${T1wRestoreBasename}_to_MMORFLinear"
