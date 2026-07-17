@@ -340,7 +340,7 @@ do
                 rm -rf "${PFMFolder}"/Results.ppp* 2>/dev/null || true # ignore errors due to nfs silly renamed files, or similar
             fi
 
-            echo  apptainer exec --bind $(dirname "${StudyFolder}") \
+            cmd=(apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
                 --env PYTHONNOUSERSITE=1 \
                 "${ProfumoSingularity}" \
@@ -348,16 +348,9 @@ do
                 --web-report \
                 "${PFM_PATH}" \
                 "${RESULTS_PATH}" \
-                "${REAL_REF_IMAGE}"
-            apptainer exec --bind $(dirname "${StudyFolder}") \
-                --env PROFUMODIR=/opt/profumo \
-                --env PYTHONNOUSERSITE=1 \
-                "${ProfumoSingularity}" \
-                /opt/fsl/fslpython/envs/profumo/bin/python3 /opt/profumo/Python/postprocess_results.py \
-                --web-report \
-                "${PFM_PATH}" \
-                "${RESULTS_PATH}" \
-                "${REAL_REF_IMAGE}"
+                "${REAL_REF_IMAGE}")
+            log_Msg "Running command: ${cmd[*]}"
+            "${cmd[@]}"
 
             log_Msg "Running PostPROFUMO step"
             "$HCPPIPEDIR"/PFM/scripts/PostPROFUMO.sh \
