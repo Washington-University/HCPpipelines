@@ -14,7 +14,7 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 g_matlab_default_mode=1
 
 #description of this script to use in usage
-opts_SetScriptDescription "regresses noise group temporal ICA components out of CIFTI and optionaly volume timeseries data and optionally correct the bias legacy field"
+opts_SetScriptDescription "regresses noise group temporal ICA components out of CIFTI and optionally volume timeseries data and optionally correct the bias legacy field"
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value other than empty string if AddOptional], [compatibility flag, ...]
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
