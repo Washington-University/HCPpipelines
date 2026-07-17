@@ -44,7 +44,7 @@ opts_AddMandatory '--concat-name' 'ConcatName' "concatenated fMRI name if using 
 opts_AddMandatory '--volume-template-file' 'VolumeTemplateFile' "volume template file path" ''
 
 #PROFUMO specific parameters
-opts_AddOptional '--profumo-threads' 'ProfumoThreads' 'integer' "number of threads for PROFUMO" '25'
+opts_AddOptional '--profumo-threads' 'ProfumoThreads' 'integer' "number of threads for PROFUMO" '-1'
 opts_AddOptional '--profumo-dof-correction' 'DOFCorrection' 'float' "DOF correction for PROFUMO" '0.5'
 opts_AddOptional '--profumo-cov-model' 'CovModel' 'string' "covariance model for PROFUMO" 'Subject'
 opts_AddOptional '--profumo-singularity' 'ProfumoSingularity' 'path' "path to PROFUMO singularity container"
@@ -82,6 +82,10 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+if [[ "$ProfumoThreads" == "-1" ]]; then
+    ProfumoThreads=$(par_numphys)
+fi  
 
 #processing code goes here
 IFS='@' read -a Subjlist <<<"$SubjlistRaw"

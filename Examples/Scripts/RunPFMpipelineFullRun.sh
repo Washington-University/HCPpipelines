@@ -188,16 +188,20 @@ main() {
     # Volume template file
     VolumeTemplateCIFTI="${HOME}/data/HCPpipelines_ExampleData/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
  
-    # PROFUMO settings
-    ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
+    ## PROFUMO settings
     ProfumoConfig="${PFMFolder}/dataLocations.json"  
     TR="0.72"
-    ProfumoThreads="14"
+    ProfumoThreads="-1" # number of threads for PROFUMO, -1 means auto-detect physical cores
     DOFCorrection="0.5"
     CovModel="Subject"
     nStarts="5" # number of multi-start iterations for PROFUMO
     RandomSeed="$randSeed" # random seed for PROFUMO reproducibility
     # RefImage will be auto-set based on data type below
+
+    # Download the PROFUMO Singularity image from the following link and place it in the PFM folder, 
+    # or change the path below to point to your own copy of the image
+    # https://balsa.wustl.edu/myelin/download?dirName=public&filepath=profumo_v2.sif
+    ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
     
     # build Profumo data location json
     mkdir -p $PFMFolder
