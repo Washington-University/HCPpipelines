@@ -294,16 +294,7 @@ do
             fi
 
             # log_Msg "Running PROFUMO decomposition with dimension ${PFMdim}"
-            echo  apptainer exec --bind $(dirname "${StudyFolder}") \
-                --env PROFUMODIR=/opt/profumo \
-                --env PYTHONNOUSERSITE=1 \
-                "${ProfumoSingularity}" \
-                /opt/profumo/C++/PROFUMO "${ProfumoConfigToUse}" \
-                "${PFMdim}" "${PFM_PATH}" \
-                --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
-                --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" \
-                --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg}
-            apptainer exec --bind $(dirname "${StudyFolder}") \
+            cmd=(apptainer exec --bind $(dirname "${StudyFolder}") \
                 --env PROFUMODIR=/opt/profumo \
                 --env PYTHONNOUSERSITE=1 \
                 "${ProfumoSingularity}" \
@@ -311,7 +302,9 @@ do
                 "${PFMdim}" "${PFM_PATH}" \
                 --useHRF "${TR}" --covModel "${CovModel}" --dofCorrection "${DOFCorrection}" \
                 --nThreads "${ProfumoThreads}" --lowRankData "${LowRankData}" --randomSeed "${RandomSeed}" \
-                --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg}
+                --multiStartIterations "${MultiStartIterations}" ${LoadSequentiallyArg} ${InitialMapsArg})
+            log_Msg "running command: ${cmd[*]}"
+            "${cmd[@]}"
             
             #Cleanup WF files
             if [[ "$NumWishart" -gt 0 ]]
