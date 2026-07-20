@@ -323,7 +323,7 @@ do
                     log_Msg "Keeping Wishart filtered files in ${WFDir}"
                 else
                     log_Msg "Cleaning up Wishart filtered files"
-                    rm -rf "${WFDir}"
+                    rm -rf "${WFDir}"  2>/dev/null || true # ignore errors due to nfs silly renamed files, or similar
                 fi
             fi          
             ;;
@@ -334,12 +334,12 @@ do
             RESULTS_PATH="${PFMFolder}/Results.ppp"
             REAL_REF_IMAGE=$(readlink -f "${RefImage}")
 
-            # Remove any existing Results.ppp directory (and ++ variants created by re-runs)
+            # Remove any existing Results.ppp directory 
             # so postprocess_results.py writes fresh output to Results.ppp
             if [[ -d "${PFMFolder}/Results.ppp" ]]
             then
-                log_Warn "Results.ppp folder ${PFMFolder}/Results.ppp(+) already exists, clearing before postprocessing"
-                rm -rf "${PFMFolder}"/Results.ppp* 2>/dev/null || true # ignore errors due to nfs silly renamed files, or similar
+                log_Warn "Results.ppp folder ${PFMFolder}/Results.ppp already exists, clearing before postprocessing"
+                rm -rf "${PFMFolder}"/Results.ppp 2>/dev/null || true # ignore errors due to nfs silly renamed files, or similar
             fi
 
             cmd=(apptainer exec --bind $(dirname "${StudyFolder}") \
