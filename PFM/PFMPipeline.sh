@@ -180,8 +180,9 @@ do
                         then
                             # Use already concatenated file
                             concatFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                            vnScalar="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                            vnSeries="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dtseries.nii"
                             concatOutFile="${WFDir}/${Subject}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                            
                             if [[ -f "$concatFile" ]]
                             then
                                 log_Msg "Applying Wishart filter to concat file for subject $Subject"
@@ -191,11 +192,15 @@ do
                                     --num-wishart="$NumWishart" \
                                     --matlab-run-mode="$MatlabMode"
                                 
+                                # un-variance normalize post-WF concatenated data
+                                wb_command -cifti-math "TCS / VN" "${vnSeries}" -var TCS "${concatOutFile}" -var VN "${vnScalar}" -select 1 1 -repeat # un-variance normalize concatenated data
+
                                 # Split back into individual runs 
                                 cumTP=0
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
                                     origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_mean.dscalar.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
@@ -204,7 +209,11 @@ do
                                         outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                                         wb_command -cifti-merge "$outFile" -direction ROW \
                                             -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
+
+                                        # un-demean the deconcatenated WF data by adding back the mean from the original run
+                                        wb_command -cifti-math "TCS + MEAN" "$outFile" -var TCS "$outFile" -var MEAN "$meanFile" -select 1 1 -repeat
                                         cumTP=$endIdx
+
                                     fi
                                 done
                             fi
