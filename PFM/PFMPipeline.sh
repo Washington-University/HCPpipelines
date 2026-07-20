@@ -31,7 +31,7 @@ opts_AddMandatory '--subject-list' 'SubjlistRaw' '100206@100307...' "list of sub
 opts_AddMandatory '--fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "list of fmri run names separated by @s"
 opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to use for PFM pipeline outputs"
 opts_AddMandatory '--output-string' 'OutputSTRING' 'string' "output string for individual subject files (typically includes dimension, group name, and seed)"
-opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_MSMAll_hp2000_clean_rclean_tclean'"
+opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' "file name component representing the preprocessing already done, e.g. '_Atlas_MSMAll_hp0_clean_tclean'"
 opts_AddMandatory '--group-average-name' 'GroupAverageName' 'string' 'name to use for the group output folder'
 opts_AddMandatory '--pfm-dimension' 'PFMdim' 'integer' "PFM dimensionality (e.g., 76, 92, 65)"
 opts_AddMandatory '--pfm-folder' 'PFMFolder' 'path' "path to PFM results folder containing Results.ppp"
@@ -223,12 +223,17 @@ do
                                     outputList+="$outputFile"
                                 fi
                             done
+
                             log_Msg "Applying Wishart filter for subject $Subject"
-                            "$HCPPIPEDIR"/PFM/scripts/ApplyWishartFilterProfumo.sh \
+                            "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
                                 --input="$inputList" \
                                 --output="$outputList" \
                                 --num-wishart="$NumWishart" \
                                 --matlab-run-mode="$MatlabMode"
+
+
+
+
                         fi
                     done
                 fi

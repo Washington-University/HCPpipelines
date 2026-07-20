@@ -138,7 +138,7 @@ main() {
     # set the start step beginning from RunPROFUMO which is by default the first step
     StartStep="RunPROFUMO"
     StopStep="GroupPFMs"
-    NumWishart="5"
+    NumWishart="6"
     KeepWishartFiles="NO"
 
     # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
@@ -158,18 +158,18 @@ main() {
     subjectExpectedTimepoints="4800"
 
     # set temporal highpass full-width (2*sigma) used in preprocessing
-    HighPass="2000"
+    HighPass="0"
 
     #set fMRIResolution of data, like '2','1.60' or '2.40'
     fMRIResolution="2.0"  
 
     # PFM settings for REST data
     # set the PFM dimensionality
-    PFMdim="99" 
+    PFMdim="76" 
 
     PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_PFM_d${PFMdim}
     # Reference image for PROFUMO
-    RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_rclean_tclean_meanvn.dscalar.nii"
+    RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_tclean_meanvn.dscalar.nii"
     
     # set the file name component representing the preprocessing already done
     fMRIProcSTRING="hp${HighPass}_clean_rclean_tclean"
