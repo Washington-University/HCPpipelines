@@ -108,161 +108,141 @@ get_options() {
     echo "-- ${scriptName}: Specified Command-Line Options: -- End --"
 }
 
+# get command line options
+get_options "$@"
 
+# set up pipeline environment variables and software
+source "${EnvironmentScript}"
 
-#
-# Function Description
-#	Main processing of this script
-#
-#	Gets user specified command line options and runs PFM postprocessing pipeline 
-#   (please make sure the PROFUMO, ICA-FIX, MSMAll and MakeAverageDataset are finished before running this script)
-#
+if ((RunLocal)) || [[ "$QUEUE" == "" ]]; then
+  echo "running locally"
+  queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+else
+  echo "queueing with fsl_sub to $QUEUE"
+  queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
+fi
 
-main() {
+# Download the PROFUMO Singularity image from the following link and place it in the PFM folder, 
+# or change the path below to point to your own copy of the image
+# https://balsa.wustl.edu/myelin/download?dirName=public&filepath=profumo_v2.sif
+ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
 
-    # get command line options
-    get_options "$@"
+# general settings
+# set the start step beginning from RunPROFUMO which is by default the first step
+StartStep="RunPROFUMO"
+StopStep="GroupPFMs"
+NumWishart="6"
+KeepWishartFiles="NO"
 
-    # set up pipeline environment variables and software
-    source "${EnvironmentScript}"
+# set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
+parLimit=-1
 
-    if ((RunLocal)) || [[ "$QUEUE" == "" ]]; then
-      echo "running locally"
-      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-    else
-      echo "queueing with fsl_sub to $QUEUE"
-      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
-    fi
+# general inputs
+fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL" 
 
-    # general settings
-    # set the start step beginning from RunPROFUMO which is by default the first step
-    StartStep="RunPROFUMO"
-    StopStep="GroupPFMs"
-    NumWishart="6"
-    KeepWishartFiles="NO"
+randSeed=123 # random seed for PROFUMO 
 
-    # set how many subjects to do in parallel (local, not cluster-distributed) during RSN regression, defaults to all detected physical cores, '-1'
-    parLimit=-1
+OutputfMRIName="rfMRI_REST"
+# set the MR concat fMRI name, if multi-run FIX was used, leave empty for single runs
+ConcatName=""
 
-    
-    # general inputs
-    fMRINames="rfMRI_REST1_LR@rfMRI_REST1_RL@rfMRI_REST2_LR@rfMRI_REST2_RL" 
+# set the output spectra size for individual projection, RunsXNumTimePoints    #subjectExpectedTimepoints="3655"
+subjectExpectedTimepoints="4800"
 
-    randSeed=123 # random seed for PROFUMO 
+# set temporal highpass full-width (2*sigma) used in preprocessing
+HighPass="0"
 
-    OutputfMRIName="rfMRI_REST"
-    # set the MR concat fMRI name, if multi-run FIX was used, leave empty for single runs
-    ConcatName=""
+#set fMRIResolution of data, like '2','1.60' or '2.40'
+fMRIResolution="2.0"  
 
-    # set the output spectra size for individual projection, RunsXNumTimePoints    #subjectExpectedTimepoints="3655"
-    subjectExpectedTimepoints="4800"
+# PFM settings for REST data
+# set the PFM dimensionality
+PFMdim="76" 
 
-    # set temporal highpass full-width (2*sigma) used in preprocessing
-    HighPass="0"
+PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_PFM_d${PFMdim}
+# Reference image for PROFUMO
+RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_tclean_meanvn.dscalar.nii"
 
-    #set fMRIResolution of data, like '2','1.60' or '2.40'
-    fMRIResolution="2.0"  
+# set the file name component representing the preprocessing already done
+fMRIProcSTRING="hp${HighPass}_clean_rclean_tclean"
 
-    # PFM settings for REST data
-    # set the PFM dimensionality
-    PFMdim="76" 
+# set the mesh resolution, like '32' for 32k_fs_LR
+LowResMesh="32"
 
-    PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_PFM_d${PFMdim}
-    # Reference image for PROFUMO
-    RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_tclean_meanvn.dscalar.nii"
-    
-    # set the file name component representing the preprocessing already done
-    fMRIProcSTRING="hp${HighPass}_clean_rclean_tclean"
+# Define OutputSTRING with seed designation
+OutputSTRING="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${randSeed}_PFMs"
 
-    # set the mesh resolution, like '32' for 32k_fs_LR
-    LowResMesh="32"
+# RSN regression settings
+FixLegacyBiasString="NO"
+ScaleFactor="0.01"
 
-    
-    # Define OutputSTRING with seed designation
-    OutputSTRING="${OutputfMRIName}_d${PFMdim}_${GroupAverageName}_seed${randSeed}_PFMs"
+# Volume template file
+VolumeTemplateCIFTI="${HOME}/data/HCPpipelines_ExampleData/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
 
-    # RSN regression settings
-    FixLegacyBiasString="NO"
-    ScaleFactor="0.01"
+## PROFUMO settings
+ProfumoConfig="${PFMFolder}/dataLocations.json"  
+TR="0.72"
+ProfumoThreads="-1" # number of threads for PROFUMO, -1 means auto-detect physical cores
+DOFCorrection="0.5"
+CovModel="Subject"
+nStarts="5" # number of multi-start iterations for PROFUMO
+RandomSeed="$randSeed" # random seed for PROFUMO reproducibility
+# RefImage will be auto-set based on data type below
 
-    # Volume template file
-    VolumeTemplateCIFTI="${HOME}/data/HCPpipelines_ExampleData/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
- 
-    ## PROFUMO settings
-    ProfumoConfig="${PFMFolder}/dataLocations.json"  
-    TR="0.72"
-    ProfumoThreads="-1" # number of threads for PROFUMO, -1 means auto-detect physical cores
-    DOFCorrection="0.5"
-    CovModel="Subject"
-    nStarts="5" # number of multi-start iterations for PROFUMO
-    RandomSeed="$randSeed" # random seed for PROFUMO reproducibility
-    # RefImage will be auto-set based on data type below
-
-    # Download the PROFUMO Singularity image from the following link and place it in the PFM folder, 
-    # or change the path below to point to your own copy of the image
-    # https://balsa.wustl.edu/myelin/download?dirName=public&filepath=profumo_v2.sif
-    ProfumoSingularity="$HCPPIPEDIR/PFM/profumo_v2.sif" 
-    
-    # build Profumo data location json
-    mkdir -p $PFMFolder
-    echo '{' > $ProfumoConfig
-    for Subject in $(echo $Subjlist | tr "@" "\n"); do
-        echo -e "\t\"$Subject\": {" >> $ProfumoConfig
-        for fMRIName in $(echo $fMRINames | tr "@" "\n"); do
-            runFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-            if [[ -e $runFile ]]; then
-                echo -e "\t\t\"$fMRIName\": \"$runFile\"," >> $ProfumoConfig
-            fi
-        done
-        perl -pi -e 'if (eof) { s/,$// }' $ProfumoConfig  # remove trailing comma
-        echo -e "\t}," >> $ProfumoConfig
+# build Profumo data location json
+mkdir -p $PFMFolder
+echo '{' > $ProfumoConfig
+for Subject in $(echo $Subjlist | tr "@" "\n"); do
+    echo -e "\t\"$Subject\": {" >> $ProfumoConfig
+    for fMRIName in $(echo $fMRINames | tr "@" "\n"); do
+        runFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+        if [[ -e $runFile ]]; then
+            echo -e "\t\t\"$fMRIName\": \"$runFile\"," >> $ProfumoConfig
+        fi
     done
     perl -pi -e 'if (eof) { s/,$// }' $ProfumoConfig  # remove trailing comma
-    echo "}" >> $ProfumoConfig
+    echo -e "\t}," >> $ProfumoConfig
+done
+perl -pi -e 'if (eof) { s/,$// }' $ProfumoConfig  # remove trailing comma
+echo "}" >> $ProfumoConfig
 
-    # PFM pipeline execution
-    echo "Starting PFM postprocessing pipeline"
-    echo "Data type: ${OutputfMRIName}"
-    echo "PFM dimension: ${PFMdim}"
+# PFM pipeline execution
+echo "Starting PFM postprocessing pipeline"
+echo "Data type: ${OutputfMRIName}"
+echo "PFM dimension: ${PFMdim}"
 
-    "${queuing_command[@]}" "$HCPPIPEDIR"/PFM/PFMPipeline.sh \
-                                    --study-folder="$StudyFolder" \
-                                    --subject-list="$Subjlist" \
-                                    --fmri-names="$fMRINames" \
-                                    --output-fmri-name="$OutputfMRIName" \
-                                    --output-string="$OutputSTRING" \
-                                    --proc-string="$fMRIProcSTRING" \
-                                    --group-average-name="$GroupAverageName" \
-                                    --pfm-dimension="$PFMdim" \
-                                    --pfm-folder="$PFMFolder" \
-                                    --surf-reg-name="$RegName" \
-                                    --concat-name="$ConcatName" \
-                                    --low-res-mesh="$LowResMesh" \
-                                    --runs-timepoints="$subjectExpectedTimepoints" \
-                                    --fix-legacy-bias="$FixLegacyBiasString" \
-                                    --num-wishart="$NumWishart"\
-                                    --scale-factor="$ScaleFactor" \
-                                    --starting-step="$StartStep" \
-                                    --stop-after-step="$StopStep" \
-                                    --parallel-limit="$parLimit" \
-                                    --matlab-run-mode="$MatlabMode" \
-                                    --profumo-config="$ProfumoConfig" \
-                                    --profumo-singularity="$ProfumoSingularity" \
-                                    --profumo-tr="$TR" \
-                                    --keep-wishart-files="$KeepWishartFiles" \
-                                    --profumo-threads="$ProfumoThreads" \
-                                    --profumo-dof-correction="$DOFCorrection" \
-                                    --profumo-cov-model="$CovModel" \
-                                    --profumo-multi-start-iterations="$nStarts" \
-                                    --profumo-random-seed="$RandomSeed" \
-                                    --ref-image="$RefImage" \
-                                    --volume-template-file="$VolumeTemplateCIFTI"
-    
-    echo "PFM pipeline submitted successfully!"
-}
+"${queuing_command[@]}" "$HCPPIPEDIR"/PFM/PFMPipeline.sh \
+                                --study-folder="$StudyFolder" \
+                                --subject-list="$Subjlist" \
+                                --fmri-names="$fMRINames" \
+                                --output-fmri-name="$OutputfMRIName" \
+                                --output-string="$OutputSTRING" \
+                                --proc-string="$fMRIProcSTRING" \
+                                --group-average-name="$GroupAverageName" \
+                                --pfm-dimension="$PFMdim" \
+                                --pfm-folder="$PFMFolder" \
+                                --surf-reg-name="$RegName" \
+                                --concat-name="$ConcatName" \
+                                --low-res-mesh="$LowResMesh" \
+                                --runs-timepoints="$subjectExpectedTimepoints" \
+                                --fix-legacy-bias="$FixLegacyBiasString" \
+                                --num-wishart="$NumWishart"\
+                                --scale-factor="$ScaleFactor" \
+                                --starting-step="$StartStep" \
+                                --stop-after-step="$StopStep" \
+                                --parallel-limit="$parLimit" \
+                                --matlab-run-mode="$MatlabMode" \
+                                --profumo-config="$ProfumoConfig" \
+                                --profumo-singularity="$ProfumoSingularity" \
+                                --profumo-tr="$TR" \
+                                --keep-wishart-files="$KeepWishartFiles" \
+                                --profumo-threads="$ProfumoThreads" \
+                                --profumo-dof-correction="$DOFCorrection" \
+                                --profumo-cov-model="$CovModel" \
+                                --profumo-multi-start-iterations="$nStarts" \
+                                --profumo-random-seed="$RandomSeed" \
+                                --ref-image="$RefImage" \
+                                --volume-template-file="$VolumeTemplateCIFTI"
 
-#
-# Invoke the main function to get things started
-#
-main "$@"
+echo "PFM pipeline submitted successfully!"
 
