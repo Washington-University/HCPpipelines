@@ -38,7 +38,6 @@ AtlasSpaceFolderName="MMORFNonLinear"
 
 T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
 AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
-T1wFolder_T2wImageWithPath_acpc_dc="${T1wFolder}/${T2wImage}_acpc_dc"
 Diffusion="${T1wFolder}/Diffusion"
 
 
