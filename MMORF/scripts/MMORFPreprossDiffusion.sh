@@ -2,13 +2,13 @@
 set -euo pipefail
 
 if [ "$#" -lt 3 ]; then
-  echo "Usage: $0 <base_diffusion_dir> <output_dir> <fsl_dir>"
+  echo "Usage: $0 <base_diffusion_dir> <output_dir> <threshold>"
   exit 1
 fi
 
 BASE_DIR="$1"
 OUT_DIR="$2"
-FSL_DIR="$3"
+THRESH="$3"
 
 mkdir -p "$OUT_DIR"
 
@@ -21,8 +21,6 @@ OUT_BVALS="$OUT_DIR/bvals_extracted"
 OUT_BVECS="$OUT_DIR/bvecs_extracted"
 VOL_LIST="$OUT_DIR/vols.txt"
 
-
-THRESH=1200
 
 echo "Filtering diffusion data (fslselectvols)"
 echo "Threshold: bval < $THRESH"
@@ -81,7 +79,7 @@ BEGIN { split(keep, idxs, " ") }
 ' "$BVECS" > "$OUT_BVECS"
 
 #DTI Fit
-${FSL_DIR}/bin/dtifit -k "${OUT_DATA}" -o "${BASE_DIR}/data" -m "${BASE_DIR}/nodif_brain_mask.nii.gz" -r "${OUT_BVECS}" -b "${OUT_BVALS}" --gradnonlin="${BASE_DIR}/grad_dev.nii.gz" --save_tensor
+${FSLDIR}/bin/dtifit -k "${OUT_DATA}" -o "${BASE_DIR}/data" -m "${BASE_DIR}/nodif_brain_mask.nii.gz" -r "${OUT_BVECS}" -b "${OUT_BVALS}" --gradnonlin="${BASE_DIR}/grad_dev.nii.gz" --save_tensor
 
 
 echo "Done."

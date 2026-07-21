@@ -3,6 +3,7 @@
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Sessionlist="100307 100610"
 T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
+Threshold="1200"
 
 #####################################
 EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
@@ -26,5 +27,6 @@ for Session in ${Sessionlist}; do
     "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/PreMMORFPipeline.sh \
         --study-folder="${StudyFolder}" \
         --subject="${Session}" \
-        --t1-template="${T1wTemplate}"
+        --t1-template="${T1wTemplate}" \
+        --threshold="${Threshold}"
 done

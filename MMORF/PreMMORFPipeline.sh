@@ -15,6 +15,8 @@ opts_SetScriptDescription "Wrapper for preparing for MMORF registration"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
 opts_AddMandatory '--subject' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'image' 'Path to the T1w template image'
+opts_AddMandatory '--threshold' 'Threshold' 'value' 'Threshold for bvals for filtering diffusion data to only include the lowest shell, this is used for dtifit'
+
 
 opts_ParseArguments "$@"
 
@@ -64,7 +66,7 @@ echo " " >> "$AtlasSpaceFolder/xfms/log.txt
 
 
 
-${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpaceFolder}/TMP" "${FSLDIR}"
+${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpaceFolder}/TMP" "${Threshold}"
 
 
 
