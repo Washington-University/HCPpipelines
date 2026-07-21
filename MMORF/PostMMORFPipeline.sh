@@ -42,7 +42,6 @@ AtlasSpaceFolderName="MMORFNonLinear"
 
 T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
 AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
-T1wFolder_T2wImageWithPath_acpc_dc="${T1wFolder}/${T2wImage}_acpc_dc"
 Diffusion="${T1wFolder}/Diffusion"
 
 
@@ -50,7 +49,7 @@ ${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessing.sh \
     --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
-    --t2="${T1wFolder_T2wImageWithPath_acpc_dc}" \
+    --t2="${T1wFolder}/${T2wImage}_acpc_dc" \
     --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
     --t2restbrain="${T1wFolder}/${T2wImage}_acpc_dc_restore_brain" \
     --ref="${T1wTemplate}" \
