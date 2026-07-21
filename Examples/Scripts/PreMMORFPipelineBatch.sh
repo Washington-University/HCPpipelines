@@ -29,5 +29,5 @@ for Session in ${Sessionlist}; do
         --study-folder="${StudyFolder}" \
         --subject="${Session}" \
         --t1-template="${T1wTemplate}" \
-        --threshold="${Threshold}"
+        --lowest-shell-threshold="${DiffusionLowestShellThreshold}"
 done
