@@ -171,22 +171,13 @@ HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 #  Validate necessary scripts exist
 #
 validate_scripts() {
-	local error_msgs=""
+    if [[ ! -f "${HCPPIPEDIR_dMRI}"/eddy_postproc.sh ]]; then
+        log_Err_Abort "${HCPPIPEDIR_dMRI}/eddy_postproc.sh not found"
+    fi
 
-	if [ ! -e ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ]; then
-		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/eddy_postproc.sh not found"
-	fi
-
-	if [ ! -e ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh ]; then
-		error_msgs+="\nERROR: ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh not found"
-	fi
-
-	if [ ! -z "${error_msgs}" ]; then
-		show_usage
-		echo -e ${error_msgs}
-		echo ""
-		exit 1
-	fi
+    if [[ ! -f "${HCPPIPEDIR_dMRI}"/DiffusionToStructural.sh ]]; then
+        log_Err_Abort "${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh not found"
+    fi
 }
 
 #
@@ -196,7 +187,7 @@ validate_scripts() {
 #  Gets user specified command line options, runs Post-Eddy steps of Diffusion Preprocessing
 #
 # Validate scripts
-validate_scripts "$@"
+validate_scripts
 
 # Establish output directory paths
 outdir=${StudyFolder}/${Session}/${DWIName}

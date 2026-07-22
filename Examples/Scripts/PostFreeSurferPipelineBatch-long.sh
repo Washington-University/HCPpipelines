@@ -23,8 +23,8 @@ PossibleVisits=(V1_MR V2_MR V3_MR)
 ExcludeVisits=()
 #Longitudinal template labels, one per each subject.
 Templates=(HCA6002236_V1_V2 HCA6002237_V1_V2 HCA6002238_V1_V2)
-#EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-EnvironmentScript="${HOME}/projects/HCPPipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+#EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 source "$EnvironmentScript"
 
 ##################################################################################################

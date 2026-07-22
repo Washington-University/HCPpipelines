@@ -29,7 +29,7 @@ opts_AddMandatory '--T1im' 'T1wImage' 'image' "input T1 image"
 
 opts_AddMandatory '--T1brain' 'T1wBrain' 'image' "input T1 brain"
 
-#optional args 
+#optional args
 opts_AddOptional '--obias' 'oBias' 'image' "output bias field image"
 
 opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1 image"
@@ -37,6 +37,10 @@ opts_AddOptional '--oT1im' 'OutputT1wRestoredImage' 'image' "output corrected T1
 opts_AddOptional '--oT1brain' 'OutputT1wRestoredBrainImage' ' ' "output corrected T1 brain"
 
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias field smoothing Sigma (Default 20)" "20"
+
+opts_AddOptional '--strongbias' 'StrongBias' 'flag' "use stronger bias field correction" "FALSE"
+
+opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
 
 opts_ParseArguments "$@"
 
@@ -78,22 +82,39 @@ echo "PWD = `pwd`" >> $WDir/log.txt
 echo "date: `date`" >> $WDir/log.txt
 echo " " >> $WDir/log.txt
 
+# parse/sanity check for TRUE or FALSE, yes/no, etc
+StrongBias=$(opts_StringToBool "$StrongBias")
+# if TRUE, pass --strongbias to fsl_anat
+if ((StrongBias)); then
+	StrongBiasFlag="--strongbias"
+else
+	StrongBiasFlag=""
+fi
 ########################################## DO WORK ##########################################
 
 # Compute T1w Bias Normalization using fsl_anat function
 
-${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup
-
+if [ $SPECIES == "Human" ] ; then
+  ${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup
+else
+  if [ $(${FSLDIR}/bin/imtest $T1wBrain) = 0 ] ; then
+    ${FSLDIR}/bin/fsl_anat -i $T1wImage -o $WD --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+  else
+    fslmaths $T1wBrain -abs ${T1wBrain}_abs # TH - avoid error of Fast if the input has negative values (e.g. due to spline interpolation)
+    ${FSLDIR}/bin/fsl_anat -i ${T1wBrain}_abs -o $WD --nobet --noreorient --clobber --nocrop --noreg --nononlinreg --noseg --nosubcortseg -s ${BiasFieldSmoothingSigma} --nocleanup $StrongBiasFlag
+    fslmaths $T1wImage -div ${WDir}/T1_fast_bias.nii.gz ${WDir}/T1_biascorr
+  fi
+fi
 # Use existing brain mask if one is provided
 
 if [ ! -z ${T1wBrain} ] ; then
-  ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain  
+  ${FSLDIR}/bin/fslmaths ${WDir}/T1_biascorr -mas ${T1wBrain} ${WDir}/T1_biascorr_brain
   verbose_echo " --> masked T1_biascorr.nii.gz using ${T1wBrain}"
 fi
 
 # Copy data out if output targets provided
 
-if [ ! -z ${OutputT1wRestoredImage} ] ; then 
+if [ ! -z ${OutputT1wRestoredImage} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr ${OutputT1wRestoredImage}
   verbose_echo " --> Copied T1_biascorr.nii.gz to ${OutputT1wRestoredImage}.nii.gz"
 fi
@@ -101,7 +122,7 @@ fi
 if [ ! -z ${OutputT1wRestoredBrainImage} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_biascorr_brain ${OutputT1wRestoredBrainImage}
   verbose_echo " --> Copied T1_biascorr_brain.nii.gz to ${OutputT1wRestoredBrainImage}.nii.gz"
-fi 
+fi
 
 if [ ! -z ${oBias} ] ; then
   ${FSLDIR}/bin/imcp ${WDir}/T1_fast_bias ${oBias}

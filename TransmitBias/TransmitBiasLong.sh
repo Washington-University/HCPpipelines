@@ -67,7 +67,7 @@ opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordin
 #MFG: T1w/ outputs should use transmit resolution, MNINonLinear/ use grayordinates
 #MFG: should add default of 2 to PostFS if we have a default here
 opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates, default '2'" '2'
-opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res"
+opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res" ''
 opts_AddOptional '--myelin-mapping-fwhm' 'MyelinMappingFWHM' 'number' "fwhm value to use in -myelin-style, default 5" '5'
 opts_AddOptional '--old-myelin-mapping' 'oldmappingStr' 'TRUE or FALSE' "if myelin mapping was done using version 1.2.3 or earlier of wb_command, set this to true" 'false'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
@@ -87,6 +87,8 @@ if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+if [ -z "$transmitRes" ]; then transmitRes="$grayordRes"; fi
 
 if [ -n "$LogDir" ]; then 
   mkdir -p "$LogDir"

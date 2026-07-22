@@ -11,14 +11,17 @@ function cifti_write(cifti, filename, varargin)
     %   before writing.  If the 'keepmetadata' option is true, this option has no
     %   effect, but a warning is issued if both options are true.
     %
+    %   Specifying "..., 'otherexts', <struct array>" allows writing additional
+    %   nifti extensions to the output file
+    %
     %   Example usage:
     %
     %   >> cifti = cifti_read('91282_Greyordinates.dscalar.nii');
     %   >> cifti.cdata = outdata;
     %   >> cifti.diminfo{2} = cifti_diminfo_make_scalars(size(outdata, 2));
     %   >> cifti_write(cifti, 'ciftiout.dscalar.nii');
-    libversion = '2.1.0';
-    options = myargparse(varargin, {'stacklevel', 'disableprovenance', 'keepmetadata'}); %stacklevel is an implementation detail, don't add to help
+    libversion = '2.2.3';
+    options = myargparse(varargin, {'stacklevel', 'disableprovenance', 'keepmetadata', 'otherexts'}); %stacklevel is an implementation detail, don't add to help
     if isempty(options.stacklevel) %stacklevel is so that so it doesn't get "ciftisave" all the time
         options.stacklevel = 2;
     end
@@ -27,11 +30,13 @@ function cifti_write(cifti, filename, varargin)
     if options.keepmetadata && options.disableprovenance
         warning('both "keepmetadata" and "disableprovenance" are true, ignoring "disableprovenance"');
     end
+    %dims_m = size(cifti.cdata); %NO: matlab can't represent [x, y, 1] matrices, always changes them to [x, y] on the fly
+    dims_m = [];
     for i = 1:length(cifti.diminfo)
         cifti.diminfo{i}.length = cifti_diminfo_length(cifti.diminfo{i}); %set diminfo .length from diminfo contents so it is synchronized
+        dims_m(i) = cifti.diminfo{i}.length; %#ok<AGROW>
     end
     sanity_check_cdata(cifti);
-    dims_m = size(cifti.cdata);
     dims_c = dims_m([2 1 3:length(dims_m)]); %ciftiopen convention, first matlab index is down
     if ~options.keepmetadata
         if ~options.disableprovenance
@@ -50,10 +55,22 @@ function cifti_write(cifti, filename, varargin)
             cifti.metadata = struct('key', {}, 'value', {});
         end
     end
-    xmlbytes = cifti_write_xml(cifti, true);
+    xmlstring = cifti_write_xml(cifti, true);
     header = make_nifti2_hdr();
-    extension = struct('ecode', 32, 'edata', xmlbytes); %header writing function will pad the extensions with nulls
-    header.extensions = extension; %don't need concatenation for only one nifti extension
+    extension = struct('ecode', 32, 'edata', unicode2native(xmlstring, 'UTF-8')); %header writing function will pad the extensions with nulls
+    if isempty(options.otherexts)
+        header.extensions = extension;
+    else
+        for i = 1:length(options.otherexts)
+            if ~isfield(options.otherexts(i), 'ecode')
+                error('otherexts is missing the "ecode" field');
+            end
+            if options.otherexts(i).ecode == 32
+                error('otherexts contains an extension that uses the CIFTI ecode (32), this is not allowed');
+            end
+        end
+        header.extensions = [extension options.otherexts];
+    end
     header.datatype = 16;
     header.bitpix = 32;
     header.dim(6:(6 + length(dims_c) - 1)) = dims_c;
@@ -68,44 +85,28 @@ function cifti_write(cifti, filename, varargin)
     %FIXME: if we allow setting nifti scale/intercept, that needs to be added to this code
     max_elems = 128 * 1024 * 1024 / 4; %assuming float32, use only 128MiB extra memory when writing (or the size of a row, if that manages to be larger)
     if numel(cifti.cdata) <= max_elems
-        %file is small, use simple 'permute' writing code
+        %file is small, use simple whole-array writing code
         fwrite_excepting(fid, permute(cifti.cdata, [2 1 3:length(size(cifti.cdata))]), 'float32');
     else
-        max_rows = max(1, min(size(cifti.cdata, 1), floor(max_elems / size(cifti.cdata, 2))));
-        switch length(size(cifti.cdata))
-            case 2
-                %even out the passes to use about the same memory
-                num_passes = ceil(size(cifti.cdata, 1) / max_rows);
-                chunk_rows = ceil(size(cifti.cdata, 1) / num_passes);
-                for i = 1:chunk_rows:size(cifti.cdata, 1)
-                    fwrite_excepting(fid, cifti.cdata(i:min(size(cifti.cdata, 1), i + chunk_rows - 1), :)', 'float32');
+        max_rows = max(1, floor(max_elems / dims_c(1)));
+        if max_rows < dims_c(2) %less than a plane at a time, don't write cross-plane
+            num_passes = ceil(dims_c(2) / max_rows); %even out the passes
+            chunk_rows = ceil(prod(dims_c(2:end)) / num_passes);
+            total_planes = prod(dims_c(3:end));
+            for plane = 1:total_planes
+                for chunkstart = 1:chunk_rows:dims_c(2)
+                    %since it is part of one plane, technically matlab will return a 2D matrix, and we could just use transpose...
+                    fwrite_excepting(fid, permute(cifti.cdata(chunkstart:min(dims_c(2), chunkstart + chunk_rows - 1), :, plane), [2 1 3]), 'float32');
                 end
-            case 3
-                %3D - this is all untested
-                if max_rows < size(cifti.cdata, 1)
-                    %keep it simple, chunk each plane independently
-                    num_passes = ceil(size(cifti.cdata, 1) / max_rows);
-                    chunk_rows = ceil(size(cifti.cdata, 1) / num_passes);
-                    for j = 1:size(cifti.cdata, 3)
-                        for i = 1:chunk_rows:size(cifti.cdata, 1)
-                            fwrite_excepting(fid, cifti.cdata(i:min(size(cifti.cdata, 1), i + chunk_rows - 1), :, j)', 'float32');
-                        end
-                    end
-                else
-                    %write multiple full planes per call
-                    plane_elems = size(cifti.cdata, 1) * size(cifti.cdata, 2);
-                    max_planes = max(1, min(size(cifti.cdata, 3), floor(max_elems / plane_elems)));
-                    num_passes = ceil(size(cifti.cdata, 3) / max_planes);
-                    chunk_planes = ceil(size(cifti.cdata, 3) / num_passes);
-                    for j = 1:chunk_planes:size(cifti.cdata, 3)
-                        fwrite_excepting(fid, permute(cifti.cdata(:, :, j:min(size(cifti.cdata, 3), j + chunk_planes - 1)), [2 1 3]), 'float32');
-                    end
-                end
-            otherwise
-                %4D and beyond is not in the cifti-2 standard and is treated as an error in sanity_check_cdata
-                %but, if it ever is supported, warn and write it the memory-intensive way anyway
-                warning('cifti writing for 4 or more dimensions currently peaks at double the memory');
-                fwrite_excepting(fid, permute(cifti.cdata, [2 1 3:length(size(cifti.cdata))]), 'float32');
+            end
+        else
+            max_planes = max(1, floor(max_rows / dims_c(2))); %just in case the division does something dumb
+            total_planes = prod(dims_c(3:end)); %flatten all dimensions 3+
+            num_passes = ceil(total_planes / max_planes);
+            chunk_planes = ceil(total_planes / num_passes);
+            for chunkstart = 1:chunk_planes:total_planes
+                fwrite_excepting(fid, permute(cifti.cdata(:, :, chunkstart:min(total_planes, chunkstart + chunk_planes - 1)), [2 1 3]), 'float32');
+            end
         end
     end
 end
@@ -204,3 +205,4 @@ function output = argtobool(input, argname)
             error(['unrecognized value for option "' argname '", please use 0/1, true/false, yes/no']);
     end
 end
+

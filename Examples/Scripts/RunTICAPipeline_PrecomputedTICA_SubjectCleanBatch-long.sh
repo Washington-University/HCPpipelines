@@ -8,7 +8,7 @@ set -eu
 # please make sure that ICA-FIX, MSMAll and MakeAverageDataset are done properly matching the input arguments before running this tICA pipeline
 
 # Global default values
-DEFAULT_STUDY_FOLDER="${HOME}/data/Pipelines_ExampleData" # location of Subject folders (named by subjectID)
+DEFAULT_STUDY_FOLDER="${HOME}/data/HCPpipelines_ExampleData" # location of Subject folders (named by subjectID)
 # example subjects including 175 7T HCP subjects, separated by @
 # space separated subject list
 DEFAULT_SUBJECT_LIST="HCA6002236 HCA6002237"

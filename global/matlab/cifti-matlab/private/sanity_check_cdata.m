@@ -14,14 +14,16 @@ function sanity_check_cdata(cifti)
     if length(cifti.diminfo) < 2 || length(cifti.diminfo) > 3
         error('cifti-2 only supports 2 or 3 dimensions'); %cifti_write currently relies on this being an error
     end
-    if length(size(cifti.cdata)) ~= length(cifti.diminfo)
-        error('number of cdata dimensions does not match diminfo field');
-    end
     dims_xml = zeros(1, length(cifti.diminfo));
     for i = 1:length(cifti.diminfo)
         dims_xml(i) = cifti_diminfo_length(cifti.diminfo{i});
     end
-    if any(dims_xml ~= size(cifti.cdata))
+    matlab_dims_xml = ambiguate_dims(dims_xml); %drop trailing singular 3rd dimension, because matlab...
+    if ndims(cifti.cdata) ~= length(matlab_dims_xml)
+        error('number of cdata dimensions does not match diminfo field');
+    end
+    if any(matlab_dims_xml ~= size(cifti.cdata))
         error('dimension length mismatch between cifti cdata and diminfo fields');
     end
 end
+

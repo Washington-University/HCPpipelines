@@ -75,6 +75,8 @@ if (( ! IsLongitudinal )); then
 	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/str2diff.mat -inverse "$WorkingDirectory"/diff2str.mat
 else
 	${FSLDIR}/bin/convert_xfm -omat "$WorkingDirectory"/diff2str_long.mat -concat "$T1wCross2LongXfm" "$WorkingDirectory"/diff2str.mat	
+	#this may be needed if "$WorkingDirectory"/diff2str.mat is a symlink pointing to a read-only file
+	rm -f "$WorkingDirectory"/diff2str.mat
 	cp "$WorkingDirectory"/diff2str_long.mat "$WorkingDirectory"/diff2str.mat
 fi
 

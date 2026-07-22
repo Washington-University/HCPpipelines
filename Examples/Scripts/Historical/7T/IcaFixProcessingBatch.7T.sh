@@ -3,7 +3,7 @@
 # Global default values
 DEFAULT_STUDY_FOLDER="${HOME}/data/7T_Testing"
 DEFAULT_SUBJECT_LIST="100307"
-DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+DEFAULT_ENVIRONMENT_SCRIPT="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 DEFAULT_RUN_LOCAL="FALSE"
 DEFAULT_FIX_DIR="${HOME}/tools/fix1.06"
 

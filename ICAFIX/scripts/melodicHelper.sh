@@ -66,6 +66,12 @@ then
     par_set_log_dir "$logDir"
 fi
 
+# Verify melodic is on PATH before adding jobs
+if ! command -v melodic &> /dev/null
+then
+    log_Err_Abort "melodic not found on PATH. Verify FSL is installed and FSLDIR is set."
+fi
+
 for ((i = 0; i < ${#inputArray[@]}; ++i))
 do
     if [[ "$seeds" == "" ]]
@@ -76,5 +82,6 @@ do
     fi
 done
 
+# If par_runjobs fails, print log directory location and exit with same status
 par_runjobs "$numpar"
 

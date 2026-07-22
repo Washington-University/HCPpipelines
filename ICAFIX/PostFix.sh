@@ -122,7 +122,7 @@ esac
 # ------------------------------------------------------------------------------
 #  Create symlinks, but only if file doesn't already exist in ResultsFolder
 # ------------------------------------------------------------------------------
-
+# symlinks review: relative, ok
 create_symlink_if_appropriate() {
     
     local file="${1}"
@@ -363,6 +363,7 @@ cat "${TemplateSceneSingleScreen}" | sed s/SubjectID/${Subject}/g | sed s/fMRINa
 # need to be preserved (but with a warning generated)!
 # If file exists as a symlink, force creation of a new symlink pointing to the FIXFolder files
 file=ReclassifyAsSignal.txt
+#symlinks review: relative links created by this function, ok
 create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
 file=ReclassifyAsNoise.txt
 create_symlink_if_appropriate "${file}" "${ResultsFolder}" "${FIXFolder}"
