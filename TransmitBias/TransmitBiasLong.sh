@@ -43,7 +43,7 @@ opts_AddOptional '--afi-angle' 'AFITargFlipAngle' 'number' "target flip angle of
 opts_AddOptional '--b1tx-phase-divisor' 'B1TxDiv' 'number' "what to divide the phase map by to obtain proportion of intended flip angle, default 800" '800'
 
 #PseudoTransmit-specific. Should be the same as in the corresponding cross-sectional calls.
-opts_AddOptional '--pt-fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "fmri runs to use SE/SBRef files from, separated by @. For per-session lists, separate session-specific sets using % (e.g., run1@run2%run2%run1@run3)."
+opts_AddOptional '--pt-fmri-names' 'fMRINames' 'rfMRI_REST1_LR@rfMRI_REST1_RL...' "fmri runs to use SE/SBRef files from, separated by @. For per-session lists, separate session-specific sets using % (e.g., run1@run2%run2%run1@run3 to use run1 and run2 from session1, run2 from session2, and run1 and run3 from session3)."
 opts_AddOptional '--pt-bbr-threshold' 'ptbbrthresh' 'number' "mincost threshold for reinitializing fMRI bbregister with flirt (may need to be increased for aging-related reduction of gray/white contrast), default 0.5" '0.5'
 opts_AddOptional '--myelin-template' 'ReferenceTemplate' 'file' "expected transmit-corrected group-average myelin pattern (for testing correction parameters)"
 opts_AddOptional '--group-uncorrected-myelin' 'GroupUncorrectedMyelin' 'file' "the group-average uncorrected myelin file (to set the appropriate scaling of the myelin template)"
