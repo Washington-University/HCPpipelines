@@ -111,6 +111,8 @@ function stepNameToInd()
     log_Err_Abort "unrecognized step name: '$1'"
 }
 
+
+
 startInd=$(stepNameToInd "$startStep")
 stopAfterInd=$(stepNameToInd "$stopAfterStep")
 
@@ -176,12 +178,11 @@ do
                     do
                         mkdir -p "${WFDir}/${Subject}"
                         
-                        if [[ "$ConcatName" != "" ]]
+                        if [[ "$ConcatName" != "" ]] # multi_run data
                         then
                             # Use already concatenated file
                             concatFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                             vnScalar="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
-                            vnSeries="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dtseries.nii"
                             concatOutFile="${WFDir}/${Subject}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                             if [[ -f "$concatFile" ]]
                             then
@@ -193,56 +194,79 @@ do
                                     --matlab-run-mode="$MatlabMode"
                                 
                                 # un-variance normalize post-WF concatenated data
-                                wb_command -cifti-math "TCS / VN" "${vnSeries}" -var TCS "${concatOutFile}" -var VN "${vnScalar}" -select 1 1 -repeat # un-variance normalize concatenated data
-
-                                # Split back into individual runs 
+                                wb_command -cifti-math "TCS / VN" "${concatOutFile}" -var TCS "${concatOutFile}" -var VN "${vnScalar}" -select 1 1 -repeat
+                                
+                                # Split back into individual runs and restore means
                                 cumTP=0
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
                                     origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                                    meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_mean.dscalar.nii"
+                                    meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
                                         startIdx=$((cumTP + 1))
                                         endIdx=$((cumTP + nTP))
                                         outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                                        wb_command -cifti-merge "$outFile" -direction ROW \
-                                            -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
-
-                                        # un-demean the deconcatenated WF data by adding back the mean from the original run
+                                        wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
+                                        
+                                        # un-demean the deconcatenated post-WF data
                                         wb_command -cifti-math "TCS + MEAN" "$outFile" -var TCS "$outFile" -var MEAN "$meanFile" -select 1 1 -repeat
                                         cumTP=$endIdx
-
                                     fi
                                 done
                             fi
-                        else
-                            # No concat file then pass individual runs
-                            inputList=""
-                            outputList=""
+                        else # single run data
+                            # No concat file not supplied so create a temporary one for Wishart filtering
+                            demeanVNarray=()
+                            vnScalarArray=()
                             for fMRIName in "${fMRINamesArray[@]}"
                             do
                                 inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                vnScalarFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
                                 outputFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                                if [[ -f "$inputFile" ]]
-                                then
-                                    if [[ "$inputList" != "" ]]; then inputList+=","; outputList+=","; fi
-                                    inputList+="$inputFile"
-                                    outputList+="$outputFile"
-                                fi
+              
+                                # demean and variance normalize runs
+                                wb_command -cifti-math "(TCS - MEAN) * VN" "$outputFile" -var TCS "$inputFile" -var MEAN "$meanFile" -var VN "$vnScalarFile" -select 1 1 -repeat
+                                demeanVNarray+=("$outputFile")
+                                vnScalarArray+=("$vnScalarFile")
                             done
+
+                            # concatenate the demeaned+VN files
+                            concatOutFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                            wb_shortcuts -cifti-concatenate "${concatOutFile}" "${demeanVNarray[*]}"
+                            
 
                             log_Msg "Applying Wishart filter for subject $Subject"
                             "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
-                                --input="$inputList" \
-                                --output="$outputList" \
+                                --input="$concatOutFile" \
+                                --output="$concatOutFile" \
                                 --num-wishart="$NumWishart" \
                                 --matlab-run-mode="$MatlabMode"
 
-
-
-
+                            # deconcatenate the Wishart filtered data back into individual runs
+                            # (each run has its own VN file, so un-VN with each separately)
+                            cumTP=0
+                            for fMRIName in "${fMRINamesArray[@]}"
+                            do
+                                origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                vnScalarFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
+                                if [[ -f "$origFile" ]]
+                                then
+                                    nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
+                                    startIdx=$((cumTP + 1))
+                                    endIdx=$((cumTP + nTP))
+                                    outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                                    wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
+                                    
+                                    # un-variance normalize and un-demean each post-WF run
+                                    wb_command -cifti-math "(TCS / VN) + MEAN" "$outFile" -var TCS "$outFile" -var MEAN "$meanFile" -var VN "$vnScalarFile" -select 1 1 -repeat
+                                  
+                                    cumTP=$endIdx
+                                fi
+                            done
                         fi
                     done
                 fi
