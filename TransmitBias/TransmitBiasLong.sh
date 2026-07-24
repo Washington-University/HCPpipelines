@@ -106,7 +106,7 @@ IFS=@ read -r -a Sessions <<< "${SessionList}"
 
 # Handle per-session fMRI name sets.
 # Default behavior: a single set applies to all sessions.
-# New behavior: multiple per-session sets separated by |, with one set per session.
+# New behavior: multiple per-session sets separated by %, with one set per session.
 fMRINamesPerSession=()
 if [[ "${fMRINames:-}" == *"%"* ]]; then
     IFS='%' read -r -a fMRINamesPerSession <<< "${fMRINames}"
