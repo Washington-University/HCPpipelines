@@ -13,20 +13,7 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: classifies functional areas in a single subject enabled by multiple versions of the areal classifier, including the mlp classifier designed in Glasser 2016, DOI 10.1038/nature18933
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-}
+opts_SetScriptDescription "classifies functional areas in a single subject enabled by multiple versions of the areal classifier, including the mlp classifier designed in Glasser 2016, DOI 10.1038/nature18933"
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
