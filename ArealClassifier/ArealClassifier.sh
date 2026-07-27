@@ -157,7 +157,7 @@ AxisOneRightParameters="3@2@1%(-Var+3)"
 AxisTwoLeftParameters="1@1.5@2%(Var-1)"
 AxisTwoRightParameters="1@1.5@2%(Var-1)"
 LinearGradientSmoothingFWHM="2"
-GradientSmoothingFWHM=`echo "1 * ( 2 * ( sqrt ( 2 * l ( 2 ) ) ) )" | bc -l` #Default is Sigma=1mm
+GradientSmoothingFWHM=`echo "1 * (2 * (sqrt(2 * l(2))))" | bc -l` #Default is Sigma=1mm
 DilationAmount="50"
 GenerateGradients="YES" #YES or NO
 ReRun="YES" #YES or NO
