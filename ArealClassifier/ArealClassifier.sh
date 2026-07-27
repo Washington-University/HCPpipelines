@@ -295,10 +295,10 @@ then
 fi
 #average dropouts across runs, map to surface, put in cifti, since nothing else uses them this way
 #these temp names are a bit messy, but who cares
-volmerged="$(mktemp --tmpdir XXXXXX.dropouts.nii.gz)"
+tempfiles_create XXXXXX.dropouts.nii.gz volmerged
 leftdropouts="$volmerged.left.func.gii"
 rightdropouts="$volmerged.right.func.gii"
-tempfiles_add "$volmerged" "$leftdropouts" "$rightdropouts"
+tempfiles_add "$leftdropouts" "$rightdropouts"
 
 IFS=@ read -a fmriarray <<<"$rfMRINamesFinal"
 mergeargs=()
