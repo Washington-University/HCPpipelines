@@ -404,6 +404,7 @@ do
 
         AreaNamesTemp="$(mktemp --tmpdir XXXXXX.areanames.txt)"
         tempfiles_add "$AreaNamesTemp"
+        #get the first line of each pair of lines
         sed -n 'p;n' "$LabelTable" > "$AreaNamesTemp"
         
         InputDense="${DownSampleFolder}/${Subject}.${Hem}.MultiModal_Features${suffix}_${RegName}.${LowResMesh}k_fs_LR.dscalar.nii"
