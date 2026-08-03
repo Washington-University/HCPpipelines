@@ -218,8 +218,10 @@ select_flag="0"
 if [[ "$SPECIES" == "Human" ]] && ((SelectBestB0)); then
 	select_flag="1"
 fi
+#TSC: before NHP, this used to be just "if not longitudinal, run eddy_postproc.sh"
+#TSC: unclear whether current version is expected to work for NHP longitudinal, if not, maybe restore the original logic
 if [[ "$SPECIES" == "Human" ]] && (( IsLongitudinal )); then
-	: # skip eddy_postproc for longitudinal Human (existing behavior)
+	true # does nothing - skip eddy_postproc for longitudinal Human (existing behavior)
 else
 	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag} ${SpeciesLabel}
 fi
