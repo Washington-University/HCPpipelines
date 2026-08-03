@@ -76,6 +76,10 @@ if [[ "$SPECIES" == *Human* ]] ; then
     InflateScale="1"
     FlatMapRootName="colin.cerebral"
 
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="2"
+
     #fMRIVolume
     FinalfMRIResolution="2" #this setup script is only used by NHP, keep symmetry with NHP here
 
@@ -118,7 +122,11 @@ elif [[ "$SPECIES" == *Chimp* ]] ; then
     GrayordinatesSpaceDIR="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases"
     ReferenceMyelinMaps="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/standard_mesh_atlases/ChimpYerkes29.MyelinMap_BC.164k_fs_LR.dscalar.nii"
     LowResMeshes="32@20" #Needs to match what is in PostFreeSurfer
-    GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human. 
+    GrayordinatesResolution="1.6" #should be either 1 (7T) or 2 (3T) for human.
+
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="1"
 
     #fMRIVolume
     FinalfMRIResolution="1.6" #For convenience in NHP, use grayordinates resolution for volume processing
@@ -272,6 +280,10 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then
     MSMSulcConf="MSMSulcStrainFinalconfMacaque"
     FlatMapRootName="$BrainTemplate"
 
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="0.7"
+    
     #fMRIVolume
     FinalfMRIResolution="1.2" #For convenience in NHP, use grayordinates resolution for volume processing
 
@@ -323,6 +335,10 @@ elif [[ "$SPECIES" = Marmoset ]] ; then
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
     FlatMapRootName="$BrainTemplate"
 
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="0.5"
+
     #fMRIVolume
     FinalfMRIResolution="0.8" #For convenience in NHP, use grayordinates resolution for volume processing
 
@@ -366,6 +382,10 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then #NightMokey added by Takuya Hayashi, 
     GrayordinatesResolution="1.0" #Needs to match what is in PostFreeSurfer. 
     InflateScale="2.5"
     MSMSulcConf=MSMSulcStrainFinalconfMacaque
+
+    # FS BBR in DiffusionPreprocPipeline
+    FSBBRDIFF=TRUE
+    DiffWMProjAbs="0.3"
 
     #fMRIVolume
     FinalfMRIResolution="1.0" #For convenience in NHP, use grayordinates resolution for volume processing

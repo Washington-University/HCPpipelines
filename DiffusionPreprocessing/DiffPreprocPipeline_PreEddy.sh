@@ -149,6 +149,17 @@ opts_AddOptional '--combine-data-flag' 'CombineDataFlag' 'number' "Specified val
   0 - As 1, but also include uncombined single volumes
 Defaults to 1" "1"
 
+#NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. Human, Chimp, RhesusMacaque, Mac30BS, CynoMacaque, Marmoset, NightMonkey" "Human"
+
+opts_AddOptional '--specieslabel' 'SpeciesLabel' 'number' "Species label for NHP sub-scripts (0=Human, 1=Chimp, 2=Macaque, etc.). Defaults to 0" "0"
+
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data"
+
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data"
+
+opts_AddOptional '--usephasezero' 'UsePhaseZero' 'Boolean' "Use T2w as phase-zero reference volume for NHP topup" "False"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -161,6 +172,7 @@ opts_ShowValues
 #parse booleans
 SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
 EnsureEvenSlices=$(opts_StringToBool "$EnsureEvenSlicesString")
+UsePhaseZero=$(opts_StringToBool "$UsePhaseZero")
 
 #defaults that depend on env variables
 if [[ "$TopupConfig" == "" ]]
@@ -280,9 +292,24 @@ for Image in ${PosInputImages}; do
 	else
 		PosVols[${Pos_count}]=$(${FSLDIR}/bin/fslval ${Image} dim4)
 		absname=$(${FSLDIR}/bin/imglob ${Image})
-		${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
-		${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
-		${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] && [[ "$TruePatientPosition" =~ ^(HFS|FFS|HFSx|FFSx)$ ]]; then
+			# NHP: correct/reorient input data based on patient position - TH Aug 2024
+			log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${absname} --out=${outdir}/rawdata/${basePos}_${Pos_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		elif [[ "$SPECIES" != "Human" ]]; then
+			# NHP: fslreorient2std + rotate bvecs
+			${runcmd} ${FSLDIR}/bin/fslreorient2std -m ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		else
+			# Human: simple copy
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${basePos}_${Pos_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
+			${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
+		fi
 	fi
 	Pos_count=$((${Pos_count} + 1))
 done
@@ -303,9 +330,24 @@ for Image in ${NegInputImages}; do
 	else
 		NegVols[${Neg_count}]=$(${FSLDIR}/bin/fslval ${Image} dim4)
 		absname=$(${FSLDIR}/bin/imglob ${Image})
-		${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
-		${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
-		${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] && [[ "$TruePatientPosition" =~ ^(HFS|FFS|HFSx|FFSx)$ ]]; then
+			# NHP: correct/reorient input data based on patient position - TH Aug 2024
+			log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
+			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${absname} --out=${outdir}/rawdata/${baseNeg}_${Neg_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		elif [[ "$SPECIES" != "Human" ]]; then
+			# NHP: fslreorient2std + rotate bvecs
+			${runcmd} ${FSLDIR}/bin/fslreorient2std -m ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		else
+			# Human: simple copy
+			${runcmd} ${FSLDIR}/bin/imcp ${absname} ${outdir}/rawdata/${baseNeg}_${Neg_count}
+			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
+			${runcmd} cp ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
+		fi
 	fi
 	Neg_count=$((${Neg_count} + 1))
 done
@@ -388,6 +430,9 @@ if [[ ${Paired_flag} == 0 && ${SelectBestB0} == 0 ]]; then
 	log_Err_Abort "This will work, provided that --combine-data-flag=2 is used in conjunction with the --select-best-b0=True option"
 fi
 
+# Intensity normalisation + select-best-b0 or sequence-based b0 extraction.
+# Same path for all species; NHP-specific behaviour is handled via $SPECIES inside run_topup.sh
+# and the optional T2w phase-zero block below (gated by --usephasezero).
 log_Msg "Running Intensity Normalisation"
 ${runcmd} ${HCPPIPEDIR_dMRI}/basic_preproc_norm_intensity.sh ${outdir} ${b0maxbval}
 
@@ -417,7 +462,21 @@ if ((EnsureEvenSlices)); then
 fi
 
 log_Msg "Running Topup"
-${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig}
+# NHP only: optionally add T2w as a phase-zero volume if available and requested - TH Jan 2023
+# (never runs for Human, regardless of --usephasezero)
+if [[ "$SPECIES" != "Human" ]] && ((UsePhaseZero)) && [[ $(${FSLDIR}/bin/imtest ${StudyFolder}/${Session}/T2w/T2w.nii.gz) == 1 ]]; then
+	T2wImage=${StudyFolder}/${Session}/T2w/T2w.nii.gz
+	# Use scanner coordinate for initial registration between T2w and dMRI - TH Jan 2023
+	${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${outdir}/topup/T2w2dMRI.mat ${T2wImage} ${outdir}/topup/Pos_b0.nii.gz
+	${FSLDIR}/bin/flirt -in ${T2wImage} -ref ${outdir}/topup/Pos_b0.nii.gz -applyxfm -init ${outdir}/topup/T2w2dMRI.mat -o ${outdir}/topup/Zero.nii.gz
+	${FSLDIR}/bin/immv ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0
+	${FSLDIR}/bin/fslmerge -t ${outdir}/topup/Pos_Neg_b0 ${outdir}/topup/Pos_Neg_NoZero_b0 ${outdir}/topup/Zero
+	${FSLDIR}/bin/fslmaths ${outdir}/topup/Pos_Neg_b0 -inm 10000 ${outdir}/topup/Pos_Neg_b0
+	cp ${outdir}/topup/acqparams.txt ${outdir}/topup/acqparams_NoZero.txt
+	cat ${outdir}/topup/acqparams.txt | tail -1 | awk '{print $1,$2,0,0.01}' >> ${outdir}/topup/acqparams.txt
+fi
+
+${runcmd} ${HCPPIPEDIR_dMRI}/run_topup.sh ${outdir}/topup ${TopupConfig} ${SPECIES}
 
 log_Msg "Completed!"
 

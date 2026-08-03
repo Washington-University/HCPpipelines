@@ -143,6 +143,12 @@ opts_AddOptional '--printcom' 'runcmd' 'echo' 'to echo or otherwise  output the 
 #If set, longitudinal mode is triggered.
 opts_AddOptional '--t1w-cross2long-xfm' 'T1wCross2LongXfm' ".mat Affine transform from cross-sectional T1w_acpc_dc space to longitudinal template space. If set, longitudinal mode is triggered." ""
 
+#NHP options
+opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. Human, Chimp, RhesusMacaque, Mac30BS, CynoMacaque, Marmoset, NightMonkey" "Human"
+
+opts_AddOptional '--specieslabel' 'SpeciesLabel' 'number' "Species label for NHP sub-scripts (0=Human, 1=Chimp, 2=Macaque, etc.). Defaults to 0" "0"
+
+opts_AddOptional '--wmprojabs' 'DiffWMProjAbs' 'number' "White matter projection absolute depth. Defaults to 2" "2"
 
 opts_ParseArguments "$@"
 
@@ -207,12 +213,15 @@ fi
 
 log_Msg "Running Eddy PostProcessing"
 # Note that gradient distortion correction is applied after 'eddy' in the dMRI Pipeline
+# Unified dispatch: eddy_postproc.sh handles both Human and NHP (gated by BetSpeciesLabel)
 select_flag="0"
-if ((SelectBestB0)); then
+if [[ "$SPECIES" == "Human" ]] && ((SelectBestB0)); then
 	select_flag="1"
 fi
-if (( ! IsLongitudinal )); then 
-    ${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag}
+if [[ "$SPECIES" == "Human" ]] && (( IsLongitudinal )); then
+	: # skip eddy_postproc for longitudinal Human (existing behavior)
+else
+	${runcmd} ${HCPPIPEDIR_dMRI}/eddy_postproc.sh ${outdir} ${GdCoeffs} ${CombineDataFlag} ${select_flag} ${SpeciesLabel}
 fi
 
 # Establish variables that follow naming conventions
@@ -228,39 +237,63 @@ DiffRes=$(${FSLDIR}/bin/fslval ${outdir}/data/data pixdim1)
 DiffRes=$(printf "%0.2f" ${DiffRes})
 
 log_Msg "Running Diffusion to Structural Registration"
+# Unified dispatch: DiffusionToStructural.sh handles both Human and NHP
+# (gated by --species). NHP-only flags --fsbbrdiff / --wmprojabs are
+# always passed but ignored when species == Human.
 ${runcmd} ${HCPPIPEDIR_dMRI}/DiffusionToStructural.sh \
-    --t1folder="${T1wFolder}" \
-    --session="${Session}" \
-    --workingdir="${outdir}/reg" \
-    --datadiffdir="${outdir}/data" \
-    --t1="${T1wImage}" \
-    --t1restore="${T1wRestoreImage}" \
-    --t1restorebrain="${T1wRestoreImageBrain}" \
-    --biasfield="${BiasField}" \
-    --brainmask="${FreeSurferBrainMask}" \
-    --datadiffT1wdir="${outdirT1w}" \
-    --regoutput="${RegOutput}" \
-    --QAimage="${QAImage}" \
-    --dof="${DegreesOfFreedom}" \
-    --gdflag=${GdFlag} \
-    --diffresol=${DiffRes} \
-    --t1w-cross2long-xfm="$T1wCross2LongXfm"
+	--t1folder="${T1wFolder}" \
+	--session="${Session}" \
+	--workingdir="${outdir}/reg" \
+	--datadiffdir="${outdir}/data" \
+	--t1="${T1wImage}" \
+	--t1restore="${T1wRestoreImage}" \
+	--t1restorebrain="${T1wRestoreImageBrain}" \
+	--biasfield="${BiasField}" \
+	--brainmask="${FreeSurferBrainMask}" \
+	--datadiffT1wdir="${outdirT1w}" \
+	--regoutput="${RegOutput}" \
+	--QAimage="${QAImage}" \
+	--dof="${DegreesOfFreedom}" \
+	--gdflag=${GdFlag} \
+	--diffresol=${DiffRes} \
+	--t1w-cross2long-xfm="$T1wCross2LongXfm" \
+	--species="${SPECIES}" \
+	--wmprojabs="${DiffWMProjAbs}" \
+	--fsbbrdiff="TRUE"
 
 to_location="${outdirT1w}/eddylogs"
 from_directory="${outdir}/eddy"
 log_Msg "Copying eddy log files to package location: ${to_location}"
 
-# Log files are any 'eddy' output that doesn't have a .nii extension
-from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
-
-${runcmd} mkdir -p ${to_location}
-for filename in ${from_files}; do
-	${runcmd} cp -p ${filename} ${to_location} || ${runcmd} cp ${filename} ${to_location}
-done
+if [[ "$SPECIES" == "Human" ]]; then
+	# Human: glob all eddy outputs except .nii files
+	from_files=$(ls ${from_directory}/eddy_unwarped_images.* | grep -v .nii)
+	${runcmd} mkdir -p ${to_location}
+	for filename in ${from_files}; do
+		${runcmd} cp -pf "$filename" "$to_location" &> /dev/null || ${runcmd} cp -f "$filename" "$to_location"
+	done
+else
+	# NHP: copy specific eddy log files
+	${runcmd} mkdir -p ${to_location}
+	for logfile in eddy_outlier_map eddy_outlier_n_sqr_stdev_map eddy_outlier_n_stdev_map \
+		eddy_outlier_report eddy_movement_rms eddy_restricted_movement_rms \
+		eddy_parameters eddy_post_eddy_shell_alignment_parameters; do
+		if [[ -f "${from_directory}/eddy_unwarped_images.${logfile}" ]]; then
+			${runcmd} cp "${from_directory}/eddy_unwarped_images.${logfile}" ${to_location}
+		fi
+	done
+fi
 
 ${runcmd} mkdir -p ${outdirT1w}/QC
-${runcmd} cp -p ${outdir}/QC/* ${outdirT1w}/QC || ${runcmd} cp ${outdir}/QC/* ${outdirT1w}/QC
-${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
+if [[ "$SPECIES" == "Human" ]]; then
+	${runcmd} cp -pf "$outdir"/QC/* "$outdirT1w"/QC &> /dev/null || ${runcmd} cp -f "$outdir"/QC/* "$outdirT1w"/QC
+	${runcmd} immv ${outdirT1w}/cnr_maps ${outdirT1w}/QC/cnr_maps
+else
+	if [ "$(ls ${outdir}/QC/ 2>/dev/null)" != "" ]; then
+		${runcmd} cp -pf "$outdir"/QC/* "$outdirT1w"/QC &> /dev/null || ${runcmd} cp -f "$outdir"/QC/* "$outdirT1w"/QC
+	fi
+	${runcmd} imcp ${outdir}/data/cnr_maps ${outdirT1w}/QC/cnr_maps
+fi
 
 log_Msg "Completed!"
 exit 0
