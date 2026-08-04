@@ -169,8 +169,7 @@ do
                     done
                 done
                 
-                if $wfComplete
-                then
+                if $wfComplete && $KeepWishartBool; then
                     log_Msg "WF files already exist in ${WFDir}"
                 else
                     log_Msg "Running Wishart filtering with ${NumWishart} iterations"
