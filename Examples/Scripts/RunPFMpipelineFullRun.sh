@@ -150,7 +150,7 @@ ConcatName=""
 subjectExpectedTimepoints="4800"
 
 # set temporal highpass full-width (2*sigma) used in preprocessing
-HighPass="0"
+HighPass="2000"
 
 #set fMRIResolution of data, like '2','1.60' or '2.40'
 fMRIResolution="2.0"  
@@ -161,7 +161,7 @@ PFMdim="76"
 
 PFMFolder=${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}_PFM_d${PFMdim}
 # Reference image for PROFUMO
-RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_tclean_meanvn.dscalar.nii"
+RefImage="${StudyFolder}/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/${OutputfMRIName}_Atlas_MSMAll_hp${HighPass}_clean_rclean_tclean_meanvn.dscalar.nii"
 
 # set the file name component representing the preprocessing already done
 fMRIProcSTRING="hp${HighPass}_clean_rclean_tclean"
