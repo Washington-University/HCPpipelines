@@ -420,7 +420,7 @@ else  # Single-run FIX processing - average across individual runs then create s
     fMRIStats_SummaryCSV($matlab_args);"
   case "$MatlabMode" in
     (0)
-      matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats_SummaryCSV.sh" "$MATLAB_COMPILER_RUNTIME" "$AveragedCIFTIOutput" "$Caret7_Command")
+      matlab_cmd=("$this_script_dir/Compiled_fMRIStats/run_fMRIStats_SummaryCSV.sh" "$MATLAB_COMPILER_RUNTIME" "$AveragedCIFTIOutput" "Caret7_Command" "$Caret7_Command")
       log_Msg "running compiled matlab command for SummaryCSV: ${matlab_cmd[*]}"
       "${matlab_cmd[@]}"
       ;;
