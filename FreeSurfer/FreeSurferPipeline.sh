@@ -147,9 +147,9 @@ opts_AddOptional '--existing-session' 'existing_sessionString' 'TRUE/FALSE' "Ind
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
 opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-session flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
 
-opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
+opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included with FS6 and not included with FS7+, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false with FS6 is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "AUTO"
 
-opts_AddOptional '--hires' 'hiresString' 'TRUE/FALSE' "Indicates that the script should include -hires as an argument to recon-all.  By default, -hires is not included." "FALSE"
+opts_AddOptional '--hires' 'hiresString' 'TRUE/FALSE' "Indicates that the script should include -hires as an argument to recon-all.  By default, -hires is included with FS7+ and not included with FS6." "AUTO"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
 
@@ -174,8 +174,13 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 #parse booleans
 flair=$(opts_StringToBool "$flairString")
 existing_session=$(opts_StringToBool "$existing_sessionString")
-conf2hires=$(opts_StringToBool "$conf2hiresString")
-hires=$(opts_StringToBool "$hiresString")
+#conf2hires and hires default to AUTO, they are resolved below, once the FreeSurfer version is known
+if [[ "${conf2hiresString}" != "AUTO" ]]; then
+    conf2hires=$(opts_StringToBool "$conf2hiresString")
+fi
+if [[ "${hiresString}" != "AUTO" ]]; then
+    hires=$(opts_StringToBool "$hiresString")
+fi
 
 # required by FS8
 export FS_ALLOW_DEEP=1
@@ -324,6 +329,30 @@ else
     log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
     if [[ "${HighMyelin}" == "AUTO" ]]; then
         HighMyelin="0.3"
+    fi
+fi
+
+# resolve the AUTO defaults of --conf2hires/--hires, FS6 uses -conf2hires, FS7+ uses -hires
+if ((use_fs6)); then
+    auto_conf2hires=1
+    auto_hires=0
+else
+    auto_conf2hires=0
+    auto_hires=1
+fi
+# a flag that was set explicitly takes precedence over the AUTO default of the other one
+if [[ "${conf2hiresString}" == "AUTO" ]]; then
+    if [[ "${hiresString}" != "AUTO" ]] && ((hires)); then
+        conf2hires=0
+    else
+        conf2hires=${auto_conf2hires}
+    fi
+fi
+if [[ "${hiresString}" == "AUTO" ]]; then
+    if [[ "${conf2hiresString}" != "AUTO" ]] && ((conf2hires)); then
+        hires=0
+    else
+        hires=${auto_hires}
     fi
 fi
 
@@ -517,8 +546,9 @@ log_Msg "hires: ${hires}"
 log_Msg "HighMyelin: ${HighMyelin}"
 
 # conf2hires and hires are mutually exclusive
+# with the AUTO defaults this can only happen when both were explicitly set to TRUE
 if ((conf2hires)) && ((hires)); then
-    log_Err_Abort "The --conf2hires and --hires flags are mutually exclusive.  Please only set one to true.  By default -conf2hires is set to true and -hires is set to false."
+    log_Err_Abort "The --conf2hires and --hires flags are mutually exclusive.  Please only set one to true.  By default (AUTO) -conf2hires is used with FS6 and -hires is used with FS7+."
 fi
 
 if ((! existing_session)); then
