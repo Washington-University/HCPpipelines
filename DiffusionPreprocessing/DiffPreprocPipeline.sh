@@ -231,9 +231,9 @@ opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. 
 
 opts_AddOptional '--wmprojabs' 'DiffWMProjAbs' 'number' "White matter projection absolute depth. Defaults to 2" "2"
 
-opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data"
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data" "HFS"
 
-opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data"
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data" "HFS"
 
 opts_AddOptional '--resamp' 'resamp_value' 'string' "Resamp value to pass to the eddy binary. If unspecified, no --resamp option is passed to eddy."
 

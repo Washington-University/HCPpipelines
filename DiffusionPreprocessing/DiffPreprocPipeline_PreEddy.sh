@@ -154,9 +154,9 @@ opts_AddOptional '--species' 'SPECIES' 'string' "Species (default: Human). e.g. 
 
 opts_AddOptional '--specieslabel' 'SpeciesLabel' 'number' "Species label for NHP sub-scripts (0=Human, 1=Chimp, 2=Macaque, etc.). Defaults to 0" "0"
 
-opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data"
+opts_AddOptional '--truepatientposition' 'TruePatientPosition' 'string' "True patient position for NHP data" "HFS"
 
-opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data"
+opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "Scanner patient position for NHP data" "HFS"
 
 opts_AddOptional '--usephasezero' 'UsePhaseZero' 'Boolean' "Use T2w as phase-zero reference volume for NHP topup" "False"
 
@@ -292,10 +292,10 @@ for Image in ${PosInputImages}; do
 	else
 		PosVols[${Pos_count}]=$(${FSLDIR}/bin/fslval ${Image} dim4)
 		absname=$(${FSLDIR}/bin/imglob ${Image})
-		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] && [[ "$TruePatientPosition" =~ ^(HFS|FFS|HFSx|FFSx)$ ]]; then
+		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]]; then
 			# NHP: correct/reorient input data based on patient position - TH Aug 2024
 			log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
-			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${absname} --out=${outdir}/rawdata/${basePos}_${Pos_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation.sh --in=${absname} --out=${outdir}/rawdata/${basePos}_${Pos_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
 			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${basePos}_${Pos_count}.bval
 			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${basePos}_${Pos_count}_reorient.mat ${outdir}/rawdata/${basePos}_${Pos_count}.bvec
 		elif [[ "$SPECIES" != "Human" ]]; then
@@ -330,10 +330,10 @@ for Image in ${NegInputImages}; do
 	else
 		NegVols[${Neg_count}]=$(${FSLDIR}/bin/fslval ${Image} dim4)
 		absname=$(${FSLDIR}/bin/imglob ${Image})
-		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]] && [[ "$TruePatientPosition" =~ ^(HFS|FFS|HFSx|FFSx)$ ]]; then
+		if [[ "$SPECIES" != "Human" ]] && [[ -n "$TruePatientPosition" ]] && [[ "$TruePatientPosition" != "$ScannerPatientPosition" ]]; then
 			# NHP: correct/reorient input data based on patient position - TH Aug 2024
 			log_Msg "Reorient $TruePatientPosition data with a scanner orientation of $ScannerPatientPosition"
-			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation --in=${absname} --out=${outdir}/rawdata/${baseNeg}_${Neg_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
+			${runcmd} ${HCPPIPEDIR_Global}/CorrectVolumeOrientation.sh --in=${absname} --out=${outdir}/rawdata/${baseNeg}_${Neg_count} --tposition="$TruePatientPosition" --sposition="$ScannerPatientPosition" --omat=TRUE
 			${runcmd} cp ${absname}.bval ${outdir}/rawdata/${baseNeg}_${Neg_count}.bval
 			${runcmd} ${HCPPIPEDIR_Global}/Rotate_bvecs.sh ${absname}.bvec ${outdir}/rawdata/${baseNeg}_${Neg_count}_reorient.mat ${outdir}/rawdata/${baseNeg}_${Neg_count}.bvec
 		elif [[ "$SPECIES" != "Human" ]]; then
