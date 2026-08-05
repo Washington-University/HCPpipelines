@@ -169,7 +169,7 @@ do
                     done
                 done
                 
-                if $wfComplete && $KeepWishartBool; then
+                if $wfComplete && [[ $KeepWishartBool == 1 ]]; then
                     log_Msg "WF files already exist in ${WFDir}"
                 else
                     log_Msg "Running Wishart filtering with ${NumWishart} iterations"
@@ -197,7 +197,7 @@ do
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
                                     origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                                    VN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                    VN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING%%_*}_vn.dscalar.nii" # not terribly robust
                                     MEAN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
                                     if [[ -f "$origFile" ]]
                                     then
@@ -208,8 +208,8 @@ do
                                         wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
                                         
                                         # un-variance normalize and un-demean the deconcatenated post-WF data
-                                        wb_command -cifti-math "((TCS / VNA) * VN) + MEAN" ${cifti_out} \
-                                          -var TCS ${cifti_out} \
+                                        wb_command -cifti-math "((TCS / VNA) * VN) + MEAN" ${outFile} \
+                                          -var TCS ${outFile} \
                                           -var VNA ${VNA} -select 1 1 -repeat \
                                           -var VN ${VN} -select 1 1 -repeat \
                                           -var MEAN ${MEAN} -select 1 1 -repeat
