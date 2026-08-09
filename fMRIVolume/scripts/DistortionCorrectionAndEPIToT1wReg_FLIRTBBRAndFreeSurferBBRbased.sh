@@ -102,7 +102,7 @@ opts_AddMandatory '--method' 'DistortionCorrection' 'method' "method to use for 
              use Philips specific Gradient Echo Field Maps for SDC
 
         '${PRECOMPUTED_FIELDMAP_METHOD_OPT}'
-             use a pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on
+             use a precomputed fieldmap in Hz (e.g., from TOPUP --fout on
              diffusion B0 images, UKB style). Requires --precomputedfmap and --precomputedfmapmag.
 
         '${NONE_METHOD_OPT}'
@@ -147,7 +147,7 @@ opts_AddOptional '--seechospacing' 'SEEchoSpacing' 'spacing (seconds)' "effectiv
 
 opts_AddOptional '--seunwarpdir' 'SEUnwarpDir' '{x,y,z,x-,y-,z-} or {i,j,k,i-,j-,k-}' "PE direction of SE fieldmaps according to the *voxel* axes. Required for --method=${TOPUP_MISMATCHED_METHOD_OPT}. Can differ from --unwarpdir."
 
-opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'image' "pre-computed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --method=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'image' "precomputed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --method=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
 opts_AddOptional '--precomputedfmapmag' 'PrecomputedFieldMapMag' 'image' "magnitude image in the same space as --precomputedfmap (e.g., a b=0 volume from the diffusion acquisition). Used for registration to T1w. Should be provided for --method=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
@@ -339,6 +339,9 @@ if (( ! IsLongitudinal )); then
         if [[ ${UnwarpDir} != [xyzijk] && ${UnwarpDir} != -[xyzijk] && ${UnwarpDir} != [xyzijk]- ]]; then
             log_Err_Abort "Error: Invalid entry for --unwarpdir ($UnwarpDir)"
         fi
+
+        # fugue expects y- not -y
+        UnwarpDirFugue=${UnwarpDir}
 
         # FSL's naming convention for 'epi_reg --pedir' is {x,y,z,-x,-y,-z}
         # So, swap out any {i,j,k} for {x,y,z} (using bash pattern replacement)
@@ -839,14 +842,14 @@ if (( ! IsLongitudinal )); then
         ${PRECOMPUTED_FIELDMAP_METHOD_OPT})
 
             # -----------------------------------------------------------
-            # -- Pre-computed Real Fieldmap (UKB style)       --
+            # -- Precomputed Fieldmap (UKB style)                      --
             # -----------------------------------------------------------
-            # The input is a pre-computed B0 real fieldmap in Hz,
+            # The input is a precomputed B0 fieldmap in Hz,
             # e.g., from TOPUP --fout on reverse-PE diffusion B0 images.
             # This is registered to T1w space and used directly for distortion
             # correction via epi_reg_dof. No phase images or delta TE needed.
 
-            log_Msg "---> Real Fieldmap distortion correction"
+            log_Msg "---> Precomputed Fieldmap distortion correction"
 
             # 1/ Convert fieldmap from Hz to rad/s (FUGUE/epi_reg expect rad/s)
             log_Msg "Converting fieldmap from Hz to rad/s"
@@ -868,7 +871,7 @@ if (( ! IsLongitudinal )); then
 
             # 4/ Extrapolate fieldmap beyond mask to avoid edge effects (fugue --unmaskfmap)
             # and demean to avoid spurious voxel shifts (following Philips method pattern)
-            ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rads2T1w_brain --mask=${WD}/FieldMap_T1w_brain_mask --unmaskfmap --savefmap=${WD}/FieldMap_rads2T1w_unmasked --unwarpdir=${UnwarpDir}
+            ${FSLDIR}/bin/fugue --loadfmap=${WD}/FieldMap_rads2T1w_brain --mask=${WD}/FieldMap_T1w_brain_mask --unmaskfmap --savefmap=${WD}/FieldMap_rads2T1w_unmasked --unwarpdir=${UnwarpDirFugue}
 
             # Demean: subtract median within brain mask
             fmap_median=$(${FSLDIR}/bin/fslstats ${WD}/FieldMap_rads2T1w_unmasked -k ${WD}/FieldMap_T1w_brain_mask -P 50)
@@ -1117,7 +1120,7 @@ if (( ! IsLongitudinal )); then
     fi
 else # IsLongitudinal=1
 
-    ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat    
+    ${FSLDIR}/bin/convert_xfm -omat ${WD}/fMRI2str_refinement-long.mat -concat "$T1wCross2LongXfm" ${WD}/fMRI2str_refinement.mat
     #cp -f would keep existing symlink if its target is writable, but we want to create a normal file, so removing target first.
     rm -f ${WD}/fMRI2str_refinement.mat
     cp -f ${WD}/fMRI2str_refinement-long.mat ${WD}/fMRI2str_refinement.mat

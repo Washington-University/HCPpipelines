@@ -95,7 +95,7 @@ opts_AddMandatory '--dcmethod' 'DistortionCorrection' 'method' "Which method to 
              differ substantially (especially PE direction axis or limited SE spatial coverage).
 
         '${PRECOMPUTED_FIELDMAP_METHOD_OPT}'
-             use a pre-computed real fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0
+             use a precomputed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0
              images, UKB style). The fieldmap is registered to T1w space and used directly
              for distortion correction via epi_reg. No phase images or deltavTE are needed.
              Requires --precomputedfmap.
@@ -146,7 +146,7 @@ opts_AddOptional '--echodiff' 'deltaTE' 'milliseconds' "Difference of echo times
 
 opts_AddOptional '--fmapcombined' 'GEB0InputName' 'file' "GE HealthCare Legacy field map only (two volumes: 1. field map in Hz and 2. magnitude image)" '' '--fmap'
 
-opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'file' "pre-computed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
+opts_AddOptional '--precomputedfmap' 'PrecomputedFieldMap' 'file' "precomputed fieldmap in Hz (e.g., from TOPUP --fout on diffusion B0 images). Required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
 opts_AddOptional '--precomputedfmapmag' 'PrecomputedFieldMapMag' 'file' "magnitude image in the same space as --precomputedfmap (e.g., a b=0 volume from the diffusion acquisition). Used for fieldmap-to-T1w registration. --precomputedfmapmag is required for --dcmethod=${PRECOMPUTED_FIELDMAP_METHOD_OPT}."
 
