@@ -671,7 +671,6 @@ if [ "$RunMode" -lt 2 ] ; then
 		fi
 		rm -f "$SubjectDIR"/"$SubjectID"/mri/transforms/"$T2Type"raw.lta # remove this otherwise conf2hires will not update this - TH
 	else
-		recon_all_pial=""
 		T2Type="NONE"
 	fi
 
