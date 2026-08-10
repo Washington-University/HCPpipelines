@@ -341,6 +341,7 @@ else
     auto_hires=1
 fi
 # a flag that was set explicitly takes precedence over the AUTO default of the other one
+#NOTE: when String is AUTO, the corresponding boolean is unset, which is why we test String != AUTO
 if [[ "${conf2hiresString}" == "AUTO" ]]; then
     if [[ "${hiresString}" != "AUTO" ]] && ((hires)); then
         conf2hires=0
