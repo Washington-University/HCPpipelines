@@ -52,6 +52,7 @@ fi
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
+source "${HCPPIPEDIR}/global/scripts/fs_version.shlib"      # Provides validate_freesurfer_version
 
 #process legacy syntax and repeatable arguments
 if (($# > 0))
@@ -146,9 +147,13 @@ opts_AddOptional '--existing-session' 'existing_sessionString' 'TRUE/FALSE' "Ind
 #TSC: repeatable options aren't currently supported in newopts, do them manually and fake the help info for now
 opts_AddOptional '--extra-reconall-arg' 'extra_reconall_args' 'token' "(repeatable) Generic single token argument to pass to recon-all.  Provides a mechanism to customize the recon-all command and/or specify the recon-all stage(s) to be run (e.g., in the case of FreeSurfer edits).  If you want to avoid running all the stages inherent to the '-all' flag in recon-all, you also need to include the --existing-session flag.  The token itself may include dashes and equal signs (although Freesurfer doesn't currently use equal signs in its argument specification).  e.g., --extra-reconall-arg=-3T is the correct syntax for adding the stand-alone '-3T' flag to recon-all, but --extra-reconall-arg='-norm3diters 3' is NOT acceptable.  For recon-all flags that themselves require an argument, you can handle that by specifying  --extra-reconall-arg multiple times (in the proper sequential fashion), e.g. --extra-reconall-arg=-norm3diters --extra-reconall-arg=3 will be translated to '-norm3diters 3' when passed to recon-all."
 
-opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "TRUE"
+opts_AddOptional '--conf2hires' 'conf2hiresString' 'TRUE/FALSE' "Indicates that the script should include -conf2hires as an argument to recon-all.  By default, -conf2hires is included with FS6 and not included with FS7+, so that recon-all will place the surfaces on the hires T1 (and T2).  Setting this to false with FS6 is an advanced option, intended for situations where: (i) the original T1w and T2w images are NOT 'hires' (i.e., they are 1 mm isotropic or worse), or  (ii) you want to be able to run some flag in recon-all, without also regenerating the surfaces, e.g. --existing-session --extra-reconall-arg=-show-edits --conf2hires=FALSE" "AUTO"
+
+opts_AddOptional '--hires' 'hiresString' 'TRUE/FALSE' "Indicates that the script should include -hires as an argument to recon-all.  By default, -hires is included with FS7+ and not included with FS6." "AUTO"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "Controls whether the HCP acquisition and processing guidelines should be treated as requirements.  'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
+
+opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
 
 opts_ParseArguments "$@"
 
@@ -169,7 +174,16 @@ extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manu
 #parse booleans
 flair=$(opts_StringToBool "$flairString")
 existing_session=$(opts_StringToBool "$existing_sessionString")
-conf2hires=$(opts_StringToBool "$conf2hiresString")
+#conf2hires and hires default to AUTO, they are resolved below, once the FreeSurfer version is known
+if [[ "${conf2hiresString}" != "AUTO" ]]; then
+    conf2hires=$(opts_StringToBool "$conf2hiresString")
+fi
+if [[ "${hiresString}" != "AUTO" ]]; then
+    hires=$(opts_StringToBool "$hiresString")
+fi
+
+# required by FS8
+export FS_ALLOW_DEEP=1
 
 #deal with NONE convention
 if [[ "$T1wImage" == "NONE" ]]; then
@@ -182,7 +196,7 @@ if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
 fi
 
-#check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy 
+#check if existing_session is set, if not t1 has to be set, and if t2 is not set, set processing mode flag to legacy
 Compliance="HCPStyleData"
 ComplianceMsg=""
 
@@ -205,7 +219,6 @@ then
 fi
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
-
 
 ${HCPPIPEDIR}/show_version
 
@@ -245,7 +258,7 @@ configure_custom_tools()
         log_Warn "use can be found on the PATH."
         log_Warn ""
         log_Warn "PATH set to: ${PATH}"
-    fi    
+    fi
 }
 
 # Show tool versions
@@ -256,15 +269,29 @@ show_tool_versions()
     ${HCPPIPEDIR}/show_version
 
     # Show recon-all version
-    log_Msg "Showing recon-all.v6.hires version"
-    local which_recon_all=$(which recon-all.v6.hires || true)
-    log_Msg ${which_recon_all}
-    recon-all.v6.hires -version
-    
-    # Show tkregister version
-    log_Msg "Showing tkregister version"
-    which tkregister
-    tkregister -version
+    if ((use_fs6)); then
+        # Show recon-all version
+        log_Msg "Showing recon-all.v6.hires version"
+        local which_recon_all=$(which recon-all.v6.hires || true)
+        log_Msg ${which_recon_all}
+        recon-all.v6.hires -version
+
+        # Show tkregister version
+        log_Msg "Showing tkregister version"
+        which tkregister
+        tkregister -version
+    else
+        # Show recon-all version
+        log_Msg "Showing recon-all version"
+        local which_recon_all=$(which recon-all || true)
+        log_Msg ${which_recon_all}
+        recon-all -version
+
+        # Show tkregister version
+        log_Msg "Showing tkregister2 version"
+        which tkregister2
+        tkregister2 -version
+    fi
 
     # Show mri_concatenate_lta version
     log_Msg "Showing mri_concatenate_lta version"
@@ -281,56 +308,62 @@ show_tool_versions()
     which fslmaths
 }
 
-validate_freesurfer_version()
-{
-    if [ -z "${FREESURFER_HOME}" ]; then
-        log_Err_Abort "FREESURFER_HOME must be set"
-    fi
-    
-    freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
+# Validate version of FreeSurfer in use
+validate_freesurfer_version
 
-    if [ -f "${freesurfer_version_file}" ]; then
-        freesurfer_version_string=$(cat "${freesurfer_version_file}")
-        log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
+if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
+    log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
+fi
+
+# if using fs6, we are using custom tools
+use_fs6=0
+if [[ ${freesurfer_primary_version} -eq 6 ]]; then
+    log_Msg "INFO: Using FreeSurfer 6 with custom tools"
+    use_fs6=1
+    # validate that unsupported parameters are not set for FS6
+    if [[ "${HighMyelin}" != "AUTO" && "${HighMyelin}" != "" ]]; then
+        log_Err_Abort "FreeSurfer 6 does not support the --high-myelin parameter. Do not set --high-myelin when using FS6."
+    fi
+    HighMyelin=""
+else
+    log_Msg "INFO: Using FreeSurfer ${freesurfer_primary_version} with default tools"
+    if [[ "${HighMyelin}" == "AUTO" ]]; then
+        HighMyelin="0.3"
+    fi
+fi
+
+# resolve the AUTO defaults of --conf2hires/--hires, FS6 uses -conf2hires, FS7+ uses -hires
+if ((use_fs6)); then
+    auto_conf2hires=1
+    auto_hires=0
+else
+    auto_conf2hires=0
+    auto_hires=1
+fi
+# a flag that was set explicitly takes precedence over the AUTO default of the other one
+#NOTE: when String is AUTO, the corresponding boolean is unset, which is why we test String != AUTO
+if [[ "${conf2hiresString}" == "AUTO" ]]; then
+    if [[ "${hiresString}" != "AUTO" ]] && ((hires)); then
+        conf2hires=0
     else
-        log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
+        conf2hires=${auto_conf2hires}
     fi
-
-    # strip out extraneous stuff from FreeSurfer version string
-    freesurfer_version_string_array=(${freesurfer_version_string//-/ })
-    freesurfer_version=${freesurfer_version_string_array[5]}
-    freesurfer_version=${freesurfer_version#v} # strip leading "v"
-
-    log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
-
-    # break FreeSurfer version into components
-    # primary, secondary, and tertiary
-    # version X.Y.Z ==> X primary, Y secondary, Z tertiary
-    freesurfer_version_array=(${freesurfer_version//./ })
-
-    freesurfer_primary_version="${freesurfer_version_array[0]}"
-    freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
-
-    freesurfer_secondary_version="${freesurfer_version_array[1]}"
-    freesurfer_secondary_version=${freesurfer_secondary_version//[!0-9]/}
-
-    freesurfer_tertiary_version="${freesurfer_version_array[2]}"
-    freesurfer_tertiary_version=${freesurfer_tertiary_version//[!0-9]/}
-
-    if [[ $(( ${freesurfer_primary_version} )) -lt 6 ]]; then
-        # e.g. 4.y.z, 5.y.z
-        log_Err_Abort "FreeSurfer version 6.0.0 or greater is required. (Use FreeSurferPipeline-v5.3.0-HCP.sh if you want to continue using FreeSurfer 5.3)"
+fi
+if [[ "${hiresString}" == "AUTO" ]]; then
+    if [[ "${conf2hiresString}" != "AUTO" ]] && ((conf2hires)); then
+        hires=0
+    else
+        hires=${auto_hires}
     fi
-}
+fi
 
 # Configure the use of FreeSurfer v6 custom tools
-configure_custom_tools
+if ((use_fs6)); then
+    configure_custom_tools
+fi
 
 # Show tool versions
 show_tool_versions
-
-# Validate version of FreeSurfer in use
-validate_freesurfer_version
 
 #
 # Generate T1w in NIFTI format and in rawavg space
@@ -401,7 +434,12 @@ make_t2w_hires_nifti_file()
     # Then we need to move (resample) it to
     # the target volume and convert it to NIFTI format.
 
-    t2w_input_file="rawavg.${t2_or_flair}.prenorm.mgz"
+    # naming seems to differ between fs6 and 7+
+    if ((use_fs6)); then
+        t2w_input_file="rawavg.${t2_or_flair}.prenorm.mgz"
+    else
+        t2w_input_file="orig/${t2_or_flair}raw.mgz"
+    fi
     target_volume="rawavg.mgz"
     t2w_output_file="T2w_hires.nii.gz"
 
@@ -505,9 +543,16 @@ log_Msg "flair: ${flair}"
 log_Msg "existing_session: ${existing_session}"
 log_Msg "extra_reconall_args: ${extra_reconall_args[*]+"${extra_reconall_args[*]}"}"
 log_Msg "conf2hires: ${conf2hires}"
+log_Msg "hires: ${hires}"
+log_Msg "HighMyelin: ${HighMyelin}"
+
+# conf2hires and hires are mutually exclusive
+# with the AUTO defaults this can only happen when both were explicitly set to TRUE
+if ((conf2hires)) && ((hires)); then
+    log_Err_Abort "The --conf2hires and --hires flags are mutually exclusive.  Please only set one to true.  By default (AUTO) -conf2hires is used with FS6 and -hires is used with FS7+."
+fi
 
 if ((! existing_session)); then
-
     # If --existing-session is NOT set, AND PostFreeSurfer has been run, then
     # certain files need to be reverted to their PreFreeSurfer output versions
     if [ `imtest ${SessionDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
@@ -529,11 +574,15 @@ if ((! existing_session)); then
     fi
 fi
 
-# ----------------------------------------------------------------------
-log_Msg "Call custom recon-all: recon-all.v6.hires"
-# ----------------------------------------------------------------------
+# recon_all --------------------------------------------------------------------
+if ((use_fs6)); then
+    log_Msg "Call custom recon-all: recon-all.v6.hires"
+    recon_all_cmd=(recon-all.v6.hires -subjid "$SessionID" -sd "$SessionDIR")
+else
+    log_Msg "Call recon-all"
+    recon_all_cmd=(recon-all -subjid "$SessionID" -sd "$SessionDIR")
+fi
 
-recon_all_cmd=(recon-all.v6.hires -subjid "$SessionID" -sd "$SessionDIR")
 if ((! existing_session)); then  # input volumes only necessary first time through
     recon_all_cmd+=(-all -i "$zero_threshold_T1wImage" -emregmask "$T1wImageBrain")
     if [ "${T2wImage}" != "" ]; then
@@ -546,7 +595,7 @@ if ((! existing_session)); then  # input volumes only necessary first time throu
 fi
 
 # By default, refine pial surfaces using T2 (if T2w image provided).
-# If for some other reason the -T2pial flag needs to be excluded from recon-all, 
+# If for some other reason the -T2pial flag needs to be excluded from recon-all,
 # this can be accomplished using --extra-reconall-arg=-noT2pial
 if [ "${T2wImage}" != "" ]; then
     if ((flair)); then
@@ -563,10 +612,18 @@ fi
 #add any extra args
 recon_all_cmd+=(${extra_reconall_args[@]+"${extra_reconall_args[@]}"})
 
-# The -conf2hires flag should come after the ${extra_reconall_args[@]} array, since it needs
+# The -conf2hires/-hires flag should come after the ${extra_reconall_args[@]} array, since it needs
 # to have the "final say" over a couple settings within recon-all
 if ((conf2hires)); then
     recon_all_cmd+=(-conf2hires)
+fi
+if ((hires)); then
+    recon_all_cmd+=(-hires)
+fi
+
+# HighMyelin
+if [[ "${HighMyelin}" != "" ]]; then
+    recon_all_cmd+=(-high-myelin "${HighMyelin}")
 fi
 
 log_Msg "...recon_all_cmd: ${recon_all_cmd[*]}"
@@ -627,7 +684,11 @@ if [[ "${T2wImage}" != "" ]]; then
     fi
 
     log_Msg "...Create a registration between the original conformed space and the rawavg space"
-    tkregister_cmd="tkregister"
+    if ((use_fs6)); then
+        tkregister_cmd="tkregister"
+    else
+        tkregister_cmd="tkregister2"
+    fi
     tkregister_cmd+=" --mov orig.mgz"
     tkregister_cmd+=" --targ rawavg.mgz"
     tkregister_cmd+=" --regheader"
@@ -660,7 +721,11 @@ if [[ "${T2wImage}" != "" ]]; then
     fi
 
     log_Msg "...Convert to FSL format"
-    tkregister_cmd="tkregister"
+    if ((use_fs6)); then
+        tkregister_cmd="tkregister"
+    else
+        tkregister_cmd="tkregister2"
+    fi
     tkregister_cmd+=" --mov orig/${t2_or_flair}raw.mgz"
     tkregister_cmd+=" --targ rawavg.mgz"
     tkregister_cmd+=" --reg Q.lta"
@@ -694,11 +759,11 @@ export SUBJECTS_DIR="$SessionDIR"
 reg=$mridir/transforms/orig2rawavg.dat
 # generate registration between conformed and hires based on headers
 # Note that the convention of tkregister2 is that the resulting $reg is the registration
-# matrix that maps from the "--targ" space into the "--mov" space. 
+# matrix that maps from the "--targ" space into the "--mov" space.
 
 tkregister2 --mov ${mridir}/rawavg.mgz --targ ${mridir}/orig.mgz --noedit --regheader --reg $reg
 
-#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.  
+#The ?h.white.deformed surfaces are used in FreeSurfer BBR registrations for fMRI and diffusion and have been moved into the HCP's T1w space so that BBR produces a transformation containing only the minor adjustment to the registration.
 mri_surf2surf --s ${SessionID} --sval-xyz white --reg $reg --tval-xyz ${mridir}/rawavg.mgz --tval white.deformed --surfreg white --hemi lh
 return_code=$?
 if [ "${return_code}" != "0" ]; then

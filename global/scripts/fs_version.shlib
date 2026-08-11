@@ -1,0 +1,71 @@
+#!/bin/bash
+
+#
+# fs_version.shlib
+#
+# Provides the validate_freesurfer_version() function, which determines the
+# version of FreeSurfer in use and breaks it into its primary, secondary, and
+# tertiary components.
+#
+# Usage:
+#
+#   validate_freesurfer_version [<version_file>]
+#
+#   1. If a parameter is provided, it is treated as a path to a text file and
+#      the FreeSurfer version string is read from that file.
+#   2. If no parameter is provided, the version is determined from the current
+#      FreeSurfer installation (${FREESURFER_HOME}/build-stamp.txt).
+#
+# On success, the following global variables are set:
+#
+#   freesurfer_version_string   - full version string as read
+#   freesurfer_version          - X.Y.Z
+#   freesurfer_version_array     - (X Y Z)
+#   freesurfer_primary_version   - X
+#   freesurfer_secondary_version - Y
+#   freesurfer_tertiary_version  - Z
+#
+# This script relies on the log_Msg and log_Err_Abort functions provided by
+# log.shlib, so the sourcing script must have already sourced it (directly or
+# via debug.shlib).
+#
+
+validate_freesurfer_version()
+{
+    local freesurfer_version_file="${1:-}"
+
+    if [ -n "${freesurfer_version_file}" ]; then
+        # a path to a file containing the FreeSurfer version string was provided
+        if [ ! -f "${freesurfer_version_file}" ]; then
+            log_Err_Abort "Specified FreeSurfer version file does not exist: ${freesurfer_version_file}"
+        fi
+    else
+        # no file provided; determine the version from the current installation
+        if [ -z "${FREESURFER_HOME}" ]; then
+            log_Err_Abort "FREESURFER_HOME must be set"
+        fi
+
+        freesurfer_version_file="${FREESURFER_HOME}/build-stamp.txt"
+
+        if [ ! -f "${freesurfer_version_file}" ]; then
+            log_Err_Abort "Cannot tell which version of FreeSurfer you are using."
+        fi
+    fi
+
+    freesurfer_version_string=$(cat "${freesurfer_version_file}")
+    log_Msg "INFO: Determined that FreeSurfer full version string is: ${freesurfer_version_string}"
+
+    # extract X.Y.Z version robustly from build stamp (handles both FS6 and FS8 formats)
+    freesurfer_version=$(echo "${freesurfer_version_string}" | grep -oP 'v?\d+\.\d+\.\d+' | head -1)
+    freesurfer_version=${freesurfer_version#v} # strip leading "v"
+
+    log_Msg "INFO: Determined that FreeSurfer version is: ${freesurfer_version}"
+
+    # break FreeSurfer version into components
+    # primary, secondary, and tertiary
+    # version X.Y.Z ==> X primary, Y secondary, Z tertiary
+    freesurfer_version_array=(${freesurfer_version//./ })
+
+    freesurfer_primary_version="${freesurfer_version_array[0]}"
+    freesurfer_primary_version=${freesurfer_primary_version//[!0-9]/}
+}

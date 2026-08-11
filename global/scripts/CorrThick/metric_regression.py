@@ -9,11 +9,12 @@ Created on Tue Aug 20 11:10:05 2024
 
 def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights):
 
-    import nibabel as nib
-    import numpy as np
+    import multiprocessing
     import os
     from concurrent.futures import ProcessPoolExecutor
-    import multiprocessing
+
+    import nibabel as nib
+    import numpy as np
     import psutil
 
     d = {}  # read all the curvature values and save them in a dictionary
@@ -187,7 +188,9 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
         "Native",
         "CorrThick",
         "{sub}.{h}.{s}.corrthickness.shape.gii".format(
-            sub=subject, h=hemi, s=surface, m=mesh
+            sub=subject,
+            h=hemi,
+            s=surface,
         ),
     )
     nib.save(data, Tcorr_name)

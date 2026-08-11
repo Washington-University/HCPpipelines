@@ -5,16 +5,17 @@ set -eu
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
 # ------------------------------------------------------------------------------
 
-pipedirguessed=0 
-if [[ "${HCPPIPEDIR:-}" == "" ]] 
-then 
-    pipedirguessed=1 
-    #fix this if the script is more than one level below HCPPIPEDIR 
-    export HCPPIPEDIR="$(dirname -- "$0")/../.." 
-fi 
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/fs_version.shlib"         # Provides validate_freesurfer_version
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -68,9 +69,9 @@ opts_AddOptional '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "li
 
 opts_ParseArguments "$@"
 
-if ((pipedirguessed)) 
-then 
-    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh" 
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
 #display the parsed/default values
@@ -79,9 +80,9 @@ opts_ShowValues
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
 
-if [[ "$LongitudinalMode" == "TEMPLATE" ]]; then 
+if [[ "$LongitudinalMode" == "TEMPLATE" ]]; then
 
-    if [ -z "$LongitudinalTemplate" -o -z "$LongitudinalTimepoints" ]; then 
+    if [ -z "$LongitudinalTemplate" -o -z "$LongitudinalTimepoints" ]; then
         log_Err_Abort "--longitudinal-template and --longitudinal-timepoints are required if --longitudinal-mode=TEMPLATE"
     fi
     LongitudinalTimepoints="${LongitudinalTimepoints//@/ }"
@@ -90,6 +91,11 @@ fi
 
 GrayordinatesResolutions=${GrayordinatesResolutions//@/ }
 log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
+
+# Determine the FreeSurfer version that produced these surfaces, as recorded in
+# the subject's build-stamp.txt (not the currently-loaded FREESURFER_HOME). Some
+# operations below depend on the FreeSurfer version used to generate the data.
+validate_freesurfer_version "$T1wFolder"/"$Session"/scripts/build-stamp.txt
 
 #Make some folders for this and later scripts
 if [ ! -e "$T1wFolder"/"$NativeFolder" ] ; then
@@ -172,11 +178,11 @@ if [ "$LongitudinalMode" != "TIMEPOINT_STAGE2" ]; then
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
     for LowResMesh in ${LowResMeshes} ; do
-      [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
-      ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
+        [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
-      [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
-      ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
+        [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T2wImage".nii.gz
+        ${CARET7DIR}/wb_command -add-to-spec-file "$T1wFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$T1wFolder"/"$T1wImage".nii.gz
     done
 
     if [[ "${T2wImage}" != "NONE" ]]
@@ -339,19 +345,28 @@ for Hemisphere in L R ; do
             fsname=$(echo $Map | cut -d "@" -f 1)
             wbname=$(echo $Map | cut -d "@" -f 2)
             mapname=$(echo $Map | cut -d "@" -f 3)
-            
+
             mris_convert -c "$FreeSurferFolder"/surf/"$hemisphere"h."$fsname" "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+
+            # mris_convert in fs7+ here adds an extra 'lh.' or 'rh.' to the front of the file name in the converted output
+            if (( freesurfer_primary_version > 6 )); then
+                mv -f "$AtlasSpaceFolder"/"$NativeFolder"/"$hemisphere"h."$Session"."$Hemisphere"."$wbname".native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+            fi
+
             ${CARET7DIR}/wb_command -set-structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii ${Structure}
+
             ${CARET7DIR}/wb_command -metric-math "var * -1" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -var var "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii
+
             ${CARET7DIR}/wb_command -set-map-names "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii -map 1 "$Session"_"$Hemisphere"_"$mapname"
+
             ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$wbname".native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true
         done
         #Thickness specific operations
         ${CARET7DIR}/wb_command -metric-math "abs(thickness)" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii -var thickness "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii
         ${CARET7DIR}/wb_command -metric-palette "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
-        
+
         # for longitudinal runs, medial wall ROIs are only created in template mode, and then copied over to timepoints
-        if [[ "$LongitudinalMode" == "NONE" || "$LongitudinalMode" == "TEMPLATE" ]]; then 
+        if [[ "$LongitudinalMode" == "NONE" || "$LongitudinalMode" == "TEMPLATE" ]]; then
             ${CARET7DIR}/wb_command -metric-math "thickness > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -var thickness "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii
             ${CARET7DIR}/wb_command -metric-fill-holes "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
             ${CARET7DIR}/wb_command -metric-remove-islands "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
@@ -364,7 +379,7 @@ for Hemisphere in L R ; do
         for Map in aparc aparc.a2009s ; do #Remove BA because it doesn't convert properly
             if [ -e "$FreeSurferFolder"/label/"$hemisphere"h."$Map".annot ] ; then
                 mris_convert --annot "$FreeSurferFolder"/label/"$hemisphere"h."$Map".annot "$FreeSurferFolder"/surf/"$hemisphere"h.white "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii
-                if (( NonHumanSpecies )); then 
+                if (( NonHumanSpecies )); then
                     # Cortical area of aparc is defined by cortical label in FreeSurfer. The following
                     # two commands adapt FS-based cortical label (?h.cortex.label) to those of HCP (atlasroi) - TH Sep 2025
                     ${CARET7DIR}/wb_command -label-dilate "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".midthickness.native.surf.gii 10 "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Map".native.label.gii
@@ -389,13 +404,13 @@ for Hemisphere in L R ; do
             if [ -e "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
                 cp "$SurfaceAtlasDIR"/${FlatMapRootName}."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
                 ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
-           fi
-       else
-           if [ -e "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
+            fi
+        else
+            if [ -e "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii ] ; then
                 cp "$SurfaceAtlasDIR"/colin.cerebral."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
-        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
-           fi
-       fi
+                ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$Session"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/"$Session"."$Hemisphere".flat."$HighResMesh"k_fs_LR.surf.gii
+            fi
+        fi
         #Concatenate FS registration to FS --> FS_LR registration
         ${CARET7DIR}/wb_command -surface-sphere-project-unproject "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.reg.native.surf.gii "$AtlasSpaceFolder"/fsaverage/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_"$Hemisphere".surf.gii "$AtlasSpaceFolder"/fsaverage/"$Session"."$Hemisphere".def_sphere."$HighResMesh"k_fs_"$Hemisphere".surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.reg.reg_LR.native.surf.gii
 
@@ -466,10 +481,10 @@ for Hemisphere in L R ; do
 
     #Ensure no zeros in atlas medial wall ROI
     ${CARET7DIR}/wb_command -metric-resample "$AtlasSpaceFolder"/"$Session"."$Hemisphere".atlasroi."$HighResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/"$Session"."$Hemisphere".sphere."$HighResMesh"k_fs_LR.surf.gii ${RegSphere} BARYCENTRIC "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -largest
-    
+
     # for longitudinal runs, medial wall ROIs are only created in template mode, and then copied over to timepoints in PostFreeSurferPipeline.sh
-    if [[ "$LongitudinalMode" == "NONE" || "$LongitudinalMode" == "TEMPLATE" ]]; then 
-	    ${CARET7DIR}/wb_command -metric-math "(atlas + individual) > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -var atlas "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -var individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
+    if [[ "$LongitudinalMode" == "NONE" || "$LongitudinalMode" == "TEMPLATE" ]]; then
+        ${CARET7DIR}/wb_command -metric-math "(atlas + individual) > 0" "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii -var atlas "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".atlasroi.native.shape.gii -var individual "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii
     fi
 
     ${CARET7DIR}/wb_command -metric-mask "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".roi.native.shape.gii "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".thickness.native.shape.gii
@@ -726,14 +741,14 @@ if (( NonHumanSpecies )); then
     # cortical gray and subcortical white matter segments
     for Hemisphere in L R ; do
         ${CARET7DIR}/wb_command -create-signed-distance-volume "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere".pial.native.surf.gii "$T1wFolder"/wmparc_1mm.nii.gz "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz
-        fslmaths "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz -mul -1 -thr 0 -bin "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz 
+        fslmaths "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz -mul -1 -thr 0 -bin "$T1wFolder"/pial."$Hemisphere"_1mm.nii.gz
     done
-    # subcortical grey matter 
+    # subcortical grey matter
     ${CARET7DIR}/wb_command -volume-label-import "$T1wFolder"/wmparc_1mm.nii.gz ${SubcorticalGrayLabels} "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -discard-others
     # cerebellar white matter and ventricles
-    for label in 7 46 4 5 14 15 43 44 ; do 
+    for label in 7 46 4 5 14 15 43 44 ; do
         fslmaths "$T1wFolder"/wmparc_1mm.nii.gz -thr $label -uthr $label -add "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
-    done	
+    done
     # create tuned brainmask
     fslmaths "$T1wFolder"/pial.L_1mm.nii.gz -add "$T1wFolder"/pial.R_1mm.nii.gz -add "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz -bin -dilD -dilD -dilD -ero -ero "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
     ${CARET7DIR}/wb_command -volume-fill-holes "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz "$T1wFolder"/"$T1wImageBrainMask"_1mm.nii.gz
