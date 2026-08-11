@@ -12,7 +12,7 @@ set -eu
 #4) Running a script can gather more information (and do sanity checking) compared to a simple text file
 #
 #Devops:
-#1. Make a new release branch, like "release-5.6.0"
+#1. Make a new release branch, like "release-5.6" (if you want bugfix versions to reuse that branch)
 #2. Edit global/scripts/versioning/base.txt to the new version number, like "v5.6.0", and then copy it to global/scripts/versioning/candidate.txt
 #3. Recompile the matlab code unless you are sure this isn't needed (as of nov 2024, use R2022b, ensure your startup.m doesn't do anything when isdeployed() or ismcc() returns true)
 #4. Commit, make an RC tag, like "v5.6.0-rc.1", push the branch and the tag
