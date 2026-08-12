@@ -54,6 +54,8 @@ opts_AddOptional '--profumo-initial-maps' 'InitialMaps' 'path' "file to initiali
 opts_AddOptional '--profumo-load-sequentially' 'LoadSequentially' 'YES or NO' "load data sequentially in PROFUMO (useful for memory management)" 'YES'
 opts_AddOptional '--num-wishart' 'NumWishart' 'integer' "number of Wishart filter iterations for prefiltering (0 to skip)" '0'
 opts_AddOptional '--keep-wishart-files' 'KeepWishartFiles' 'YES or NO' "keep Wishart-filtered files after PROFUMO instead of deleting (default NO)" 'NO'
+opts_AddOptional '--variance-normalization' 'VarNorm' 'YES or NO' "Variance normalize Wishart-filtered data before PROFUMO (default NO)" 'NO'
+opts_AddOptional '--weight-vertex-areas' 'VAweight' 'YES or NO' "Weight Wishart-filtered data by vertex areas for PROFUMO (default NO)" 'NO'
 
 #optional parameters
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
@@ -93,6 +95,9 @@ IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
 FixLegacyBiasBool=$(opts_StringToBool "$FixLegacyBias")
 KeepWishartBool=$(opts_StringToBool "$KeepWishartFiles")
+VarNormBool=$(opts_StringToBool "$VarNorm")
+VAweightBool=$(opts_StringToBool "$VAweight")
+
 if ! [[ "$parLimit" == "-1" || "$parLimit" =~ [1-9][0-9]* ]]
 then
     log_Err_Abort "--parallel-limit must be a positive integer or -1, provided value: '$parLimit'"
@@ -181,7 +186,7 @@ do
                         then
                             # Use already concatenated file
                             concatFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                            VNA="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                            clean_VN="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
                             concatOutFile="${WFDir}/${Subject}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                             if [[ -f "$concatFile" ]]
                             then
@@ -197,22 +202,50 @@ do
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
                                     origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                                    VN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING%%_*}_vn.dscalar.nii" # not terribly robust
-                                    MEAN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
                                         startIdx=$((cumTP + 1))
                                         endIdx=$((cumTP + nTP))
                                         outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                                        wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
+                                        wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx" # naive splitting
                                         
-                                        # un-variance normalize and un-demean the deconcatenated post-WF data
-                                        wb_command -cifti-math "((TCS / VNA) * VN) + MEAN" ${outFile} \
-                                          -var TCS ${outFile} \
-                                          -var VNA ${VNA} -select 1 1 -repeat \
-                                          -var VN ${VN} -select 1 1 -repeat \
-                                          -var MEAN ${MEAN} -select 1 1 -repeat
+                                        ## The "*_clean*" volume and CIFTI timeseries have no mean, i.e. they are intensity normalized.
+                                        ## However, timeseries files without "*_vn*"" retain run variances, i.e. they are not variance normalized.
+                                        ## To expound, for concatenated (non "_vn*") timeseries, the indiviudal run variances are divided out, data concatenated and the mean of run variances (VNA) multiplied back in.
+                                        ## Therefore, naive splitting of the concatenated timeseries will result the data retaining this run-average variance. 
+                                        ## In addition, the tICA pipeline creates a concat "*_clean_vn*" dscalar file, this contains the pooled variance across runs, rather than average of run variances. 
+                                        ## The variance normalization option below divides each run (after splitting) by the clean_VN map to yield variance normalized (post-wishart) single run timeseries. 
+                                        if [[ "$VarNormBool" == 1 ]];then
+                                          wb_command -cifti-math "(TCS / clean_VN)" ${outFile} \
+                                            -var TCS ${outFile} \
+                                            -var clean_VN ${clean_VN} -select 1 1 -repeat
+                                        fi
+
+                                        if [[ "$VAweightBool" == 1 ]];then
+                                          log_Msg "Weighting data by average vertex areas"
+                                          VA=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii
+                                          VAgray=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness_va.grayordinates.${LowResMesh}k_fs_LR.dscalar.nii
+                                          ATLASroiL=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+                                          ATLASroiR=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+                                          if [[ ! -f "$VAgray" ]]; then
+                                            # create VA cifti with volume grayordinates filled with average of vertex areas for weighting 
+                                            tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
+                                            tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
+                                            tempfiles_create "tmp_lab_XXXXXX.nii.gz" tmp_lab_file
+                                            tempfiles_create "tmp_Lva_XXXXXX.shape.gii" tmp_Lva_file
+                                            tempfiles_create "tmp_Rva_XXXXXX.shape.gii" tmp_Rva_file
+                                            wb_command -cifti-separate ${outFile} COLUMN -volume-all "$tmp_jnk_file" -roi "$tmp_roi_file" -label "$tmp_lab_file"
+                                            wb_command -cifti-separate ${VA} COLUMN -metric CORTEX_LEFT "$tmp_Lva_file" -metric CORTEX_RIGHT "$tmp_Rva_file"
+                                            mean_VA=$(wb_command -cifti-stats ${VA} -reduce MEAN) # $VA is a dscalar cifti already masked by ATLASroi
+                                            wb_command -volume-math "(ROI * $mean_VA)" "$tmp_roi_file" -var ROI "$tmp_roi_file"
+                                            wb_command -cifti-create-dense-scalar ${VAgray} -volume "$tmp_roi_file" "$tmp_lab_file" \
+                                              -left-metric "$tmp_Lva_file" -roi-left $ATLASroiL -right-metric "$tmp_Rva_file" -roi-right $ATLASroiR
+                                          fi
+                                          wb_command -cifti-math "(TCS * VA)" ${outFile} \
+                                            -var TCS ${outFile} \
+                                            -var VA ${VAgray} -select 1 1 -repeat
+                                        fi
 
                                         cumTP=$endIdx
                                     fi
@@ -295,6 +328,7 @@ do
                 echo "}" >> "$ProfumoConfigToUse"
                 log_Msg "WF complete"
             fi
+
 
             # Set up PROFUMO paths
             PFM_PATH="${PFMFolder}/Analysis.pfm"

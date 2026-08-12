@@ -28,6 +28,7 @@ opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution"
 opts_AddMandatory '--pfm-folder' 'PFMFolder' 'path' "path to PFM results folder"
 opts_AddMandatory '--concat-name' 'ConcatName' 'string' "concatenated fMRI name if using multi-run data"
 opts_AddMandatory '--profumo-tr' 'TR' "repetition time for PROFUMO analysis" '0.72'
+opts_AddOptional '--weight-vertex-areas' 'VAweight' 'YES or NO' "Weight data by vertex areas for PROFUMO (default NO)" 'NO'
 
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
@@ -35,6 +36,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 2 = Octave" "$g_matlab_default_mode"
 
 opts_ParseArguments "$@"
+VAweightBool=$(opts_StringToBool "$VAweight")
+
 
 if ((pipedirguessed))
 then
@@ -75,7 +78,7 @@ IFS='@' read -a fMRIList <<<"$fMRIListRaw"
 this_script_dir=$(dirname "$0")
 
 #matlab function arguments converted to strings
-matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fMRIProcSTRING" "$OutputfMRIName" "$OutputSTRING" "$RegString" "$LowResMesh" "$TR" "$PFMFolder")
+matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fMRIProcSTRING" "$OutputfMRIName" "$OutputSTRING" "$RegString" "$LowResMesh" "$TR" "$PFMFolder" "$VAweightBool")
 
 case "$MatlabMode" in
     (0)

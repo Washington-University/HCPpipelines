@@ -1,4 +1,4 @@
-function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder)
+function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder,VAweightBool)
 % PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder)
 % This function imports PROFUMO results and generates CIFTI-format time courses
 % and power spectra for each subject. The outputs are used for subsequent
@@ -16,6 +16,7 @@ function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProc
 %   LowResMesh - Mesh resolution (e.g., '10' for 10k)
 %   TR - Repetition time in seconds
 %   PFMFolder - Path to PROFUMO results folder
+%   VAweightBool - Boolean flag for vertex area weighting
 
 %% Parse string inputs and initialize
 Subjlist = strsplit(SubjListRaw, '@');
@@ -88,6 +89,20 @@ for s = 1:numel(Subjlist)
     ts.ts = TCS;
     ts.NtimepointsPerSubject = size(TCS, 1);
     PFMSpectra = cifti_struct_create_sdseries(nets_spectra_sp(ts)','step',1/TR);
+
+    %% divide out vertex area weights
+    if VAweightBool
+      fprintf('Dividing out vertex area weights\n');
+      VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness_va.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
+      PFMTCSorig.cdata = PFMTCSorig.cdata ./ VAgray;
+      PFMSpectraorig.cdata = PFMSpectraorig.cdata ./ VAgray;
+      PFMTCS.cdata = PFMTCS.cdata ./ VAgray;
+      PFMSpectra.cdata = PFMSpectra.cdata ./ VAgray;
+      mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
+      maps = ciftiopen(mapFile, wbcommand);
+      maps.cdata = maps.cdata ./ VAgray;
+      ciftisave(maps, mapFile, wbcommand);
+    end
 
     %% Save individual-level results
     % Save original and amplitude-modulated time courses and spectra
