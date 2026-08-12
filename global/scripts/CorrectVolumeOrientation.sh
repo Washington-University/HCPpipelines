@@ -102,6 +102,20 @@ fi
 
 # sanity check the input arguments
 
+# --tposition must be one of the supported true patient positions; abort loudly
+# on anything else so that a typo cannot silently produce a wrong orientation.
+case "$TruePosition" in
+    HFSx|FFSx|HFS|HFP|FFS|FFP) ;;
+    *) log_Err_Abort "unknown --tposition: '$TruePosition'. Must be one of: HFSx, FFSx, HFS, HFP, FFS, FFP" ;;
+esac
+
+# --sposition must be one of the supported scanner patient positions; abort
+# loudly on anything else so that a typo cannot silently produce a wrong result.
+case "$PatientPosition" in
+    HFS|HFP|FFS|FFP|NONE) ;;
+    *) log_Err_Abort "unknown --sposition: '$PatientPosition'. Must be one of: HFS, HFP, FFS, FFP, NONE" ;;
+esac
+
 omat=$(opts_StringToBool "$omat")
 reorient2std=$(opts_StringToBool "$reorient2std")
 # Display the parsed/default values
