@@ -93,7 +93,7 @@ for s = 1:numel(Subjlist)
     %% divide out vertex area weights
     if VAweightBool
       fprintf('Dividing out vertex area weights\n');
-      VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness_va.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
+      VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
       PFMTCSorig.cdata = PFMTCSorig.cdata ./ VAgray;
       PFMSpectraorig.cdata = PFMSpectraorig.cdata ./ VAgray;
       PFMTCS.cdata = PFMTCS.cdata ./ VAgray;

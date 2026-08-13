@@ -196,6 +196,26 @@ do
                                     --output="$concatOutFile" \
                                     --num-wishart="$NumWishart" \
                                     --matlab-run-mode="$MatlabMode"
+
+                                if [[ "$VAweightBool" == 1 ]]; then
+                                    # create VA cifti with volume grayordinates filled with average of vertex areas for weighting 
+                                    VA=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va.${LowResMesh}k_fs_LR.dscalar.nii
+                                    VAgray=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va.grayordinates.${LowResMesh}k_fs_LR.dscalar.nii
+                                    ATLASroiL=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+                                    ATLASroiR=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+                                    tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
+                                    tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
+                                    tempfiles_create "tmp_lab_XXXXXX.nii.gz" tmp_lab_file
+                                    tempfiles_create "tmp_Lva_XXXXXX.shape.gii" tmp_Lva_file
+                                    tempfiles_create "tmp_Rva_XXXXXX.shape.gii" tmp_Rva_file
+                                    wb_command -cifti-separate ${outFile} COLUMN -volume-all "$tmp_jnk_file" -roi "$tmp_roi_file" -label "$tmp_lab_file"
+                                    wb_command -cifti-separate ${VA} COLUMN -metric CORTEX_LEFT "$tmp_Lva_file" -metric CORTEX_RIGHT "$tmp_Rva_file"
+                                    mean_VA=$(wb_command -cifti-stats ${VA} -reduce MEAN) # $VA is a dscalar cifti already masked by ATLASroi
+                                    wb_command -volume-math "(ROI * $mean_VA)" "$tmp_roi_file" -var ROI "$tmp_roi_file"
+                                    wb_command -cifti-create-dense-scalar ${VAgray} -volume "$tmp_roi_file" "$tmp_lab_file" \
+                                      -left-metric "$tmp_Lva_file" -roi-left $ATLASroiL -right-metric "$tmp_Rva_file" -roi-right $ATLASroiR
+                              fi
+                                
                                                                 
                                 # Split back into individual runs and restore means
                                 cumTP=0
@@ -217,26 +237,9 @@ do
                                             -var clean_VN ${clean_VN} -select 1 1 -repeat
                                         fi
 
+                  
                                         if [[ "$VAweightBool" == 1 ]];then
                                           log_Msg "Weighting data by average vertex areas"
-                                          VA=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness_va.${LowResMesh}k_fs_LR.dscalar.nii
-                                          VAgray=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness_va.grayordinates.${LowResMesh}k_fs_LR.dscalar.nii
-                                          ATLASroiL=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-                                          ATLASroiR=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-                                          if [[ ! -f "$VAgray" ]]; then
-                                            # create VA cifti with volume grayordinates filled with average of vertex areas for weighting 
-                                            tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
-                                            tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
-                                            tempfiles_create "tmp_lab_XXXXXX.nii.gz" tmp_lab_file
-                                            tempfiles_create "tmp_Lva_XXXXXX.shape.gii" tmp_Lva_file
-                                            tempfiles_create "tmp_Rva_XXXXXX.shape.gii" tmp_Rva_file
-                                            wb_command -cifti-separate ${outFile} COLUMN -volume-all "$tmp_jnk_file" -roi "$tmp_roi_file" -label "$tmp_lab_file"
-                                            wb_command -cifti-separate ${VA} COLUMN -metric CORTEX_LEFT "$tmp_Lva_file" -metric CORTEX_RIGHT "$tmp_Rva_file"
-                                            mean_VA=$(wb_command -cifti-stats ${VA} -reduce MEAN) # $VA is a dscalar cifti already masked by ATLASroi
-                                            wb_command -volume-math "(ROI * $mean_VA)" "$tmp_roi_file" -var ROI "$tmp_roi_file"
-                                            wb_command -cifti-create-dense-scalar ${VAgray} -volume "$tmp_roi_file" "$tmp_lab_file" \
-                                              -left-metric "$tmp_Lva_file" -roi-left $ATLASroiL -right-metric "$tmp_Rva_file" -roi-right $ATLASroiR
-                                          fi
                                           wb_command -cifti-math "(TCS * VA)" ${outFile} \
                                             -var TCS ${outFile} \
                                             -var VA ${VAgray} -select 1 1 -repeat
