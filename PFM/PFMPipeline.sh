@@ -214,7 +214,7 @@ do
                                     wb_command -volume-math "(ROI * $mean_VA)" "$tmp_roi_file" -var ROI "$tmp_roi_file"
                                     wb_command -cifti-create-dense-scalar ${VAgray} -volume "$tmp_roi_file" "$tmp_lab_file" \
                                       -left-metric "$tmp_Lva_file" -roi-left $ATLASroiL -right-metric "$tmp_Rva_file" -roi-right $ATLASroiR
-                              fi
+                                fi
                                 
                                                                 
                                 # Split back into individual runs and restore means
