@@ -210,12 +210,7 @@ do
                                         outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                                         wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx" # naive splitting
                                         
-                                        ## The "*_clean*" volume and CIFTI timeseries have no mean, i.e. they are intensity normalized.
-                                        ## However, timeseries files without "*_vn*"" retain run variances, i.e. they are not variance normalized.
-                                        ## To expound, for concatenated (non "_vn*") timeseries, the indiviudal run variances are divided out, data concatenated and the mean of run variances (VNA) multiplied back in.
-                                        ## Therefore, naive splitting of the concatenated timeseries will result the data retaining this run-average variance. 
-                                        ## In addition, the tICA pipeline creates a concat "*_clean_vn*" dscalar file, this contains the pooled variance across runs, rather than average of run variances. 
-                                        ## The variance normalization option below divides each run (after splitting) by the clean_VN map to yield variance normalized (post-wishart) single run timeseries. 
+                                        ## The concatenated timeseries are intensity normalized and differences in unstructured noise variance between runs and the means have been removed.  For model-free analyses (i.e., not task-GLM) that prefer single runs, it is best to simply deconcatenate the runs.  If variance normalization is desired, use the same _clean_vn file from the concatenated folder for each run, rather than the original _vn files, which may cause extreme values in areas of little or no signal and require more complex handling.
                                         if [[ "$VarNormBool" == 1 ]];then
                                           wb_command -cifti-math "(TCS / clean_VN)" ${outFile} \
                                             -var TCS ${outFile} \
