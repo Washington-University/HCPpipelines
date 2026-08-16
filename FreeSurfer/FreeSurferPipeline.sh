@@ -791,6 +791,41 @@ fi
 popd
 
 # ----------------------------------------------------------------------
+log_Msg "Creating symlinks for rawavg surfaces if deformed versions do not exist (this is required if conf2hires is not used)"
+# ----------------------------------------------------------------------
+
+surfdir=${SessionDIR}/${SessionID}/surf
+
+# List of surface file pairs: (rawavg_name, deformed_name)
+declare -a surface_pairs=(
+    "lh.white:lh.white.deformed"
+    "rh.white:rh.white.deformed"
+    "lh.pial:lh.pial.deformed"
+    "rh.pial:rh.pial.deformed"
+)
+
+for pair in "${surface_pairs[@]}"; do
+    base_file="${pair%%:*}"
+    deformed_file="${pair##*:}"
+
+    base_path="${surfdir}/${base_file}"
+    deformed_path="${surfdir}/${deformed_file}"
+
+    if [ ! -e "${deformed_path}" ]; then
+        if [ -e "${base_path}" ]; then
+            log_Msg "Creating symlink: ${deformed_file} -> ${base_file}"
+            ln -s "${base_file}" "${deformed_path}"
+            return_code=$?
+            if [ "${return_code}" != "0" ]; then
+                log_Err_Abort "Failed to create symlink ${deformed_file} -> ${base_file} with return_code: ${return_code}"
+            fi
+        else
+            log_Warn "Expected file ${base_path} does not exist, cannot create symlink"
+        fi
+    fi
+done
+
+# ----------------------------------------------------------------------
 log_Msg "Generating QC file"
 # ----------------------------------------------------------------------
 
