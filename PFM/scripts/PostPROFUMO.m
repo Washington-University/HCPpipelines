@@ -1,4 +1,4 @@
-function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder,clean_VN_Name,VAweightBool)
+function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder,VarNormBool,VAweightBool)
 % PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProcSTRING, OutputfMRIName, OutputSTRING, RegString, LowResMesh, TR, PFMFolder)
 % This function imports PROFUMO results and generates CIFTI-format time courses
 % and power spectra for each subject. The outputs are used for subsequent
@@ -16,13 +16,14 @@ function PostPROFUMO(StudyFolder, SubjListRaw, fMRIListRaw, ConcatName, fMRIProc
 %   LowResMesh - Mesh resolution (e.g., '10' for 10k)
 %   TR - Repetition time in seconds
 %   PFMFolder - Path to PROFUMO results folder
-%   clean_VN_Name - Path to group variance normalization file for restoring variance (unused if empty)
+%   VarNormBool - Boolean flag for variance normalization
 %   VAweightBool - Boolean flag for vertex area weighting
 
 %% Parse string inputs and initialize
 Subjlist = strsplit(SubjListRaw, '@');
 fMRINames = strsplit(fMRIListRaw, '@');
 TR = str2double(TR);
+VarNormBool = logical(str2double(VarNormBool));
 VAweightBool = logical(str2double(VAweightBool));
 wbcommand = 'wb_command';
 
@@ -93,8 +94,9 @@ for s = 1:numel(Subjlist)
     PFMSpectra = cifti_struct_create_sdseries(nets_spectra_sp(ts)','step',1/TR);
 
     %% restore variance
-    if ~isempty(clean_VN_Name)
+    if VarNormBool
         fprintf('Restoring variance\n');
+        clean_VN_Name = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName RegString fMRIProcSTRING '_vn.dscalar.nii'];
         clean_VN = ciftiopen(clean_VN_Name, wbcommand).cdata;
         mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
         maps = ciftiopen(mapFile, wbcommand);
@@ -105,7 +107,7 @@ for s = 1:numel(Subjlist)
     %% divide out vertex area weights
     if VAweightBool
         fprintf('Dividing out vertex area weights\n');
-        VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand).cdata;
+        VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand).cdata;
         mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
         maps = ciftiopen(mapFile, wbcommand);
         maps.cdata = maps.cdata ./ VAgray;

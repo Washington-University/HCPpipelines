@@ -397,12 +397,6 @@ do
             RESULTS_PATH="${PFMFolder}/Results.ppp"
             REAL_REF_IMAGE=$(readlink -f "${RefImage}")
 
-            if [[ "${VarNormBool}" == 1 ]];then
-                clean_VN="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
-            else
-                clean_VN=''''
-            fi
-
             # Remove any existing Results.ppp directory 
             # so postprocess_results.py writes fresh output to Results.ppp
             if [[ -d "${PFMFolder}/Results.ppp" ]]
@@ -436,7 +430,7 @@ do
                 --low-res-mesh="$LowResMesh" \
                 --profumo-tr="$TR" \
                 --pfm-folder="$PFMFolder" \
-                --clean-vn-name="$clean_VN" \
+                --variance-normalize="$VarNorm" \
                 --weight-vertex-areas="$VAweight" \
                 --matlab-run-mode="$MatlabMode"
 

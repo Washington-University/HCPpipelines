@@ -28,7 +28,7 @@ opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution"
 opts_AddMandatory '--pfm-folder' 'PFMFolder' 'path' "path to PFM results folder"
 opts_AddMandatory '--concat-name' 'ConcatName' 'string' "concatenated fMRI name if using multi-run data"
 opts_AddMandatory '--profumo-tr' 'TR' "repetition time for PROFUMO analysis" '0.72'
-opts_AddOptional '--clean-vn-name' 'clean_VN_Name' 'path' "Path to group variance normalization file for restoring variance (default: none)" ''''
+opts_AddOptional '--variance-normalize' 'VarNorm' 'YES or NO' "Variance normalize data before PROFUMO (default NO)" 'NO'
 opts_AddOptional '--weight-vertex-areas' 'VAweight' 'YES or NO' "Weight data by vertex areas for PROFUMO (default NO)" 'NO'
 
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
@@ -37,6 +37,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 2 = Octave" "$g_matlab_default_mode"
 
 opts_ParseArguments "$@"
+VarNormBool=$(opts_StringToBool "$VarNorm")
 VAweightBool=$(opts_StringToBool "$VAweight")
 
 
@@ -79,7 +80,7 @@ IFS='@' read -a fMRIList <<<"$fMRIListRaw"
 this_script_dir=$(dirname "$0")
 
 #matlab function arguments converted to strings
-matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fMRIProcSTRING" "$OutputfMRIName" "$OutputSTRING" "$RegString" "$LowResMesh" "$TR" "$PFMFolder" "$clean_VN_Name" "$VAweightBool")
+matlab_argarray=("$StudyFolder" "$SubjListRaw" "$fMRIListRaw" "$ConcatName" "$fMRIProcSTRING" "$OutputfMRIName" "$OutputSTRING" "$RegString" "$LowResMesh" "$TR" "$PFMFolder" "$VarNormBool" "$VAweightBool")
 
 case "$MatlabMode" in
     (0)
