@@ -201,8 +201,8 @@ do
 
                                 if [[ "$VAweightBool" == 1 ]]; then
                                     # create VA_norm cifti with volume grayordinates filled with ones areas for weighting 
-                                    VAnorm=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
-                                    VAgray=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.grayordinates.${LowResMesh}k_fs_LR.dscalar.nii
+                                    VAnorm=${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
+                                    VAgray=${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.grayordinates.${LowResMesh}k_fs_LR.dscalar.nii
                                     tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
                                     tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
                                     wb_command -cifti-separate "${concatOutFile}" COLUMN -volume-all "$tmp_jnk_file" -roi "$tmp_roi_file" -crop
