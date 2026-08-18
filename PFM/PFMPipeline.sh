@@ -227,17 +227,17 @@ do
                                         #  If variance normalization is desired, use the same _clean_vn file from the concatenated folder for each run, rather than the original _vn files, 
                                         #  which may cause extreme values in areas of little or no signal and require more complex handling.
                                         if [[ "$VarNormBool" == 1 ]];then
-                                          wb_command -cifti-math "(TCS / clean_VN)" ${outFile} \
-                                            -var TCS ${outFile} \
-                                            -var clean_VN ${clean_VN} -select 1 1 -repeat
+                                            log_Msg "Normalizing variance"
+                                            wb_command -cifti-math "(TCS / clean_VN)" ${outFile} \
+                                                -var TCS ${outFile} \
+                                                -var clean_VN ${clean_VN} -select 1 1 -repeat
                                         fi
 
-                  
                                         if [[ "$VAweightBool" == 1 ]];then
-                                          log_Msg "Weighting data by average vertex areas"
-                                          wb_command -cifti-math "(TCS * VA)" ${outFile} \
-                                            -var TCS ${outFile} \
-                                            -var VA ${VAgray} -select 1 1 -repeat
+                                            log_Msg "Weighting data by average vertex areas"
+                                            wb_command -cifti-math "(TCS * VA)" ${outFile} \
+                                                -var TCS ${outFile} \
+                                                -var VA ${VAgray} -select 1 1 -repeat
                                         fi
 
                                         cumTP=$endIdx
