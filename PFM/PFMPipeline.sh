@@ -1,4 +1,4 @@
-cd #!/bin/bash
+#!/bin/bash
 set -eu
 
 pipedirguessed=0
@@ -56,8 +56,8 @@ opts_AddOptional '--num-wishart' 'NumWishart' 'integer' "number of Wishart filte
 
 # Post-Wishart filter specific parameters (only used if --num-wishart > 0)
 opts_AddOptional '--keep-wishart-files' 'KeepWishartFiles' 'YES or NO' "keep Wishart-filtered files after PROFUMO instead of deleting (default NO)" 'NO'
-opts_AddOptional '--variance-normalization' 'VarNorm' 'YES or NO' "Variance normalize data before PROFUMO (default NO)" 'NO'
-opts_AddOptional '--weight-vertex-areas' 'VAweight' 'YES or NO' "Weight data by vertex areas before PROFUMO (default NO)" 'NO'
+opts_AddOptional '--variance-normalization' 'VarNorm' 'YES or NO' "Variance normalize data before PROFUMO (default YES)" 'YES'
+opts_AddOptional '--weight-vertex-areas' 'VAweight' 'YES or NO' "Weight data by vertex areas before PROFUMO (default YES)" 'YES'
 
 #optional parameters
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'string' "mesh resolution, like '32' for 32k_fs_LR" '32'
