@@ -796,8 +796,8 @@ surfdir=${SessionDIR}/${SessionID}/surf
 for name in lh.white lh.pial rh.white rh.pial; do
     defname="${name}".deformed
     if [ ! -e "${surfdir}/${defname}" ] && [ -e "${surfdir}/${name}" ]; then
-        log_Msg "Creating symlink: ${surfdir}/${defname} -> ${surfdir}/${name}"
-        ln -s "${surfdir}/${name}" "${surfdir}/${defname}"
+        log_Msg "Creating symlink: ${surfdir}/${defname} -> ${name}"
+        ln -s "${name}" "${surfdir}/${defname}"
     fi
 done
 
