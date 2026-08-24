@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 get_batch_options() {
     local arguments=("$@")
@@ -27,21 +27,24 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
-	    *)
-		echo ""
-		echo "ERROR: Unrecognized Option: ${argument}"
-		echo ""
-		exit 1
-		;;
+            *)
+                echo ""
+                echo "ERROR: Unrecognized Option: ${argument}"
+                echo ""
+                exit 1
+                ;;
         esac
     done
 }
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by SubjectID) 
-Subjlist="100307 100610" #Space delimited list of subject IDs 
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script 
+StudyFolder="/media/myelin/brainmappers/Connectome_Project/YA_HCP_ReTest_Final"
+
+#sub 103818 was removed
+Subjlist="105923 111312 114823 115320 122317 125525 130518 135528 137128 139839 143325 144226 146129 149337 149741 151526 158035 169343 172332 175439 177746 185442 187547 192439 194140 195041 200109 200614 204521 250427 287248 341834 433839 562345 599671 601127 627549 660951 662551 783462 859671 861456 877168 917255"
+
+EnvironmentScript="/media/myelin/oren/HippUnfoldTesting/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -51,44 +54,51 @@ if [ -n "${command_line_specified_subject}" ]; then
     Subjlist="${command_line_specified_subject}"
 fi
 
-#Set up pipeline environment variables and software
+# Set up pipeline environment variables and software
 source "$EnvironmentScript"
 
 # Log the originating call
 echo "$@"
 
-#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
-#DO NOT include "-q " at the beginning
-#default to no queue, implying run local
-QUEUE=""
+# NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+# DO NOT include "-q " at the beginning
+QUEUE="dyn.q"
 #QUEUE="hcp_priority.q"
 
-########################################## INPUTS ########################################## 
+########################################## INPUTS ##########################################
 
-#Scripts called by this script do assume they run on the outputs of the PostFreeSurfer Pipeline
+# Scripts called by this script do assume they run on the outputs of the PostFreeSurfer Pipeline
 
 ######################################### DO WORK ##########################################
 
 for Subject in $Subjlist ; do
-  echo $Subject
+    echo "$Subject"
 
-  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-      echo "About to locally run ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
-      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-  else
-      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
-      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
-  fi
+    LogDir="${StudyFolder}/${Subject}/T1w/HippUnfold/logs/HippUnfoldHCP"
+    mkdir -p "$LogDir"
 
-  "${queuing_command[@]}" "$HCPPIPEDIR"/HippUnfoldHCP/HippUnfoldHCP.sh \
-      --study-folder="$StudyFolder" \
-      --subject="$Subject" \
-      
-  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+        RunLocal="TRUE"
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
+        RunLocal="FALSE"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE" -l "$LogDir")
+    fi
 
-  echo "set -- --study-folder=$StudyFolder \
-      --subject=$Subject" \
+    "${queuing_command[@]}" \
+        "$HCPPIPEDIR"/HippUnfoldHCP/HippUnfoldHCP.sh \
+        --study-folder="$StudyFolder" \
+        --subject="$Subject" \
+        --runlocal="$RunLocal"
 
-  echo ". ${EnvironmentScript}"
+    # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+
+    echo "set --study-folder=$StudyFolder --subject=$Subject --runlocal=$RunLocal"
+
+    echo ". ${EnvironmentScript}"
 
 done
+
+
