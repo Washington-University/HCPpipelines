@@ -30,8 +30,8 @@ if [ -z "${HCPPIPEDIR}" ]; then
     exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-#source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"            # Debugging functions; also sources log.shlib
+#source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"            # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/opts.shlib"                # Command line option functions
 
 opts_ShowVersionIfRequested "$@"
@@ -358,9 +358,8 @@ for Structure in hipp dentate; do
                     "${TargetROI}" \
                     "${TargetAllMetric}"
 
-
+            done
         done
-
 
         # =====================================================================
         # Map goodvoxels in volume space
@@ -453,7 +452,6 @@ for Structure in hipp dentate; do
 
         fi
 
-
         "${WB}" -metric-dilate \
             "${NativefMRI}" \
             "${MidSurface}" \
@@ -513,26 +511,26 @@ for Structure in hipp dentate; do
 
             log_Msg "Generated fMRI file in ${Mesh} mesh at: ${TargetfMRI}"
 
+            # =====================================================================
+            # Map VN volume to native hippocampal surface
+            # =====================================================================
 
-            done
+            VolumefMRIVN="${VolumefMRI}_vn.nii.gz"
+            TargetfMRIVN="${WorkingDirectory}/${Prefix}_fMRI_vn.${Mesh}.func.gii"
+
+            "${WB}" -volume-to-surface-mapping \
+                "${VolumefMRIVN}" \
+                "${TargetMidSurface}" \
+                "${TargetfMRIVN}" \
+                -cubic
+
+            "${WB}" -metric-mask \
+                "${TargetfMRIVN}" \
+                "${TargetROI}" \
+                "${TargetfMRIVN}"
+
+            log_Msg "Generated VN file in ${Mesh} mesh at: ${TargetfMRIVN}"
         done
     done
 done
 
-# =====================================================================
-# All voxel mask an good voxel mask
-# =====================================================================
-
-fslmaths "${WorkingDirectory}/${Subject}.L.hipp.ribbon.nii.gz" \
-    -add "${WorkingDirectory}/${Subject}.R.hipp.ribbon.nii.gz" \
-    -add "${WorkingDirectory}/${Subject}.L.dentate.ribbon.nii.gz" \
-    -add "${WorkingDirectory}/${Subject}.R.dentate.ribbon.nii.gz" \
-    -bin \
-    "${WorkingDirectory}/${Subject}.allStructures.allVoxels.ribbon.nii.gz"
-
-fslmaths "${WorkingDirectory}/${Subject}.L.hipp_goodvoxels.nii.gz" \
-    -add "${WorkingDirectory}/${Subject}.R.hipp_goodvoxels.nii.gz" \
-    -add "${WorkingDirectory}/${Subject}.L.dentate_goodvoxels.nii.gz" \
-    -add "${WorkingDirectory}/${Subject}.R.dentate_goodvoxels.nii.gz" \
-    -bin \
-    "${WorkingDirectory}/${Subject}.all_structures.goodvoxels.nii.gz"
