@@ -62,7 +62,7 @@ mkdir -p "$AtlasSpaceFolder/Diffusion"
 echo "$0 $@" >> "$AtlasSpaceFolder/xfms/log.txt"
 echo "Pwd = `pwd`" >> "$AtlasSpaceFolder/xfms/log.txt"
 echo "date: `date`" >> "$AtlasSpaceFolder/xfms/log.txt"
-echo " " >> "$AtlasSpaceFolder/xfms/log.txt
+echo " " >> "$AtlasSpaceFolder/xfms/log.txt"
 
 
 
