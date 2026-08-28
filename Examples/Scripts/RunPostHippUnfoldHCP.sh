@@ -1,5 +1,3 @@
-#!/bin/bash 
-
 get_batch_options() {
     local arguments=("$@")
 
@@ -45,7 +43,6 @@ Subjlist="100307 100610" #Space delimited list of subject IDs
 
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
-
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
 fi
@@ -54,47 +51,51 @@ if [ -n "${command_line_specified_subject}" ]; then
     Subjlist="${command_line_specified_subject}"
 fi
 
-#Set up pipeline environment variables and software
+# Set up pipeline environment variables and software
 source "$EnvironmentScript"
 
-#Log the originating call
+# Log the originating call
 echo "$@"
 
-#NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
-#DO NOT include "-q " at the beginning
+# NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
+# DO NOT include "-q " at the beginning
 QUEUE=""
 #QUEUE="hcp_priority.q"
 
-########################################## INPUTS ########################################## 
+########################################## INPUTS ##########################################
 
 # Scripts called by this script do assume they run on the outputs of the PostFreeSurfer Pipeline
 
 ######################################### DO WORK ##########################################
 
 for Subject in $Subjlist ; do
-  echo $Subject
+    echo "$Subject"
 
-  LogDir="${StudyFolder}/${Subject}/T1w/HippUnfold/logs/PostHippUnfoldHCP"
-  mkdir -p "$LogDir"
+    LogDir="${StudyFolder}/${Subject}/T1w/HippUnfold/logs/HippUnfoldHCP"
+    
+    mkdir -p "$LogDir"
+    cd "$LogDir"
+    
+    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+        echo "About to locally run ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
+        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+        RunLocal="TRUE"
+    else
+        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
+        RunLocal="FALSE"
+        queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE" -l "$LogDir")
+    fi
 
-  if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-      echo "About to locally run ${HCPPIPEDIR}/HippUnfoldHCP/PostHippUnfoldHCP.sh"
-      queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-  else
-      echo "About to use fsl_sub to queue ${HCPPIPEDIR}/HippUnfoldHCP/PostHippUnfoldHCP.sh"
-      queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE" -l "$LogDir")
-  fi
+    "${queuing_command[@]}" \
+        "$HCPPIPEDIR"/HippUnfoldHCP/HippUnfoldHCP.sh \
+        --study-folder="$StudyFolder" \
+        --subject="$Subject" \
+        --runlocal="$RunLocal"
 
-  "${queuing_command[@]}" "$HCPPIPEDIR"/HippUnfoldHCP/PostHippUnfoldHCP.sh \
-      --study-folder="$StudyFolder" \
-      --subject="$Subject"
+    # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
-  # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
+    echo "set --study-folder=$StudyFolder --subject=$Subject --runlocal=$RunLocal"
 
-  echo "set -- --study-folder=$StudyFolder \
-      --subject=$Subject"
-
-  echo ". ${EnvironmentScript}"
+    echo ". ${EnvironmentScript}"
 
 done
-
