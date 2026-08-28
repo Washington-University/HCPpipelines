@@ -1,25 +1,24 @@
 #!/bin/bash
 set -eu
-
 pipedirguessed=0
-
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
-    # pipedirguessed=1
-
-    # Fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/.."
+  # pipedirguessed=1
+   #fix this if the script is more than one level below HCPPIPEDIR
+   export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
+
 opts_SetScriptDescription "Make some BIDS structures and run HippUnfold"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--hippunfold-cache-dir' 'HippUnfoldCacheDIR' 'path' "location of HippUnfold cache"
 opts_AddOptional '--hippunfold-dir' 'HippUnfoldDIR' 'path' "location of HippUnfold outputs"
-opts_AddOptional '--runlocal' 'RunLocal' 'TRUE|FALSE' "whether running locally" "FALSE"
+opts_AddOptional '--isolate-cache' 'IsolateCache' 'TRUE|FALSE' "whether to use a separate cache for this job" "FALSE"
 
 opts_ParseArguments "$@"
 
@@ -30,25 +29,15 @@ fi
 
 opts_ShowValues
 
-
-# ---------------------------------------------------------------------
-# Input/output directories
-# ---------------------------------------------------------------------
-
 T1wFolder="$StudyFolder/$Subject/T1w"
 
-if [[ -z "${HippUnfoldDIR:-}" ]]
-then
+if [[ -z "${HippUnfoldDIR:-}" ]]; then
     HippUnfoldDIR="${T1wFolder}/HippUnfold"
 fi
 
 T1wImage="$T1wFolder/T1w_acpc_dc_restore.nii.gz"
 T2wImage="$T1wFolder/T2w_acpc_dc_restore.nii.gz"
 
-
-# ---------------------------------------------------------------------
-# Check inputs
-# ---------------------------------------------------------------------
 
 if [[ ! -f "$T1wImage" ]]
 then
@@ -70,7 +59,6 @@ fi
 mkdir -p "$HippUnfoldDIR"
 
 ln -sf "$T1wImage" "$HippUnfoldDIR/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-
 ln -sf "$T2wImage" "$HippUnfoldDIR/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
 
 log_Msg "Created folder structure under $HippUnfoldDIR and linked T1w and T2w images"
@@ -81,33 +69,27 @@ log_Msg "Starting HippUnfold pipeline for subject: $Subject"
 # HippUnfold cache
 # ---------------------------------------------------------------------
 
-if [[ -z "${HIPPUNFOLD_CACHE_DIR:-}" ]]
-then
-    log_Err_Abort "HIPPUNFOLD_CACHE_DIR is not set"
-fi
+export APPTAINER_BINDPATH=${HippUnfoldCacheDIR}:${HippUnfoldCacheDIR}
+export APPTAINER_CACHEDIR=${HippUnfoldCacheDIR}/apptainer
 
-export APPTAINER_BINDPATH=${HIPPUNFOLD_CACHE_DIR}:${HIPPUNFOLD_CACHE_DIR}
-export APPTAINER_CACHEDIR=${HIPPUNFOLD_CACHE_DIR}/apptainer
-export APPTAINERENV_HIPPUNFOLD_CACHE_DIR=${HIPPUNFOLD_CACHE_DIR}
-
-mkdir -p "${HIPPUNFOLD_CACHE_DIR}/apptainer"
-mkdir -p "${HIPPUNFOLD_CACHE_DIR}/snakemake-conda"
+mkdir -p "${HippUnfoldCacheDIR}/apptainer"
+mkdir -p "${HippUnfoldCacheDIR}/snakemake-conda"
 
 
 # ---------------------------------------------------------------------
 # Construct HippUnfold command
 # ---------------------------------------------------------------------
 
-CondaPrefix="${HIPPUNFOLD_CACHE_DIR}/snakemake-conda"
+CondaPrefix="${HippUnfoldCacheDIR}/snakemake-conda"
 
 if [[ "${HIPPUNFOLDPATH:-}" == "" ]]
 then
     hippcmd=(hippunfold --use-conda)
 else
-    if [[ "$RunLocal" == "FALSE" ]]
+    if [[ "$IsolateCache" == "TRUE" ]]
     then
     	# Separate cache and conda directory for each subject to avoid crash due to parallel use
-	JobCache="${HIPPUNFOLD_CACHE_DIR}/job-cache/${JOB_ID:-local}_${Subject}"
+	JobCache="${HippUnfoldCacheDIR}/job-cache/${JOB_ID:-local}_${Subject}"
 	JobCondaPrefix="${JobCache}/snakemake-conda"
 	JobCondaPkgs="${JobCache}/conda-pkgs"
 
@@ -116,7 +98,6 @@ else
 	mkdir -p "$JobCondaPkgs"
 	
 	CondaPrefix="$JobCondaPrefix"
-        export APPTAINERENV_HIPPUNFOLD_CACHE_DIR="$JobCache"
 
         hippcmd=(
             apptainer run
@@ -145,8 +126,7 @@ fi
 
 log_Msg "Running HippUnfold for subject: $Subject"
 
-# Do not put a $ before {subject}, and do not capitalize the s.
-
+#Seriously: don't put a $ on {subject} and don't capitalize the S...
 "${hippcmd[@]}" "$HippUnfoldDIR" "$HippUnfoldDIR" participant \
     --modality T2w \
     --path-T1w "$HippUnfoldDIR/s_{subject}_T1w_acpc_dc_restore.nii.gz" \
@@ -163,7 +143,7 @@ log_Msg "Running HippUnfold for subject: $Subject"
 # Remove cache directory
 # ---------------------------------------------------------------------
    
-if [[ "$RunLocal" == "FALSE" ]]
+if [[ "$IsolateCache" == "TRUE" ]]
 then
 	rm -rf "$JobCache"
 fi

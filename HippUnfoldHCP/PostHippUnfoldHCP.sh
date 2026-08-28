@@ -1,17 +1,16 @@
 #!/bin/bash
 set -eu
-
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
-# pipedirguessed=1
-#fix this if the script is more than one level below HCPPIPEDIR
-export HCPPIPEDIR="$(dirname -- "$0")/.."
+  # pipedirguessed=1
+   #fix this if the script is more than one level below HCPPIPEDIR
+   export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-#source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"            
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@" # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+
 
 opts_SetScriptDescription "Make some BIDS structures and run HippUnfold"
 
@@ -24,7 +23,7 @@ opts_ParseArguments "$@"
 
 if ((pipedirguessed))
 then
-  log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
 opts_ShowValues
@@ -42,32 +41,21 @@ if [[ -z "${AtlasHippUnfoldDIR:-}" ]] ; then
 AtlasHippUnfoldDIR="${AtlasFolder}/HippUnfold"
 fi
 
-RawHippUnfoldFolder="${PhysicalHippUnfoldDIR}/sub-${Subject}"
-
-if [[ ! -d "$RawHippUnfoldFolder" ]]
-then
-echo "ERROR: HippUnfold output not found:" >&2
-echo "$RawHippUnfoldFolder" >&2
-exit 1
-fi
-
 function PALETTE {
-File=${1}
-Color=${2}
-Type=${3}
-wb_command=${4}
-
-if [ "${Color}" = "GRAY" ] ; then
-  command="-pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true"
-elif [ "${Color}" = "VIDEEN" ] ; then
-  command="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
-fi
-
-if [ "${Type}" = "metric" ] ; then
-  ${wb_command} -metric-palette "$File" MODE_AUTO_SCALE_PERCENTAGE ${command}
-elif [ "${Type}" = "cifti" ] ; then
-  ${wb_command} -cifti-palette "$File" MODE_AUTO_SCALE_PERCENTAGE "$File" ${command}
-fi
+  File=${1}
+  Color=${2}
+  Type=${3}
+  wb_command=${4}
+  if [ ${Color} = "GRAY" ] ; then
+    command="-pos-percent 2 98 -palette-name Gray_Interp -disp-pos true -disp-neg true -disp-zero true"
+  elif [ ${Color} = "VIDEEN" ] ; then
+    command="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
+  fi
+  if [ ${Type} = "metric" ] ; then
+    ${wb_command} -metric-palette "$File" MODE_AUTO_SCALE_PERCENTAGE ${command}
+  elif [ ${Type} = "cifti" ] ; then
+    ${wb_command} -cifti-palette "$File" MODE_AUTO_SCALE_PERCENTAGE "$File" ${command}
+  fi
 }
 
 for Mesh in native 512 2k 8k 18k ; do
