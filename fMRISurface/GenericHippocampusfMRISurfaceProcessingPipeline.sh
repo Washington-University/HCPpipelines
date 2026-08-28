@@ -197,6 +197,28 @@ if ((doProcessing)); then
                 -roi "${WorkingDirectory}/${Subject}.R.dentate_ones.${Mesh}.func.gii"
 
             log_Msg "Generated fMRI time series Cifti file: "${ResultsFolder}/${Subject}.${NameOffMRI}"_AtlasHipp_${ProcString}.${Mesh}.dtseries.nii"
+            
+# --------------------------------------------------------------------------
+# Combine VN maps from all four hippocampal structures
+# --------------------------------------------------------------------------
+
+    "${CARET7DIR}/wb_command" -cifti-create-dense-scalar \
+        "${ResultsFolder}/${NameOffMRI}_AtlasHipp_${ProcString}_vn.${Mesh}.dscalar.nii" \
+        -metric HIPPOCAMPUS_LEFT \
+            "${WorkingDirectory}/${Subject}.L.hipp_fMRI_vn.${Mesh}.func.gii" \
+            -roi "${WorkingDirectory}/${Subject}.L.hipp_ones.${Mesh}.func.gii" \
+        -metric HIPPOCAMPUS_RIGHT \
+            "${WorkingDirectory}/${Subject}.R.hipp_fMRI_vn.${Mesh}.func.gii" \
+            -roi "${WorkingDirectory}/${Subject}.R.hipp_ones.${Mesh}.func.gii" \
+        -metric HIPPOCAMPUS_DENTATE_LEFT \
+            "${WorkingDirectory}/${Subject}.L.dentate_fMRI_vn.${Mesh}.func.gii" \
+            -roi "${WorkingDirectory}/${Subject}.L.dentate_ones.${Mesh}.func.gii" \
+        -metric HIPPOCAMPUS_DENTATE_RIGHT \
+            "${WorkingDirectory}/${Subject}.R.dentate_fMRI_vn.${Mesh}.func.gii" \
+            -roi "${WorkingDirectory}/${Subject}.R.dentate_ones.${Mesh}.func.gii"
+
+    log_Msg "Generated VN CIFTI file: ${ResultsFolder}/${NameOffMRI}_AtlasHipp_${ProcString}_vn.${Mesh}.dscalar.nii"
+
     done
 fi
 

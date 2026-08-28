@@ -440,15 +440,15 @@ for Structure in hipp dentate; do
 
         else
 
-            "${WB}" -volume-to-surface-mapping \
-                "${VolumefMRI}.nii.gz" \
-                "${MidSurface}" \
-                "${NativefMRI}" \
-                -ribbon-constrained \
-                    "${InnerSurface}" \
-                    "${OuterSurface}" \
-                    -dilate-missing ${dilation_dist} \
-                        -nearest
+	"${WB}" -volume-to-surface-mapping \
+            "${VolumefMRI}.nii.gz" \
+	    "${MidSurface}" \
+	    "${NativefMRI}" \
+	    -ribbon-constrained \
+	    	"${InnerSurface}" \
+	    	"${OuterSurface}" \
+	    	-dilate-missing ${dilation_dist} 
+	    	-nearest
 
         fi
 
@@ -456,7 +456,7 @@ for Structure in hipp dentate; do
             "${NativefMRI}" \
             "${MidSurface}" \
             "${dilation_dist}" \
-            "${NativefMRI}" \
+            "${NativefMRI}" 
             -nearest
 
         "${WB}" -metric-mask \
@@ -466,7 +466,26 @@ for Structure in hipp dentate; do
 
         log_Msg "Generated fMRI file in native space at: ${NativefMRI}"
 
+	# =====================================================================
+	# Map VN volume to native hippocampal surface
+	# =====================================================================
 
+	VolumefMRIVN="${VolumefMRI}_vn.nii.gz"
+	NativefMRIVN="${WorkingDirectory}/${Prefix}_fMRI_vn.native.func.gii"
+
+	"${WB}" -volume-to-surface-mapping \
+	    "${VolumefMRIVN}" \
+	    "${MidSurface}" \
+	    "${NativefMRIVN}" \
+	    -cubic
+
+	"${WB}" -metric-mask \
+	    "${NativefMRIVN}" \
+	    "${NativeROI}" \
+	    "${NativefMRIVN}"
+
+	log_Msg "Generated VN file in native space at: ${NativefMRIVN}"
+	
         # =====================================================================
         # Resample complete fMRI timeseries to all densities
         # =====================================================================
