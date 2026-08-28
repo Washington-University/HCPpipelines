@@ -86,10 +86,18 @@ function tempfiles_copy()
     cp "$1" "${!2}"
 }
 
-#implementation details
-tempfiles_list=()
-tempfiles_keep 0
+#this is mainly for the purpose of parallel.shlib, as a backgrounded function doesn't affect global variables
+#however, this would also be needed for any type of subshell, which don't affect global variables
+#also used to set the defaults, for convenience
+function tempfiles_subshell_reset()
+{
+    tempfiles_list=()
+    #ignore previous setting for keeping temp files?
+    tempfiles_keep 0
+    trap tempfiles_cleanup EXIT
+}
 
+#implementation details
 function tempfiles_cleanup()
 {
     if ((${#tempfiles_list[@]} > 0))
@@ -105,14 +113,6 @@ function tempfiles_cleanup()
     tempfiles_list=()
 }
 
-#this is mainly for the purpose of parallel.shlib, as a backgrounded function doesn't affect global variables
-#however, this would also be needed for functions that use tempfiles which are called in a subshell, which also don't affect global variables
-function tempfiles_subshell_reset()
-{
-    tempfiles_list=()
-    #ignore setting for keeping temp files?
-    tempfiles_keep 0
-}
-
-trap tempfiles_cleanup EXIT
+tempfiles_keep 0
+tempfiles_subshell_reset
 

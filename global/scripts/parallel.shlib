@@ -104,7 +104,6 @@ function par_runjobs()
                 echo "error in job $par_global_launch_count, check "$joberrlog" and "$joboutlog", command: ${cmdargs[*]}" >> "$badjobslog"
             fi
             
-            tempfiles_cleanup
             #explanation: set stderr messages to go to original stdout, redirect only stdout messages to a file, take the new stdout (which only has stderr left in it) and tee it (duplicate the messages) to a file and back to stdout, redirect that stdout back to stderr
         ) <<<"${par_jobinputarray[i]}" 2>&1 > "$joboutlog" | tee "$joberrlog" 1>&2 &
         #save all the job pids, why not
