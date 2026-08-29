@@ -29,7 +29,7 @@ fi
 
 opts_ShowValues
 
-    echo "Launching Post MMORF registration for session ${Session}"
+echo "Launching Post MMORF registration for session ${Session}"
 
 
 T1wImage="T1w"
