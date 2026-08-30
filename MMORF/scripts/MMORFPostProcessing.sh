@@ -52,13 +52,8 @@ opts_AddMandatory '--ot2restbrain' 'OutputT2wImageRestoreBrain' 'image' 'output 
 
 opts_AddMandatory '--outputfolder' 'Output' 'path' 'target folder for output'
 
-
-
-
 ##optional args
 opts_AddOptional '--ref1mm' 'Reference1mm' 'image' 'reference 1mm image' "${HCPPIPEDIR_Templates}/MMORF_T1_1mm.nii.gz"
-
-
 
 opts_ParseArguments "$@"
 
@@ -69,7 +64,6 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
-
 
 log_Check_Env_Var FSLDIR
 
