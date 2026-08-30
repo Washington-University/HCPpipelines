@@ -246,6 +246,7 @@ for Hemisphere in L R ; do
     CurrentSphere="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.${RegNameOrig}.native.surf.gii"
 
     NewSphere="${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii"
+    #Since this is copying, it seems useful to not having to copy every time.
     [ ! -f "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii" ] && cp "$NewSphere" "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
     [ ! -f "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii" ] && cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii" "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
     [ ! -f "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii" ] && cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
@@ -367,8 +368,6 @@ resample_cifti_to_mesh() {
         OutCifti="${MNINonLinearFolder}/${MeshFolder}/${Base/.native./_${RegName}.${Mesh}_fs_LR.}"
     fi
 
-    [[ -f "$OutCifti" ]] && { echo "CIFTI already exists: $OutCifti"; return; }
-
     echo "Resampling CIFTI to ${Mesh} mesh:"
     echo "  IN : $InCifti"
     echo "  OUT: $OutCifti"
@@ -437,7 +436,7 @@ process_mesh_folder() {
 
         # HighResMesh special case
         [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]] && Path="${MNINonLinearFolder}/${File}"
-        [[ ! -f "$Path" ]] && resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
+        resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
 
         add_to_spec "$Spec" "$Path"
     done
@@ -454,7 +453,7 @@ process_mesh_folder() {
             Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
             
             [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]] && Path="${MNINonLinearFolder}/${File}"
-            [[ ! -f "$Path" ]] && resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
+            resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
         fi
         add_to_spec "$Spec" "$Path"
     done
@@ -470,7 +469,7 @@ process_mesh_folder() {
             File="${Session}.${Stem}_${RegName}.${Mesh}_fs_LR.dscalar.nii"
             Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
             [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]] && Path="${MNINonLinearFolder}/${File}"
-            [[ ! -f "$Path" ]] && resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" "$RegName"
+            resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" "$RegName"
         fi
         add_to_spec "$Spec" "$Path"
     done
