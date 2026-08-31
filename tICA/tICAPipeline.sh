@@ -86,7 +86,10 @@ opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA 
 opts_AddOptional '--reclean-mode' 'RecleanModeString' 'YES or NO' 'whether the data should use ReCleanSignal.txt for DVARS' 'NO'
 
 #tICA Component Classification
-#not integrated yet
+opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify empty string to use native environment instead" ""
+opts_AddOptional '--python-singularity-mount-path' 'PythonSingularityMountPath' 'string' "the file path of the mount path for singularity" ""
+opts_AddOptional '--python-interpreter' 'PythonInterpreter' 'string' "the python interpreter path" ""
+opts_AddOptional '--noise-file-name' 'ClassifyNoiseFileName' 'string' "output file name (within the tICA_d<dim> folder) for the ClassifyTICA noise component list, defaults to Noise.txt -- override for testing so you don't overwrite the file CleanData expects" "Noise.txt"
 
 #tICA Cleanup
 opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text file containing the component numbers to be removed by cleanup, separated by spaces, requires either --ica-mode=REUSE_TICA or --starting-step=CleanData"
@@ -116,11 +119,14 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 opts_ParseArguments "$@"
 
 # if Group sICA hand classifications exists, use it to filter the group sICA components before projecting to individuals
-HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
+HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt"
 if [ -e "${HandSignalFile}" ]; then
     # Import the contents of $HandSignalFile as an array
     read -a sigIdx < "${HandSignalFile}"
     tICADim="${#sigIdx[@]}"
+elif [[ "$sicadimOverride" ]]; then
+
+    tICADim="$sicadimOverride"
 else
     tICADim=""
 fi
@@ -693,15 +699,21 @@ do
                 --matlab-run-mode="$MatlabMode"
             ;;
         (ClassifyTICA)
-            #REUSE_TICA mode shouldn't attempt this (or give an error)
+            #REUSE_TICA mode shouldn't attempt this 
             if [[ "$tICAmode" == "USE" ]]
             then
                 #skip to next pipeline stage
                 continue
             fi
-            #don't abort for "not implemented", we still want it to write the config if possible
-            log_Err "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
-            break
+            "$HCPPIPEDIR"/tICA/scripts/ClassifyTICA.sh \
+                --study-folder="$StudyFolder" \
+                --out-group-name="$GroupAverageName" \
+                --fmri-output-name="$OutputfMRIName" \
+                --ica-dim="$tICADim" \
+                --python-singularity="${PythonSingularity}" \
+                --python-singularity-mount-path="${PythonSingularityMountPath}" \
+                --python-interpreter="${PythonInterpreter}" \
+                --noise-file-name="${ClassifyNoiseFileName}"
             ;;
         (CleanData)
             if [[ "$NuisanceListTxt" == "" ]]
