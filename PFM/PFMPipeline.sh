@@ -200,13 +200,13 @@ do
                                     --matlab-run-mode="$MatlabMode"
 
                                 if [[ "$VAweightBool" == 1 ]]; then
-                                    # create VA_norm cifti with volume grayordinates filled with ones areas for weighting 
-                                    VAnorm=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
-                                    VAgray=${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.grayordinates.${LowResMesh}k_fs_LR.dscalar.nii
+                                    # create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
+                                    VAnorm=${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
+                                    tempfiles_create "tmp_VAgray_XXXXXX.nii.gz" tmp_VAgray_file
                                     tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
                                     tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
                                     wb_command -cifti-separate "${concatOutFile}" COLUMN -volume-all "$tmp_jnk_file" -roi "$tmp_roi_file" -crop
-                                    wb_command -cifti-create-dense-from-template "${concatOutFile}" "$VAgray" -cifti "$VAnorm" -volume-all "$tmp_roi_file" -from-cropped
+                                    wb_command -cifti-create-dense-from-template "${concatOutFile}" "$tmp_VAgray_file" -cifti "$VAnorm" -volume-all "$tmp_roi_file" -from-cropped
                                 fi
                                                                                   
                                 # Split back into individual runs and restore means
@@ -237,7 +237,7 @@ do
                                             log_Msg "Weighting data by average vertex areas"
                                             wb_command -cifti-math "(TCS * VA)" ${outFile} \
                                                 -var TCS ${outFile} \
-                                                -var VA ${VAgray} -select 1 1 -repeat
+                                                -var VA ${tmp_VAgray_file} -select 1 1 -repeat
                                         fi
 
                                         cumTP=$endIdx

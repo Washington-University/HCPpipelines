@@ -59,6 +59,17 @@ for s = 1:numel(Subjlist)
   
     %% Process subject if valid runs found
     if numel(subfMRINames) ~= 0
+    
+        if VAweightBool
+          %  create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
+          VAnorm = [StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.' LowResMesh 'k_fs_LR.dscalar.nii'];
+          tmp_VAgray_file = [tempname '.nii.gz'];
+          tmp_jnk_file = [tempname '.nii.gz'];
+          tmp_roi_file = [tempname '.nii.gz'];
+          system(sprintf('%s -cifti-separate "%s" COLUMN -volume-all "%s" -roi "%s" -crop', wbcommand, concatOutFile, tmp_jnk_file, tmp_roi_file));
+          system(sprintf('%s -cifti-create-dense-from-template "%s" "%s" -cifti "%s" -volume-all "%s" -from-cropped', wbcommand, concatOutFile, tmp_VAgray_file, VAnorm, tmp_roi_file));
+        end
+
         %% Load and concatenate PFM time courses and amplitudes
         % Load PROFUMO outputs and amplitude-modulate time courses
         origTCS = [];  % Original unmodulated time courses
@@ -126,6 +137,12 @@ for s = 1:numel(Subjlist)
         % Copy PFM maps from PFM folder to subject's MNINonLinear/fsaverage_LR<LowResMesh> space directory
         copyfile([PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'], [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
 
+        % clean up temporary files
+        if VAweightBool
+          delete(tmp_VAgray_file);
+          delete(tmp_roi_file);
+          delete(tmp_jnk_file);
+        end
     end  % if numel(subfMRINames) ~= 0
 end  % for s = 1:numel(Subjlist)
 end
