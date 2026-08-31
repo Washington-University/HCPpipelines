@@ -16,7 +16,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study fol
 opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w template image"
 opts_AddOptional '--hiresmesh' 'HighResMesh' 'High resolution mesh, default 164' '164'
-opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'Low resolution meshes delimited by @, like 32@59' '32@59'
+opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'Low resolution meshes delimited by @, like 32@79' '32@79'
 opts_AddOptional '--regname' 'RegName' 'Registration name, default MSMAll' "MSMAll"
 opts_AddOptional '--regnameorig' 'RegNameOrig' 'Registration name for original, default MSMSulc' "MSMSulc"
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'Additional scaling beyond linear to deal with a lowres mesh greater than 32k, default 1 (linear)' "1"
