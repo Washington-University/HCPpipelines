@@ -150,20 +150,30 @@ if [ ! -e "$AtlasSpaceFolder"/Results ] ; then
 fi
 
 
-[ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+if [ "${T2wImage}" != "NONE" ]; then
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+fi
 ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
-[ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+if [ "${T2wImage}" != "NONE" ]; then
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+fi
 ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
-[ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+if [ "${T2wImage}" != "NONE" ]; then
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+fi
 ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
 for LowResMesh in ${LowResMeshes} ; do
-    [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+    if [ "${T2wImage}" != "NONE" ]; then
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+    fi
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 
-    [ "${T2wImage}" != "NONE" ] && ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+    if [ "${T2wImage}" != "NONE" ]; then
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
+    fi
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT1wImage".nii.gz
 done
 
@@ -248,10 +258,9 @@ for Hemisphere in L R ; do
     CurrentSphere="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.${RegNameOrig}.native.surf.gii"
 
     NewSphere="${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii"
-    #Since this is copying, it seems useful to not having to copy every time.
-    [ ! -f "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii" ] && cp "$NewSphere" "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
-    [ ! -f "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii" ] && cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii" "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
-    [ ! -f "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii" ] && cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
+    cp "$NewSphere" "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
+    cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii" "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
+    cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
 
     add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
     add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
@@ -300,9 +309,9 @@ for Hemisphere in L R ; do
         CurrentSphere="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.${RegNameOrig}.native.surf.gii"
         NewSphere="${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.sphere.${LowResMeshTemp}_fs_LR.surf.gii"
 
-        [ ! -f "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii" ] && cp "$NewSphere" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
-        [ ! -f "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii" ] && cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
-        [ ! -f "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii" ] && cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
+        cp "$NewSphere" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
+        cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
+        cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
 
         add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
         add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
@@ -352,8 +361,9 @@ resample_cifti_to_mesh() {
     local MeshFolder="$3"
     local RegName="$4"  # optional registration name
 
-    [[ "$Mesh" != *k ]] && Mesh="${Mesh}k"
-
+    if [[ "$Mesh" != *k ]]; then
+        Mesh="${Mesh}k"
+    fi
     local Base
     Base=$(basename "$InCifti")
     local OutCifti
@@ -437,7 +447,9 @@ process_mesh_folder() {
         local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dlabel.nii"
 
         # HighResMesh special case
-        [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]] && Path="${MNINonLinearFolder}/${File}"
+        if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
+            Path="${MNINonLinearFolder}/${File}"
+        fi
         resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
 
         add_to_spec "$Spec" "$Path"
@@ -452,9 +464,10 @@ process_mesh_folder() {
             # LowResMesh: resample from native if missing
             local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dscalar.nii"
             File="${Session}.${Stem}.${Mesh}_fs_LR.dscalar.nii"
-            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
-            
-            [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]] && Path="${MNINonLinearFolder}/${File}"
+            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"  
+            if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
+                Path="${MNINonLinearFolder}/${File}"
+            fi
             resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
         fi
         add_to_spec "$Spec" "$Path"
@@ -470,7 +483,9 @@ process_mesh_folder() {
             local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dscalar.nii"
             File="${Session}.${Stem}_${RegName}.${Mesh}_fs_LR.dscalar.nii"
             Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
-            [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]] && Path="${MNINonLinearFolder}/${File}"
+            if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
+                Path="${MNINonLinearFolder}/${File}"
+            fi
             resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" "$RegName"
         fi
         add_to_spec "$Spec" "$Path"

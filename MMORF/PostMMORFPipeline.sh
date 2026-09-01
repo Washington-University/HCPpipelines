@@ -45,7 +45,7 @@ AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
 Diffusion="${T1wFolder}/Diffusion"
 
 
-${HCPPIPEDIR}/MMORF/scripts/MMORFPostProcessing.sh \
+${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
     --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
@@ -105,4 +105,4 @@ argList+=("$RegName")                   # ${15}
 argList+=("$RegNameOrig")                   # ${16}
 argList+=("$InflateExtraScale")         # ${17}
     
-${HCPPIPEDIR}/MMORF/scripts/PostMMORF.sh "${argList[@]}"
+${HCPPIPEDIR}/MMORF/scripts/PostMMORF_generateSurfaceFiles.sh "${argList[@]}"
