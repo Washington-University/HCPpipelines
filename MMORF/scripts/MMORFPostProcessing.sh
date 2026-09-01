@@ -1,6 +1,7 @@
 #!/bin/bash 
-
 set -eu
+
+#Mostly copied from PreFreeSurfer/scripts/AtlasRegistrationToMNI152_FLIRTandFNIRT.sh
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
