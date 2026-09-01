@@ -142,7 +142,7 @@ then
     echo "Sorting the input DICOM folder"
     series_crc=($(dcm2niix -o "$rawfolder" -n -1 -b n -f %s "$DicomIn" | \
         awk -v s="$DicomSeriesIn" '$1~/^[0-9]+([.][0-9]+)?$/{n=$NF;sub(/^.*\//,"",n);sub(/_.*/,"",n);if(n==s)print $1}'))
-    if [[ "$series_crc" == "" ]]
+   if (( ${#series_crc[@]} == 0 ))
     then
         log_Err_Abort "could not find series $DicomSeriesIn in folder $DicomIn"
     fi
@@ -150,7 +150,7 @@ then
 else #determine the input series number to make the output series number
     echo "Reading the input DICOM folder"
     DicomSeriesIn=($(dcm2niix -o "$rawfolder" -n -1 -b n -f %s "$DicomIn" | \
-        awk '$1~/^[0-9]+([.][0-9]+)?$/{sub(".*/","",$NF);sub("_.*","",$NF);print $NF;exit}'))
+        awk '$1~/^[0-9]+([.][0-9]+)?$/{sub(".*/","",$NF);sub("_.*","",$NF);print $NF}'))
     if [[ "${#DicomSeriesIn[@]}" != "1" ]]
     then
         log_Err_Abort "No DICOM series, or more than one found in folder $DicomIn"
