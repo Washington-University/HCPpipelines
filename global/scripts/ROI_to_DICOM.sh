@@ -20,6 +20,7 @@ opts_AddMandatory '--dicom-input' 'DicomIn' 'path' "folder containing the origin
 opts_AddOptional '--dicom-series' 'DicomSeriesIn' 'series number' "if the folder contains multiple series, you must specify the DICOM series number of the appropriate T1w here"
 opts_AddOptional '--grayordinates' 'Grayord' '91282' "the grayordinates cifti space the roi/vertex is based on, default 91282" '91282'
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "what surface registration to use"
+opts_AddMandatory '--dicom-output' 'DicomOut' 'path' "location to write modified dicom series"
 opts_AddOptional '--cifti-roi-in' 'roiIn' 'file' "cifti (dscalar) file containing the binary roi"
 opts_AddOptional '--vertex-in' 'vertexIn' 'index' "specify a single vertex index (0-based) to draw an ROI from, requires --vertex-structure and uses the surface mesh implied by --grayordinates"
 opts_AddOptional '--vertex-structure' 'vertexStruct' 'name' "specify what surface the vertex is in, currently supports CORTEX_LEFT or CORTEX_RIGHT"
@@ -29,7 +30,6 @@ opts_AddOptional '--outline' 'outlineDist' 'distance' "use an outline with the g
 opts_AddOptional '--outline-type' 'outlineType' 'name' "outline behavior, valid types:
 INSIDE (default) - do not draw any voxels outside of the ROI, only make some of the ROI interior transparent
 OUTSIDE - draw voxels outside the ROI and make the entire ROI transparent" 'INSIDE'
-opts_AddMandatory '--dicom-output' 'DicomOut' 'path' "location to write modified dicom series"
 
 opts_ParseArguments "$@"
 
