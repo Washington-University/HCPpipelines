@@ -304,7 +304,7 @@ else
         "$vertTxt" \
         "$tempVertMetric"
     
-    if [[ $(echo "$vertexDist == 0" | bc) == "1*" ]]
+    if [[ $(echo "$vertexDist == 0" | bc) == 1* ]]
     then
         useMetric="$tempVertMetric"
     else
