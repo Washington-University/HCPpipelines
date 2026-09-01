@@ -22,23 +22,6 @@ if [ "$#" = "0" ]; then
     exit 1
 fi
 
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
-pipedirguessed=0
-if [[ "${HCPPIPEDIR:-}" == "" ]]
-then
-    pipedirguessed=1
-    #fix this if the script is more than one level below HCPPIPEDIR
-    export HCPPIPEDIR="$(dirname -- "$0")/../.."
-fi
-
-
-if [ -z "${HCPPIPEDIR}" ]; then
-  echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-  exit 1
-fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
