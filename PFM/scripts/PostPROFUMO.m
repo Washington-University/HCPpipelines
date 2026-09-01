@@ -62,12 +62,13 @@ for s = 1:numel(Subjlist)
     
         if VAweightBool
           %  create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
+          ciftiTemplate = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName RegString fMRIProcSTRING '_vn.dscalar.nii']; % use clean_VN as cifti template
           VAnorm = [StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.' LowResMesh 'k_fs_LR.dscalar.nii'];
           tmp_VAgray_file = [tempname '.dscalar.nii'];
           tmp_jnk_file = [tempname '.nii.gz'];
           tmp_roi_file = [tempname '.nii.gz'];
-          system(sprintf('%s -cifti-separate "%s" COLUMN -volume-all "%s" -roi "%s" -crop', wbcommand, concatOutFile, tmp_jnk_file, tmp_roi_file));
-          system(sprintf('%s -cifti-create-dense-from-template "%s" "%s" -cifti "%s" -volume-all "%s" -from-cropped', wbcommand, concatOutFile, tmp_VAgray_file, VAnorm, tmp_roi_file));
+          system(sprintf('%s -cifti-separate "%s" COLUMN -volume-all "%s" -roi "%s" -crop', wbcommand, ciftiTemplate, tmp_jnk_file, tmp_roi_file));
+          system(sprintf('%s -cifti-create-dense-from-template "%s" "%s" -cifti "%s" -volume-all "%s" -from-cropped', wbcommand, ciftiTemplate, tmp_VAgray_file, VAnorm, tmp_roi_file));
         end
 
         %% Load and concatenate PFM time courses and amplitudes
