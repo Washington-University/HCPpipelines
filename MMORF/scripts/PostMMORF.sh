@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#based substantially on PostFreeSurfer/scripts/FreeSurfer2CaretConvertAndRegisterNonlinear.sh
+
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
