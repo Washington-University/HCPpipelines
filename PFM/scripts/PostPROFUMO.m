@@ -63,7 +63,7 @@ for s = 1:numel(Subjlist)
         if VAweightBool
           %  create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
           VAnorm = [StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.' LowResMesh 'k_fs_LR.dscalar.nii'];
-          tmp_VAgray_file = [tempname '.nii.gz'];
+          tmp_VAgray_file = [tempname '.dscalar.nii'];
           tmp_jnk_file = [tempname '.nii.gz'];
           tmp_roi_file = [tempname '.nii.gz'];
           system(sprintf('%s -cifti-separate "%s" COLUMN -volume-all "%s" -roi "%s" -crop', wbcommand, concatOutFile, tmp_jnk_file, tmp_roi_file));
