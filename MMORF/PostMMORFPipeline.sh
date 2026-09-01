@@ -36,7 +36,7 @@ T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
 T2wFolderName="T2w"
-AtlasSpaceFolderName="MMORFNonLinear"
+AtlasSpaceFolderName="HCPMultiModalNonLinear"
 
 
 
@@ -68,7 +68,7 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
 
 
 T1wFolder="T1w" #Location of T1w images
-AtlasSpaceFolder="MMORFNonLinear"
+AtlasSpaceFolder="HCPMultiModalNonLinear"
 NativeFolder="Native"
 
 AtlasTransform="acpc_dc2mmorf"
