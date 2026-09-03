@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
+
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 <base_diffusion_dir> <output_dir> <threshold>"
   exit 1
