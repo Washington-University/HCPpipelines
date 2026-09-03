@@ -67,8 +67,6 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
 
 
 
-T1wFolder="T1w" #Location of T1w images
-AtlasSpaceFolder="HCPMultiModalNonLinear"
 NativeFolder="Native"
 
 AtlasTransform="acpc_dc2mmorf"
@@ -79,9 +77,6 @@ T1wRestoreImage="T1w_acpc_dc_restore"
 T2wRestoreImage="T2w_acpc_dc_restore"
 T1wImageBrainMask="brainmask_fs"
 
-
-T1wFolder="$StudyFolder"/"$Session"/"$T1wFolder"
-AtlasSpaceFolder="$StudyFolder"/"$Session"/"$AtlasSpaceFolder"
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
