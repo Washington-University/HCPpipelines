@@ -350,8 +350,8 @@ resample_cifti_to_mesh() {
     local Base
     Base=$(basename "$InCifti")
     local OutCifti
-
-    if [[ ! -d "${MNINonLinearFolder}/${MeshFolder}" ]]; then
+    
+    if [[ ! -d "${MNINonLinearFolder}/${MeshFolder}" && "$MeshFolder" != "fsaverage_LR${HighResMesh}k" ]]; then
         mkdir -p "${MNINonLinearFolder}/${MeshFolder}"
     fi
 
@@ -362,7 +362,7 @@ resample_cifti_to_mesh() {
     if [[ -n "$RegName" ]]; then
         OutCifti="${MNINonLinearFolder}/${MeshFolder}/${Base/.native./_${RegName}.${Mesh}_fs_LR.}"
     fi
-    
+
     if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
         OutCifti="${MNINonLinearFolder}/${Base/.native./.${Mesh}_fs_LR.}"
         if [[ -n "$RegName" ]]; then
