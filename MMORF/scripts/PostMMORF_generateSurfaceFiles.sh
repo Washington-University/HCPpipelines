@@ -362,6 +362,13 @@ resample_cifti_to_mesh() {
     if [[ -n "$RegName" ]]; then
         OutCifti="${MNINonLinearFolder}/${MeshFolder}/${Base/.native./_${RegName}.${Mesh}_fs_LR.}"
     fi
+    
+    if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
+        OutCifti="${MNINonLinearFolder}/${Base/.native./.${Mesh}_fs_LR.}"
+        if [[ -n "$RegName" ]]; then
+            OutCifti="${MNINonLinearFolder}/${Base/.native./_${RegName}.${Mesh}_fs_LR.}"
+        fi
+    fi
 
     echo "Resampling CIFTI to ${Mesh} mesh:"
     echo "  IN : $InCifti"
@@ -425,16 +432,19 @@ process_mesh_folder() {
 
     # --- dlabel files ---
     for Stem in "${LabelStems[@]}"; do
-        File="${Session}.${Stem}${Prefix}.dlabel.nii"
-        Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
-        local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dlabel.nii"
-
-        # HighResMesh special case
-        if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
-            Path="${MNINonLinearFolder}/${File}"
+        if [[ "$MeshFolder" == "$NativeFolder" ]]; then
+            File="${Session}.${Stem}${Prefix}.dlabel.nii"
+            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
+        else
+            # LowResMesh: resample from native if missing
+            local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dlabel.nii"
+            File="${Session}.${Stem}.${Mesh}_fs_LR.dlabel.nii"
+            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"  
+            if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
+                Path="${MNINonLinearFolder}/${File}"
+            fi
+            resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
         fi
-        resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
-
         add_to_spec "$Spec" "$Path"
     done
 
