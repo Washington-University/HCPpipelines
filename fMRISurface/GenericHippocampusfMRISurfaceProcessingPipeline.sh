@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu
 # Requirements for this script
 # installed versions of: FSL, Connectome Workbench (wb_command)
 # environment: HCPPIPEDIR, FSLDIR, CARET7DIR
@@ -24,7 +24,9 @@ then
 fi
 
 #comment the line back in when done
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"          # Debugging functions; also sources log.shlib
+#source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"          # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"          # Debugging functions; also sources log.shlib
+
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib" # Check processing mode requirements
 
@@ -40,14 +42,11 @@ opts_AddOptional '--procstring' 'ProcString' 'string' 'processing suffix appende
 
 opts_AddMandatory '--smoothingFWHM' 'SmoothingFWHM' 'number' 'smoothing FWHM (mm)'
 
-opts_AddOptional '--fmri-qc' 'QCMode' 'YES OR NO OR ONLY' "Controls whether to generate a QC scene and snapshots (default=YES). ONLY executes just the QC script." "YES"
-
-opts_AddOptional '--output-directory' 'OutputDirectory' 'path' 'Directory where pipeline outputs will be written' ""
-
 opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to do goodVoxel procedure (default = YES)" "YES"
 
-opts_AddOptional '--factor' 'factor' 'number' "Scaling factor for eliminating high COV voxels"
+opts_AddOptional '--factor' 'factor' 'number' "Scaling factor for eliminating high COV voxels (default = 1.5)" "1.5"
 
+opts_AddOptional '--resample_mesh' 'MeshString' 'string' 'Resample native mesh to: 512, 2k, 8k, or 18k. Use quote for multiple meshes, e.g. "512 2k 8k"' "512 2k 8k 18k"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -76,162 +75,59 @@ HCPPIPEDIR_fMRISurf="${HCPPIPEDIR}/fMRISurface/scripts"
 log_Msg "Platform Information Follows:"
 uname -a
 
-QCMode="$(echo "${QCMode}" | tr '[:upper:]' '[:lower:]')"
-
-doProcessing=1
-doQC=1
-
-case "${QCMode}" in
-    yes)
-        ;;
-    no)
-        doQC=0
-        ;;
-    only)
-        doProcessing=0
-        log_Warn "Only generating fMRI QC scene and snapshots from existing data"
-        ;;
-    *)
-        log_Err_Abort "Unrecognized value '${QCMode}' for --fmri-qc; use YES, NO, or ONLY"
-        ;;
-esac
-
-
 # ------------------------------------------------------------------------------
 # Set up paths
 # ------------------------------------------------------------------------------
 
-PipelineScripts="${HCPPIPEDIR_fMRISurf}"
-
 MainSubjectFolder="${Path}/${Subject}"
 AtlasSpaceFolder="${MainSubjectFolder}/MNINonLinear"
 InputResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
-ResultsFolderName="Results"
+ResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
 
-if [ -n "${OutputDirectory}" ]; then
-    ResultsFolder="${OutputDirectory}/${Subject}/${NameOffMRI}"
-else
-    ResultsFolder="${AtlasSpaceFolder}/${ResultsFolderName}/${NameOffMRI}"
-fi
-
-WorkingDirectory="${ResultsFolder}/tmp"
-
+WorkingDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping" #should 'HippocampalVolumeToSurfaceMapping' be a parameter?'
 mkdir -p "${WorkingDirectory}"
 
-VolumefMRI="${InputResultsFolder}/${NameOffMRI}${ProcString}"
+VolumefMRI="${InputResultsFolder}/${NameOffMRI}${ProcString}.nii.gz"
 
 SBRef="${InputResultsFolder}/${NameOffMRI}_SBRef.nii.gz"
 
 HippUnfoldFolder="${AtlasSpaceFolder}/HippUnfold"
 
-if [ ! -f "${VolumefMRI}.nii.gz" ]; then
-    log_Err_Abort "Cannot find selected fMRI file: ${VolumefMRI}.nii.gz"
+if [ ! -f "${VolumefMRI}" ]; then
+    log_Err_Abort "Cannot find selected fMRI file: ${VolumefMRI}"
 fi
 
 if [ ! -f "${SBRef}" ]; then
     log_Err_Abort "Cannot find selected SBRef file: ${SBRef}"
 fi
 
-log_Msg "Selected fMRI file: ${VolumefMRI}.nii.gz"
+#Parse MeshString into a mesh array
+for Mesh in ${MeshString}; do
+    if [[ " 512 2k 8k 18k " != *" ${Mesh} "* ]]; then
+        log_Err_Abort "Invalid mesh: ${Mesh}"
+    fi
+done
+Meshes="native ${MeshString}"
+
+log_Msg "Selected fMRI file: ${VolumefMRI}"
 log_Msg "Selected SBRef file: ${SBRef}"
 
 # ------------------------------------------------------------------------------
-# Generate fMRI time series within ROIs
+# Combining ROIs into a single CIFTI time series and vn file
 # ------------------------------------------------------------------------------
 
-if ((doProcessing)); then
-
-    # Make fMRI ribbon
-    log_Msg "Make fMRI Ribbon"
-    log_Msg "mkdir -p ${WorkingDirectory}"
-
-    log_Msg "Hippocampal Volume To Surface Mapping"
-    "${PipelineScripts}/HippocampalVolumeToSurfaceMapping.sh" \
-            "${WorkingDirectory}" \
-            "${Subject}" \
-            "${HippUnfoldFolder}" \
-            "${VolumefMRI}" \
-            "${SBRef}" \
-            "${doGoodVoxels}" \
-            "${factor}"
-
-#Surface Smoothing
- # ------------------------------------------------------------------------------
-# Hippocampal Surface Smoothing
-# ------------------------------------------------------------------------------
-
-    log_Msg "Hippocampal Surface Smoothing"
-
-    Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
-
-    Meshes=(native 512 2k 8k 18k)
-    Structures=(hipp dentate)
-
-    for Mesh in "${Meshes[@]}"; do
-        for Structure in "${Structures[@]}"; do
-            for Hemisphere in L R; do
-                "${CARET7DIR}/wb_command" -metric-smoothing \
-                    "${HippUnfoldFolder}/${Mesh}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii" \
-                    "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" \
-                    "${Sigma}" \
-                    "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-                    -roi "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
-            done
-        done
-    done
-# ------------------------------------------------------------------------------
-# Combining ROIs into a single CIFTI file
-# ------------------------------------------------------------------------------
+log_Msg "mkdir -p ${WorkingDirectory}"
+log_Msg "Hippocampal Volume To Surface Mapping"
 
 
-    for Mesh in ${Meshes[@]}; do
-        "${CARET7DIR}/wb_command" -cifti-create-dense-timeseries \
-            "${ResultsFolder}/${NameOffMRI}_AtlasHipp_${ProcString}.${Mesh}.dtseries.nii" \
-            -metric HIPPOCAMPUS_LEFT "${WorkingDirectory}/${Subject}.L.hipp_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-                -roi "${WorkingDirectory}/${Subject}.L.hipp_ones.${Mesh}.func.gii" \
-            -metric HIPPOCAMPUS_RIGHT "${WorkingDirectory}/${Subject}.R.hipp_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-                -roi "${WorkingDirectory}/${Subject}.R.hipp_ones.${Mesh}.func.gii" \
-            -metric HIPPOCAMPUS_DENTATE_LEFT "${WorkingDirectory}/${Subject}.L.dentate_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-                -roi "${WorkingDirectory}/${Subject}.L.dentate_ones.${Mesh}.func.gii" \
-            -metric HIPPOCAMPUS_DENTATE_RIGHT "${WorkingDirectory}/${Subject}.R.dentate_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-                -roi "${WorkingDirectory}/${Subject}.R.dentate_ones.${Mesh}.func.gii"
+# Generate fMRI time series for each of the hippocampal structures: L hipp, R hipp, L dentate, R dentate
+"${HCPPIPEDIR_fMRISurf}/HippocampalVolumeToSurfaceMapping.sh" "${ResultsFolder}" "${Subject}" "${HippUnfoldFolder}" "${VolumefMRI}" "${SBRef}" "${doGoodVoxels}" "${factor}" "${Meshes}"
 
-            log_Msg "Generated fMRI time series Cifti file: "${ResultsFolder}/${Subject}.${NameOffMRI}"_AtlasHipp_${ProcString}.${Mesh}.dtseries.nii"
-            
-# --------------------------------------------------------------------------
-# Combine VN maps from all four hippocampal structures
-# --------------------------------------------------------------------------
+#Surface Smoothing of each hippocampal structure
+"${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${ResultsFolder}" "${WorkingDirectory}" "${Subject}" "${SmoothingFWHM}" "${Meshes}"
 
-    "${CARET7DIR}/wb_command" -cifti-create-dense-scalar \
-        "${ResultsFolder}/${NameOffMRI}_AtlasHipp_${ProcString}_vn.${Mesh}.dscalar.nii" \
-        -metric HIPPOCAMPUS_LEFT \
-            "${WorkingDirectory}/${Subject}.L.hipp_fMRI_vn.${Mesh}.func.gii" \
-            -roi "${WorkingDirectory}/${Subject}.L.hipp_ones.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_RIGHT \
-            "${WorkingDirectory}/${Subject}.R.hipp_fMRI_vn.${Mesh}.func.gii" \
-            -roi "${WorkingDirectory}/${Subject}.R.hipp_ones.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_DENTATE_LEFT \
-            "${WorkingDirectory}/${Subject}.L.dentate_fMRI_vn.${Mesh}.func.gii" \
-            -roi "${WorkingDirectory}/${Subject}.L.dentate_ones.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_DENTATE_RIGHT \
-            "${WorkingDirectory}/${Subject}.R.dentate_fMRI_vn.${Mesh}.func.gii" \
-            -roi "${WorkingDirectory}/${Subject}.R.dentate_ones.${Mesh}.func.gii"
+#Integration of the 4 hippocampal structures into single CIFTI timeseries and vn files
+"${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" "${ResultsFolder}" "${Subject}" "${NameOffMRI}" "${ProcString}" "${SmoothingFWHM}" "${Meshes}"
 
-    log_Msg "Generated VN CIFTI file: ${ResultsFolder}/${NameOffMRI}_AtlasHipp_${ProcString}_vn.${Mesh}.dscalar.nii"
+log_Msg "GenericHippocampusfMRISurfaceProcessingPipeline Completed!"
 
-    done
-fi
-
-#Uncomment if want to remove the subfoler with intermediate files
-#rm -rf "${WorkingDirectory}"
-
-# if ((doQC)); then
-#     log_Msg "Generating fMRI QC scene and snapshots"
-#     "${PipelineScripts}/GenerateFMRIScenes.sh" \
-#         --study-folder="${Path}" \
-#         --subject="${Subject}" \
-#         --fmriname="${NameOffMRI}${ProcString}" \
-#         --output-folder="${ResultsFolder}/fMRIQC"
-# fi
-
-log_Msg "Completed!"
