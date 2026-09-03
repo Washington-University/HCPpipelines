@@ -15,7 +15,7 @@ opts_SetScriptDescription "Wrapper for running post MMORF registration"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
 opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w template image"
-opts_AddOptional '--hiresmesh' 'HighResMesh' 'High resolution mesh, default 164' '164'
+opts_AddOptional '--hiresmesh' 'HighResMesh' 'number' 'High resolution mesh, default 164' '164'
 opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'Low resolution meshes delimited by @, like 32@79' '32@79'
 opts_AddOptional '--regname' 'RegName' 'MSMAll' 'Registration name, default MSMAll' "MSMAll"
 opts_AddOptional '--regnameorig' 'RegNameOrig' 'MSMSulc' 'Registration name for original, default MSMSulc' "MSMSulc"
