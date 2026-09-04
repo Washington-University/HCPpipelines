@@ -46,8 +46,8 @@ echo "Launching MMORF registration for session ${Session}"
 
 ${HCPPIPEDIR}/MMORF/scripts/MMORF.sh \
     --outputfolder="${AtlasSpaceFolder}" \
-    --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
-    --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
+    --t1restore="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
+    --t2restore="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
     --ref="${T1wTemplate}" \
     --ref2="${T2wTemplate}" \
     --refmask="${refmask}" \
