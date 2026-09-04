@@ -27,7 +27,7 @@ for Session in ${Sessionlist}; do
     
     "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/PreMMORFPipeline.sh \
         --study-folder="${StudyFolder}" \
-        --subject="${Session}" \
+        --session="${Session}" \
         --t1-template="${T1wTemplate}" \
         --lowest-shell-threshold="${DiffusionLowestShellThreshold}"
 done
