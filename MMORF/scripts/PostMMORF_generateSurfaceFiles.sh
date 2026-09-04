@@ -344,9 +344,6 @@ resample_cifti_to_mesh() {
     local MeshFolder="$3"
     local RegName="$4"  # optional registration name
 
-    if [[ "$Mesh" != *k ]]; then
-        Mesh="${Mesh}k"
-    fi
     local Base
     Base=$(basename "$InCifti")
     local OutCifti
