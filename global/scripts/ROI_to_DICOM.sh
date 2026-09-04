@@ -21,7 +21,9 @@ opts_AddOptional '--dicom-series' 'DicomSeriesIn' 'series number' "if the folder
 opts_AddOptional '--grayordinates' 'Grayord' '91282' "the grayordinates cifti space the roi/vertex is based on, default 91282" '91282'
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "what surface registration to use"
 opts_AddMandatory '--dicom-output' 'DicomOut' 'path' "location to write modified dicom series"
-opts_AddOptional '--cifti-roi-in' 'roiIn' 'file' "cifti (dscalar) file containing the binary roi"
+opts_AddOptional '--cifti-roi-in' 'ciftiRoiIn' 'file' "cifti (dscalar) file containing the binary roi"
+opts_AddOptional '--volume-roi-in' 'volRoiIn' 'file' "volume file containing the binary roi, requires --volume-space"
+opts_AddOptional '--volume-space' 'volSpace' 'name' "volume space of --volume-roi-in, must be 'MNINonLinear' or 'T1w'"
 opts_AddOptional '--vertex-in' 'vertexIn' 'index' "specify a single vertex index (0-based) to draw an ROI from, requires --vertex-structure and uses the surface mesh implied by --grayordinates"
 opts_AddOptional '--vertex-structure' 'vertexStruct' 'name' "specify what surface the vertex is in, currently supports CORTEX_LEFT or CORTEX_RIGHT"
 opts_AddOptional '--vertex-radius' 'vertexDist' 'number' "a distance in mm around --vertex-in to include in the ROI, default 0 (just the vertex)" '0'
@@ -41,17 +43,26 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
-if [[ "$roiIn" == "" && "$vertexIn" == "" ]]
+inputCount=0
+if [[ "$ciftiRoiIn" != "" ]]; then inputCount=$((inputCount + 1)); fi
+if [[ "$volRoiIn" != "" ]]
 then
-    log_Err_Abort "you must specify --cifti-roi-in or --vertex-in"
+    inputCount=$((inputCount + 1))
+    case "$volSpace" in
+        (MNINonLinear|T1w)
+            ;;
+        ("")
+            log_Err_Abort "you must specify --volume-space when using --volume-roi-in"
+            ;;
+        (*)
+            log_Err_Abort "unrecognized volume space '$volSpace'"
+            ;;
+    esac
 fi
 if [[ "$vertexIn" != "" ]]
 then
-    if [[ "$roiIn" != "" ]]
-    then
-        log_Err_Abort "you must not specify both --cifti-roi-in and --vertex-in"
-    fi
-    #sanity check structure before warpfield stuff
+    inputCount=$((inputCount + 1))
+    #sanity check structure before warpfield commands
     case "$vertexStruct" in
         (CORTEX_LEFT|CORTEX_RIGHT)
             ;;
@@ -62,6 +73,15 @@ then
             log_Err_Abort "unrecognized --vertex-structure specifier: $vertexStruct"
             ;;
     esac
+fi
+
+if ((inputCount == 0))
+then
+    log_Err_Abort "you must specify --cifti-roi-in, --volume-roi-in, or --vertex-in"
+fi
+if ((inputCount > 1))
+then
+    log_Err_Abort "you may only specify one of --cifti-roi-in, --volume-roi-in, or --vertex-in"
 fi
 
 case "$Grayord" in
@@ -104,26 +124,25 @@ else
     acpcdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/OrigT1w2T1w_PreFS.nii.gz
     gdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w1_gdc_warp.nii.gz
     
+    t1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/raw_T1w1_to_T1w_PreFS.nii.gz
     fnirtarg="$StudyFolder"/"$Subject"/T1w/T1w1_gdc.nii.gz
-    
-    warpfield="$StudyFolder"/"$Subject"/T1w/xfms/raw_T1w1_to_T1w_PreFS.nii.gz
     
     if [[ -f "$gdcwarpfield" ]]
     then
         echo "Concatenating with gradient distortion warp field"
-        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --warp2="$acpcdcwarpfield" --out="$warpfield"
+        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
     else
         #assume scanner-applied gdc
-        cp "$acpcdcwarpfield" "$warpfield"
+        cp "$acpcdcwarpfield" "$t1wwarpfield"
     fi
     
     echo "inverting the warp field"
-    invwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w_PreFS_to_raw_T1w1.nii.gz
+    invt1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w_PreFS_to_raw_T1w1.nii.gz
     downsampref="$rawnifti"_downsampref.nii.gz
     tempfiles_add "$downsampref"
     #invert at lower resolution for speed - readout and gradient distortion should be small changes, so 3mm is probably fine
     flirt -interp spline -in "$fnirtarg" -ref "$fnirtarg" -applyisoxfm 3 -out "$downsampref" -noresampblur
-    invwarp -w "$warpfield" -o "$invwarpfield" -r "$downsampref"
+    invwarp -w "$t1wwarpfield" -o "$invt1wwarpfield" -r "$downsampref"
 fi
 
 #due to "convert the whole folder" behavior, out filename arguments are unusual
@@ -142,7 +161,7 @@ then
     echo "Sorting the input DICOM folder"
     series_crc=($(dcm2niix -o "$rawfolder" -n -1 -b n -f %s "$DicomIn" | \
         awk -v s="$DicomSeriesIn" '$1~/^[0-9]+([.][0-9]+)?$/{n=$NF;sub(/^.*\//,"",n);sub(/_.*/,"",n);if(n==s)print $1}'))
-   if (( ${#series_crc[@]} == 0 ))
+    if (( ${#series_crc[@]} == 0 ))
     then
         log_Err_Abort "could not find series $DicomSeriesIn in folder $DicomIn"
     fi
@@ -169,12 +188,12 @@ function warpSurface()
     outName="$2"
     wb_command -surface-apply-warpfield \
         "$StudyFolder"/"$Subject"/T1w/fsaverage_LR"$ciftiMesh"k/"$Subject"."$surfType""$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
-        "$warpfield" \
+        "$t1wwarpfield" \
         "$outName" \
         -fnirt "$fnirtarg"
 }
 
-if [[ "$roiIn" != "" ]]
+if [[ "$ciftiRoiIn" != "" ]]
 then
     #cifti input
     mergeArgs=()
@@ -194,7 +213,7 @@ then
         tempfiles_add "$tempMetric"
         
         #support single-hemisphere cifti, etc
-        if wb_command -cifti-separate "$roiIn" COLUMN \
+        if wb_command -cifti-separate "$ciftiRoiIn" COLUMN \
             -metric "$sepStruct" "$tempMetric" &> /dev/null
         then
             tempMetricBin="$rawnifti"_sep_bin."$hem".func.gii
@@ -232,7 +251,7 @@ then
     tempfiles_add "$tempVol"
 
     #support surface-only cifti
-    if wb_command -cifti-separate "$roiIn" COLUMN \
+    if wb_command -cifti-separate "$ciftiRoiIn" COLUMN \
         -volume-all "$tempVol" &> /dev/null
     then
         tempVolBin="$rawnifti"_sepVol_bin.nii.gz
@@ -251,7 +270,7 @@ then
             "$tempVolResamp" \
             -warp "$StudyFolder"/"$Subject"/MNINonLinear/xfms/standard2acpc_dc.nii.gz \
                 -fnirt "$StudyFolder"/"$Subject"/MNINonLinear/T1w_restore.nii.gz \
-            -warp "$invwarpfield" \
+            -warp "$invt1wwarpfield" \
                 -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz
         
         wb_command -volume-math 'x > 0.5' "$tempVolResampBin" \
@@ -272,7 +291,41 @@ then
     wb_command -volume-reduce "$tempMerge" MAX "$tempMergeMax"
 
     roiFile="$tempMergeMax"
-else
+fi
+
+if [[ "$volRoiIn" != "" ]]
+then
+    tempVolBin="$rawnifti"_sepVol_bin.nii.gz
+    tempVolResamp="$rawnifti"_sepVol_resamp.nii.gz
+    tempVolResampBin="$rawnifti"_sepVol_resampBin.nii.gz
+    tempfiles_add "$tempVolBin" "$tempVolResamp" "$tempVolResampBin"
+    
+    wb_command -volume-math 'x > 0' "$tempVolBin" \
+        -var x "$volRoiIn"
+    
+    if [[ "$volSpace" == "MNINonLinear" ]]
+    then
+        xfmargs=(-warp "$StudyFolder"/"$Subject"/MNINonLinear/xfms/standard2acpc_dc.nii.gz \
+            -fnirt "$StudyFolder"/"$Subject"/MNINonLinear/T1w_restore.nii.gz)
+    else
+        xfmargs=()
+    fi
+    xfmargs+=(-warp "$invt1wwarpfield" \
+        -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz)
+    
+    wb_command -volume-resample "$tempVolBin" \
+        "$rawnifti" \
+        TRILINEAR \
+        "$tempVolResamp" \
+        "${xfmargs[@]}"
+    
+    wb_command -volume-math 'x > 0.5' "$tempVolResampBin" \
+        -var x "$tempVolResamp"
+    roiFile="$tempVolResampBin"
+fi
+
+if [[ "$vertexIn" != "" ]]
+then
     #vertex index
     case "$vertexStruct" in
         (CORTEX_LEFT)
