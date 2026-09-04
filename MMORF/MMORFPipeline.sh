@@ -19,7 +19,7 @@ opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w templat
 opts_AddMandatory '--t2-template' 'T2wTemplate' 'Image' "Path to the T2w template image"
 opts_AddMandatory '--ref-mask' 'refmask' 'Image' "Path to the reference mask image"
 opts_AddMandatory '--diffusion-ref' 'DiffusionRef' 'Image' "Path to the diffusion reference image"
-opts_AddMandatory '--dti-mask' 'DTIMask' 'Image' "Path to the DTI mask image"
+opts_AddMandatory '--dti-ref-mask' 'DTIRefMask' 'Image' "Path to the reference DTI mask image"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -54,6 +54,6 @@ ${HCPPIPEDIR}/MMORF/scripts/MMORF.sh \
     --diffusion="${Diffusion}" \
     --DTImask="${Diffusion}/nodif_brain_mask.nii.gz" \
     --DTIref="${DiffusionRef}" \
-    --DTIrefmask="${DTIMask}" \
+    --DTIrefmask="${DTIRefMask}" \
 
     

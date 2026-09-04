@@ -6,7 +6,7 @@ T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
 T2wTemplate="${TemplateDir}/MMORF_T2.nii.gz"
 refmask="${TemplateDir}/MMORF_T1_brainmask_fs.nii.gz"
 DiffusionRef="${TemplateDir}/MMORF_DiffusionRef.nii.gz"
-DTIMask="${TemplateDir}/MMORF_nodif_brainmask.nii.gz"
+DTIRefMask="${TemplateDir}/MMORF_nodif_brainmask.nii.gz"
 
 EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
@@ -31,5 +31,5 @@ for Session in ${Sessionlist}; do
         --t2-template="${T2wTemplate}" \
         --ref-mask="${refmask}" \
         --diffusion-ref="${DiffusionRef}" \
-        --dti-mask="${DTIMask}"
+        --dti-ref-mask="${DTIRefMask}"
 done
