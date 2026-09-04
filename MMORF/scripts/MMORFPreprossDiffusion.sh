@@ -49,7 +49,7 @@ cat "$VOL_LIST"
 # --------------------------------------------------
 # 2. Extract volumes (single FSL call)
 # --------------------------------------------------
-fslselectvols \
+${FSLDIR}/bin/fslselectvols \
   -i "$DATA" \
   -o "$OUT_DATA" \
   --vols="$VOL_LIST"
