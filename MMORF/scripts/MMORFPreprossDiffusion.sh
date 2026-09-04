@@ -74,8 +74,8 @@ KEEP_IDXS=$(paste -sd' ' "$VOL_LIST")
 awk -v keep="$KEEP_IDXS" '
 BEGIN { split(keep, idxs, " ") }
 {
-  for (i in idxs)
-    printf "%f ", $(idxs[i]+1)
+  for (j = 1; j <= n; j++)
+    printf "%f ", $(idxs[j]+1)
   printf "\n"
 }
 ' "$BVECS" > "$OUT_BVECS"
