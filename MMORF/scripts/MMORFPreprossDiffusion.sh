@@ -72,7 +72,7 @@ awk -v t="$THRESH" '
 KEEP_IDXS=$(paste -sd' ' "$VOL_LIST")
 
 awk -v keep="$KEEP_IDXS" '
-BEGIN { split(keep, idxs, " ") }
+BEGIN { n=split(keep, idxs, " ") }
 {
   for (j = 1; j <= n; j++)
     printf "%f ", $(idxs[j]+1)
