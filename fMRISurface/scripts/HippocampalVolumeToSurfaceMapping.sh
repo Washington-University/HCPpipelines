@@ -1,5 +1,5 @@
 #!/bin/bash 
-set -eu
+
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------
@@ -30,8 +30,8 @@ if [[ -z "${HCPPIPEDIR}" ]]; then
     exit 1
 fi
 
-#source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"            # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+#source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"            # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/opts.shlib"                # Command line option functions
 
 opts_ShowVersionIfRequested "$@"
@@ -46,13 +46,14 @@ fi
 # ------------------------------------------------------------------------------
 
 ResultsFolder="$1"
-Subject="$2"
-HippUnfoldFolder="$3"
-VolumefMRI="$4"
-SBRef="$5"
-doGoodVoxels="$6"
-Factor="$7" # Factor is a scaling factor for how many std units away from mean to set threshold
-Meshes="$8" # default: Meshes=(native 512 2k 8k 18k)
+WorkingDirectory="$2"
+Subject="$3"
+HippUnfoldFolder="$4"
+VolumefMRI="$5"
+SBRef="$6"
+doGoodVoxels="$7"
+Factor="$8" # Factor is a scaling factor for how many std units away from mean to set threshold
+Meshes="$9" # options: Meshes=(native 512 2k 8k 18k)
 
 NeighborhoodSmoothing="5"   # Distinguishes large vs small dropout
 dilation_dist="10"
@@ -75,10 +76,10 @@ for Structure in hipp dentate; do
 
         Prefix="${Subject}.${Hemisphere}.${Structure}"
 
-        ThicknessMetric="${HippUnfoldFolder}/native/${Prefix}_thickness.native.shape.gii"
-        InnerSurface="${HippUnfoldFolder}/native/${Prefix}_inner.native.surf.gii"
-        MidSurface="${HippUnfoldFolder}/native/${Prefix}_midthickness.native.surf.gii"
-        OuterSurface="${HippUnfoldFolder}/native/${Prefix}_outer.native.surf.gii"
+        ThicknessMetric="${HippUnfoldFolder}/Native/${Prefix}_thickness.native.shape.gii"
+        InnerSurface="${HippUnfoldFolder}/Native/${Prefix}_inner.native.surf.gii"
+        MidSurface="${HippUnfoldFolder}/Native/${Prefix}_midthickness.native.surf.gii"
+        OuterSurface="${HippUnfoldFolder}/Native/${Prefix}_outer.native.surf.gii"
 
         OnesMetric="${WorkingDirectory}/${Prefix}_ones.native.func.gii"
         ProbabilisticRibbon="${WorkingDirectory}/${Prefix}.ribbon_probabilistic.nii.gz"
@@ -130,7 +131,7 @@ for Structure in hipp dentate; do
         fi
 
 
-        NativeFolder="${HippUnfoldFolder}/native"
+        NativeFolder="${HippUnfoldFolder}/Native"
 
         InnerSurface="${NativeFolder}/${Prefix}_inner.native.surf.gii"
         MidSurface="${NativeFolder}/${Prefix}_midthickness.native.surf.gii"
@@ -240,8 +241,13 @@ for Structure in hipp dentate; do
         # =====================================================================
         for Mesh in ${Meshes}; do
 
-            TargetfMRI="${ResultsFolder}/${Prefix}_fMRI.${Mesh}.func.gii"
-            MeshFolder="${HippUnfoldFolder}/${Mesh}"
+            if [[ "${Mesh}" == "native" ]]; then
+                MeshFolder="${HippUnfoldFolder}/Native"
+            else
+                MeshFolder="${HippUnfoldFolder}/${Mesh}"
+            fi
+
+            TargetfMRI="${WorkingDirectory}/${Prefix}_fMRI.${Mesh}.func.gii"
             TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
             TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
             TargetROI="${WorkingDirectory}/${Prefix}_ones.${Mesh}.func.gii"
@@ -299,12 +305,12 @@ for Structure in hipp dentate; do
 
         for Mesh in ${Meshes}; do
 
-            TargetfMRIVN="${ResultsFolder}/${Prefix}_fMRI_vn.${Mesh}.func.gii"
-            MeshFolder="${HippUnfoldFolder}/${Mesh}"
-            TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
-            TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
+            TargetfMRIVN="${WorkingDirectory}/${Prefix}_fMRI_vn.${Mesh}.func.gii"
 
-            if [[ "${Mesh}" == "native" ]]; then
+           if [[ "${Mesh}" == "native" ]]; then
+                MeshFolder="${HippUnfoldFolder}/Native"
+                TargetFlat="${MeshFolder}/${Prefix}_flat.native.surf.gii"
+                TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.native.surf.gii"
 
                 # Map VN volume to native surface
                 wb_command -volume-to-surface-mapping "${FiniteVolumefMRIVN}" "${TargetMidSurface}" "${TargetfMRIVN}" -cubic
@@ -312,6 +318,9 @@ for Structure in hipp dentate; do
 
                 log_Msg "Generated VN file in native mesh at: ${TargetfMRIVN}"
             else
+                MeshFolder="${HippUnfoldFolder}/${Mesh}"
+                TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
+                TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
                 # Resample native VN surface to other mesh surface
                 wb_command -metric-resample "${NativefMRIVN}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetfMRIVN}" \
                     -area-surfs "${MidSurface}" "${TargetMidSurface}" -current-roi "${NativeROI}" -bypass-sphere-check

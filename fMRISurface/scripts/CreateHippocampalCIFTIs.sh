@@ -1,7 +1,8 @@
 #!/bin/bash
-set -eu
+
 # --------------------------------------------------------------------------------
-#  Usage Description Function
+# A script for the conversion of 4 structures (L hipp, R hipp, L dentate, R dentate) 
+# into a single CIFTI file and deletion of intermediate func.gii file
 # --------------------------------------------------------------------------------
 
 script_name=$(basename "${0}")
@@ -47,36 +48,75 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
 
 # ------------------------------------------------------------------------------
-#  Start work
+#  Loop that detects func.gii for all 4 structures (L hipp, R hipp, L dentate, R dentate),
+#  merges them into CIFTI files, and deletes the func.gii
 # ------------------------------------------------------------------------------
 
 log_Msg "START"
 
 ResultsFolder="$1"
-Subject="$2"
-NameOffMRI="$3"
-ProcString="$4"
-SmoothingFWHM="$5"
+WorkingDirectory="$2"
+Subject="$3"
+NameOffMRI="$4"
+ProcString="$5"
 Meshes="$6"
+doGoodVoxels="$7"
+SmoothingFWHM="$8"
 
 for Mesh in ${Meshes}; do
 
-    wb_command -cifti-create-dense-timeseries "${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii" \
-        -metric HIPPOCAMPUS_LEFT "${ResultsFolder}/${Subject}.L.hipp_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_RIGHT "${ResultsFolder}/${Subject}.R.hipp_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_DENTATE_LEFT "${ResultsFolder}/${Subject}.L.dentate_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_DENTATE_RIGHT "${ResultsFolder}/${Subject}.R.dentate_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii"
+    for LeftHipp in "${WorkingDirectory}/${Subject}.L.hipp_"*.${Mesh}.func.gii; do
 
-    log_Msg "Generated fMRI time series CIFTI file: ${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii"
+        if [[ ! -e "${LeftHipp}" ]]; then
+            continue
+        fi
 
-    wb_command -cifti-create-dense-scalar "${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}_vn.${Mesh}.dscalar.nii" \
-        -metric HIPPOCAMPUS_LEFT "${ResultsFolder}/${Subject}.L.hipp_fMRI_vn.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_RIGHT "${ResultsFolder}/${Subject}.R.hipp_fMRI_vn.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_DENTATE_LEFT "${ResultsFolder}/${Subject}.L.dentate_fMRI_vn.${Mesh}.func.gii" \
-        -metric HIPPOCAMPUS_DENTATE_RIGHT "${ResultsFolder}/${Subject}.R.dentate_fMRI_vn.${Mesh}.func.gii"
+        BaseName=$(basename "${LeftHipp}")
 
-    log_Msg "Generated VN CIFTI file: ${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}_vn.${Mesh}.dscalar.nii"
+        DataName="${BaseName#${Subject}.L.hipp_}"
+        DataName="${DataName%.${Mesh}.func.gii}"
+
+        RightHipp="${WorkingDirectory}/${Subject}.R.hipp_${DataName}.${Mesh}.func.gii"
+        LeftDentate="${WorkingDirectory}/${Subject}.L.dentate_${DataName}.${Mesh}.func.gii"
+        RightDentate="${WorkingDirectory}/${Subject}.R.dentate_${DataName}.${Mesh}.func.gii"
+
+        if [[ -f "${LeftHipp}" &&
+              -f "${RightHipp}" &&
+              -f "${LeftDentate}" &&
+              -f "${RightDentate}" ]]; then
+
+            if [[ "${DataName}" == fMRI_s* ]]; then
+
+                OutputFile="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii"
+
+                wb_command -cifti-create-dense-timeseries "${OutputFile}" \
+                    -metric HIPPOCAMPUS_LEFT "${LeftHipp}" \
+                    -metric HIPPOCAMPUS_RIGHT "${RightHipp}" \
+                    -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" \
+                    -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
+
+            else
+
+                OutputName="${DataName#fMRI_}"
+
+                OutputFile="${WorkingDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_${OutputName}.${Mesh}.dscalar.nii"
+
+                wb_command -cifti-create-dense-scalar "${OutputFile}" \
+                    -metric HIPPOCAMPUS_LEFT "${LeftHipp}" \
+                    -metric HIPPOCAMPUS_RIGHT "${RightHipp}" \
+                    -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" \
+                    -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
+            fi
+
+            rm -f \
+                "${LeftHipp}" \
+                "${RightHipp}" \
+                "${LeftDentate}" \
+                "${RightDentate}"
+
+            log_Msg "Generated CIFTI file: ${OutputFile}"
+        fi
+
+    done
 
 done
-
-log_Msg "END"

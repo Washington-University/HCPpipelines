@@ -1,8 +1,4 @@
 #!/bin/bash
-set -eu
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
 
 script_name=$(basename "${0}")
 
@@ -53,11 +49,10 @@ log_Check_Env_Var CARET7DIR
 log_Msg "START"
 
 HippUnfoldFolder="$1"
-ResultsFolder="$2"
-WorkingDirectory="$3"
-Subject="$4"
-SmoothingFWHM="$5"
-Meshes="$6"
+WorkingDirectory="$2"
+Subject="$3"
+SmoothingFWHM="$4"
+Meshes="$5"
 
 Sigma=$(echo "${SmoothingFWHM} / (2 * sqrt(2 * l(2)))" | bc -l)
 
@@ -66,7 +61,12 @@ Structures=(hipp dentate)
 for Mesh in ${Meshes}; do
     for Structure in "${Structures[@]}"; do
         for Hemisphere in L R; do
-            wb_command -metric-smoothing "${HippUnfoldFolder}/${Mesh}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii" "${ResultsFolder}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma}" "${ResultsFolder}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" -roi "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
+            if [[ "${Mesh}" == "native" ]] ; then
+                MeshFolder='Native'
+            else
+                MeshFolder="${Mesh}"
+            fi
+            wb_command -metric-smoothing "${HippUnfoldFolder}/${MeshFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii" "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma}" "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" -roi "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
         done
     done
 done

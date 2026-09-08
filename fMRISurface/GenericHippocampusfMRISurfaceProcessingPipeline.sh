@@ -1,19 +1,40 @@
 #!/bin/bash
-set -eu
+
 # Requirements for this script
 # installed versions of: FSL, Connectome Workbench (wb_command)
 # environment: HCPPIPEDIR, FSLDIR, CARET7DIR
 
 ########################################## PIPELINE OVERVIEW ##########################################
 
-# TODO
+# This script combines surface metric files from the left and right hippocampus and dentate gyrus
+# into CIFTI files for each requested non-native mesh.
+#
+# The script creates:
+#   1. Dense scalar CIFTI files containing mean fMRI intensity of both good voxels and all voxels.
+#   2. Dense scalar CIFTI files containing coefficient of variation (COV) of both good voxels and all voxels.
+#   3. A dense scalar CIFTI file containing the good-voxel mask when good-voxel processing is enabled.
+#   4. A dense timeseries CIFTI file containing smooth fMRI timeseries.
+#   5. A dense scalar CIFTI file containing the fMRI variance normalization (VN) data.
+#
+# Native-mesh files are retained as processing intermediates and are not converted to CIFTI.
 
 ########################################## OUTPUT DIRECTORIES ##########################################
 
-# TODO
+# ResultsFolder:
+#   Contains the final hippocampal fMRI CIFTI outputs:
+#       ${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii
+#       ${NameOffMRI}_AtlasHipp${ProcString}_vn.${Mesh}.dscalar.nii
+#
+# WorkingDirectory:
+#   Contains the hippocampal volume-to-surface mapping outputs and QC CIFTI files:
+#       ${Subject}.allStructures_mean.${Mesh}.dscalar.nii
+#       ${Subject}.allStructures_mean_all.${Mesh}.dscalar.nii
+#       ${Subject}.allStructures_cov.${Mesh}.dscalar.nii
+#       ${Subject}.allStructures_cov_all.${Mesh}.dscalar.nii
+#       ${Subject}.allStructures_goodvoxels.${Mesh}.dscalar.nii
+#
 
 ################################################ SUPPORT FUNCTIONS ##################################################
-
 set -eu
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
@@ -23,8 +44,7 @@ then
     export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
-#comment the line back in when done
-#source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"          # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"          # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"          # Debugging functions; also sources log.shlib
 
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
@@ -46,7 +66,7 @@ opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to d
 
 opts_AddOptional '--factor' 'factor' 'number' "Scaling factor for eliminating high COV voxels (default = 1.5)" "1.5"
 
-opts_AddOptional '--resample_mesh' 'MeshString' 'string' 'Resample native mesh to: 512, 2k, 8k, or 18k. Use quote for multiple meshes, e.g. "512 2k 8k"' "512 2k 8k 18k"
+opts_AddOptional '--resample_mesh' 'MeshString' 'string' 'Resample native mesh to: 512, 2k, 8k, or 18k. Use quote for multiple meshes, e.g. "512 2k 8k"' "2k"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -84,7 +104,7 @@ AtlasSpaceFolder="${MainSubjectFolder}/MNINonLinear"
 InputResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
 ResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
 
-WorkingDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping" #should 'HippocampalVolumeToSurfaceMapping' be a parameter?'
+WorkingDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping"
 mkdir -p "${WorkingDirectory}"
 
 VolumefMRI="${InputResultsFolder}/${NameOffMRI}${ProcString}.nii.gz"
@@ -121,13 +141,13 @@ log_Msg "Hippocampal Volume To Surface Mapping"
 
 
 # Generate fMRI time series for each of the hippocampal structures: L hipp, R hipp, L dentate, R dentate
-"${HCPPIPEDIR_fMRISurf}/HippocampalVolumeToSurfaceMapping.sh" "${ResultsFolder}" "${Subject}" "${HippUnfoldFolder}" "${VolumefMRI}" "${SBRef}" "${doGoodVoxels}" "${factor}" "${Meshes}"
+"${HCPPIPEDIR_fMRISurf}/HippocampalVolumeToSurfaceMapping.sh" "${ResultsFolder}" "${WorkingDirectory}" "${Subject}" "${HippUnfoldFolder}" "${VolumefMRI}" "${SBRef}" "${doGoodVoxels}" "${factor}" "${Meshes}"
 
 #Surface Smoothing of each hippocampal structure
-"${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${ResultsFolder}" "${WorkingDirectory}" "${Subject}" "${SmoothingFWHM}" "${Meshes}"
+"${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${WorkingDirectory}" "${Subject}" "${SmoothingFWHM}" "${Meshes}"
 
-#Integration of the 4 hippocampal structures into single CIFTI timeseries and vn files
-"${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" "${ResultsFolder}" "${Subject}" "${NameOffMRI}" "${ProcString}" "${SmoothingFWHM}" "${Meshes}"
+#Integration of the 4 hippocampal structures into single CIFTI files and cleanup of intermediate files
+"${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" "${ResultsFolder}" "${WorkingDirectory}" "${Subject}" "${NameOffMRI}" "${ProcString}" "${Meshes}" "${doGoodVoxels}" "${SmoothingFWHM}"
 
 log_Msg "GenericHippocampusfMRISurfaceProcessingPipeline Completed!"
 
