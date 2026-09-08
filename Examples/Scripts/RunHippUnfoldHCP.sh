@@ -39,17 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-#StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by SubjectID) 
-#Subjlist="100307 100610" #Space delimited list of subject IDs 
-#EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script 
-
-StudyFolder="/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/" 
-Subjlist="103818 105923 111312 114823 115320 122317 125525 130518 135528 \
-137128 139839 143325 144226 146129 149337 149741 151526 158035 \
-169343 172332 175439 177746 185442 187547 192439 194140 195041 \
-200109 200614 204521 250427 287248 341834 433839 562345 599671 \
-601127 627549 660951 662551 783462 859671 861456 877168 917255"
-EnvironmentScript="/media/myelin/oren/HippUnfoldTesting/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" 
+StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by SubjectID) 
+Subjlist="100307 100610" #Space delimited list of subject IDs 
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script 
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -67,7 +59,7 @@ echo "$@"
 
 # NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 # DO NOT include "-q " at the beginning
-QUEUE="dyn.q"
+QUEUE=""
 #QUEUE="hcp_priority.q"
 
 ######################################### DO WORK ##########################################
