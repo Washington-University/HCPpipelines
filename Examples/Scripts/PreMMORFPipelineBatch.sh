@@ -2,7 +2,7 @@
 
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Sessionlist="100307 100610"
-T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
+
 #set this so that all the bvals in the lowest diffusion shell are below it (nominal shell value plus 200 will usually work)
 DiffusionLowestShellThreshold="1200"
 
@@ -11,6 +11,7 @@ EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeli
 
 source "${EnvironmentScript}"
 
+T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
 
 QUEUE=""
 

@@ -2,15 +2,16 @@
 
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Sessionlist="100307 100610"
+
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
+source "${EnvironmentScript}"
+
 T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
 T2wTemplate="${TemplateDir}/MMORF_T2.nii.gz"
 refmask="${TemplateDir}/MMORF_T1_brainmask_fs.nii.gz"
 DiffusionRef="${TemplateDir}/MMORF_DiffusionRef.nii.gz"
 DTIRefMask="${TemplateDir}/MMORF_nodif_brainmask.nii.gz"
-
-EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
-
-source "${EnvironmentScript}"
 
 QUEUE=""
 

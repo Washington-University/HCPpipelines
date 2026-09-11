@@ -1,7 +1,6 @@
 #!/bin/bash
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Subjectlist="100307 100610"
-T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
 highResMesh='164'
 lowResMeshes='32@79'
 regName="MSMAll"
@@ -10,6 +9,9 @@ inflateExtraScale='1'
 EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 source "${EnvironmentScript}"
+
+T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
+
 QUEUE=""
 
 for subj in $Subjectlist; do
