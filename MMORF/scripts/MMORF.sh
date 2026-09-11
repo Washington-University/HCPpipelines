@@ -36,7 +36,6 @@ log_Check_Env_Var FSLDIR
 
 
 DTI=${Diffusion}/data_tensor.nii.gz
-brainmaskedited=$Output/TMP/brainmask_fs_transformed.nii.gz
 
 warp_default_args=(
                     --warp_res_init 32
@@ -54,7 +53,7 @@ scalar_default_args=(
                     --use_mask_ref_scalar 1 1 1 1 1 1 1
                     --use_mask_mov_scalar 0 0 0 0 0 0 0
                     --mask_ref_scalar ${ReferenceMask}
-                    --mask_mov_scalar ${brainmaskedited}
+                    --mask_mov_scalar NULL
                     --fwhm_ref_scalar 8.0 8.0 4.0 2.0 1.0 0.5 0.25
                     --fwhm_mov_scalar 8.0 8.0 4.0 2.0 1.0 0.5 0.25
                     --lambda_scalar 1 1 1 1 1 1 1

@@ -66,8 +66,6 @@ echo " " >> "$AtlasSpaceFolder/xfms/log.txt"
 
 ${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpaceFolder}/TMP" "${Threshold}"
 
-#transform brain mask to fit with the MMORF alogrithm
-${FSLDIR}/bin/fslmaths ${brainmask_fs} -mul 7 -add 1 -div 8 "${AtlasSpaceFolder}/TMP/brainmask_fs_transformed.nii.gz"
 
 # Linear registration to MMORF
 verbose_echo " --> Linear registration to MMORF"
