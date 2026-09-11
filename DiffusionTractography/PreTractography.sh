@@ -24,6 +24,7 @@ opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'name of folder containing fiber
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
 opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
 opts_AddMandatory '--group' 'whim' 'true or false' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
+opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for group volume labeled whim mask"
 opts_AddOptional '--warp' 'warp' 'If your intended seed space is not diffusion space' ""
 opts_AddOptional '--groupname' 'GroupName' 'Average Group Name' ""
 
@@ -89,10 +90,8 @@ ${PipelineScripts}/MakeTrajectorySpace.sh \
     --whim="$whim"
 
 log_Msg "MakeWorkbenchUODFs"
-#${HCPPIPEDIR_dMRITract}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --lowresmesh="${LowResMesh}" --diffresol="${DiffusionResolution}" --bpxdirs="${BedpostXFolders}"
-#The bpxdirs is just the name of the folder, it is not a directory. If you do it, it is wrong.
-#whim is a flag. Whim is single sample so different commands needs to be used.
-${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresol="${DiffusionResolution}" --bpxdirs="${BedpostXFolders}" --whim="${whim}"
+
+${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresol="${DiffusionResolution}" --bpxfoldername="${BedpostXFolders}" --whim="${whim}" --whimmask="${WhimMask}"
 
 log_Msg "MakeSeeds"
 ${PipelineScripts}/MakeSeeds.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresmesh="${DiffResMesh}" --diffresol="${DiffusionResolution}" --regname="${RegName}" --whim="${whim}" --groupname="$GroupName"

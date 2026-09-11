@@ -27,8 +27,9 @@ StudyFolder=`getopt1 "--path" $@`                # "$1" #Path to Generic Study f
 Subject=`getopt1 "--subject" $@`                 # "$2" #SubjectID
 Folder=`getopt1 "--folder" $@`                   # "$3" #folder so it is not just t1w
 DiffusionResolution=`getopt1 "--diffresol" $@`   # "$4" #Diffusion Resolution in mm
-BedpostXFolders=`getopt1 "--bpxdirs" $@` #Delimited by @
+BedpostXFolders=`getopt1 "--bpxfoldername" $@` #Delimited by @
 Whim=`getopt1 "--whim" $@` #"true" or "false". Though it is just judging if it is true or not.
+WhimMask=`getopt1 "--whimmask" $@` #Path to whim mask
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"    # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  
@@ -56,7 +57,7 @@ for BedpostXFolderName in ${BedpostXFolders} ; do
   if [[ "$Whim" == "true" ]]; then
     BedpostXFolder="${T1wFolder}/${BedpostXFolderName}"
     ${Caret7_Command} -convert-fiber-orientations \
-    ${T1wFolder}/${trajectory}_${DiffusionResolution}.nii.gz \
+    $WhimMask \
     ${BedpostXFolder}/${BedpostXFolderName}_${trajectory}_${DiffusionResolution}.fiberTEMP.nii \
   -fiber \
     ${BedpostXFolder}/f_1_std.nii.gz \
