@@ -1,5 +1,5 @@
 #!/bin/bash 
-set -uo pipefail
+set -euo pipefail
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]

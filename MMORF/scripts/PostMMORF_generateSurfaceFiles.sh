@@ -89,17 +89,14 @@ log_Msg "AtlasSpaceT1wImage: ${AtlasSpaceT1wImage}"
 AtlasSpaceT2wImage="${13}"
 log_Msg "AtlasSpaceT2wImage: ${AtlasSpaceT2wImage}"
 
-T1wImageBrainMask="${14}"
-log_Msg "T1wImageBrainMask: ${T1wImageBrainMask}"
 
-
-RegName="${15}"
+RegName="${14}"
 log_Msg "RegName: ${RegName}"
 
-RegNameOrig="${16}"
+RegNameOrig="${15}"
 log_Msg "RegNameOrig: ${RegNameOrig}"
 
-InflateExtraScale="${17}"
+InflateExtraScale="${16}"
 log_Msg "InflateExtraScale: ${InflateExtraScale}"
 
 
@@ -424,8 +421,10 @@ process_mesh_folder() {
     local RegName="$3"
     local IncludeMyelin="$4"  # "yes" or "no"
     local Mesh="$5"           # e.g., "32k", "59k"
-
-    local Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}${Prefix}.wb.spec"
+    local Spec
+    local File
+    local Path
+    Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}${Prefix}.wb.spec"
 
     # --- dlabel files ---
     for Stem in "${LabelStems[@]}"; do
@@ -463,7 +462,7 @@ process_mesh_folder() {
         add_to_spec "$Spec" "$Path"
     done
         
-    local Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}.${RegName}${Prefix}.wb.spec"
+    Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}.${RegName}${Prefix}.wb.spec"
 
     for Stem in "${ScalarStems[@]}"; do
         if [[ "$MeshFolder" == "$NativeFolder" ]]; then
@@ -481,7 +480,7 @@ process_mesh_folder() {
         add_to_spec "$Spec" "$Path"
     done
         
-    local Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}${Prefix}.wb.spec"
+    Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}${Prefix}.wb.spec"
 
     # --- Myelin maps for native only ---
     if [[ "$IncludeMyelin" == "yes" ]]; then

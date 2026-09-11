@@ -54,6 +54,4 @@ ${HCPPIPEDIR}/MMORF/scripts/MMORF.sh \
     --diffusion="${Diffusion}" \
     --DTImask="${Diffusion}/nodif_brain_mask.nii.gz" \
     --DTIref="${DiffusionRef}" \
-    --DTIrefmask="${DTIRefMask}" \
-
-    
+    --DTIrefmask="${DTIRefMask}"

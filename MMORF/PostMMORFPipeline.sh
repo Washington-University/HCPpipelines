@@ -95,9 +95,8 @@ argList+=("$AtlasTransform")            # ${10}
 argList+=("$InverseAtlasTransform")     # ${11}
 argList+=("$AtlasSpaceT1wImage")        # ${12}
 argList+=("$AtlasSpaceT2wImage")        # ${13}
-argList+=("$T1wImageBrainMask")         # ${14}
-argList+=("$RegName")                   # ${15}
-argList+=("$RegNameOrig")                   # ${16}
-argList+=("$InflateExtraScale")         # ${17}
+argList+=("$RegName")                   # ${14}
+argList+=("$RegNameOrig")                   # ${15}
+argList+=("$InflateExtraScale")         # ${16}
     
 ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_generateSurfaceFiles.sh "${argList[@]}"

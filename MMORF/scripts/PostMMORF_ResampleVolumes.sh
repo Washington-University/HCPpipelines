@@ -35,7 +35,7 @@ opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
 
 opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
-opts_AddMandatory '--owarp' 'OutputTransform' 'number' 'output warp'
+opts_AddMandatory '--owarp' 'OutputTransform' 'warp' 'output warp'
 
 opts_AddMandatory '--oinvwarp' 'OutputInvTransform' 'inverse' 'output inverse warp'
 
@@ -85,7 +85,7 @@ ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrai
 verbose_echo " --> Generating DTI set of warped outputs"
 ${FSLDIR}/bin/vecreg --interp=spline -i "${Diffusion}/data_tensor.nii.gz" --premat="${Output}/xfms/acpc2MMORFLinear.mat" -w "${Output}/xfms/mov_to_ref_mm_warp" -r "${Reference}" -o "${Output}/Diffusion/data_tensor.nii.gz" 
 ${FSLDIR}/bin/fslmaths "${Output}/Diffusion/data_tensor.nii.gz" -tensor_decomp "${Output}/Diffusion/data"
-rm "${Output}/Diffusion/data.nii.gz"
+rm -f "${Output}/Diffusion/data.nii.gz"
 
 # T2w set of warped outputs (brain/whole-head + restored/orig)
 if [ ! "${T2wImage}" = "NONE" ] ; then
@@ -102,13 +102,3 @@ rm -rf "${Output}/TMP"
 
 log_Msg "END: AtlasRegistration to MMORF"
 echo " END: `date`" >> $Output/xfms/log.txt
-
-########################################## QA STUFF ##########################################
-
-#if [ -e $Output/xfms/qa.txt ] ; then rm -f $Output/xfms/qa.txt ; fi
-#echo "cd `pOutput`" >> $Output/xfms/qa.txt
-#echo "# Check quality of alignment with MNI image" >> $Output/MMORF/qa.txt
-#echo "fslview ${Reference} ${OutputT1wImageRestore}" >> $Output/MMORF/qa.txt
-#echo "fslview ${Reference} ${OutputT2wImageRestore}" >> $Output/MMORF/qa.txt
-
-##############################################################################################
