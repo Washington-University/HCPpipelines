@@ -11,6 +11,7 @@ fi
 BASE_DIR="$1"
 OUT_DIR="$2"
 THRESH="$3"
+GradNonLin="$4"
 
 mkdir -p "$OUT_DIR"
 
@@ -81,7 +82,11 @@ BEGIN { n=split(keep, idxs, " ") }
 ' "$BVECS" > "$OUT_BVECS"
 
 #DTI Fit
-${FSLDIR}/bin/dtifit -k "${OUT_DATA}" -o "${BASE_DIR}/data" -m "${BASE_DIR}/nodif_brain_mask.nii.gz" -r "${OUT_BVECS}" -b "${OUT_BVALS}" --gradnonlin="${BASE_DIR}/grad_dev.nii.gz" --save_tensor
+if [[ "$GradNonLin" == "True" ]]; then
+  ${FSLDIR}/bin/dtifit -k "${OUT_DATA}" -o "${BASE_DIR}/data" -m "${BASE_DIR}/nodif_brain_mask.nii.gz" -r "${OUT_BVECS}" -b "${OUT_BVALS}" --gradnonlin="${BASE_DIR}/grad_dev.nii.gz" --save_tensor
+else
+  ${FSLDIR}/bin/dtifit -k "${OUT_DATA}" -o "${BASE_DIR}/data" -m "${BASE_DIR}/nodif_brain_mask.nii.gz" -r "${OUT_BVECS}" -b "${OUT_BVALS}" --save_tensor
+fi
 
 
 echo "Done."

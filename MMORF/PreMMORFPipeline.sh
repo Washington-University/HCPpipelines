@@ -16,6 +16,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study fol
 opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'image' 'Path to the T1w template image'
 opts_AddMandatory '--lowest-shell-threshold' 'Threshold' 'value' 'Threshold for bvals for filtering diffusion data to only include the lowest shell, used for dtifit - the nominal shell value plus 200 will usually work'
+opts_AddMandatory '--gradnonlin' 'GradNonLin' 'True or False' 'Indicate whether to apply gradient nonlinearity correction to the diffusion data'
 
 
 opts_ParseArguments "$@"
@@ -64,7 +65,7 @@ echo "Pwd = `pwd`" >> "$AtlasSpaceFolder/xfms/log.txt"
 echo "date: `date`" >> "$AtlasSpaceFolder/xfms/log.txt"
 echo " " >> "$AtlasSpaceFolder/xfms/log.txt"
 
-${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpaceFolder}/TMP" "${Threshold}"
+${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpaceFolder}/TMP" "${Threshold}" "${GradNonLin}"
 
 
 # Linear registration to MMORF

@@ -5,6 +5,8 @@ Sessionlist="100307 100610"
 
 #set this so that all the bvals in the lowest diffusion shell are below it (nominal shell value plus 200 will usually work)
 DiffusionLowestShellThreshold="1200"
+#True or False depending on the study whether to apply gradient nonlinearity correction to the diffusion data
+GradientNonLinear="True"
 
 #####################################
 EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
@@ -30,5 +32,6 @@ for Session in ${Sessionlist}; do
         --study-folder="${StudyFolder}" \
         --session="${Session}" \
         --t1-template="${T1wTemplate}" \
-        --lowest-shell-threshold="${DiffusionLowestShellThreshold}"
+        --lowest-shell-threshold="${DiffusionLowestShellThreshold}" \
+        --gradnonlin="${GradientNonLinear}"
 done
