@@ -19,10 +19,12 @@ opts_SetScriptDescription "Prepare the data to run Tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
-opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'folders delimited by @' 'BEDPOSTX Folders delimited by @'
+opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX Folder or whim folder'
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'NONE for MSMSulc, else RegName such as MSMAll'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
+opts_AddMandatory '--group' 'whim' 'true or false' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
 
 
 opts_ParseArguments "$@"
@@ -47,14 +49,15 @@ log_Check_Env_Var CARET7DIR
 log_Msg "Platform Information Follows: "
 uname -a
 
-
+TrajectorySpaceFolder="${StudyFolder}/${Subject}/${Folder}"
 T1wDiffusionFolder="${StudyFolder}/${Subject}/T1w/Diffusion"
 DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
 DiffusionResolution=`printf "%0.2f" ${DiffusionResolution}`
-ResultsFolder="${T1wFolder}/Results"
-DiffMeshFolder="${T1wFolder}/fsaverage_LR${DiffResMesh}k"
+ResultsFolder="${TrajectorySpaceFolder}/Results"
+DiffMeshFolder="${TrajectorySpaceFolder}/fsaverage_LR${DiffResMesh}k"
 TractographyResultsFolder="${ResultsFolder}/Matrix${Matrix}WholeBrainTractography"
-BedpostXFolder="${BedpostXFolders}" #TODO: Allow only one bedpostX folder
+BedpostXFolderPath="${TrajectorySpaceFolder}/${BedpostXFolder}" 
+BedpostXFolderPathT1w="${StudyFolder}/${Subject}/T1w/${BedpostXFolder}" 
 
 log_Msg "Converting Probtrackx Matrices"
 
@@ -67,7 +70,11 @@ elif [ ${Matrix} -eq 3 ] ; then
 else
   log_Err_Abort "Matrix Type Not Supported"
 fi
-${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolder}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
+if [ "${whim}" == "true" ]; then
+  ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPath}/${BedpostXFolder}_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
+else
+  ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPathT1w}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
+fi
 ${CARET7DIR}/wb_command -convert-matrix4-to-matrix2 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse WBSPARSE ${TractographyResultsFolder}/fdt_matrix2.dconn.wbsparse -distances ${TractographyResultsFolder}/fdt_matrix2_dist.dconn.wbsparse
 
 log_Msg "Completed"
