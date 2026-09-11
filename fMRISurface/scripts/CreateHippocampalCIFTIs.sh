@@ -62,7 +62,11 @@ ProcString="$5"
 Meshes="$6"
 doGoodVoxels="$7"
 SmoothingFWHM="$8"
+VolumefMRI="$9"
 
+TR=$(wb_command -file-information "$VolumefMRI" -only-step-interval)
+
+log_Msg "fMRI TR: ${TR} seconds"
 for Mesh in ${Meshes}; do
 
     for LeftHipp in "${WorkingDirectory}/${Subject}.L.hipp_"*.${Mesh}.func.gii; do
@@ -93,8 +97,8 @@ for Mesh in ${Meshes}; do
                     -metric HIPPOCAMPUS_LEFT "${LeftHipp}" \
                     -metric HIPPOCAMPUS_RIGHT "${RightHipp}" \
                     -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" \
-                    -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
-
+                    -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}" \
+                    -timestep "${TR}"
             else
 
                 OutputName="${DataName#fMRI_}"
