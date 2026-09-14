@@ -22,7 +22,6 @@ opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolu
 
 opts_AddOptional '--bpxfoldername' 'BedpostXFolders' 'folder@folder' 'names of folders containing fiber estimations, delimited by @'
 
-opts_AddOptional '--whim' 'Whim' 'boolean' 'whether to use WHIM'
 opts_AddOptional '--whimmask' 'WhimMask' 'file' 'path to WHIM mask'
 
 opts_ParseArguments "$@"
@@ -45,7 +44,7 @@ BedpostXFolders=`echo ${BedpostXFolders} | sed 's/@/ /g'`
 log_Check_Env_Var HCPPIPEDIR
 
 for BedpostXFolderName in ${BedpostXFolders} ; do
-  if [[ "$Whim" == "true" ]]; then
+  if [[ -n "$WhimMask" ]]; then
     BedpostXFolder="${T1wFolder}/${BedpostXFolderName}"
     ${Caret7_Command} -convert-fiber-orientations \
     $WhimMask \

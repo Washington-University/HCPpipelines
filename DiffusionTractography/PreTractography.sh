@@ -23,7 +23,6 @@ opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh num
 opts_AddOptional '--bpxdirs' 'BedpostXFolders' 'folder@folder' "names of folders containing fiber estimations, default Diffusion.bedpostX" "Diffusion.bedpostX"
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
 opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
-opts_AddMandatory '--group' 'whim' 'true or false' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
 opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for group volume labeled whim mask"
 opts_AddOptional '--warp' 'warp' 'file' "If your intended seed space is not diffusion space"
 opts_AddOptional '--groupname' 'GroupName' 'string' "Average Group Name"
@@ -87,14 +86,14 @@ ${PipelineScripts}/MakeTrajectorySpace.sh \
     --wholebrainwhitelabels="$WholeBrainWhiteLabels" \
     --diffresol="${DiffusionResolution}" \
     --freesurferlabels="${FreeSurferLabels}" \
-    --whim="$whim"
+    --whimmask="${WhimMask}"
 
 log_Msg "MakeWorkbenchUODFs"
 
-${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresol="${DiffusionResolution}" --bpxfoldername="${BedpostXFolders}" --whim="${whim}" --whimmask="${WhimMask}"
+${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresol="${DiffusionResolution}" --bpxfoldername="${BedpostXFolders}" --whimmask="${WhimMask}"
 
 log_Msg "MakeSeeds"
-${PipelineScripts}/MakeSeeds.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresmesh="${DiffResMesh}" --diffresol="${DiffusionResolution}" --regname="${RegName}" --whim="${whim}" --groupname="$GroupName"
+${PipelineScripts}/MakeSeeds.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresmesh="${DiffResMesh}" --diffresol="${DiffusionResolution}" --regname="${RegName}" --whimmask="${WhimMask}" --groupname="$GroupName"
 
 log_Msg "Completed"
 

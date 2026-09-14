@@ -31,7 +31,7 @@ opts_AddOptional '--wholebrainwhitelabels' 'WholeBrainWhiteLabels' 'file' 'whole
 opts_AddOptional '--freesurferlabels' 'FreeSurferLabels' 'file' 'FreeSurfer labels'
 
 opts_AddMandatory '--warp' 'Warp' 'file' 'warp from T1w to trajectory space'
-opts_AddOptional '--whim' 'Whim' 'folder' 'WHIM folder'
+opts_AddOptional '--whimmask' 'WhimMask' 'file' 'path to WHIM mask'
 
 opts_ParseArguments "$@"
 
@@ -84,7 +84,7 @@ fi
 if [ ! -e "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" ] ; then
   ${FSLDIR}/bin/flirt -interp spline -in "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -ref "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -applyisoxfm "$DiffusionResolution" -out "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution"
 fi
-if [[ "$Whim" != "true" ]]; then
+if [[ -n "$WhimMask" ]]; then
   if [ ! -e "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz ] ; then
     FreeSurferFolder="$TrajectorySpaceFolder"/"$Subject"
     mri_convert -rt nearest -rl "$TrajectorySpaceFolder"/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "$TrajectorySpaceFolder"/wmparc_1mm.nii.gz

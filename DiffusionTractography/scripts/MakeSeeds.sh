@@ -21,7 +21,7 @@ opts_AddMandatory '--results-folder' 'Folder' 'Folder' ""
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'Diffusion res mesh number'
 opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution'
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
-opts_AddMandatory '--whim' 'Whim' 'True if group average is used.' ""
+opts_AddMandatory '--whimmask' 'WhimMask' 'file' 'path to WHIM mask'
 opts_AddOptional '--groupname' 'GroupName' 'Group Folder_Name' ""
 
 
@@ -57,7 +57,7 @@ for Hemisphere in L R ; do
     done
     ${CARET7DIR}/wb_command -surface-generate-inflated ${FolderMeshFolder}/${Subject}.${Hemisphere}.midthickness_${RegName}.${DiffResMesh}k_fs_LR.surf.gii ${FolderMeshFolder}/${Subject}.${Hemisphere}.inflated_${RegName}.${DiffResMesh}k_fs_LR.surf.gii ${FolderMeshFolder}/${Subject}.${Hemisphere}.very_inflated_${RegName}.${DiffResMesh}k_fs_LR.surf.gii -iterations-scale ${DiffResInflationScale}
   fi
-  if [[ "$Whim" == "true" ]]; then
+  if [[ -n "$WhimMask" ]]; then
     $FSLDIR/bin/surf2surf -i ${FolderMeshFolder}/${Subject}.${Hemisphere}.white_${RegName}.${DiffResMesh}k_fs_LR.surf.gii -o ${ROIsTrajectorySpaceFolder}/${Subject}.${Hemisphere}.white_${RegName}.${DiffResMesh}k_fs_LR.gii --values=${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.${Hemisphere}.atlasroi.${DiffResMesh}k_fs_LR.shape.gii
     $FSLDIR/bin/surf2surf -i ${FolderMeshFolder}/${Subject}.${Hemisphere}.pial_${RegName}.${DiffResMesh}k_fs_LR.surf.gii -o ${ROIsTrajectorySpaceFolder}/${Subject}.${Hemisphere}.pial_${RegName}.${DiffResMesh}k_fs_LR.gii --values=${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.${Hemisphere}.atlasroi.${DiffResMesh}k_fs_LR.shape.gii
   else
@@ -70,7 +70,7 @@ done
 
 #TODO: Currently unique per individual
 ##Need group name here
-if [[ "$Whim" == "true" ]]; then
+if [[ -n "$WhimMask" ]]; then
   fslmaths ${StudyFolder}/${GroupName}/${Folder}/Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz -bin ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz
   echo "OTHER" > ${ROIsTrajectorySpaceFolder}/tmp.txt
   echo "1 255 255 255 255" >> ${ROIsTrajectorySpaceFolder}/tmp.txt
@@ -84,7 +84,7 @@ fi
 rm ${ROIsTrajectorySpaceFolder}/tmp.txt
 
 ###Add conditional to detect whether to change this to individual vs group.
-if [[ "$Whim" == "true" ]]; then
+if [[ -n "$WhimMask" ]]; then
   ${CARET7DIR}/wb_command -cifti-create-dense-scalar ${FolderMeshFolder}/Grey.dscalar.nii -left-metric ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.L.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -roi-left ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.L.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -right-metric ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.R.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -roi-right ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.R.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -volume ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz
 else
   ${CARET7DIR}/wb_command -cifti-create-dense-scalar ${FolderMeshFolder}/Grey.dscalar.nii -left-metric ${FolderMeshFolder}/${Subject}.L.roi_${RegName}.${DiffResMesh}k_fs_LR.shape.gii -roi-left ${FolderMeshFolder}/${Subject}.L.roi_${RegName}.${DiffResMesh}k_fs_LR.shape.gii -right-metric ${FolderMeshFolder}/${Subject}.R.roi_${RegName}.${DiffResMesh}k_fs_LR.shape.gii -roi-right ${FolderMeshFolder}/${Subject}.R.roi_${RegName}.${DiffResMesh}k_fs_LR.shape.gii -volume ${ROIsTrajectorySpaceFolder}/Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz ${ROIsTrajectorySpaceFolder}/Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz
@@ -94,7 +94,7 @@ echo ${ROIsTrajectorySpaceFolder}/${Subject}.R.pial_${RegName}.${DiffResMesh}k_f
 
 echo ${ROIsTrajectorySpaceFolder}/${Subject}.L.white_${RegName}.${DiffResMesh}k_fs_LR.gii > ${ROIsTrajectorySpaceFolder}/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt
 echo ${ROIsTrajectorySpaceFolder}/${Subject}.R.white_${RegName}.${DiffResMesh}k_fs_LR.gii >> ${ROIsTrajectorySpaceFolder}/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt
-if [[ "$Whim" == "true" ]]; then
+if [[ -n "$WhimMask" ]]; then
   echo ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz >> ${ROIsTrajectorySpaceFolder}/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt
 else
   echo ${ROIsTrajectorySpaceFolder}/Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz >> ${ROIsTrajectorySpaceFolder}/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt
