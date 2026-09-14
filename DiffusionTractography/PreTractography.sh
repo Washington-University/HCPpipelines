@@ -20,13 +20,13 @@ opts_SetScriptDescription "Prepare the data to run Tractography"
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
-opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'name of folder containing fiber estimations' ""
+opts_AddOptional '--bpxdirs' 'BedpostXFolders' 'folder@folder' "names of folders containing fiber estimations, default Diffusion.bedpostX" "Diffusion.bedpostX"
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
 opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
 opts_AddMandatory '--group' 'whim' 'true or false' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
 opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for group volume labeled whim mask"
-opts_AddOptional '--warp' 'warp' 'If your intended seed space is not diffusion space' ""
-opts_AddOptional '--groupname' 'GroupName' 'Average Group Name' ""
+opts_AddOptional '--warp' 'warp' 'file' "If your intended seed space is not diffusion space"
+opts_AddOptional '--groupname' 'GroupName' 'string' "Average Group Name"
 
 
 
