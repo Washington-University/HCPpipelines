@@ -1,43 +1,41 @@
 #!/bin/bash
 set -e
 echo -e "\n START: MakeTrajectorySpace"
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
 
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 
-########################################## SUPPORT FUNCTIONS #####################################################
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
+opts_SetScriptDescription "Make a trajectory space for Tractography"
 
-defaultopt() {
-    echo $1
-}
+opts_AddMandatory '--path' 'StudyFolder' 'folder' 'path to Generic Study folder'
+opts_AddMandatory '--subject' 'Subject' 'subject' 'subject ID'
+opts_AddMandatory '--folder' 'TrajectorySpaceFolder' 'folder' 'trajectory space folder'
+opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
 
-################################################## OPTION PARSING ###################################################
-####Maybe we make this the whim version and call the OG version when we don't need this. 
-####Also problems: This assumes T1w space is what we want, not sure if that is true.
-# Input Variables
-StudyFolder=`getopt1 "--path" $@`                # "$1" #Path to Generic Study folder
-Subject=`getopt1 "--subject" $@`                 # "$2" #SubjectID
-TrajectorySpaceFolder=`getopt1 "--folder" $@`                 # "$3" #Folder
-DiffusionResolution=`getopt1 "--diffresol" $@`   # "$3" #Diffusion Resolution in mm
-WholeBrainTrajectoryLabels=`getopt1 "--wholebrainlabels" $@`
-LeftCerebralTrajectoryLabels=`getopt1 "--leftcerebrallabels" $@`
-RightCerebralTrajectoryLabels=`getopt1 "--rightcerebrallabels" $@`
-WholeBrainSubcorticalLabels=`getopt1 "--wholebrainsubcorticallabels" $@`
-LeftSubcorticalLabels=`getopt1 "--leftsubcorticallabels" $@`
-RightSubcorticalLabels=`getopt1 "--rightsubcorticallabels" $@`
-WholeBrainWhiteLabels=`getopt1 "--wholebrainwhitelabels" $@`
-FreeSurferLabels=`getopt1 "--freesurferlabels" $@`
-Warp=`getopt1 "--warp" $@` #Warp from T1w to whichever folder it is.
-Whim=`getopt1 "--whim" $@`
+opts_AddOptional '--wholebrainlabels' 'WholeBrainTrajectoryLabels' 'file' 'whole brain trajectory labels'
+opts_AddOptional '--leftcerebrallabels' 'LeftCerebralTrajectoryLabels' 'file' 'left cerebral trajectory labels'
+opts_AddOptional '--rightcerebrallabels' 'RightCerebralTrajectoryLabels' 'file' 'right cerebral trajectory labels'
+
+opts_AddOptional '--wholebrainsubcorticallabels' 'WholeBrainSubcorticalLabels' 'file' 'whole brain subcortical labels'
+opts_AddOptional '--leftsubcorticallabels' 'LeftSubcorticalLabels' 'file' 'left subcortical labels'
+opts_AddOptional '--rightsubcorticallabels' 'RightSubcorticalLabels' 'file' 'right subcortical labels'
+
+opts_AddOptional '--wholebrainwhitelabels' 'WholeBrainWhiteLabels' 'file' 'whole brain white matter labels'
+opts_AddOptional '--freesurferlabels' 'FreeSurferLabels' 'file' 'FreeSurfer labels'
+
+opts_AddMandatory '--warp' 'Warp' 'file' 'warp from T1w to trajectory space'
+opts_AddOptional '--whim' 'Whim' 'folder' 'WHIM folder'
+
+opts_ParseArguments "$@"
+
+opts_ShowValues
 
 Caret7_Command=${CARET7DIR}/wb_command
 
