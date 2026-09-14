@@ -3,36 +3,32 @@ set -e
 echo -e "\n START: MakeWorkbenchUODFs"
 
 
-########################################## SUPPORT FUNCTIONS #####################################################
-# function for parsing options
-getopt1() {
-    sopt="$1"
-    shift 1
-    for fn in $@ ; do
-	if [ `echo $fn | grep -- "^${sopt}=" | wc -w` -gt 0 ] ; then
-	    echo $fn | sed "s/^${sopt}=//"
-	    return 0
-	fi
-    done
-}
-
-defaultopt() {
-    echo $1
-}
-
-
-################################################## OPTION PARSING ###################################################
-# Input Variables
-StudyFolder=`getopt1 "--path" $@`                # "$1" #Path to Generic Study folder
-Subject=`getopt1 "--subject" $@`                 # "$2" #SubjectID
-Folder=`getopt1 "--folder" $@`                   # "$3" #folder so it is not just t1w
-DiffusionResolution=`getopt1 "--diffresol" $@`   # "$4" #Diffusion Resolution in mm
-BedpostXFolders=`getopt1 "--bpxfoldername" $@` #Delimited by @
-Whim=`getopt1 "--whim" $@` #"true" or "false". Though it is just judging if it is true or not.
-WhimMask=`getopt1 "--whimmask" $@` #Path to whim mask
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
+fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"    # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  
+
+opts_SetScriptDescription "Make workbench UODFs for Tractography"
+opts_AddMandatory '--path' 'StudyFolder' 'folder' 'path to Generic Study folder'
+opts_AddMandatory '--subject' 'Subject' 'subject' 'subject ID'
+opts_AddMandatory '--folder' 'Folder' 'folder' 'folder so it is not just T1w'
+opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
+
+opts_AddOptional '--bpxfoldername' 'BedpostXFolders' 'folder@folder' 'names of folders containing fiber estimations, delimited by @'
+
+opts_AddOptional '--whim' 'Whim' 'boolean' 'whether to use WHIM'
+opts_AddOptional '--whimmask' 'WhimMask' 'file' 'path to WHIM mask'
+
+opts_ParseArguments "$@"
+
+opts_ShowValues
+
 Caret7_Command=${CARET7DIR}/wb_command
 
 #NamingConventions and Paths
