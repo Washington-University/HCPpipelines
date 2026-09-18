@@ -1,10 +1,18 @@
 #!/bin/bash
 set -eu
-echo 1
-#EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script 
-EnvironmentScript="/media/myelin/oren/HippUnfoldTesting/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" 
-source ${EnvironmentScript} #script requires HCPCIFTIRWDIR thart is assigned within the environmental script
-echo 2
+
+if [[ -z "${HCPCIFTIRWDIR:-}" ]] ; then
+    # The script requires HCPCIFTIRWDIR, which is defined in the environment script.
+    # Edit this path if your environment script is located elsewhere.
+    EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+
+    if [[ ! -f "$EnvironmentScript" ]] ; then
+        echo "ERROR: HCPCIFTIRWDIR is not set and the environment script does not exist: $EnvironmentScript" >&2
+        exit 1
+    fi
+
+    source "$EnvironmentScript"
+fi
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
