@@ -86,6 +86,7 @@ Usage: $log_ToolName arguments...
 opts_AddMandatory '--study-folder' 'Path' '/path/to/study/folder' "directory containing imaging data for all subjects"
 opts_AddMandatory '--subject' 'Subject' 'SubjectID' ""
 opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List of task fMRI scan names, which are the prefixes of the time series filename for the TaskName task. Multiple task fMRI scan names should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/MNINonLinear/Results directory. Also assumes that timeseries image filename begins with this string.
+opts_AddOptional '--structure' 'Structure' 'Cortex or Hippocampus' "Structure to analyze: Cortex or Hippocampus. Default=Cortex" "Cortex"
 opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName1@DesignName2' "List of design names, which are the prefixes of the fsf filenames for each scan run. Should contain same number of design files as time series images in --lvl1tasks option. (N-th design will be used for N-th time series image.) Separate multiple design names by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks."
 opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'tfMRI_TaskName' "Name of Level2 subdirectory in which all Level2 feat directories are written for TaskName. Default is 'NONE', which means that no Level2 analysis will run." 'NONE'
 opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'DesignName_TaskName' "Prefix of design.fsf filename for the Level2 analysis for TaskName. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task."
@@ -96,23 +97,35 @@ opts_AddOptional '--finalsmoothingFWHM' 'FinalSmoothingFWHM' 'number' "Value (in
 opts_AddOptional '--highpassfilter' 'TemporalFilter' 'integer' "Apply *additional* highpass filter (in seconds) to time series and task design. This is above and beyond temporal filter applied during preprocessing. To apply no additional filtering, set to 'NONE'. Default=200" '200'
 opts_AddOptional '--lowpassfilter' 'TemporalSmoothing' 'integer' "Apply *additional* lowpass filter (in seconds) to time series and task design. This is above and beyond temporal filter applied during preprocessing. Low pass filter is generally not advised for Task fMRI analyses. Default=NONE" 'NONE'
 opts_AddOptional '--procstring' 'ProcSTRING' 'string' "String value in filename of time series image, specifying the additional processing that was previously applied (e.g., FIX-cleaned data with 'hp2000_clean' in filename). Default=NONE" 'NONE'
-opts_AddOptional '--lowresmesh' 'LowResMesh' 'integer' "Value (in mm) that matches surface resolution for fMRI data. Default=32, which is appropriate for HCP minimal preprocessing pipeline outputs" '32'
+opts_AddOptional '--lowresmesh' 'LowResMesh' 'integer' "Surface resolution for fMRI data. Default=32 for Cortex and 2 for Hippocampus." ''
 opts_AddOptional '--grayordinatesres' 'GrayordinatesResolution' 'number' "Value (in mm) that matches value in 'Atlas_ROIs' filename; Default='2', which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
 opts_AddOptional '--regname' 'RegName' 'RegName' "Name of surface registration technique. Default=NONE, which will use the default (MSMSulc) surface registration." 'NONE'
 opts_AddOptional '--vba' 'VolumeBasedProcessing' 'YES/NO' "Default=NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced)" 'NO'
 opts_AddOptional '--parcellation' 'Parcellation' 'ParcellationName' "Name of parcellation scheme to conduct parcellated analysis. Default=NONE, which will perform dense analysis instead. Non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation supersedes smoothing (i.e. no smoothing is done)" 'NONE'
 opts_AddOptional '--parcellationfile' 'ParcellationFile' '/path/to/dlabel' "Absolute path to the parcellation dlabel file. Default=NONE" 'NONE'
 
-opts_ParseArguments "$@"
+opts_ParseArguments "$@" # was this line accidentially dropped?
 
 # if LevelOnefsfNames is blank, set equal to LevelOnefMRINames
 [ -z "$LevelOnefsfNames" ] && LevelOnefsfNames=${LevelOnefMRINames}
 # if LevelTwofsfName is blank, set equal to LevelTwofMRIName
 [ -z "$LevelTwofsfName" ] && LevelTwofsfName=${LevelTwofMRIName}
 
+# Validate structure and set structure-specific default mesh
+case "${Structure}" in
+    Cortex)
+        [ -z "${LowResMesh}" ] && LowResMesh=32
+        ;;
+    Hippocampus)
+        [ -z "${LowResMesh}" ] && LowResMesh=2
+        ;;
+    *)
+        log_Err_Abort "Structure must be Cortex or Hippocampus. Structure=${Structure}"
+        ;;
+esac
+
 #display the parsed/default values
 opts_ShowValues
-
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -130,7 +143,6 @@ ${HCPPIPEDIR}/show_version
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
-log_Check_Env_Var CARET7DIR
 
 HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
 
@@ -208,16 +220,21 @@ else
 	log_Msg "Beginning analyses with FSL version ${fsl_ver}"
 fi
 
-
-
 ########################################## MAIN #########################################
 
 # Determine locations of necessary directories (using expected naming convention)
 AtlasFolder="${Path}/${Subject}/MNINonLinear"
 ResultsFolder="${AtlasFolder}/Results"
 ROIsFolder="${AtlasFolder}/ROIs"
-DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
 
+case "${Structure}" in
+    Cortex)
+        DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
+        ;;
+    Hippocampus)
+        DownSampleFolder="${AtlasFolder}/HippUnfold/${LowResMesh}k"
+        ;;
+esac
 
 # Run Level 1 analyses for each phase encoding direction (from command line arguments)
 log_Msg "RUN_LEVEL1: Running Level 1 Analysis for Both Phase Encoding Directions"
@@ -227,9 +244,10 @@ for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
 	log_Msg "RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"
 	# Get corresponding fsf name from $LevelOnefsfNames list
 	LevelOnefsfName=`echo $LevelOnefsfNames | cut -d "@" -f $i`
-	log_Msg "RUN_LEVEL1: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile $ProcSTRING $TemporalSmoothing"
+	log_Msg "RUN_LEVEL1: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh $Subject $Structure $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile $ProcSTRING $TemporalSmoothing"
 	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
 	  $Subject \
+	  $Structure \
 	  $ResultsFolder \
 	  $ROIsFolder \
 	  $DownSampleFolder \
@@ -247,6 +265,7 @@ for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
 	  $ParcellationFile \
 	  $ProcSTRING \
 	  $TemporalSmoothing
+
 	i=$(($i+1))
 done
 
@@ -254,9 +273,10 @@ if [ "$LevelTwofMRIName" != "NONE" ]
 then
 	# Combine Data Across Phase Encoding Directions in the Level 2 Analysis
 	log_Msg "RUN_LEVEL2: Combine Data Across Phase Encoding Directions in the Level 2 Analysis"
-	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfName $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ProcSTRING $TemporalSmoothing"
+	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $Structure $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfName $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ProcSTRING $TemporalSmoothing"
 	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
 	  $Subject \
+	  $Structure \
 	  $ResultsFolder \
 	  $DownSampleFolder \
 	  $LevelOnefMRINames \
