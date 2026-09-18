@@ -58,8 +58,8 @@ get_batch_options "$@"
 # Edit these values as needed. Command-line options override the corresponding defaults.
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by SubjectID) 
 Subjlist="100307 100610" #Space delimited list of subject IDs 
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script 
-CorticalMesh=32
+EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+
 # NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 # DO NOT include "-q " at the beginning
 QUEUE=""
