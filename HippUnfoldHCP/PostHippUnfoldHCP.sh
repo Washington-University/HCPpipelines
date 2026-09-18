@@ -17,7 +17,7 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all s
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddOptional '--hippunfold-dir' 'PhysicalHippUnfoldDIR' 'path' "location of HippUnfold outputs"
 opts_AddOptional '--atlas-hippunfold-dir' 'AtlasHippUnfoldDIR' 'path' "location of Atlas HippUnfold outputs"
-
+opts_AddOptional '--cortical-mesh' 'CorticalMesh' '32 or 59' "cortical mesh density: 32 recommended for 3T; 59 recommended for 7T (default: 32)"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed)) ; then
@@ -30,6 +30,17 @@ log_Msg "Starting PostHippUnfold pipeline for subject: $Subject"
 
 T1wFolder="$StudyFolder/$Subject/T1w"
 AtlasFolder="$StudyFolder/$Subject/MNINonLinear"
+
+if [[ -z "${CorticalMesh:-}" ]] ; then
+    CorticalMesh=32
+fi
+case "$CorticalMesh" in
+    32|59)
+        ;;
+    *)
+        log_Err_Abort "Invalid --cortical-mesh value '$CorticalMesh'. Supported values are 32 and 59."
+        ;;
+esac
 
 if [[ -z "${PhysicalHippUnfoldDIR:-}" ]] ; then
     PhysicalHippUnfoldDIR="${T1wFolder}/HippUnfold"
@@ -283,30 +294,11 @@ for Mesh in native 512 2k 8k 18k ; do
 
         wb_command -spec-file-merge "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/Native/${Subject}.native.wb.spec" "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.native.wb_spec"
 
-    elif [[ "${Mesh}" = "512" ]] ; then
+    else
 
-        wb_command -spec-file-merge "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${T1wFolder}/fsaverage_LR32k/${Subject}.MSMAll.32k_fs_LR.wb.spec" "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec"
+        wb_command -spec-file-merge "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${T1wFolder}/fsaverage_LR${CorticalMesh}k/${Subject}.MSMAll.${CorticalMesh}k_fs_LR.wb.spec" "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.${CorticalMesh}k.wb_spec"
 
-        wb_command -spec-file-merge "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/fsaverage_LR32k/${Subject}.MSMAll.32k_fs_LR.wb.spec" "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.32k.wb_spec"
-
-    elif [[ "${Mesh}" = "2k" ]] ; then
-
-        wb_command -spec-file-merge "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec" "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec"
-
-        wb_command -spec-file-merge "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec" "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec"
-
-    elif [[ "${Mesh}" = "8k" ]] ; then
-
-        wb_command -spec-file-merge "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec" "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec"
-
-        wb_command -spec-file-merge "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec" "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec"
-
-    elif [[ "${Mesh}" = "18k" ]] ; then
-
-        wb_command -spec-file-merge "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec" "${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec"
-
-        wb_command -spec-file-merge "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/${Subject}.MSMAll.164k_fs_LR.wb.spec" "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.164k.wb_spec"
-
+        wb_command -spec-file-merge "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec" "${AtlasFolder}/fsaverage_LR${CorticalMesh}k/${Subject}.MSMAll.${CorticalMesh}k_fs_LR.wb.spec" "${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.MSMAll.${CorticalMesh}k.wb_spec"
     fi
 done
 

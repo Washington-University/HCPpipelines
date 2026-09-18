@@ -11,19 +11,6 @@ fi
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
-
-# Remove subject specific cache directory even in case of script failure
-cleanup() {
-    if [[ -n "${JobCache:-}" && -d "$JobCache" ]]; then
-        log_Msg "Removing job cache: $JobCache"
-        rm -rf "$JobCache"
-        log_Msg "Temporary cache directory deleted"
-    fi
-}
-
-trap cleanup EXIT
-
-
 opts_SetScriptDescription "Make some BIDS structures and run HippUnfold"
 
 opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all subjects"
@@ -151,4 +138,10 @@ log_Msg "Running HippUnfold for subject: $Subject"
     --latency-wait 60 \
     --rerun-incomplete
     
+# Remove temporary cache only after HippUnfold completes successfully
+if [[ -d "$JobCache" ]]; then
+    log_Msg "Removing job cache: $JobCache"
+    rm -rf "$JobCache"
+fi
+
 log_Msg "HippUnfold pipeline completed successfully for subject: $Subject"
