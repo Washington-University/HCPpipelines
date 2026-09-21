@@ -75,7 +75,17 @@ if [ "${whim}" == "true" ]; then
 else
   ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPathT1w}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
 fi
-${CARET7DIR}/wb_command -convert-matrix4-to-matrix2 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse WBSPARSE ${TractographyResultsFolder}/fdt_matrix2.dconn.wbsparse -distances ${TractographyResultsFolder}/fdt_matrix2_dist.dconn.wbsparse
+
+rm -f ${TractographyResultsFolder}/fdt_matrix4_1.mtx
+rm -f ${TractographyResultsFolder}/fdt_matrix4_2.mtx
+rm -f ${TractographyResultsFolder}/fdt_matrix4_3.mtx
+if [ ${Matrix} -eq 1 ] ; then
+  rm -f ${TractographyResultsFolder}/fdt_matrix1.dot
+  rm -f ${TractographyResultsFolder}/fdt_matrix1_lengths.dot
+elif [ ${Matrix} -eq 3 ] ; then
+  rm -f ${TractographyResultsFolder}/fdt_matrix3.dot
+  rm -f ${TractographyResultsFolder}/fdt_matrix3_lengths.dot
+fi
 
 log_Msg "Completed"
 
