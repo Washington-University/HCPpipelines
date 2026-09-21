@@ -24,7 +24,6 @@ opts_AddOptional '--bpxdirs' 'BedpostXFolders' 'folder@folder' "names of folders
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
 opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
 opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for group volume labeled whim mask"
-opts_AddOptional '--warp' 'warp' 'file' "If your intended seed space is not diffusion space"
 opts_AddOptional '--groupname' 'GroupName' 'string' "Average Group Name"
 
 
@@ -71,6 +70,12 @@ DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
 DiffusionResolution=`printf "%0.2f" ${DiffusionResolution}`
 
 log_Msg "MakeTrajectorySpace"
+
+if [[ "$folder"=="MNINonLinear" ]]; then
+  warp="${StudyFolder}/${Subject}/MNINonLinear/xfms/acpc_dc2standard.nii.gz"
+elif [[ "$folder"=="HCPMultiModalNonLinear" ]]; then
+  warp="${StudyFolder}/${Subject}/HCPMultiModalNonLinear/xfms/acpc_dc2HCPMultiModal.nii.gz"
+fi
 
 
 ${PipelineScripts}/MakeTrajectorySpace.sh \
