@@ -74,7 +74,7 @@ log_Msg "MakeTrajectorySpace"
 if [[ "$folder"=="MNINonLinear" ]]; then
   warp="${StudyFolder}/${Subject}/MNINonLinear/xfms/acpc_dc2standard.nii.gz"
 elif [[ "$folder"=="HCPMultiModalNonLinear" ]]; then
-  warp="${StudyFolder}/${Subject}/HCPMultiModalNonLinear/xfms/acpc_dc2HCPMultiModal.nii.gz"
+  warp="${StudyFolder}/${Subject}/HCPMultiModalNonLinear/xfms/acpc_dc2mmorf.nii.gz"
 fi
 
 
