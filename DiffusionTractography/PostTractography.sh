@@ -25,6 +25,7 @@ opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX resul
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'NONE for MSMSulc, else RegName such as MSMAll'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
 opts_AddMandatory '--group' 'whim' 'true or false' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
+opts_AddOptional '--cleanup' 'cleanup' 'bool' "indicate if you want to cleanup the intermediate files. Default is false" "false"
 
 
 opts_ParseArguments "$@"
@@ -76,16 +77,19 @@ else
   ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPathT1w}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
 fi
 
-rm -f ${TractographyResultsFolder}/fdt_matrix4_1.mtx
-rm -f ${TractographyResultsFolder}/fdt_matrix4_2.mtx
-rm -f ${TractographyResultsFolder}/fdt_matrix4_3.mtx
-if [ ${Matrix} -eq 1 ] ; then
-  rm -f ${TractographyResultsFolder}/fdt_matrix1.dot
-  rm -f ${TractographyResultsFolder}/fdt_matrix1_lengths.dot
-elif [ ${Matrix} -eq 3 ] ; then
-  rm -f ${TractographyResultsFolder}/fdt_matrix3.dot
-  rm -f ${TractographyResultsFolder}/fdt_matrix3_lengths.dot
+if [ "${cleanup}" == "true" ]; then
+  rm -f ${TractographyResultsFolder}/fdt_matrix4_1.mtx
+  rm -f ${TractographyResultsFolder}/fdt_matrix4_2.mtx
+  rm -f ${TractographyResultsFolder}/fdt_matrix4_3.mtx
+  if [ ${Matrix} -eq 1 ] ; then
+    rm -f ${TractographyResultsFolder}/fdt_matrix1.dot
+    rm -f ${TractographyResultsFolder}/fdt_matrix1_lengths.dot
+  elif [ ${Matrix} -eq 3 ] ; then
+    rm -f ${TractographyResultsFolder}/fdt_matrix3.dot
+    rm -f ${TractographyResultsFolder}/fdt_matrix3_lengths.dot
+  fi
 fi
+
 
 log_Msg "Completed"
 
