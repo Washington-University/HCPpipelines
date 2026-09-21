@@ -13,7 +13,7 @@ EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeli
 
 source "${EnvironmentScript}"
 
-T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
+T1wTemplateBrain="${TemplateDir}/MMORF_T1_Brain.nii.gz"
 
 QUEUE=""
 
@@ -31,7 +31,7 @@ for Session in ${Sessionlist}; do
     "${queuing_command[@]}" ${HCPPIPEDIR}/MMORF/PreMMORFPipeline.sh \
         --study-folder="${StudyFolder}" \
         --session="${Session}" \
-        --t1-template="${T1wTemplate}" \
+        --t1-brain-template="${T1wTemplateBrain}" \
         --lowest-shell-threshold="${DiffusionLowestShellThreshold}" \
         --gradnonlin="${GradientNonLinear}"
 done

@@ -14,7 +14,7 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 opts_SetScriptDescription "Wrapper for preparing for MMORF registration"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
 opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
-opts_AddMandatory '--t1-template' 'T1wTemplate' 'image' 'Path to the T1w template image'
+opts_AddMandatory '--t1-brain-template' 'T1wTemplateBrain' 'image' 'Path to the T1w template image brain'
 opts_AddMandatory '--lowest-shell-threshold' 'Threshold' 'value' 'Threshold for bvals for filtering diffusion data to only include the lowest shell, used for dtifit - the nominal shell value plus 200 will usually work'
 opts_AddMandatory '--gradnonlin' 'GradNonLin' 'True or False' 'Indicate whether to apply gradient nonlinearity correction to the diffusion data'
 
@@ -45,6 +45,7 @@ echo "Launching Pre MMORF registration for session ${Session}"
 
 
 brainmask_fs=${T1wFolder}/brainmask_fs.nii.gz
+T1wRestoreBrain=${T1wFolder}/${T1wImage}_acpc_dc_restore_brain
 T1wRestore=${T1wFolder}/${T1wImage}_acpc_dc_restore
 
 
@@ -70,4 +71,4 @@ ${HCPPIPEDIR}/MMORF/scripts/MMORFPreprossDiffusion.sh "${Diffusion}" "${AtlasSpa
 
 # Linear registration to MMORF
 verbose_echo " --> Linear registration to MMORF"
-${FSLDIR}/bin/flirt -interp spline -in ${T1wRestore} -ref ${T1wTemplate} -omat "${AtlasSpaceFolder}/xfms/acpc2MMORFLinear.mat" -out "${AtlasSpaceFolder}/xfms/${T1wRestoreBasename}_to_MMORFLinear"
+${FSLDIR}/bin/flirt -interp spline -in ${T1wRestoreBrain} -ref ${T1wTemplateBrain} -omat "${AtlasSpaceFolder}/xfms/acpc2MMORFLinear.mat" -out "${AtlasSpaceFolder}/xfms/${T1wRestoreBasename}_to_MMORFLinear"
