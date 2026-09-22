@@ -155,6 +155,7 @@ opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacySty
 
 opts_AddOptional '--high-myelin' 'HighMyelin' "High Myelin" 'Value of the high myelin extra recon-all parameter, relevant if using FreeSurfer 7 and above. By default it will be automatically set to 0.3 for FS7 and FS8 and disabled for FS6.' "AUTO"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -167,6 +168,7 @@ extra_reconall_args=${extra_reconall_args_manual[*]+"${extra_reconall_args_manua
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 #TSC: now use an array for proper argument handling
 extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manual[@]}"})
@@ -513,7 +515,7 @@ make_t1wxt2w_qc_file()
 
 
 T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
-OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the ${PHYSICALDIR}/${PHYSICALDIR}.nii.gz file; NOT FreeSurfer's "orig" space)
+OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the ${physicalDir}/${physicalDir}.nii.gz file; NOT FreeSurfer's "orig" space)
 
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
@@ -557,7 +559,7 @@ if ((! existing_session)); then
     # certain files need to be reverted to their PreFreeSurfer output versions
     if [ `imtest ${SessionDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
         log_Err "The --existing-session flag was not invoked AND PostFreeSurfer has already been run."
-        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <session>/${PHYSICALDIR}/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
+        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <session>/${physicalDir}/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
         log_Err_Abort "If this is the goal, delete ${SessionDIR}/${SessionID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
     fi
 

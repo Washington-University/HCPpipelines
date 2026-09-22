@@ -8,7 +8,7 @@ Created on Sun Apr 28 17:45:23 2024
 
 import os
 
-STANDARDDIR = os.environ.get("STANDARDDIR", "MNINonLinear")
+standardDir = os.environ.get("STANDARDDIR", "MNINonLinear")
 
 def roi(subjects_dir,subject,hemi,surface,mesh,number):
     
@@ -22,7 +22,7 @@ def roi(subjects_dir,subject,hemi,surface,mesh,number):
     rois=[None]*m
     weights=[None]*m
     i=0
-    roi_file = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', '{sub}.{h}.{s}.roi.{m}.csv'.format(sub=subject,h=hemi,s=surface,m=mesh))
+    roi_file = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', '{sub}.{h}.{s}.roi.{m}.csv'.format(sub=subject,h=hemi,s=surface,m=mesh))
     sigma = number / math.sqrt(2 * math.log(2))
     
     with open(roi_file) as f:

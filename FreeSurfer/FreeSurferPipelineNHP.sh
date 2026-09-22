@@ -142,7 +142,7 @@ opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 opts_AddOptional '--flair' 'flair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--t1wdivflair' 't1wdivflair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -T1wDivFLAIR/-T1wDivFLAIRpial options (rather than the -T2/-T2pial options).  The ${PHYSICALDIR}/FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
+opts_AddOptional '--t1wdivflair' 't1wdivflair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -T1wDivFLAIR/-T1wDivFLAIRpial options (rather than the -T2/-T2pial options).  The ${physicalDir}/FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
 opts_AddOptional '--existing-subject' 'existing_subject' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
 
@@ -160,6 +160,7 @@ opts_AddOptional '--runmode' 'RunMode' 'Default|FSinit|FSbrainseg|FSsurfinit|FSh
 
 opts_AddMandatory '--scale-factor' 'ScaleFactor' 'number' "Brain scale factor for NHP processing (recommended value is BrainScaleFactor in SetUpSPECIES.sh).  Controls volume rescaling for FreeSurfer and some derived parameters in SetUpFSNHP.sh."
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -172,6 +173,7 @@ extra_reconall_args=${extra_reconall_args_manual[*]+"${extra_reconall_args_manua
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 #TSC: now use an array for proper argument handling
 extra_reconall_args=(${extra_reconall_args_manual[@]+"${extra_reconall_args_manual[@]}"})
@@ -457,7 +459,7 @@ make_t1wxt2w_qc_file()
 
 
 T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
-OutputOrigT2wToT1w="OrigT2w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the ${PHYSICALDIR}/${PHYSICALDIR}.nii.gz file; NOT FreeSurfer's "orig" space)
+OutputOrigT2wToT1w="OrigT2w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the ${physicalDir}/${physicalDir}.nii.gz file; NOT FreeSurfer's "orig" space)
 
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
@@ -509,7 +511,7 @@ else
 		mv "$SubjectDIR"/"$SubjectID"_scaled "$SubjectDIR"/"$SubjectID"
 	fi
 	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
-		if [ $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz -nt $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/${PHYSICALDIR}/T1w_acpc_dc_restore_scaled.nii.gz ] ; then
+		if [ $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/${physicalDir}/T1w_acpc_dc_restore.nii.gz -nt $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/${physicalDir}/T1w_acpc_dc_restore_scaled.nii.gz ] ; then
 			log_Msg "restore PreFreeSurfer resampling"
 			${HCPPIPEDIR_FS}/RestorePreFreeSurferResamplingNHP.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
 		fi

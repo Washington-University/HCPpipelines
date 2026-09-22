@@ -30,6 +30,8 @@ opts_AddOptional '--surf' 'Surface' 'surface' "provide surface for regression ca
 opts_AddOptional '--patch-size' 'PatchSize' 'distance' "provide patch kernel size in millimeters FWHM for regression, default 6" "6"
 opts_AddOptional '--surf-smooth' 'SurfSmooth' 'distance' "provide surface smoothing in millimeters FWHM, default 2.14" "2.14"
 opts_AddOptional '--metric-smooth' 'MetricSmooth' 'distance' "provide metric smoothing in millimeters FWHM, default 2.52" "2.52"
+opts_AddOptional '--physical-dir' 'PhysicalFolderName' 'name' "name of subject physical-space directory, default 'T1w'" 'T1w'
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--skip-computation' 'SkipCompute' 'YES or NO' "whether or not to compute the curvature-corrected (folding-compensated) cortical thickness, if it is already available, but just to resample it to 164k and 32k, defaults to 'NO'" "NO"
 
 opts_ParseArguments "$@"
@@ -42,13 +44,16 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
+
 #sanity check boolean strings and convert to 1 and 0
 SkC=$(opts_StringToBool "$SkipCompute")
 
 #set paths
-NonlinearFolder="$SubjectDir"/"$Subject"/${STANDARDDIR}
+NonlinearFolder="$SubjectDir"/"$Subject"/${standardDir}
 NativeFolder="$NonlinearFolder"/Native
-T1wNativeFolder="$SubjectDir"/"$Subject"/${PHYSICALDIR}/Native
+T1wNativeFolder="$SubjectDir"/"$Subject"/${physicalDir}/Native
 
 #Make intermediate directory to save intermediate files
 mkdir -p "$NativeFolder"/CorrThick
@@ -81,7 +86,7 @@ if ((! SkC)); then
 		fi
 		(
 			cd "$HCPPIPEDIR"/global/scripts/CorrThick
-			python3 CorrThick.py "$SubjectDir" "$Subject" "$Structure" "$Hemisphere" "$Surface" "$PatchSize" "$SurfSmooth" "$MetricSmooth"
+			python3 CorrThick.py "$SubjectDir" "$Subject" "$Structure" "$Hemisphere" "$Surface" "$PatchSize" "$SurfSmooth" "$MetricSmooth" "$StandardFolderName" "$PhysicalFolderName"
 		)
 	done	
 fi

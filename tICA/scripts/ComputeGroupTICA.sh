@@ -43,6 +43,7 @@ opts_AddMandatory '--tICA-dim' 'tICAdim' 'integer' "number of tICA components"
 opts_AddMandatory '--subject-expected-timepoints' 'RunsXNumTimePoints' 'integer' "number of concatenated timepoints in a subject with full data"
 opts_AddMandatory '--low-res-mesh' 'LowResMesh' 'integer' "mesh resolution, like '32'"
 opts_AddMandatory '--sica-proc-string' 'sICAProcString' 'string' "name part to use for some outputs, like 'tfMRI_RET_7T_d73_WF5_WR'"
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 
 0 = compiled MATLAB
@@ -63,8 +64,10 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
+standardDir="$StandardFolderName"
+
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/tICA_d$tICAdim"
+OutputFolder="$OutGroupFolder/${standardDir}/Results/$fMRIConcatName/tICA_d$tICAdim"
 
 TCSConcatName="$OutputFolder/sICA_TCS_$tICAdim.sdseries.nii"
 TCSMaskName="$OutputFolder/sICA_TCSMASK_$tICAdim.sdseries.nii"
@@ -118,7 +121,7 @@ rm -f -- "$TCSListName" "$SpectraListName" "$SubjListName" "$fMRIListName"
 
 for Subject in "${SubjList[@]}"
 do
-    FilePrefix="$StudyFolder/$Subject/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
+    FilePrefix="$StudyFolder/$Subject/${standardDir}/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
     echo "${FilePrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii" >> "$TCSListName"
     echo "${FilePrefix}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" >> "$SpectraListName"
     echo "$Subject" >> "$SubjListName"
@@ -126,7 +129,7 @@ done
 
 for fMRIName in "${fMRIList[@]}"
 do
-    echo "${STANDARDDIR}/Results/$fMRIName/${fMRIName}_Atlas${RegString}.dtseries.nii" >> "$fMRIListName"
+    echo "${standardDir}/Results/$fMRIName/${fMRIName}_Atlas${RegString}.dtseries.nii" >> "$fMRIListName"
 done
 
 #shortcut in case the folder gets renamed
@@ -134,9 +137,11 @@ this_script_dir=$(dirname "$0")
 
 #matlab function arguments have been changed to strings, to avoid having two copies of the argument list in the script
 matlab_argarray=("$StudyFolder" "$SubjListName" "$TCSListName" "$SpectraListName" "$fMRIListName" "$tICAdim" "$RunsXNumTimePoints" "$TCSConcatName" "$TCSMaskName" "$AvgTCSName" "$AvgSpectraName" "$AvgMapsName" "$AvgVolMapsName" "$OutputFolder" "$sICAProcString" "$RegName" "$LowResMesh" "$tICAmode" "$tICAMM")
+matlab_argarray_interp=("${matlab_argarray[@]}" "$StandardFolderName")
 
 case "$MatlabMode" in
     (0)
+        export standardDir="$StandardFolderName"
         matlab_cmd=("$this_script_dir/Compiled_ComputeGroupTICA/run_ComputeGroupTICA.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
         log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
         "${matlab_cmd[@]}"
@@ -144,7 +149,7 @@ case "$MatlabMode" in
     (1 | 2)
         #reformat argument array so matlab sees them as strings
         matlab_args=""
-        for thisarg in "${matlab_argarray[@]}"
+        for thisarg in "${matlab_argarray_interp[@]}"
         do
             if [[ "$matlab_args" != "" ]]
             then

@@ -70,6 +70,7 @@ opts_AddOptional '--start-stage' 'StartStage' 'stage_id' "Starting stage. One of
 opts_AddOptional '--end-stage' 'EndStage' 'stage_id' "End stage. Full pipeline includes 0) TEMPLATE, 1) TIMEPOINTS stages. One of TEMPLATE, TIMEPOINTS [TIMEPOINTS]" 'TIMEPOINTS'
 opts_AddOptional '--logdir' 'LogDir' 'string' "directory where logs will be written (default: current directory)" ""
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -88,6 +89,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 # Show HCP pipelines version
 log_Msg "Showing HCP Pipelines version"
@@ -261,18 +263,18 @@ log_Msg "extra_reconall_args_base: $extra_reconall_args_base"
 log_Msg "extra_reconall_args_long: $extra_reconall_args_long"
 log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 
-TemplateT1wDir="${StudyFolder}/${SubjectID}.long.${TemplateID}/${PHYSICALDIR}"
+TemplateT1wDir="${StudyFolder}/${SubjectID}.long.${TemplateID}/${physicalDir}"
 mkdir -p "${TemplateT1wDir}"
 
 if (( start_stage < 1 )); then
 
   #prepare session folder structure
   for Session in ${Sessions} ; do
-    Source="${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}"
+    Source="${StudyFolder}/${Session}/${physicalDir}/${Session}"
     Target="${TemplateT1wDir}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     #symlinks review: changed from absolute to relative.
-    ( cd "${TemplateT1wDir}" && ln -sf "../../${Session}/${PHYSICALDIR}/$Session" "$Session" )
+    ( cd "${TemplateT1wDir}" && ln -sf "../../${Session}/${physicalDir}/$Session" "$Session" )
   done
 
   # ----------------------------------------------------------------------
@@ -330,7 +332,7 @@ if (( end_stage > 0 )); then
     recon_all_cmd+=" -long ${Session} ${TemplateID} -all -conf2hires"
 
     recon_all_cmd+=" $extra_reconall_args_long "
-    T2w=${StudyFolder}/${Session}/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz
+    T2w=${StudyFolder}/${Session}/${physicalDir}/T2w_acpc_dc_restore.nii.gz
 
     if [ -f "$T2w" ]; then
       recon_all_cmd+=" -T2 $T2w"
@@ -338,8 +340,8 @@ if (( end_stage > 0 )); then
         log_Msg "WARNING: No T2-weighted image $T2w, T2-weighted processing will not run."
     fi
 
-    T1w=${StudyFolder}/${Session}/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz
-    emregmask=${StudyFolder}/${Session}/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz
+    T1w=${StudyFolder}/${Session}/${physicalDir}/T1w_acpc_dc_restore.nii.gz
+    emregmask=${StudyFolder}/${Session}/${physicalDir}/T1w_acpc_dc_restore_brain.nii.gz
 
     if [ -f "$emregmask" ]; then
       recon_all_cmd+=" -emregmask $emregmask"
@@ -364,7 +366,7 @@ fi
 for Session in ${Sessions} ; do
   rm -f "${TemplateT1wDir}/${Session}"
   LongSession=${Session}.long.${TemplateID}
-  LongSessionT1wDir="$StudyFolder/${LongSession}/${PHYSICALDIR}"
+  LongSessionT1wDir="$StudyFolder/${LongSession}/${physicalDir}"
   rm -rf "$LongSessionT1wDir"
   mkdir -p "$LongSessionT1wDir"
   mv "${TemplateT1wDir}/${LongSession}" "${LongSessionT1wDir}"/

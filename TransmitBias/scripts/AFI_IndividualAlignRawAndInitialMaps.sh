@@ -33,6 +33,8 @@ opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudi
 opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
 
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -42,6 +44,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 oldmapping=$(opts_StringToBool "$oldmappingStr")
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
@@ -53,7 +57,7 @@ if (( IsLongitudinal )); then
     fi
     SessionLong="$SessionCross.long.$TemplateLong"
     Session="$SessionLong"
-    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/${PHYSICALDIR}/xfms/T1w_cross_to_T1w_long.mat"
+    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/${physicalDir}/xfms/T1w_cross_to_T1w_long.mat"
     if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
     	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
     fi
@@ -89,8 +93,8 @@ fi
 #TSC: other two don't have /reg
 #MFG: can make it consistent
 #Build Paths
-T1wFolder="$StudyFolder/$Session"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder/$Session"/${STANDARDDIR}
+T1wFolder="$StudyFolder/$Session"/${physicalDir}
+AtlasFolder="$StudyFolder/$Session"/${standardDir}
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 WorkingDirectory="$AFIFolder"

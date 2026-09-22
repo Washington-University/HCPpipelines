@@ -5,10 +5,10 @@ function computeRecleanFeatures(StudyFolder, ...
                                 Resolution, ...
                                 CorticalParcellationFile, ...
                                 WMLabelFile, ...
-                                CSFLabelFile, VisualAreasFile, LanguageAreasFile, SubRegionsFile, NonGreyParcelsFile)
+                                CSFLabelFile, VisualAreasFile, LanguageAreasFile, SubRegionsFile, NonGreyParcelsFile, ...
+                                standardDir)
 
-STANDARDDIR = getenv('STANDARDDIR');
-if isempty(STANDARDDIR), STANDARDDIR = 'MNINonLinear'; end
+if nargin < 13 || isempty(standardDir), standardDir = 'MNINonLinear'; end
 
 fMRINames = myreadtext(fMRIListName);
 
@@ -35,28 +35,28 @@ SubjFolderlist=[StudyFolder '/' subj];
 for j=1:length(fMRINames)
     fMRIName=fMRINames{j};
 
-    sICA=load([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'],'-ascii');
+    sICA=load([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'],'-ascii');
     num_comps=size(sICA,2);
 
     OrigFeatures=single(zeros(num_comps,186));
     NewFeatures=single(zeros(num_comps,424));
 
-    MelodicFile=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'];
+    MelodicFile=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_mix'];
     if exist(MelodicFile,'file')
         sICA=load(MelodicFile,'-ascii');
-        if isfile([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt'])
-            prob_file = importdata([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt']);
-        elseif isfile([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_hp2000_thr10.txt'])
-            prob_file = importdata([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_hp2000_thr10.txt']);
+        if isfile([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt'])
+            prob_file = importdata([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_Style_Single_Multirun_Dedrift_thr10.txt']);
+        elseif isfile([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_hp2000_thr10.txt'])
+            prob_file = importdata([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix4melview_HCP_hp2000_thr10.txt']);
         end
         probability=prob_file.data(1:size(sICA,2),:);
-        Stats=load([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_ICstats'],'-ascii');
-        FeaturesFileTable=readtable([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv']); % can properly read files both w/ and w/o header; Context: pyfix has features.csv w/ header but legacy fix doesn't
+        Stats=load([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_ICstats'],'-ascii');
+        FeaturesFileTable=readtable([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix/features.csv']); % can properly read files both w/ and w/o header; Context: pyfix has features.csv w/ header but legacy fix doesn't
         FeaturesFile=table2array(FeaturesFileTable); % convert table object to a matrix
-        Powerspectra=load([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_FTmix'],'-ascii');
+        Powerspectra=load([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_FTmix'],'-ascii');
 
         % derive TR
-        file_name=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas.dtseries.nii'];
+        file_name=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas.dtseries.nii'];
         CIFTIDenseTimeSeries=ciftiopen(file_name, "wb_command");
         TR = CIFTIDenseTimeSeries.diminfo{2}.seriesStep;
 
@@ -65,17 +65,17 @@ for j=1:length(fMRINames)
         sICAnoisy=sum(abs(sICA),2);
         sICAnoisy=sICAnoisy>prctile(sICAnoisy,87.5);
 
-        CIFTI=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii'],'wb_command');
-        CIFTIVN=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas_hp' hp '_clean_vn.dscalar.nii'],'wb_command');
+        CIFTI=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii'],'wb_command');
+        CIFTIVN=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas_hp' hp '_clean_vn.dscalar.nii'],'wb_command');
         CIFTI.cdata=CIFTI.cdata./repmat(CIFTIVN.cdata,1,size(CIFTI.cdata,2));
         %system(['/media/myelin/brainmappers/Connectome_Project/YA_HCP_Final/Scripts/MSMAllResampleAndSmoothSICA.sh ' SubjFolderlist ' ' subj ' ' fMRIName ' ' hp ' ' Resolution ' ' num2str(FinalSpatialSmoothingFWHM) ' wb_command']);
-        CIFTI_file=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii'];
-        CIFTIMSMAll_file=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll.dscalar.nii'];
-        CIFTIMSMAll_smooth_file=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll_4.dscalar.nii'];
-        fs_path=[SubjFolderlist '/' STANDARDDIR '/fsaverage_LR32k'];
-        native_path=[SubjFolderlist '/' STANDARDDIR '/Native'];
-        vn_file_path=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn.dscalar.nii'];
-        vn_smooth_file_path=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'];
+        CIFTI_file=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.dscalar.nii'];
+        CIFTIMSMAll_file=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll.dscalar.nii'];
+        CIFTIMSMAll_smooth_file=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll_4.dscalar.nii'];
+        fs_path=[SubjFolderlist '/' standardDir '/fsaverage_LR32k'];
+        native_path=[SubjFolderlist '/' standardDir '/Native'];
+        vn_file_path=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn.dscalar.nii'];
+        vn_smooth_file_path=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'];
 
         system(['wb_command -surface-sphere-project-unproject ' fs_path '/' subj '.L.sphere.32k_fs_LR.surf.gii ' native_path '/' subj '.L.sphere.MSMSulc.native.surf.gii ' native_path '/' subj '.L.sphere.MSMAll.native.surf.gii ' fs_path '/' subj '.L.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii']);
         system(['wb_command -surface-sphere-project-unproject ' fs_path '/' subj '.R.sphere.32k_fs_LR.surf.gii ' native_path '/' subj '.R.sphere.MSMSulc.native.surf.gii ' native_path '/' subj '.R.sphere.MSMAll.native.surf.gii ' fs_path '/' subj '.R.sphere.MSMSulc_MSMAll.32k_fs_LR.surf.gii']);
@@ -86,30 +86,30 @@ for j=1:length(fMRINames)
         CIFTIMSMAll=ciftiopen(CIFTIMSMAll_file,'wb_command');
         CIFTIMSMAllVN=ciftiopen(vn_file_path,'wb_command');
         CIFTIMSMAll.cdata=CIFTIMSMAll.cdata./repmat(CIFTIMSMAllVN.cdata,1,size(CIFTIMSMAll.cdata,2));
-        CIFTIMSMAllSmooth=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'],'wb_command');
-        CIFTIMSMAllSmoothVN=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'],'wb_command');
+        CIFTIMSMAllSmooth=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_MSMAll_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'],'wb_command');
+        CIFTIMSMAllSmoothVN=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas_MSMAll_hp' hp '_clean_vn_' num2str(FinalSpatialSmoothingFWHM) '.dscalar.nii'],'wb_command');
         CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./repmat(CIFTIMSMAllSmoothVN.cdata,1,size(CIFTIMSMAllSmooth.cdata,2));
-        %CIFTIDropouts=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_dropouts.dscalar.nii'],'wb_command');
-        cifti_dropout_file=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_dropouts.dscalar.nii'];
+        %CIFTIDropouts=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_dropouts.dscalar.nii'],'wb_command');
+        cifti_dropout_file=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_dropouts.dscalar.nii'];
 
         CIFTIDropouts=ciftiopen(cifti_dropout_file,'wb_command');
-        WMPARC=read_avw([SubjFolderlist '/' STANDARDDIR '/ROIs/wmparc.' Resolution '.nii.gz']);
-        ROIFolder=[SubjFolderlist '/' STANDARDDIR '/ROIs'];
+        WMPARC=read_avw([SubjFolderlist '/' standardDir '/ROIs/wmparc.' Resolution '.nii.gz']);
+        ROIFolder=[SubjFolderlist '/' standardDir '/ROIs'];
 
         system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' CSFLabelFile ' ' ROIFolder '/CSFReg.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
         system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' WMLabelFile ' ' ROIFolder '/WMReg.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
         system(['wb_command -volume-label-import ' ROIFolder '/wmparc.' Resolution '.nii.gz ' NonGreyParcelsFile ' ' ROIFolder '/NonGrey.' Resolution '.nii.gz -discard-others -drop-unused-labels']);
 
-        WM=read_avw([SubjFolderlist '/' STANDARDDIR '/ROIs/WMReg.' Resolution '.nii.gz']);
-        CSF=read_avw([SubjFolderlist '/' STANDARDDIR '/ROIs/CSFReg.' Resolution '.nii.gz']);
-        NONGREY=read_avw([SubjFolderlist '/' STANDARDDIR '/ROIs/NonGrey.' Resolution '.nii.gz']);
+        WM=read_avw([SubjFolderlist '/' standardDir '/ROIs/WMReg.' Resolution '.nii.gz']);
+        CSF=read_avw([SubjFolderlist '/' standardDir '/ROIs/CSFReg.' Resolution '.nii.gz']);
+        NONGREY=read_avw([SubjFolderlist '/' standardDir '/ROIs/NonGrey.' Resolution '.nii.gz']);
         % dropout file is not ready for lifespan
-        %DROPOUT=read_avw([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_dropouts.nii.gz']);
-        dropout_file=[SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_dropouts.nii.gz'];
+        %DROPOUT=read_avw([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_dropouts.nii.gz']);
+        dropout_file=[SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_dropouts.nii.gz'];
 
         DROPOUT=read_avw(dropout_file);
-        VOLUME=read_avw([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz']);
-        SBREFOrig = read_avw([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz']);
+        VOLUME=read_avw([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz']);
+        SBREFOrig = read_avw([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz']);
 
         VOLUME = reshape(VOLUME, prod([size(VOLUME, 1), size(VOLUME, 2), size(VOLUME, 3)]), size(VOLUME, 4));
         volumeValid = range(VOLUME, 2) > 0;
@@ -141,14 +141,14 @@ for j=1:length(fMRINames)
         VOLSMOOTHROIS=WMPARC.*0;
         VOLSMOOTHROIS(volumeValid) = VolSmoothROIs_data;
         VOLSMOOTHROIS=reshape(VOLSMOOTHROIS,size(SBREFOrig,1),size(SBREFOrig,2),size(SBREFOrig,3),size(SBREFOrig,4));
-        save_avw(VOLSMOOTHROIS,[SubjFolderlist '/' STANDARDDIR '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz'],'f',[1.6 1.6 1.6 1]);
-        system(['fslcpgeom ' SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz ' SubjFolderlist '/' STANDARDDIR '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz -d']);
+        save_avw(VOLSMOOTHROIS,[SubjFolderlist '/' standardDir '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz'],'f',[1.6 1.6 1.6 1]);
+        system(['fslcpgeom ' SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_SBRef.nii.gz ' SubjFolderlist '/' standardDir '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz -d']);
 
         SmoothingSigma=FinalSpatialSmoothingFWHM/(2*sqrt(2*log(2)));
-        system(['wb_command -volume-label-import ' SubjFolderlist '/' STANDARDDIR '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz "" ' SubjFolderlist '/' STANDARDDIR '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz']);
-        system(['wb_command -volume-parcel-smoothing ' SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz ' SubjFolderlist '/' STANDARDDIR '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz ' num2str(SmoothingSigma) ' ' SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
+        system(['wb_command -volume-label-import ' SubjFolderlist '/' standardDir '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz "" ' SubjFolderlist '/' standardDir '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz']);
+        system(['wb_command -volume-parcel-smoothing ' SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC.nii.gz ' SubjFolderlist '/' standardDir '/ROIs/VolumeSmoothROIs.' Resolution '.nii.gz ' num2str(SmoothingSigma) ' ' SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
 
-        VOLUMESMOOTH=read_avw([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
+        VOLUMESMOOTH=read_avw([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/filtered_func_data.ica/melodic_oIC_FWHM' num2str(FinalSpatialSmoothingFWHM) '.nii.gz']);
         VolumeSmooth_data = vol_reshape_and_mask(VOLUMESMOOTH, volumeValid);
         VolumeSmooth_data=VolumeSmooth_data./std(Volume_data(:));
         CIFTIMSMAllSmooth.cdata=CIFTIMSMAllSmooth.cdata./std(CIFTIMSMAll.cdata(:));
@@ -247,19 +247,19 @@ for j=1:length(fMRINames)
             end
 
         end
-        save([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/original_fix_features.mat'], 'OrigFeatures', '-v7.3')
-        save([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/reclean_features.mat'], 'NewFeatures', '-v7.3')
-        save([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix_prob.mat'], 'probs', '-v7.3')
+        save([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/original_fix_features.mat'], 'OrigFeatures', '-v7.3')
+        save([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/reclean_features.mat'], 'NewFeatures', '-v7.3')
+        save([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix_prob.mat'], 'probs', '-v7.3')
 
         T_fix = cell2table(num2cell(OrigFeatures), 'RowNames', row_names);
         T_reclean = cell2table(num2cell(NewFeatures), 'RowNames', row_names);
         T_fix_prob = cell2table(num2cell(probs), 'RowNames', row_names);
         T_fix_reclean = cell2table(num2cell([OrigFeatures, NewFeatures]), 'RowNames', row_names);
 
-        writetable(T_fix, [SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/original_fix_features.csv'], 'WriteRowNames', true);
-        writetable(T_reclean, [SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/reclean_features.csv'], 'WriteRowNames', true);
-        writetable(T_fix_reclean, [SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix_reclean_features.csv'], 'WriteRowNames', true);
-        writetable(T_fix_prob, [SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix_prob.csv'], 'WriteRowNames', true);
+        writetable(T_fix, [SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/original_fix_features.csv'], 'WriteRowNames', true);
+        writetable(T_reclean, [SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/reclean_features.csv'], 'WriteRowNames', true);
+        writetable(T_fix_reclean, [SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix_reclean_features.csv'], 'WriteRowNames', true);
+        writetable(T_fix_prob, [SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_hp' hp '.ica/fix_prob.csv'], 'WriteRowNames', true);
     end
 end
 

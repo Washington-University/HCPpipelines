@@ -56,6 +56,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $
 2 = Octave" "$g_matlab_default_mode"
 
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -74,17 +76,19 @@ log_Msg "Showing HCP Pipelines version"
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 # ------------------------------------------------------------------------------
 #  Main processing of script.
 # ------------------------------------------------------------------------------
 # Naming Conventions and other variables
 Caret7_Command=${CARET7DIR}/wb_command
-AtlasFolder="${StudyFolder}/${Session}/${STANDARDDIR}"
+AtlasFolder="${StudyFolder}/${Session}/${standardDir}"
 DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
 NativeFolder="${AtlasFolder}/Native"
 ResultsFolder="${AtlasFolder}/Results/${OutputfMRIName}"
-T1wFolder="${StudyFolder}/${Session}/${PHYSICALDIR}"
+T1wFolder="${StudyFolder}/${Session}/${physicalDir}"
 DownSampleT1wFolder="${T1wFolder}/fsaverage_LR${LowResMesh}k"
 NativeT1wFolder="${T1wFolder}/Native"
 

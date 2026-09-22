@@ -28,6 +28,7 @@ opts_AddMandatory '--output-fmri-name' 'OutputfMRIName' 'rfMRI_REST' "name to us
 opts_AddOptional '--mask-save-path' 'MaskSavePath' 'path' "subfolder name for output mask files"
 opts_AddOptional '--label-text-folder' 'ConfigFilePath' 'path' "folder containing the specific lable table text files needed by this script"
 opts_AddOptional '--dilate' 'Dilate' 'distance in mm' "amount of dilation to use for the 'avoid' masks, default 5.0" '5.0'
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -37,6 +38,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 fMRIResolution=${fMRIResolution}
 VolumeTemplate=${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii
 #erode_mm=(1.25 1.75 2.25 2.75 3.25 3.75 4.25 4.75)
@@ -67,7 +69,7 @@ done
 #                ${MaskSavePath}/${GroupAverageName}_brainboundary_${erode_mm_final[6]}mm_${OutputfMRIName}.${fMRIResolution}.dscalar.nii
 #                ${MaskSavePath}/${GroupAverageName}_brainboundary_${erode_mm_final[7]}mm_${OutputfMRIName}.${fMRIResolution}.dscalar.nii)
 
-MNIPath=${StudyFolder}/${GroupAverageName}/${STANDARDDIR}
+MNIPath=${StudyFolder}/${GroupAverageName}/${standardDir}
 mkdir -p "$MaskSavePath"
 
 # specific brain region masks

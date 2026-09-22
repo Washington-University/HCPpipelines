@@ -46,6 +46,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -55,18 +56,19 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-InputStats="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/sICA/iq_$sICAdim.wb_annsub.csv"
+InputStats="$OutGroupFolder/${standardDir}/Results/$fMRIConcatName/sICA/iq_$sICAdim.wb_annsub.csv"
 
 # if Group sICA hand classifications exists, use it to filter the group sICA components before running tICA
-HandSignalFile="${OutGroupFolder}/${STANDARDDIR}/Results/${fMRIConcatName}/sICA/HandSignal.txt" 
+HandSignalFile="${OutGroupFolder}/${standardDir}/Results/${fMRIConcatName}/sICA/HandSignal.txt" 
 if [ -e "${HandSignalFile}" ]; then
     tICADim=$(wc -w < "${HandSignalFile}")
 else
     tICADim="$sICAdim"
 fi
-OutputFolder="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/tICA_d$tICADim"
+OutputFolder="$OutGroupFolder/${standardDir}/Results/$fMRIConcatName/tICA_d$tICADim"
 
 OutTCSName="$OutputFolder/sICA_TCS_$sICAdim.sdseries.nii"
 OutTCSMaskName="$OutputFolder/sICA_TCSMASK_$sICAdim.sdseries.nii"
@@ -119,7 +121,7 @@ rm -f -- "$TCSListName" "$MapListName" "$VolMapListName" "$SpectraListName"
 
 for Subject in "${SubjList[@]}"
 do
-    FilePrefix="$StudyFolder/$Subject/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
+    FilePrefix="$StudyFolder/$Subject/${standardDir}/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
     echo "${FilePrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii" >> "$TCSListName"
     echo "${FilePrefix}.${LowResMesh}k_fs_LR.dscalar.nii" >> "$MapListName"
     echo "${FilePrefix}_vol.${LowResMesh}k_fs_LR.dscalar.nii" >> "$VolMapListName"

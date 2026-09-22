@@ -22,6 +22,8 @@ opts_AddMandatory '--group-corrected-myelin' 'GroupCorrected' 'file' "the group-
 opts_AddMandatory '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates"
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
+opts_AddOptional '--physical-dir' 'PhysicalFolderName' 'name' "name of subject physical-space directory, default 'T1w'" 'T1w'
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
 opts_AddOptional '--myelin-mapping-fwhm' 'MyelinMappingFWHM' 'number' "fwhm value to use in -myelin-style, default 5" '5'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
@@ -35,6 +37,9 @@ if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 useRCfiles=$(opts_StringToBool "$useRCfilesStr")
 
@@ -66,8 +71,8 @@ case "$MatlabMode" in
 esac
 
 #Build Paths
-T1wFolder="$StudyFolder"/"$Subject"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder"/"$Subject"/${STANDARDDIR}
+T1wFolder="$StudyFolder"/"$Subject"/${physicalDir}
+AtlasFolder="$StudyFolder"/"$Subject"/${standardDir}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -235,7 +240,7 @@ wb_command -cifti-math "myelin / (transmit * $Slope + (1 - $Slope))" "$DownSampl
 
 #Transmit Field Correction Application Volume
 
-#NOTE: ${STANDARDDIR}/T1wDividedByT2w.nii.gz already has RC-correction as needed, unlike ${PHYSICALDIR}/
+#NOTE: ${standardDir}/T1wDividedByT2w.nii.gz already has RC-correction as needed, unlike ${physicalDir}/
 wb_command -volume-math "(myelin / (transmit * $Slope + (1 - $Slope))) * MASK" "$AtlasFolder"/T1wDividedByT2w_Corr.nii.gz -fixnan 0 \
     -var myelin "$AtlasFolder"/T1wDividedByT2w.nii.gz \
     -var transmit "$AtlasFolder"/rB1Tx.nii.gz \

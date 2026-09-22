@@ -39,6 +39,7 @@ opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'numstring' "representing the 
 
 opts_AddMandatory '--low-res-meshes' 'LowResMesh' 'numstring' "representing the low res mesh (@ delimited list) (e.g. 32)"
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -48,13 +49,14 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 log_Check_Env_Var CARET7DIR
 
 Subjlist=${Subjlist//@/ }
 log_Msg "Subjlist: ${Subjlist}"
 
-CommonAtlasFolder="${CommonFolder}/${STANDARDDIR}"
+CommonAtlasFolder="${CommonFolder}/${standardDir}"
 log_Msg "CommonAtlasFolder: ${CommonAtlasFolder}"
 
 #CommonDownSampleFolder="${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k"
@@ -81,7 +83,7 @@ for Hemisphere in L R ; do
 	for Subject in ${Subjlist} ; do
 		log_Msg "Working on subject: ${Subject}"
 
-		AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+		AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
 		log_Msg "AtlasFolder: ${AtlasFolder}"
 		NativeFolder="${AtlasFolder}/Native"
 		log_Msg "NativeFolder: ${NativeFolder}"
@@ -109,7 +111,7 @@ for Hemisphere in L R ; do
 		# line length is.)
 
 		#SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
-		SurfAverageSTRING+=" -surf ${Subject}/${STANDARDDIR}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"
+		SurfAverageSTRING+=" -surf ${Subject}/${standardDir}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"
 
 		log_Msg "SurfAverageSTRING: ${SurfAverageSTRING}"
 		#log_Msg "Length of SurfAverageSTRING: ${#SurfAverageSTRING}"

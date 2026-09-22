@@ -69,6 +69,8 @@ opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'number' "usually '32', the stan
 opts_AddMandatory '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' "location of FreeSurferSubcorticalLabelTableLut.txt"
 opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin map to use for bias correction"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
+opts_AddOptional '--physical-dir' 'PhysicalFolderName' 'name' "name of subject physical-space directory, default 'T1w'" 'T1w'
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--logdir' 'LogDir' 'string' "directory where logs will be written (default: current directory)" ""
 opts_ParseArguments "$@"
 
@@ -148,6 +150,8 @@ if (( start_stage==0 )); then
     --template2mmmask="$Template2mmMask"                                  \
     --fnirtconfig="$FNIRTConfig"                                          \
     --freesurferlabels="$FreeSurferLabels"                                \
+    --physical-dir="$PhysicalFolderName"                                  \
+    --standard-dir="$StandardFolderName"                                  \
       )
       par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   done
@@ -175,6 +179,8 @@ if (( start_stage <= 1 )) && (( end_stage >= 1 )); then
       --template2mmmask="$Template2mmMask"                  \
       --fnirtconfig="$FNIRTConfig"                          \
       --freesurferlabels="$FreeSurferLabels"                \
+        --physical-dir="$PhysicalFolderName"                  \
+        --standard-dir="$StandardFolderName"                  \
   )
   par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
   par_finalize_stage $parallel_mode $max_jobs
@@ -203,6 +209,8 @@ if (( start_stage <=2 )) && (( end_stage >= 2 )); then
     --lowresmesh="$LowResMeshes"                    \
     --subcortgraylabels="$SubcorticalGrayLabels"    \
     --refmyelinmaps="$ReferenceMyelinMaps"          \
+    --physical-dir="$PhysicalFolderName"            \
+    --standard-dir="$StandardFolderName"            \
     --regname="$RegName"
     )
     par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
@@ -229,6 +237,8 @@ if (( start_stage <=3 )) && (( end_stage >=3 )); then
       --lowresmesh="$LowResMeshes"                    \
       --subcortgraylabels="$SubcorticalGrayLabels"    \
       --refmyelinmaps="$ReferenceMyelinMaps"          \
+        --physical-dir="$PhysicalFolderName"            \
+        --standard-dir="$StandardFolderName"            \
       --regname="$RegName"
   )
   par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"
@@ -254,6 +264,8 @@ if (( start_stage <= 4 )) && (( end_stage >=4 )); then
     --lowresmesh="$LowResMeshes"                    \
     --subcortgraylabels="$SubcorticalGrayLabels"    \
     --refmyelinmaps="$ReferenceMyelinMaps"          \
+    --physical-dir="$PhysicalFolderName"            \
+    --standard-dir="$StandardFolderName"            \
     --regname="$RegName"
       )
     par_add_job_to_stage $parallel_mode "$fslsub_queue" "${cmd[@]}"

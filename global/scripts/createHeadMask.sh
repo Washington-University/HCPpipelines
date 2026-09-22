@@ -19,11 +19,12 @@ source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 opts_SetScriptDescription "Create head mask from T1w and T2w images, and brain mask"
 
 ## Define arguments
-opts_AddMandatory '--t1w' 'T1wImage' 'path' "full path to T1w image (e.g., <subjDir>/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz)"
+opts_AddMandatory '--t1w' 'T1wImage' 'path' "full path to T1w image (e.g., <subjDir>/${physicalDir}/T1w_acpc_dc_restore.nii.gz)"
 opts_AddMandatory '--t2w' 'T2wImage' 'path' "full path to T2w image (e.g., <subjDir>/T2w/T2w_acpc_dc_restore.nii.gz)"
-opts_AddMandatory '--brain-mask' 'BrainMaskFile' 'path' "full path to brain mask file (e.g., <subjDir>/${PHYSICALDIR}/brainmask_fs.nii.gz)"
-opts_AddMandatory '--output-filename' 'OutputFile' 'path' "full path to output head mask file (e.g., <subjDir>/${PHYSICALDIR}/Head.nii.gz)"
+opts_AddMandatory '--brain-mask' 'BrainMaskFile' 'path' "full path to brain mask file (e.g., <subjDir>/${physicalDir}/brainmask_fs.nii.gz)"
+opts_AddMandatory '--output-filename' 'OutputFile' 'path' "full path to output head mask file (e.g., <subjDir>/${physicalDir}/Head.nii.gz)"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -33,6 +34,7 @@ fi
 
 ## Display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 ## Validate that input files exist
 if [[ ! -f "$T1wImage" ]]; then

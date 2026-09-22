@@ -43,6 +43,7 @@ opts_AddOptional '--cifti-out' 'ciftiOut' 'file' "output filename for extracted 
 opts_AddOptional '--concat-volume-input' 'concatVol' 'file' "filename of the concatenated volume (for making volume output)"
 opts_AddOptional '--volume-out' 'volOut' 'file' "output filename for extracted volume data"
 opts_AddOptional '--csv-out' 'csvOut' 'file' "output filename for csv of start and end index for all run names"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -52,6 +53,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 if [[ -z "$ciftiOut" && -z "$volOut" && -z "$csvOut" ]]
 then
@@ -145,18 +147,18 @@ do
     NumTPs=0
     if ((testVol))
     then
-        if [[ ! -f "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}.nii.gz" ]]
+        if [[ ! -f "$StudyFolder/$Subject/${standardDir}/Results/$fmriName/${fmriName}.nii.gz" ]]
         then
-            log_Msg "missing run: '$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}.nii.gz'"
+            log_Msg "missing run: '$StudyFolder/$Subject/${standardDir}/Results/$fmriName/${fmriName}.nii.gz'"
         else
-            NumTPs=$(fslval "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}.nii.gz" dim4)
+            NumTPs=$(fslval "$StudyFolder/$Subject/${standardDir}/Results/$fmriName/${fmriName}.nii.gz" dim4)
         fi
     else
-        if [[ ! -f "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" ]]
+        if [[ ! -f "$StudyFolder/$Subject/${standardDir}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" ]]
         then
-            log_Msg "missing run: '$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii'"
+            log_Msg "missing run: '$StudyFolder/$Subject/${standardDir}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii'"
         else
-            NumTPs=$(wb_command -file-information "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
+            NumTPs=$(wb_command -file-information "$StudyFolder/$Subject/${standardDir}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
         fi
     fi
     curTimepoints=$((curTimepoints + NumTPs))

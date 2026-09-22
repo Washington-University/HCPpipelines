@@ -41,6 +41,7 @@ opts_AddMandatory '--proc-string' 'fMRIProcSTRING' 'string' 'name component used
 opts_AddMandatory '--out-group-name' 'GroupAverageName' 'string' 'name to use for the output folder'
 opts_AddMandatory '--pca-internal-dim' 'PCAInternalDim' 'integer' 'internal MIGP dimensionality'
 opts_AddMandatory '--pca-out-dim' 'PCAOutputDim' 'integer' 'number of components to output'
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--resumable' 'checkpointFile' 'filename' 'file to use to save and resume interrupted processing, must use .mat extension'
 opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
 0 = compiled MATLAB
@@ -55,6 +56,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+standardDir="$StandardFolderName"
 
 case "$MatlabMode" in
     (0)
@@ -83,7 +86,7 @@ then
 fi
 
 #Naming Conventions
-CommonAtlasFolder="$StudyFolder/$GroupAverageName/${STANDARDDIR}"
+CommonAtlasFolder="$StudyFolder/$GroupAverageName/${standardDir}"
 OutputFolder="$CommonAtlasFolder/Results/$OutputfMRIName"
 
 OutputPCA="$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}"
@@ -101,9 +104,11 @@ this_script_dir=$(dirname "$0")
 
 #matlab function arguments have been changed to strings, to avoid having two copies of the argument list in the script
 matlab_argarray=("$StudyFolder" "$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}.txt" "$fMRINames" "$fMRIProcSTRING" "$PCAInternalDim" "$PCAOutputDim" "$OutputPCA" "$checkpointFile")
+matlab_argarray_interp=("${matlab_argarray[@]}" "$StandardFolderName")
 
 case "$MatlabMode" in
     (0)
+        export standardDir="$StandardFolderName"
         matlab_cmd=("$this_script_dir/Compiled_MIGP/run_MIGP.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
         log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
         "${matlab_cmd[@]}"
@@ -111,7 +116,7 @@ case "$MatlabMode" in
     (1 | 2)
         #reformat argument array so matlab sees them as strings
         matlab_args=""
-        for thisarg in "${matlab_argarray[@]}"
+        for thisarg in "${matlab_argarray_interp[@]}"
         do
             if [[ "$matlab_args" != "" ]]
             then

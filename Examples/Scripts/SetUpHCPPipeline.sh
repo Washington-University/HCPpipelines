@@ -43,26 +43,6 @@ export FSL_DIR="${FSLDIR}"
 # If you want to use MSM Configuration files other than those already provided, can change the following
 export MSMCONFIGDIR="${HCPPIPEDIR}/MSMConfig"
 
-# Set Standard space and Physical space folder names
-export PHYSICALDIR='T1w' # Files in this directory contain data in the rigid-aligned ACPC space of each subject
-                         # When analysing physical quantities like cortical thickness or surface area, or
-                         # using geodesic distances use the files in this directory (most of the time)
-                         # Note that surfaces in this directory still have the standard mesh topology 
-                         # but have the individual rather than standard geometry.
-                         #
-                         # The $PHYSICALDIR/xfms directory contains the warpfields to resample volume data
-                         # between the physical $PHYSICALDIR and standard $STANDARDDIR spaces
-                         # in these files, physical space called "acpc_dc" and standard space is called "standard"
-
-export STANDARDDIR='MNINonLinear' # Files in this directory contain data in the standard space of the template brain, 
-                                  # typically, deformed by non-linear registration. 
-                                  # Most pipeline outputs, including fMRI results are in this space
-                                  # While surface data (e.g. func.gii metric files or dscalar.nii cifti files) in this directory 
-                                  # can be shown on $PHYSICALDIR surfaces, due to their shared topology and surface registration,
-                                  # the volume components of cifti files in this directory are in the standard space, and will not
-                                  # be in alignment with the $PHYSICALDIR volume data or surfaces.  
-
-
 # ---------------------------------------------------------
 # Users probably won't need to edit anything below this line
 # ---------------------------------------------------------

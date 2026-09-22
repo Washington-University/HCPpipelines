@@ -80,6 +80,7 @@ opts_AddOptional '--delete-intermediates' 'DeleteIntermediates' 'TRUE or FALSE' 
 
 opts_AddOptional '--clean-substring' 'CleanSubstring' 'string' "the clean mode substring, can be 'clean' as sICA+FIX cleaned,'clean_rclean' as sICA+FIX cleaned and reclean, default to 'clean'" "clean"
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -89,6 +90,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
@@ -125,9 +127,9 @@ have_hand_reclassification()
 	local HighPass="${4}"
 
 	if (( HighPass >= 0 )); then
-		[ -e "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+		[ -e "${StudyFolder}/${Subject}/${standardDir}/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 	else
-		[ -e "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}.ica/HandNoise.txt" ]
+		[ -e "${StudyFolder}/${Subject}/${standardDir}/Results/${fMRIName}/${fMRIName}.ica/HandNoise.txt" ]
 	fi
 }
 
@@ -202,7 +204,7 @@ fi
 log_Msg "Use fixlist=$fixlist"
 
 DIR=$(pwd)
-cd ${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}
+cd ${StudyFolder}/${Subject}/${standardDir}/Results/${fMRIName}
 
 # Note: fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
 # that any desired filtering has already been done outside of fix.
@@ -389,7 +391,7 @@ log_Msg "Done running fix_3_clean"
 
 # Remove any existing old versions of the cleaned data (normally they should be overwritten
 # in the renaming that follows, but this ensures that any old versions don't linger)
-cd ${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}
+cd ${StudyFolder}/${Subject}/${standardDir}/Results/${fMRIName}
 fmri=${fMRIName}
 if (( hp >= 0 )); then
 	fmrihp=${fmri}_hp${hp}

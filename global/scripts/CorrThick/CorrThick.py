@@ -15,12 +15,21 @@ surface=str(sys.argv[5])
 number=float(sys.argv[6])
 iteration=str(sys.argv[7])
 smooth=str(sys.argv[8])
+standard_dir=str(sys.argv[9]) if len(sys.argv) > 9 else 'MNINonLinear'
+physical_dir=str(sys.argv[10]) if len(sys.argv) > 10 else 'T1w'
 
 import neighbor_info
 import curvature
 import metric_regression
 import roi
 import wb
+
+neighbor_info.standardDir = standard_dir
+curvature.standardDir = standard_dir
+metric_regression.standardDir = standard_dir
+roi.standardDir = standard_dir
+wb.standardDir = standard_dir
+wb.physicalDir = physical_dir
 
 ################################################################################
 mesh='164k'

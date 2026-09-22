@@ -160,6 +160,7 @@ opts_AddOptional '--scannerpatientposition' 'ScannerPatientPosition' 'string' "S
 
 opts_AddOptional '--usephasezero' 'UsePhaseZero' 'Boolean' "Use T2w as phase-zero reference volume for NHP topup" "False"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -168,6 +169,7 @@ then
 fi
 
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 #parse booleans
 SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
@@ -244,7 +246,7 @@ b0dist=45               # Minimum distance in volumes between b0s considered for
 
 # Establish output directory paths
 outdir=${StudyFolder}/${Session}/${DWIName}
-outdirT1w=${StudyFolder}/${Session}/${PHYSICALDIR}/${DWIName}
+outdirT1w=${StudyFolder}/${Session}/${physicalDir}/${DWIName}
 
 # Delete any existing output sub-directories
 if [ -d ${outdir} ]; then

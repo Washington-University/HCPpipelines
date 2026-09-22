@@ -58,6 +58,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -67,6 +69,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 #sanity check boolean strings and convert to 1 and 0
 DoZ=$(opts_StringToBool "$DoZString")
@@ -109,8 +113,8 @@ then
     DoVol=1
 fi
 
-MNIFolder="$StudyFolder/$Subject/${STANDARDDIR}"
-T1wFolder="$StudyFolder/$Subject/${PHYSICALDIR}"
+MNIFolder="$StudyFolder/$Subject/${standardDir}"
+T1wFolder="$StudyFolder/$Subject/${physicalDir}"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 

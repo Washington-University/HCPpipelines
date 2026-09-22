@@ -58,13 +58,15 @@ opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitu
 #generic other settings
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#MFG: ${PHYSICALDIR}/ outputs should use transmit resolution, ${STANDARDDIR}/ use grayordinates
+#MFG: ${physicalDir}/ outputs should use transmit resolution, ${standardDir}/ use grayordinates
 #MFG: should add default of 2 to PostFS if we have a default here
 opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates, default '2'" '2' '--grayordinatesres'
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res"
 opts_AddOptional '--myelin-mapping-fwhm' 'MyelinMappingFWHM' 'number' "fwhm value to use in -myelin-style, default 5" '5'
 opts_AddOptional '--old-myelin-mapping' 'oldmappingStr' 'TRUE or FALSE' "if myelin mapping was done using version 1.2.3 or earlier of wb_command, set this to true" 'false'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -74,6 +76,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 oldmapping=$(opts_StringToBool "$oldmappingStr")
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
@@ -131,8 +135,8 @@ WorkingDIR="$StudyFolder"/"$Session"/TransmitBias
 mkdir -p "$WorkingDIR"
 
 #Build Paths
-T1wFolder="$StudyFolder"/"$Session"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder"/"$Session"/${STANDARDDIR}
+T1wFolder="$StudyFolder"/"$Session"/${physicalDir}
+AtlasFolder="$StudyFolder"/"$Session"/${standardDir}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -162,7 +166,7 @@ then
         -bad-brainordinate-roi "$zerocheck"
 fi
 
-#NOTE: this script also generates ${PHYSICALDIR}/T1w_acpc_dc_restore."$transmitRes".nii.gz
+#NOTE: this script also generates ${physicalDir}/T1w_acpc_dc_restore."$transmitRes".nii.gz
 "$scriptsdir"/CreateTransmitBiasROIs.sh \
     --study-folder="$StudyFolder" \
     --subject="$Session" \
@@ -175,7 +179,7 @@ fi
 #AFI is an interleaved 3D scan, can't have interpretable motion between TRs in image space, but can use it for alignment
 #B1Tx is phase-based, but magnitude is used for alignment
 
-#"${PHYSICALDIR}/ReceiveFieldCorrection.nii.gz" filename isn't obviously myelin-related, but the contents are
+#"${physicalDir}/ReceiveFieldCorrection.nii.gz" filename isn't obviously myelin-related, but the contents are
 #MFG: stuck, already packaged
 ReceiveBias=""
 if [[ "$T1wunprocstr" != "" ]]
@@ -240,16 +244,16 @@ then
         -var origmyelin "$T1wFolder"/T1wDividedByT2w.nii.gz \
         -var RC "$T1wFolder"/ReceiveFieldCorrection.nii.gz
 
-    #NOTE: ${STANDARDDIR}/T1wDivT2w will always be RC-corrected, but ${PHYSICALDIR}/T1wDivT2w won't (already existed, also _ribbon version...)
+    #NOTE: ${standardDir}/T1wDivT2w will always be RC-corrected, but ${physicalDir}/T1wDivT2w won't (already existed, also _ribbon version...)
     wb_command -volume-math "clamp(T1w / T2w / (RC + (RC == 0)), 0, 100)" "$AtlasFolder"/T1wDividedByT2w.nii.gz -fixnan 0 \
-        -var T1w "$AtlasFolder"/${PHYSICALDIR}.nii.gz \
+        -var T1w "$AtlasFolder"/${physicalDir}.nii.gz \
         -var T2w "$AtlasFolder"/T2w.nii.gz \
         -var RC "$AtlasFolder"/ReceiveFieldCorrection.nii.gz
         
     #we will generate corrected _ribbon outputs (later) by masking full volume, ignoring the clamping difference of previous files
 else
     wb_command -volume-math 'clamp(T1w / T2w, 0, 100)' "$AtlasFolder"/T1wDividedByT2w.nii.gz -fixnan 0 \
-        -var T1w "$AtlasFolder"/${PHYSICALDIR}.nii.gz \
+        -var T1w "$AtlasFolder"/${physicalDir}.nii.gz \
         -var T2w "$AtlasFolder"/T2w.nii.gz
 fi
 

@@ -48,6 +48,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 1 = interpreted MATLAB
 2 = Octave" '1'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -57,6 +59,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 useRCfiles=$(opts_StringToBool "$useRCfilesStr")
 
@@ -102,8 +106,8 @@ WorkingDIR="$StudyFolder"/"$Subject"/TransmitBias
 mkdir -p "$WorkingDIR"
 
 #Build Paths
-T1wFolder="$StudyFolder"/"$Subject"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder"/"$Subject"/${STANDARDDIR}
+T1wFolder="$StudyFolder"/"$Subject"/${physicalDir}
+AtlasFolder="$StudyFolder"/"$Subject"/${standardDir}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k

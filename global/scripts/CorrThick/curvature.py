@@ -17,12 +17,12 @@ import os
 import nibabel as nib
 import math
 
-STANDARDDIR = os.environ.get("STANDARDDIR", "MNINonLinear")
+standardDir = os.environ.get("STANDARDDIR", "MNINonLinear")
 
 def Gaussian_curvature(x,y,z,subjects_dir,subject,hemi,surface):
 
     input_ndl = '{sub}.{h}.{s}.neighbor.asc'.format(sub=subject,h=hemi,s=surface) #Read the neighbor .asc file
-    ndl_file = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', input_ndl)
+    ndl_file = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', input_ndl)
     ndl = np.loadtxt(ndl_file)
     nb = np.zeros(len(x)) # max number of neighbor for each vertex
     for i in range(len(x)):
@@ -91,14 +91,14 @@ def Gaussian_curvature(x,y,z,subjects_dir,subject,hemi,surface):
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(K))
     K_name = '{sub}.{h}.{s}.K.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    K_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', K_name)
+    K_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', K_name)
     nib.save(data, K_name)
     
     a_sum = np.float32(a_sum) #gifti supports float32 only
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(a_sum))
     a_name = '{sub}.{h}.{s}.area.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    a_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', a_name)
+    a_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', a_name)
     nib.save(data, a_name)
     
     return 
@@ -106,7 +106,7 @@ def Gaussian_curvature(x,y,z,subjects_dir,subject,hemi,surface):
 def mean_curvature(x,y,z,subjects_dir,subject,hemi,surface):
     
     input_ndl = '{sub}.{h}.{s}.neighbor.asc'.format(sub=subject,h=hemi,s=surface) #Read the neighbor .asc file
-    ndl_file = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', input_ndl)
+    ndl_file = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', input_ndl)
     ndl = np.loadtxt(ndl_file)
     nb = np.zeros(len(ndl)) # max number of neighbor for each vertex
     for i in range(len(ndl)):
@@ -162,7 +162,7 @@ def mean_curvature(x,y,z,subjects_dir,subject,hemi,surface):
 
     # read the area file
     a_name = '{sub}.{h}.{s}.area.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    a_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', a_name)
+    a_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', a_name)
     a_sum = nib.load(a_name)
     a_sum = a_sum.agg_data()
     H = H_sum/4/(a_sum/3) # This is the final mean curvature
@@ -172,7 +172,7 @@ def mean_curvature(x,y,z,subjects_dir,subject,hemi,surface):
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(H))
     H_name = '{sub}.{h}.{s}.H.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    H_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', H_name)
+    H_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', H_name)
     nib.save(data, H_name)
     
     return 
@@ -181,12 +181,12 @@ def k1_k2_SI(x,y,z,subjects_dir,subject,hemi,surface):
         
     # read H and K 
     H_name = '{sub}.{h}.{s}.H.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    H_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', H_name)
+    H_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', H_name)
     H = nib.load(H_name)
     h = H.agg_data()
 
     K_name = '{sub}.{h}.{s}.K.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    K_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', K_name)
+    K_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', K_name)
     K = nib.load(K_name)
     k = K.agg_data()
               
@@ -221,7 +221,7 @@ def k1_k2_SI(x,y,z,subjects_dir,subject,hemi,surface):
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(k1))
     k1_name = '{sub}.{h}.{s}.k1.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    k1_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', k1_name)
+    k1_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', k1_name)
     nib.save(data, k1_name)
     
     # Save k2 in gifti 
@@ -229,7 +229,7 @@ def k1_k2_SI(x,y,z,subjects_dir,subject,hemi,surface):
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(k2))
     k2_name = '{sub}.{h}.{s}.k2.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    k2_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', k2_name)
+    k2_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', k2_name)
     nib.save(data, k2_name)
     
     # Save SI in gifti 
@@ -237,7 +237,7 @@ def k1_k2_SI(x,y,z,subjects_dir,subject,hemi,surface):
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(SI))
     SI_name = '{sub}.{h}.{s}.SI.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    SI_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', SI_name)
+    SI_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', SI_name)
     nib.save(data, SI_name)
     
     # Save C in gifti 
@@ -245,7 +245,7 @@ def k1_k2_SI(x,y,z,subjects_dir,subject,hemi,surface):
     data = nib.gifti.gifti.GiftiImage()
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(C))
     C_name = '{sub}.{h}.{s}.C.shape.gii'.format(sub=subject,h=hemi,s=surface)
-    C_name = os.path.join(subjects_dir, subject, STANDARDDIR,'Native', 'CorrThick', C_name)
+    C_name = os.path.join(subjects_dir, subject, standardDir,'Native', 'CorrThick', C_name)
     nib.save(data, C_name)
     
     return 

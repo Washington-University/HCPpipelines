@@ -44,6 +44,7 @@ opts_AddMandatory '--tica-proc-string' 'tICAProcString' 'string' "name part to u
 opts_AddMandatory '--fmri-resolution' 'fMRIResolution' 'string' "resolution of data, like '2' or '1.60' "
 opts_AddMandatory '--surf-reg-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 
 # DVARS and GS related
 opts_AddMandatory '--melodic-high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX'
@@ -67,8 +68,10 @@ fi
 #display the parsed/default values
 opts_ShowValues
 
+standardDir="$StandardFolderName"
+
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/$OutputfMRIName/tICA_d$tICAdim"
+OutputFolder="$StudyFolder/$GroupAverageName/${standardDir}/Results/$OutputfMRIName/tICA_d$tICAdim"
 
 RegString=""
 if [[ "$RegName" != "" && "$RegName" != "MSMSulc" ]]
@@ -132,9 +135,11 @@ this_script_dir=$(dirname "$0")
 HelpFuncPath="$this_script_dir/feature_helpers"
 #all arguments are strings, so we can can use the same argument list for compiled and interpreted
 matlab_argarray=("$StudyFolder" "$GroupAverageName" "$SubjListName" "$fMRIListName" "$OutputfMRIName" "$tICAdim" "$ProcString" "$tICAProcString" "$fMRIResolution" "$RegString" "$LowResMesh" "$ToSaveFeatures" "$HighPass" "$MRFixConcatName" "$RecleanModeString" "$ConfigFilePath" "$HelpFuncPath" "$CorticalParcellationFile" "$ParcelReorderFile" "$NiftiTemplateFile" "$VascularTerritoryFile" "$VesselProbMapFile" "$MultiBandKspaceMapFile" "$PerfusionFile" "$ArrivalAtlasFile")
+matlab_argarray_interp=("${matlab_argarray[@]}" "$StandardFolderName")
 
 case "$MatlabMode" in
     (0)
+        export standardDir="$StandardFolderName"
         matlab_cmd=("$this_script_dir/Compiled_ComputeTICAFeatures/run_ComputeTICAFeatures.sh" "$MATLAB_COMPILER_RUNTIME" "${matlab_argarray[@]}")
         log_Msg "running compiled matlab command: ${matlab_cmd[*]}"
         "${matlab_cmd[@]}"
@@ -142,7 +147,7 @@ case "$MatlabMode" in
     (1 | 2)
         #reformat argument array so matlab sees them as strings
         matlab_args=""
-        for thisarg in "${matlab_argarray[@]}"
+        for thisarg in "${matlab_argarray_interp[@]}"
         do
             if [[ "$matlab_args" != "" ]]
             then

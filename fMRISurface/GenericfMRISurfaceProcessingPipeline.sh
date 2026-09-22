@@ -56,6 +56,8 @@ opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to d
 
 opts_AddOptional '--species' 'Species' 'e.g. Human, etc.' "Species [Human]" "Human"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -64,6 +66,8 @@ then
 fi
 
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 "$HCPPIPEDIR"/show_version
 
@@ -120,8 +124,8 @@ fi
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
 
 #Naming Conventions
-AtlasSpaceFolder="${STANDARDDIR}"
-T1wFolder="${PHYSICALDIR}"
+AtlasSpaceFolder="${standardDir}"
+T1wFolder="${physicalDir}"
 NativeFolder="Native"
 ResultsFolder="Results"
 DownSampleFolder="fsaverage_LR${LowResMesh}k"

@@ -1,6 +1,5 @@
-function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPCAout, outputPCA, checkpointFile)
-STANDARDDIR = getenv('STANDARDDIR');
-if isempty(STANDARDDIR), STANDARDDIR = 'MNINonLinear'; end
+function MIGP(StudyFolder, Subjlist, fMRINamesRaw, ProcSTRING, dPCAinternal, dPCAout, outputPCA, checkpointFile, standardDir)
+if nargin < 9 || isempty(standardDir), standardDir = 'MNINonLinear'; end
     
     %if isdeployed()
         %better solution for compiled matlab: *require* all arguments to be strings, so we don't have to build the argument list twice in the script
@@ -49,8 +48,8 @@ if isempty(STANDARDDIR), STANDARDDIR = 'MNINonLinear'; end
         s
         grot = [];
         for f = 1:length(fMRINames)
-            dtseriesname = [StudyFolder '/' Subjlist{s} '/' STANDARDDIR '/Results/' fMRINames{f} '/' fMRINames{f} ProcSTRING '.dtseries.nii'];
-            vnname = [StudyFolder '/' Subjlist{s} '/' STANDARDDIR '/Results/' fMRINames{f} '/' fMRINames{f} ProcSTRING '_vn.dscalar.nii'];
+            dtseriesname = [StudyFolder '/' Subjlist{s} '/' standardDir '/Results/' fMRINames{f} '/' fMRINames{f} ProcSTRING '.dtseries.nii'];
+            vnname = [StudyFolder '/' Subjlist{s} '/' standardDir '/Results/' fMRINames{f} '/' fMRINames{f} ProcSTRING '_vn.dscalar.nii'];
             if exist(dtseriesname, 'file')
                 vn = ciftiopen(vnname, wbcommand);
                 if isempty(vnsum)

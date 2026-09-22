@@ -102,7 +102,8 @@ opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal
 opts_AddOptional '--sessions-long' 'Sessions' 'list' "@ separated list of longitudinal timepoints" ""
 opts_AddOptional '--template-long' 'TemplateLong' 'template_id' "longitudinal template ID" ""
 opts_AddOptional '--fmri-out-config-file' 'OutConfig' 'file name' 'Output file with detected fMRI run configuration [fmri_list.txt].
-Specify file name only, without path. The file will be stored under [Session]/${STANDARDDIR}/Results folder.' "fmri_list.txt"
+Specify file name only, without path. The file will be stored under [Session]/${standardDir}/Results folder.' "fmri_list.txt"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -120,6 +121,7 @@ log_Msg "Showing HCP Pipelines version"
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 # ------------------------------------------------------------------------------
 #  Main processing of script.
@@ -160,7 +162,7 @@ if (( IsLongitudinal ));  then
     IFS=@ read -r -a SessionsLong <<< "${Sessions}"
     IFS=@ read -r -a PossibleRuns <<< "${mrfixNamesToUse}"
 
-    ResultsTemplateDir=$StudyFolder/$SubjectLong.long.$TemplateLong/${STANDARDDIR}/Results
+    ResultsTemplateDir=$StudyFolder/$SubjectLong.long.$TemplateLong/${standardDir}/Results
 
     expected_concatenated_output_dir="$ResultsTemplateDir/${OutputfMRIName}"
     expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
@@ -177,17 +179,17 @@ if (( IsLongitudinal ));  then
     NativeMyelinMap="MyelinMap.native.dscalar.nii"
     # Build the average myelin map command.
     average_cmd=("${CARET7DIR}/wb_command" -cifti-average \
-        "$StudyFolder/$TemplateSession/${STANDARDDIR}/Native/$TemplateSession.$NativeMyelinMap")
+        "$StudyFolder/$TemplateSession/${standardDir}/Native/$TemplateSession.$NativeMyelinMap")
 
     for tp in "${SessionsLong[@]}"; do
         SessionLong=$tp.long.$TemplateLong                      #longitudinal session directory name
-        average_cmd+=(-cifti "$StudyFolder/$SessionLong/${STANDARDDIR}/Native/$SessionLong.$NativeMyelinMap")
+        average_cmd+=(-cifti "$StudyFolder/$SessionLong/${standardDir}/Native/$SessionLong.$NativeMyelinMap")
 
         echo "searching $SessionLong for eligible fMRI runs"
-        if [ ! -d "$StudyFolder/$SessionLong/${STANDARDDIR}/Results" ]; then
+        if [ ! -d "$StudyFolder/$SessionLong/${standardDir}/Results" ]; then
             log_Err_Abort "ICAFix output does not exist for longitudinal session $SessionLong in $StudyFolder"
         fi
-        ResultsTPLongDir=$StudyFolder/$SessionLong/${STANDARDDIR}/Results
+        ResultsTPLongDir=$StudyFolder/$SessionLong/${standardDir}/Results
         # iterate over possible fMRI runs and build a list of found runs for this timepoint.
         # Found runs are copied to template directory and all relevant files/dirs are renamed
         # for the run to be unique within subject.
@@ -220,7 +222,7 @@ if (( IsLongitudinal ));  then
     done
     # Arrays with template fMRI names, matching timepoint labels, original run labels,
     # and per-timepoint concatenated fMRI names are stored in a configuration file under
-    # ${STANDARDDIR}/Results/. Multiple configuration files may be used for the same
+    # ${standardDir}/Results/. Multiple configuration files may be used for the same
     # subject with different fMRI combinations or longitudinal templates.
     conf_file="$ResultsTemplateDir/$OutConfig"
     echo "${TemplateRunsStr#@}" > "$conf_file"
@@ -251,7 +253,7 @@ if (( IsLongitudinal ));  then
     # log_Msg "Running MSM on longitudinal timepoints"
 
 else #cross-sectional run
-    expected_concatenated_output_dir="${StudyFolder}/${Session}/${STANDARDDIR}/Results/${OutputfMRIName}"
+    expected_concatenated_output_dir="${StudyFolder}/${Session}/${standardDir}/Results/${OutputfMRIName}"
     expected_concatenated_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}${output_proc_string}.dtseries.nii"
     before_vn_output_file="${expected_concatenated_output_dir}/${OutputfMRIName}${fMRIProcSTRING}_novn.dtseries.nii"
 
@@ -280,7 +282,7 @@ else #cross-sectional run
         for ((index = 0; index < ${#mrNamesArray[@]}; ++index))
         do
             fmriName="${mrNamesArray[$index]}"
-            NumTPS=$(${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps)
+            NumTPS=$(${CARET7DIR}/wb_command -file-information "${StudyFolder}/${Session}/${standardDir}/Results/${fmriName}/${fmriName}_Atlas.dtseries.nii" -only-number-of-maps)
             curTimepoints=$((curTimepoints + NumTPS))
             runSplits[$((index + 1))]="$curTimepoints"
             for ((index2 = 0; index2 < ${#mrNamesUseArray[@]}; ++index2))
@@ -304,8 +306,8 @@ else #cross-sectional run
             mergeArgs+=(-column $((runSplits[runIndex] + 1)) -up-to $((runSplits[runIndex + 1])) )
         done
         mkdir -p "${expected_concatenated_output_dir}"
-        ${CARET7DIR}/wb_command -cifti-merge "${before_vn_output_file}" -cifti "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean.dtseries.nii" "${mergeArgs[@]}"
-        ${CARET7DIR}/wb_command -cifti-math 'data / variance' "${expected_concatenated_output_file}" -var data "${before_vn_output_file}" -var variance "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean_vn.dscalar.nii" -select 1 1 -repeat
+        ${CARET7DIR}/wb_command -cifti-merge "${before_vn_output_file}" -cifti "${StudyFolder}/${Session}/${standardDir}/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean.dtseries.nii" "${mergeArgs[@]}"
+        ${CARET7DIR}/wb_command -cifti-math 'data / variance' "${expected_concatenated_output_file}" -var data "${before_vn_output_file}" -var variance "${StudyFolder}/${Session}/${standardDir}/Results/${mrfixConcatName}/${mrfixConcatName}_Atlas_hp${HighPass}_clean_vn.dscalar.nii" -select 1 1 -repeat
         rm -f -- "${before_vn_output_file}"
     else
         log_Msg "Running MSM on full timeseries"
@@ -363,13 +365,13 @@ log_Msg "fMRIProcSTRING: ${fMRIProcSTRING}"
 if (( IsLongitudinal )); then
     for tp in "${SessionsLong[@]}"; do
         SessionLong=$tp.long.$TemplateLong
-        NativeFolderTP="$StudyFolder"/"$SessionLong"/${STANDARDDIR}/Native
-        AtlasFolderTP="$StudyFolder"/"$SessionLong"/${STANDARDDIR}
+        NativeFolderTP="$StudyFolder"/"$SessionLong"/${standardDir}/Native
+        AtlasFolderTP="$StudyFolder"/"$SessionLong"/${standardDir}
         DownsampleFolderTP="$AtlasFolderTP/fsaverage_LR${LowResMesh}k"
 
         for Hemisphere in L R; do
             # Copy the reg sphere
-            cp "$StudyFolder/$TemplateSession/${STANDARDDIR}/Native/$TemplateSession.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii" "$StudyFolder/$SessionLong/${STANDARDDIR}/Native/$SessionLong.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii"
+            cp "$StudyFolder/$TemplateSession/${standardDir}/Native/$TemplateSession.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii" "$StudyFolder/$SessionLong/${standardDir}/Native/$SessionLong.$Hemisphere.sphere.${DeDriftRegName}.native.surf.gii"
 
             ${CARET7DIR}/wb_command -surface-vertex-areas ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.surf.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.midthickness.native.shape.gii
             ${CARET7DIR}/wb_command -surface-vertex-areas ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.surf.gii ${NativeFolderTP}/${SessionLong}.${Hemisphere}.sphere.native.shape.gii

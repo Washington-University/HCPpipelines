@@ -19,6 +19,8 @@ opts_AddMandatory '--subject' 'Subject' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--grayordinates-res' 'grayordRes' 'number' "resolution used for low resolution MNINonLinear output volumes"
 opts_AddMandatory '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -28,10 +30,12 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 #Build Paths
-T1wFolder="$StudyFolder/$Subject"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder/$Subject"/${STANDARDDIR}
+T1wFolder="$StudyFolder/$Subject"/${physicalDir}
+AtlasFolder="$StudyFolder/$Subject"/${standardDir}
 
 #create low-res T1w-space image for completeness
 #special case, if resolutions are equal, borrow the fMRI grid (legacy reasons), otherwise do a new applyisoxfm

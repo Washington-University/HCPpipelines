@@ -29,6 +29,8 @@ opts_AddOptional '--use-ind-mean' 'UseIndMean' 'YES or NO' "whether to use the m
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'meshnum' "low resolution mesh node count (in thousands), defaults to '32' for 32k_fs_LR" '32'
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, this option is mainly intended for non-human-adult data, defaults to '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--map' 'MapName' 'string' "map to applied the bias field correction, defaults to 'MyelinMap'" 'MyelinMap'
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -46,6 +48,8 @@ log_Msg "Showing HCP Pipelines version"
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 # ------------------------------------------------------------------------------
 #  Main processing of script.
@@ -56,9 +60,9 @@ UseIndMeanBool=$(opts_StringToBool "$UseIndMean")
 # default folders
 SubjFolder=${StudyFolder}/${Subject}
 log_Msg "SubjFolder: $SubjFolder"
-AtlasSpaceFolder=${SubjFolder}/${STANDARDDIR}
+AtlasSpaceFolder=${SubjFolder}/${standardDir}
 log_Msg "AtlasSpaceFolder: $AtlasSpaceFolder"
-T1wFolder=${SubjFolder}/${PHYSICALDIR}
+T1wFolder=${SubjFolder}/${physicalDir}
 log_Msg "T1wFolder: $T1wFolder"
 NativeFolder=${AtlasSpaceFolder}/Native
 log_Msg "NativeFolder: $NativeFolder"

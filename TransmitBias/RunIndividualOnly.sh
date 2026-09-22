@@ -68,7 +68,7 @@ opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siem
 #MFG: stay mandatory
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#MFG: ${PHYSICALDIR}/ outputs should use transmit resolution, ${STANDARDDIR}/ use grayordinates
+#MFG: ${physicalDir}/ outputs should use transmit resolution, ${standardDir}/ use grayordinates
 #MFG: should add default of 2 to PostFS if we have a default here
 opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates, default '2'" '2'
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res"
@@ -79,6 +79,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 1 = interpreted MATLAB
 2 = Octave" '1'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -88,6 +90,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 useRCFiles=0
 if [[ "$T1wunprocstr" != "" ]]
@@ -176,7 +180,7 @@ esac
 # set the default GMWMtemplate
 if [[ -z "$GMWMtemplate" ]]
 then
-    GMWMtemplate="$StudyFolder"/"$Subject"/${STANDARDDIR}/GMWMTemplate.nii.gz
+    GMWMtemplate="$StudyFolder"/"$Subject"/${standardDir}/GMWMTemplate.nii.gz
 fi
 
 "$HCPPIPEDIR"/TransmitBias/Phase3_IndividualAdjustment.sh \

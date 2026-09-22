@@ -41,10 +41,12 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 if ((pipedirguessed))
 then
@@ -118,8 +120,8 @@ if [ -z ${MRFixConcatName} ]; then
         --subject="$Subject" \
         --fmri-name="$fMRIName" \
         --high-pass="$HighPass" \
-        --reclassify-as-signal-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${ReclassifyAsSignalFile}" \
-        --reclassify-as-noise-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${ReclassifyAsNoiseFile}" \
+        --reclassify-as-signal-file="${StudyFolder}/${Subject}/${standardDir}/Results/${fMRIName}/${ReclassifyAsSignalFile}" \
+        --reclassify-as-noise-file="${StudyFolder}/${Subject}/${standardDir}/Results/${fMRIName}/${ReclassifyAsNoiseFile}" \
         --matlab-run-mode="$MatlabMode"
 
         # MSMAll
@@ -156,8 +158,8 @@ else
         --subject="$Subject" \
         --fmri-name="$MRFixConcatName" \
         --high-pass="$HighPass" \
-        --reclassify-as-signal-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${MRFixConcatName}/${ReclassifyAsSignalFile}" \
-        --reclassify-as-noise-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${MRFixConcatName}/${ReclassifyAsNoiseFile}" \
+        --reclassify-as-signal-file="${StudyFolder}/${Subject}/${standardDir}/Results/${MRFixConcatName}/${ReclassifyAsSignalFile}" \
+        --reclassify-as-noise-file="${StudyFolder}/${Subject}/${standardDir}/Results/${MRFixConcatName}/${ReclassifyAsNoiseFile}" \
         --matlab-run-mode="$MatlabMode"
 
     #MR FIX config support for non-HCP settings
@@ -166,7 +168,7 @@ else
 
     fMRINamesExist=()
     for fMRIName in "${fMRINamesArray[@]}"; do
-        if [[ -e "$StudyFolder/$Subject/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas_MSMAll.dtseries.nii" ]]; then
+        if [[ -e "$StudyFolder/$Subject/${standardDir}/Results/${fMRIName}/${fMRIName}_Atlas_MSMAll.dtseries.nii" ]]; then
             fMRINamesExist+=("$fMRIName")
         fi
     done

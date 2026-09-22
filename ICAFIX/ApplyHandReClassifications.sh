@@ -38,6 +38,7 @@ opts_AddOptional '--reclassify-as-noise-file' 'ReclassifyAsNoise' 'file' "text f
 ## deprecated, matlab code is not used
 opts_AddOptional '--matlab-run-mode' 'g_matlab_run_mode' '0, 1, 2' "deprecated, this code does not currently use matlab"
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -47,6 +48,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 log_Check_Env_Var FSLDIR
 # Show HCP Pipelines Version
@@ -111,7 +113,7 @@ else
 fi
 
 # Naming Conventions
-AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
 ResultsFolder="${AtlasFolder}/Results/${fMRIName}"

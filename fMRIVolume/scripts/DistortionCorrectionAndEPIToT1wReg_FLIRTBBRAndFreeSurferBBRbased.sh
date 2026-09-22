@@ -172,6 +172,7 @@ opts_AddOptional '--SEPhaseZeroFSBrainmask' 'SpinEchoPhaseEncodeZeroFSBrainmask'
 
 opts_AddOptional '--species' 'SPECIES' 'string' "Species label (Human, Macaque, Marmoset, etc.)" "Human"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -216,6 +217,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var FREESURFER_HOME
@@ -534,13 +536,13 @@ if (( ! IsLongitudinal )); then
                 initcoord=""
                 if [ $SpinEchoPhaseEncodeZero != "NONE" ] ; then
                     log_Msg "reading coordinates from SE field magnitude"
-                    ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_tmp.mat ${WD}/${ScoutInputFileSE}_undistorted.nii.gz ${WD}/../../${PHYSICALDIR}/${PHYSICALDIR}.nii.gz
-                    ${FSLDIR}/bin/convert_xfm -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0.mat -concat ${WD}/../../${PHYSICALDIR}/xfms/acpc.mat ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_tmp.mat
+                    ${CARET7DIR}/wb_command -convert-affine -from-world ${FSLDIR}/etc/flirtsch/ident.mat -to-flirt ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_tmp.mat ${WD}/${ScoutInputFileSE}_undistorted.nii.gz ${WD}/../../${physicalDir}/${physicalDir}.nii.gz
+                    ${FSLDIR}/bin/convert_xfm -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0.mat -concat ${WD}/../../${physicalDir}/xfms/acpc.mat ${WD}/${ScoutInputFileSE}_undistorted2T1w_init_tmp.mat
                     initcoord="-init ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0.mat"
                     convert_xfm -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0_inv.mat -inverse ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0.mat
 
                     # pre-masking undistorted fMRI to remove eye ball - TH Sep 2025
-                    flirt -in ${WD}/../../${PHYSICALDIR}/T1w_acpc_brain_mask.nii.gz -ref ${WD}/${ScoutInputFileSE}_undistorted.nii.gz -applyxfm -init ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0_inv.mat -o ${WD}/${ScoutInputFileSE}_undistorted_fov -interp trilinear
+                    flirt -in ${WD}/../../${physicalDir}/T1w_acpc_brain_mask.nii.gz -ref ${WD}/${ScoutInputFileSE}_undistorted.nii.gz -applyxfm -init ${WD}/${ScoutInputFileSE}_undistorted2T1w_init0_inv.mat -o ${WD}/${ScoutInputFileSE}_undistorted_fov -interp trilinear
                     fslmaths ${WD}/${ScoutInputFileSE}_undistorted_fov -thr 0.5 -bin ${WD}/${ScoutInputFileSE}_undistorted_fov
                     fMRIRes=$(fslval ${WD}/${ScoutInputFileSE}_undistorted pixdim1)
                     DilateDistance=$(echo "$fMRIRes * 2" | bc)
@@ -579,7 +581,7 @@ if (( ! IsLongitudinal )); then
 
                     log_Msg "register T1w contrast scout to T1w struc with FSL-BBR"
                     # calculate outer brain boundary for FSL-BBR
-                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/${PHYSICALDIR}/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
+                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/${physicalDir}/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
                     # use flipped bbrslope and brain boundary
                     ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope $BBRslope -out ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII
                     ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileSE}_undistorted2T1w_initII -ref ${WD}/${T1wBrainImageFile} -init ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 | awk 'NR==1 {print $1}' > ${WD}/${ScoutInputFileSE}_undistorted2T1w_initIII.mat.mincost
@@ -654,7 +656,7 @@ if (( ! IsLongitudinal )); then
                 #we don't have the final transform to actual T1w space yet, that occurs later in this script
                 #but, we need the T1w segmentation to make the bias field, so use the initial registration above, then compute the bias field again at the end
                 Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
-                ReferenceImage=${SessionFolder}/${PHYSICALDIR}/T1w_acpc_dc.nii.gz
+                ReferenceImage=${SessionFolder}/${physicalDir}/T1w_acpc_dc.nii.gz
                 for File in ${Files}
                 do
                     #NOTE: this relies on TopupPreprocessingAll generating _jac versions of the files
@@ -803,7 +805,7 @@ if (( ! IsLongitudinal )); then
             ${FSLDIR}/bin/convert_xfm -omat ${WD}/SE2T1w_init.mat -concat ${WD}/${ScoutInputFile}${ScoutExtension}2T1w_init.mat ${WD}/SE2BOLD_undistorted.mat
 
             # Resample SE phase images and BOLD SBRef to T1w space
-            ReferenceImage=${SessionFolder}/${PHYSICALDIR}/T1w_acpc_dc.nii.gz
+            ReferenceImage=${SessionFolder}/${physicalDir}/T1w_acpc_dc.nii.gz
             Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc"
             for File in ${Files}
             do
@@ -1016,7 +1018,7 @@ if (( ! IsLongitudinal )); then
                 if [[ "$BBRContrast" = T1w ]]; then
                     # use FSL-BBR
                     # use flipped bbrslope and brain boundary
-                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/${PHYSICALDIR}/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
+                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/${physicalDir}/brainmask_fs.nii.gz -bin ${WD}/brainmask_fs
                     ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope 0.5 -out ${WD}/${ScoutInputFileGE}_undistorted2T1w_FSLBBR
                     ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -init ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/brainmask_fs -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope 0.5 | awk 'NR==1 {print $1}' > ${WD}/GEEPItoT1w_FSLBBR.mat.mincost
                     log_Msg "Run FreeSurfer bbregister"
@@ -1042,7 +1044,7 @@ if (( ! IsLongitudinal )); then
                 elif [[ "$BBRContrast" = T2w ]]; then
 
                     log_Msg "Run FSL BBR with FLIRT"
-                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/${PHYSICALDIR}/wmparc -thr 2 -uthr 2 -bin -mul 39 -add ${SubjectFolder}/${PHYSICALDIR}/wmparc -thr 41 -uthr 41 -bin ${WD}/wmseg_acpc_dc
+                    ${FSLDIR}/bin/fslmaths ${SubjectFolder}/${physicalDir}/wmparc -thr 2 -uthr 2 -bin -mul 39 -add ${SubjectFolder}/${physicalDir}/wmparc -thr 41 -uthr 41 -bin ${WD}/wmseg_acpc_dc
                     ${FSLDIR}/bin/flirt -interp spline -dof 6 -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -omat ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/wmseg_acpc_dc -cost bbr -schedule ${FSLDIR}/etc/flirtsch/bbr.sch -bbrslope -0.5  -out ${WD}/${ScoutInputFileGE}_undistorted2T1w
                     ${FSLDIR}/bin/flirt -in ${WD}/${ScoutInputFileGE}_undistorted2T1w_init -ref ${WD}/${T1wBrainImageFile} -init ${WD}/GEEPItoT1w_FSLBBR.mat -wmseg ${WD}/wmseg_acpc_dc -cost bbr -schedule ${FSLDIR}/etc/flirtsch/measurecost1.sch -bbrslope -0.5 | awk 'NR==1 {print $1}' > ${WD}/GEEPItoT1w_FSLBBR.mat.mincost
 
@@ -1140,7 +1142,7 @@ if [[ $DistortionCorrection == $SPIN_ECHO_METHOD_OPT ]]; then
     #we need them before the final bias field computation
 
     # Set up reference image
-    ReferenceImage=${SessionFolder}/${PHYSICALDIR}/T1w_acpc_dc.nii.gz
+    ReferenceImage=${SessionFolder}/${physicalDir}/T1w_acpc_dc.nii.gz
 
     Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc SBRef_dc"
     for File in ${Files}
@@ -1174,18 +1176,18 @@ if [[ $DistortionCorrection == $SPIN_ECHO_METHOD_OPT ]]; then
             ${FSLDIR}/bin/fslmaths ${WD}/${File} -div "$UseBiasField" ${WD}/${File}_unbias
 
             #don't need the T1w versions
-            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/${PHYSICALDIR}/Results/${NameOffMRI}/${NameOffMRI}_${File}
+            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/${physicalDir}/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
 
         #required in longitudinal mode
-        mkdir -p "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI"
+        mkdir -p "$SessionFolder/${physicalDir}/Results/$NameOffMRI"
 
         #copy recieve field, pseudo transmit field, and dropouts, etc to results dir
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_dropouts"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_reference" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_sebased_reference"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_raw" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_raw"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_field" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_field"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_dropouts"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_reference" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_sebased_reference"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_raw" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_raw"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_field" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_field"
     else
         #don't need to do anything more with scout, it is 1-step resampled and bias correction, jacobians reapplied
         Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc"
@@ -1199,7 +1201,7 @@ if [[ $DistortionCorrection == $SPIN_ECHO_METHOD_OPT ]]; then
                 ${FSLDIR}/bin/imcp ${WD}/${File} ${WD}/${File}_unbias
             fi
             #don't need the T1w versions
-            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/${PHYSICALDIR}/Results/${NameOffMRI}/${NameOffMRI}_${File}
+            #${FSLDIR}/bin/imcp ${WD}/${File}_unbias ${SessionFolder}/${physicalDir}/Results/${NameOffMRI}/${NameOffMRI}_${File}
         done
     fi
 fi
@@ -1210,7 +1212,7 @@ then
     # SE images are in SE space, so compose: SE -> BOLD_undistorted -> T1w (refined)
     ${FSLDIR}/bin/convert_xfm -omat ${WD}/SE2T1w.mat -concat ${WD}/fMRI2str.mat ${WD}/SE2BOLD_undistorted.mat
 
-    ReferenceImage=${SessionFolder}/${PHYSICALDIR}/T1w_acpc_dc.nii.gz
+    ReferenceImage=${SessionFolder}/${physicalDir}/T1w_acpc_dc.nii.gz
 
     Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc"
     for File in ${Files}
@@ -1243,13 +1245,13 @@ then
             ${FSLDIR}/bin/fslmaths ${WD}/${File} -div "$UseBiasField" ${WD}/${File}_unbias
         done
 
-        mkdir -p "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI"
+        mkdir -p "$SessionFolder/${physicalDir}/Results/$NameOffMRI"
 
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_dropouts"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_reference" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_sebased_reference"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_raw" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_raw"
-        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_field" "$SessionFolder/${PHYSICALDIR}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_field"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_dropouts" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_dropouts"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_bias" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_sebased_reference" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_sebased_reference"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_raw" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_raw"
+        ${FSLDIR}/bin/imcp "$WD/ComputeSpinEchoBiasField/${NameOffMRI}_pseudo_transmit_field" "$SessionFolder/${physicalDir}/Results/$NameOffMRI/${NameOffMRI}_pseudo_transmit_field"
     else
         Files="PhaseOne_gdc_dc PhaseTwo_gdc_dc"
         for File in ${Files}

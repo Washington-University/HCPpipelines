@@ -36,6 +36,7 @@ opts_AddMandatory '--smoothingfwhm' 'SmoothingFWHM' 'value (mm)' "smoothing FWHM
 
 opts_AddMandatory '--inputdir' 'InputDir' 'path' "input dir"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -45,6 +46,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 log_Check_Env_Var FSLDIR
 
@@ -53,7 +55,7 @@ log_Check_Env_Var FSLDIR
 Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 Caret7_Command="${CARET7DIR}"/wb_command
 
-T1wFolder="${SubjectFolder}/${PHYSICALDIR}" #brainmask, wmparc, ribbon
+T1wFolder="${SubjectFolder}/${physicalDir}" #brainmask, wmparc, ribbon
 
 #take inputs from specified directory (likely some working dir), so we don't have to put initial-registration files into the output folders temporarily
 ${FSLDIR}/bin/fslmaths ${InputDir}/PhaseOne_gdc_dc.nii.gz -add ${InputDir}/PhaseTwo_gdc_dc.nii.gz -Tmean ${WD}/SpinEchoMean.nii.gz

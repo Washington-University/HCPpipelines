@@ -86,6 +86,8 @@ opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "group myelin m
 
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
+opts_AddOptional '--physical-dir' 'PhysicalFolderName' 'name' "name of subject physical-space directory, default 'T1w'" 'T1w'
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 opts_AddOptional '--structural-qc' 'QCMode' 'yes|no|only' "whether to run structural QC, default 'yes'" 'yes'
@@ -113,8 +115,8 @@ For the FreesurferPipeline-long, these are also supplied as timepoint labels, as
 Then the same are supplied to PostFreeSurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
 internally, longitudinal timepoint directories will be named as: <Session>.long.<Template>
 Longitudinal template directory is named <Subject>.long.<Template>. 
-Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Template>/${PHYSICALDIR}/<Session>.long.<Temlate>. 
-Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/${PHYSICALDIR}/<Template>. " "NONE"
+Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Template>/${physicalDir}/<Session>.long.<Temlate>. 
+Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/${physicalDir}/<Template>. " "NONE"
 
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
 opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list @ separated, if LongitudinalMode==TEMPLATE"
@@ -136,6 +138,9 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 if [[ "$MSMSulcConf" != */* && "${MSMCONFIGDIR:-}" == "" ]]; then 
     log_Err_Abort "\$MSMCONFIGDIR must be set to run MSMSulc"
@@ -248,10 +253,10 @@ echo ExperimentRoot: $ExperimentRoot
 #  Do NOT include spaces in any of these names
 # ------------------------------------------------------------------------------
 T1wImage="T1w_acpc_dc"
-T1wFolder="${PHYSICALDIR}" #Location of T1w images
+T1wFolder="${physicalDir}" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
-AtlasSpaceFolder="${STANDARDDIR}"
+AtlasSpaceFolder="${standardDir}"
 NativeFolder="Native"
 
 if [ "$LongitudinalMode" == "TEMPLATE" ]; then
@@ -468,10 +473,10 @@ if [ "$LongitudinalMode" == "TEMPLATE" ]; then
     NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
     for tp in ${Sessions[@]}; do
         NativeFolderTP="$tp.long.$LongitudinalTemplate"
-        mkdir -p "$StudyFolder/$NativeFolderTP/${STANDARDDIR}/Native"
+        mkdir -p "$StudyFolder/$NativeFolderTP/${StandardFolderName}/Native"
         for Hemisphere in L R; do
-            cp "$StudyFolder/$NativeFolderTemplate/${STANDARDDIR}/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
-            "$StudyFolder/$NativeFolderTP/${STANDARDDIR}/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+            cp "$StudyFolder/$NativeFolderTemplate/${StandardFolderName}/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+            "$StudyFolder/$NativeFolderTP/${StandardFolderName}/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
         done
     done
 fi

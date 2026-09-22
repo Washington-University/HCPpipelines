@@ -8,9 +8,8 @@ function [features, other_features]=ComputeTICAFeatures(StudyFolder, GroupAverag
                                                         CorticalParcellationFile, ParcelReorderFile, ...
                                                         NiftiTemplateFile, VascularTerritoryFile, ...
                                                         VesselProbMapFile, MultiBandKspaceMapFile, ...
-                                                        PerfusionFile, ArrivalAtlasFile)
-STANDARDDIR = getenv('STANDARDDIR');
-if isempty(STANDARDDIR), STANDARDDIR = 'MNINonLinear'; end
+                                                        PerfusionFile, ArrivalAtlasFile, standardDir)
+if nargin < 27 || isempty(standardDir), standardDir = 'MNINonLinear'; end
 
 % Compute features for tICA components
 % Usage:
@@ -84,7 +83,7 @@ end
 
 % read necessary files
 disp('reading necessary files as beginning...')
-OutputFolder=[StudyFolder '/' GroupAverageName '/' STANDARDDIR '/Results/' OutputfMRIName '/tICA_d' num2str(tICAdim)];
+OutputFolder=[StudyFolder '/' GroupAverageName '/' standardDir '/Results/' OutputfMRIName '/tICA_d' num2str(tICAdim)];
 
 tICAMaps=ciftiopen([OutputFolder '/tICA_Maps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii'], wbcommand);
 tICAVolMaps=ciftiopen([OutputFolder '/tICA_VolMaps_' num2str(tICAdim) '_' nonlinear '.dscalar.nii'], wbcommand);
@@ -123,7 +122,7 @@ for i=1:max(CorticalParcellation.cdata)
     CorticalROIs([CorticalParcellation.cdata ; zeros(length(tICAMaps.cdata)-length(CorticalParcellation.cdata),1)]==i,i)=1;
 end
 ParcelReorder=load(ParcelReorderFile,'-ascii');
-%VertexAreas=ciftiopen([StudyFolder '/' GroupAverageName '/' STANDARDDIR '/fsaverage_LR32k/' GroupAverageName '.midthickness' RegString '_va.32k_fs_LR.dscalar.nii'], wbcommand);
+%VertexAreas=ciftiopen([StudyFolder '/' GroupAverageName '/' standardDir '/fsaverage_LR32k/' GroupAverageName '.midthickness' RegString '_va.32k_fs_LR.dscalar.nii'], wbcommand);
 
 pipedir = getenv('HCPPIPEDIR');
 vertarealeft = gifti([pipedir '/global/templates/standard_mesh_atlases/resample_fsaverage/fs_LR.L.midthickness_va_avg.' LowResMesh 'k_fs_LR.shape.gii']);
@@ -144,7 +143,7 @@ vessal_prob_map=niftiread(VesselProbMapFile);
 
 % create cifti masks
 disp('creating brain masks...')
-MaskSavePath = [StudyFolder '/' GroupAverageName '/' STANDARDDIR '/ROIs_test2'];
+MaskSavePath = [StudyFolder '/' GroupAverageName '/' standardDir '/ROIs_test2'];
 %brain_masks(StudyFolder, GroupAverageName, Resolution, OutputfMRIName, MaskSavePath);
 launch_file=[HelpFuncPath '/brain_masks.sh'];
 
@@ -198,7 +197,7 @@ boundary_mask5_loc=find(boundary_mask5.cdata==1);
 
 % generating DVARS and GS for each subject each fMRI runs
 disp('generating DVARS and GS...')
-ComputeDVARSandGS(StudyFolder,Subjlist, hp, MRFixConcatName, fMRINames, RegString, fMRIProcString, RecleanMode);
+ComputeDVARSandGS(StudyFolder,Subjlist, hp, MRFixConcatName, fMRINames, RegString, fMRIProcString, RecleanMode, standardDir);
 
 % identify strongest single subject
 disp('identifying strongest single subject corresponding to each component...')
@@ -215,10 +214,10 @@ CIFTIDVARS={};
 for i=1:length(Subjlist)
     %Subjlist{i}
     SubjFolderlist=[StudyFolder '/' Subjlist{i}];
-    if isfile([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'])
-        tICATCS_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-        %tICASpectra_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-        %tICAMapsZ_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
+    if isfile([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'])
+        tICATCS_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+        %tICASpectra_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+        %tICAMapsZ_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand);
 
         CIFTIGS_sub=[];
         CIFTIDVARS_sub=[];
@@ -228,9 +227,9 @@ for i=1:length(Subjlist)
         for j=1:length(fMRINames)
             %%%%%% original
             fMRIName=fMRINames{j};
-            if isfile([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas' RegString fMRIProcString '_GS.sdseries.nii'])
-                CIFTIGS_run=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas' RegString fMRIProcString '_GS.sdseries.nii'], wbcommand);
-                CIFTIDVARS_run=ciftiopen([SubjFolderlist '/' STANDARDDIR '/Results/' fMRIName '/' fMRIName '_Atlas' RegString fMRIProcString '_DVARS.sdseries.nii'], wbcommand);
+            if isfile([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas' RegString fMRIProcString '_GS.sdseries.nii'])
+                CIFTIGS_run=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas' RegString fMRIProcString '_GS.sdseries.nii'], wbcommand);
+                CIFTIDVARS_run=ciftiopen([SubjFolderlist '/' standardDir '/Results/' fMRIName '/' fMRIName '_Atlas' RegString fMRIProcString '_DVARS.sdseries.nii'], wbcommand);
                 CIFTIGS_sub=[CIFTIGS_sub CIFTIGS_run.cdata];
                 CIFTIDVARS_sub=[CIFTIDVARS_sub CIFTIDVARS_run.cdata];
             end
@@ -281,7 +280,7 @@ end
 %     Subjlist{i}
 %     Start=1;
 %     End=0;
-%     if exist([SubjFolderlist{i} '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']) & length(tICATCS{i})==RunsXNumTimePoints
+%     if exist([SubjFolderlist{i} '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{i} '.' OutString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii']) & length(tICATCS{i})==RunsXNumTimePoints
 %         for j=1:length(PhysiofMRINames)
 %             r=rs(j);
 %                 RunLength=RunLengths(j);
@@ -313,8 +312,8 @@ tICAspectra_SS.cdata=tICAspectra.cdata*0;
 for i=1:size(TCSVARS,2)
     %Subjlist{I(i)}
     SubjFolderlist=[StudyFolder '/' Subjlist{I(i)}];
-    tICAMaps_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
-    tICAVolMaps_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
+    tICAMaps_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
+    tICAVolMaps_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SR' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
     tICAMaps_SS.cdata(:,i)=tICAMaps_sub.cdata(:,i);
     try
         tICAVolMaps_SS.cdata(:,i)=tICAVolMaps_sub.cdata(:,i);
@@ -322,12 +321,12 @@ for i=1:size(TCSVARS,2)
        [StudyFolder '/' Subjlist{I(i)}]
        tICAFeaturesProcString
     end
-    tICAMapsZ_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
-    tICAVolMapsZ_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
+    tICAMapsZ_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');      
+    tICAVolMapsZ_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString '_SRZ' RegString '_vol.' LowResMesh 'k_fs_LR.dscalar.nii'],'wb_command');
     tICAMapsZ_SS.cdata(:,i)=tICAMapsZ_sub.cdata(:,i);
     tICAVolMapsZ_SS.cdata(:,i)=tICAVolMapsZ_sub.cdata(:,i);
-    tICATCS_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
-    tICASpectra_sub=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
+    tICATCS_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
+    tICASpectra_sub=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command');
     tICAtcs_SS.cdata(i,1:length(tICATCS_sub.cdata(i,:)))=tICATCS_sub.cdata(i,:);
     tICAspectra_SS.cdata(i,1:length(tICASpectra_sub.cdata(i,:)))=tICASpectra_sub.cdata(i,:);
 
@@ -588,7 +587,7 @@ for i=1:tICAdim
     
     % single subject timeseries statistics
     SubjFolderlist=[StudyFolder '/' Subjlist{I(i)}];
-    ss_tcs=ciftiopen([SubjFolderlist '/' STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command'); 
+    ss_tcs=ciftiopen([SubjFolderlist '/' standardDir '/fsaverage_LR' LowResMesh 'k/' Subjlist{I(i)} '.' tICAFeaturesProcString RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'],'wb_command'); 
     ss_tcs_stat(i,:)=single_subject_tcs_features(ss_tcs.cdata(i,:));
     CE_ss_tcs_stat(i,1)=CE(ss_tcs.cdata(i,:));
     sum_outlier_ss_tcs_stat(i,1)=sum_outlier(ss_tcs.cdata(i,:));

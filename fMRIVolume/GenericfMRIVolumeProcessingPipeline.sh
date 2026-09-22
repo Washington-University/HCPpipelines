@@ -213,6 +213,8 @@ opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies long
 # Disable RUN
 RUN=""
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -221,6 +223,8 @@ then
 fi
 
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 script_name=$(basename "$0")
 
@@ -523,7 +527,7 @@ if (( IsLongitudinal )); then
     if [ ! -d "$Path/$SessionLong" ]; then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
-    T1wCross2LongXfm=$Path/$SessionLong/${PHYSICALDIR}/xfms/T1w_cross_to_T1w_long.mat
+    T1wCross2LongXfm=$Path/$SessionLong/${physicalDir}/xfms/T1w_cross_to_T1w_long.mat
     if [ ! -f "$T1wCross2LongXfm" ]; then
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi
@@ -562,8 +566,8 @@ PipelineScripts=${HCPPIPEDIR_fMRIVol}
 T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
 T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
-T1wFolder="${PHYSICALDIR}" #Location of T1w images
-AtlasSpaceFolderBase="${STANDARDDIR}"
+T1wFolder="${physicalDir}" #Location of T1w images
+AtlasSpaceFolderBase="${standardDir}"
 ResultsFolder="Results"
 BiasField="BiasField_acpc_dc"
 BiasFieldMNI="BiasField"

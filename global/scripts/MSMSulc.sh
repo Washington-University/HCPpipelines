@@ -23,6 +23,7 @@ opts_AddOptional '--hemi' 'Hemi' 'hemisphere' "provide hemisphere for registrati
 opts_AddOptional '--refmesh' 'RefMesh' 'ref mesh' "provide alternate standard sphere, default 164k_fs_LR, use .HEMISPHERE. instead of .L. or .R."
 opts_AddOptional '--refdata' 'RefData' 'ref data' "provide alternate reference data, use .HEMISPHERE. instead of .L. or .R."
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -32,10 +33,11 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 #set paths
 SurfaceTemplateFolder="$HCPPIPEDIR"/global/templates/standard_mesh_atlases
-NonlinearFolder="$SubjectDir"/"$Subject"/${STANDARDDIR}
+NonlinearFolder="$SubjectDir"/"$Subject"/${standardDir}
 NativeFolder="$NonlinearFolder"/Native
 
 #If the config file doesn't have a directory separator, treat it as relative to $MSMCONFIGDIR

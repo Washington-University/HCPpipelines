@@ -33,6 +33,7 @@ opts_AddMandatory '--output-xfm' 'finalxfm' 'file' "the final bbr rigid alignmen
 opts_AddOptional '--output-inverse-xfm' 'invxfm' 'file' "the inverse of the output alignment"
 opts_AddOptional '--output-image' 'resampledimage' 'file' "the file resampled to the new alignment (using the input dims/spacing)"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -42,6 +43,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 hideBBRstdout=$(opts_StringToBool "$hideBBRstdoutSTR")
 
@@ -63,7 +65,7 @@ case "$contrast" in
         ;;
 esac
 
-T1wFolder="$StudyFolder/$Subject/${PHYSICALDIR}"
+T1wFolder="$StudyFolder/$Subject/${physicalDir}"
 
 if [[ "$fssubjectsdir" == "" ]]
 then
@@ -161,7 +163,7 @@ then
     fi
 fi
 
-#this is ${PHYSICALDIR}/T1w_acpc_dc (not the flirt target) because that is what the surfaces align with, and makes it simpler to use the output xfm
+#this is ${physicalDir}/T1w_acpc_dc (not the flirt target) because that is what the surfaces align with, and makes it simpler to use the output xfm
 "$FREESURFER_HOME"/bin/tkregister2 --noedit --reg "$whichbbr" --mov "$flirttarget" --targ "$T1wFolder"/T1w_acpc_dc.nii.gz --fslregout "$bbrtemp".mat
 
 tempfiles_create bbregister_reorientmat_XXXXXX.mat reorientfinal

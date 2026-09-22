@@ -31,6 +31,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 1 = interpreted MATLAB
 2 = Octave" '0'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -40,6 +42,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 useRCfiles=$(opts_StringToBool "$useRCfilesStr")
 
@@ -74,8 +78,8 @@ esac
 AtlasTransform="acpc_dc2standard"
 
 #Build Paths
-T1wFolder="$StudyFolder/$Subject"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder/$Subject"/${STANDARDDIR}
+T1wFolder="$StudyFolder/$Subject"/${physicalDir}
+AtlasFolder="$StudyFolder/$Subject"/${standardDir}
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 

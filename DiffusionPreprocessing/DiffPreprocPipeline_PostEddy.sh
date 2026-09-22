@@ -150,6 +150,7 @@ opts_AddOptional '--specieslabel' 'SpeciesLabel' 'number' "Species label for NHP
 
 opts_AddOptional '--wmprojabs' 'DiffWMProjAbs' 'number' "White matter projection absolute depth. Defaults to 2" "2"
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -158,6 +159,7 @@ then
 fi
 
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
 
 #parse booleans
 SelectBestB0=$(opts_StringToBool "$SelectBestB0String")
@@ -197,7 +199,7 @@ validate_scripts
 
 # Establish output directory paths
 outdir=${StudyFolder}/${Session}/${DWIName}
-outdirT1w=${StudyFolder}/${Session}/${PHYSICALDIR}/${DWIName}
+outdirT1w=${StudyFolder}/${Session}/${physicalDir}/${DWIName}
 
 # Determine whether Gradient Nonlinearity Distortion coefficients are supplied
 GdFlag=0
@@ -227,7 +229,7 @@ else
 fi
 
 # Establish variables that follow naming conventions
-T1wFolder="${StudyFolder}/${Session}/${PHYSICALDIR}" #Location of T1w images
+T1wFolder="${StudyFolder}/${Session}/${physicalDir}" #Location of T1w images
 T1wImage="${T1wFolder}/T1w_acpc_dc"
 T1wRestoreImage="${T1wFolder}/T1w_acpc_dc_restore"
 T1wRestoreImageBrain="${T1wFolder}/T1w_acpc_dc_restore_brain"

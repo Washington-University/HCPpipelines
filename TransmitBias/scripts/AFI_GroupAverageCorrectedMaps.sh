@@ -29,6 +29,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 1 = interpreted MATLAB
 2 = Octave" '0'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -38,6 +40,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 this_script_dir=$(dirname "$0")
 
@@ -68,7 +72,7 @@ case "$MatlabMode" in
         ;;
 esac
 
-GroupAtlasFolder="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}
+GroupAtlasFolder="$StudyFolder"/"$GroupAverageName"/${standardDir}
 
 source "$HCPPIPEDIR"/TransmitBias/scripts/mergeavg.shlib
 
@@ -87,13 +91,13 @@ for ((i = 0; i < ${#SubjArray[@]}; ++i))
 do
     Subject="${SubjArray[$i]}"
     #test the same file as the first group average script
-    if [[ -f "${StudyFolder}/${Subject}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/${Subject}.AFI_orig${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" ]]
+    if [[ -f "${StudyFolder}/${Subject}/${standardDir}/fsaverage_LR${LowResMesh}k/${Subject}.AFI_orig${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" ]]
     then
         GoodSubjArray+=("$Subject")
         GoodVoltagesArray+=("${VoltagesArray[$i]}")
         
-        cat "${StudyFolder}/${Subject}/${PHYSICALDIR}/AFI_stats.txt" >> "$StatsFile"
-        cat "${StudyFolder}/${Subject}/${STANDARDDIR}/AFI_CSFStats.txt" >> "$CSFStatsFile"
+        cat "${StudyFolder}/${Subject}/${physicalDir}/AFI_stats.txt" >> "$StatsFile"
+        cat "${StudyFolder}/${Subject}/${standardDir}/AFI_CSFStats.txt" >> "$CSFStatsFile"
     fi
 done
 avg_setSubjects "${GoodSubjArray[@]}"
@@ -112,30 +116,30 @@ rAFI="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.rA
 tempfiles_create AFImerge_XXXXXX.nii.gz afimergetemp
 tempfiles_add "$afimergetemp"_2.nii.gz "$afimergetemp"_3.nii.gz "$afimergetemp"_4.nii.gz
 #extra arguments on the end are added per-file
-volmergeavg "${STANDARDDIR}/AFI_orig_Atlas.nii.gz" "$afimergetemp" "$afimergetemp"_3.nii.gz -subvolume 1 &
-volmergeavg "${STANDARDDIR}/AFI_orig_Atlas.nii.gz" "$afimergetemp"_2.nii.gz "$afimergetemp"_4.nii.gz -subvolume 2 &
+volmergeavg "${standardDir}/AFI_orig_Atlas.nii.gz" "$afimergetemp" "$afimergetemp"_3.nii.gz -subvolume 1 &
+volmergeavg "${standardDir}/AFI_orig_Atlas.nii.gz" "$afimergetemp"_2.nii.gz "$afimergetemp"_4.nii.gz -subvolume 2 &
 
-volmergeavg "${STANDARDDIR}/T1wDividedByT2w_Atlas.nii.gz" \
+volmergeavg "${standardDir}/T1wDividedByT2w_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.T1wDividedByT2w_Atlas.nii.gz" \
     "$AvgMyelinVolFile" &
 
-volmergeavg "${STANDARDDIR}/AFI_Atlas.nii.gz" \
+volmergeavg "${standardDir}/AFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.AFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.AFI_Atlas.nii.gz" &
 
-ciftimergeavgsubj "${STANDARDDIR}/fsaverage_LR${LowResMesh}k" "rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
+ciftimergeavgsubj "${standardDir}/fsaverage_LR${LowResMesh}k" "rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
     "$rAFI" \
     "${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" &
 
-volmergeavg "${STANDARDDIR}/rAFI_Atlas.nii.gz" \
+volmergeavg "${standardDir}/rAFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.rAFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.rAFI_Atlas.nii.gz" &
 
-ciftimergeavgsubj "${STANDARDDIR}/fsaverage_LR${LowResMesh}k" "MyelinMap_Corr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
+ciftimergeavgsubj "${standardDir}/fsaverage_LR${LowResMesh}k" "MyelinMap_Corr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
     "$IndCorrMyelinAll" \
     "$AvgIndCorrMyelin" &
 
-volmergeavg "${STANDARDDIR}/T1wDividedByT2w_Corr_Atlas.nii.gz" \
+volmergeavg "${standardDir}/T1wDividedByT2w_Corr_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.T1wDividedByT2w_IndCorr_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.T1wDividedByT2w_IndCorr_Atlas.nii.gz" &
 

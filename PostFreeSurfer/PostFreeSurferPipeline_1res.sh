@@ -67,6 +67,8 @@ opts_AddMandatory '--refmyelinmaps' 'ReferenceMyelinMaps' 'file' "high-resolutio
 opts_AddOptional '--mcsigma' 'CorrectionSigma' 'number' "myelin map bias correction sigma, default '$defaultSigma'" "$defaultSigma"
 opts_AddOptional '--regname' 'RegName' 'name' "surface registration to use, default 'MSMSulc'" 'MSMSulc'
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' "surface inflation scaling factor to deal with different resolutions, default '1'" '1'
+opts_AddOptional '--physical-dir' 'PhysicalFolderName' 'name' "name of subject physical-space directory, default 'T1w'" 'T1w'
+opts_AddOptional '--standard-dir' 'StandardFolderName' 'name' "name of subject standard-space directory, default 'MNINonLinear'" 'MNINonLinear'
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData|LegacyStyleData' "disable some HCP preprocessing requirements to allow processing of data that doesn't meet HCP acquisition guidelines - don't use this if you don't need to" 'HCPStyleData'
 
 opts_ParseArguments "$@"
@@ -78,6 +80,9 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 #processing code goes here
 
@@ -97,10 +102,10 @@ PipelineScripts="$HCPPIPEDIR_PostFS"
 #  Do NOT include spaces in any of these names
 # ------------------------------------------------------------------------------
 T1wImage="T1w_acpc_dc"
-T1wFolder="${PHYSICALDIR}" #Location of T1w images
+T1wFolder="${physicalDir}" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
-AtlasSpaceFolder="${STANDARDDIR}"
+AtlasSpaceFolder="${standardDir}"
 NativeFolder="Native"
 FreeSurferFolder="$Subject"
 FreeSurferInput="T1w_acpc_dc_restore_1mm"

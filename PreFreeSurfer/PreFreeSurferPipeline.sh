@@ -86,14 +86,14 @@
 # the Session (--session).  All outputs are generated within the tree rooted
 # at ${StudyFolder}/${Session}.  The main output directories are:
 #
-# * The T1wFolder: ${StudyFolder}/${Session}/${PHYSICALDIR}
+# * The T1wFolder: ${StudyFolder}/${Session}/${physicalDir}
 # * The T2wFolder: ${StudyFolder}/${Session}/T2w
-# * The AtlasSpaceFolder: ${StudyFolder}/${Session}/${STANDARDDIR}
+# * The AtlasSpaceFolder: ${StudyFolder}/${Session}/${standardDir}
 #
 # All outputs are generated in directories at or below these three main
 # output directories.  The full list of output directories is:
 #
-# * ${T1wFolder}/${PHYSICALDIR}${i}_GradientDistortionUnwarp
+# * ${T1wFolder}/${physicalDir}${i}_GradientDistortionUnwarp
 # * ${T1wFolder}/AverageT1wImages
 # * ${T1wFolder}/ACPCAlignment
 # * ${T1wFolder}/BrainExtraction_FNIRTbased
@@ -270,11 +270,11 @@ opts_AddOptional '--topupconfig' 'TopupConfig' 'file_path' "Configuration file f
 
 opts_AddOptional '--bfsigma' 'BiasFieldSmoothingSigma' 'value' "Bias Field Smoothing Sigma (optional)"
 
-opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom brain mask saved as '<session>/${PHYSICALDIR}/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.  If PreFreeSurfer has been run before and you have created custom structural images, e.g.:
-- '<session>/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz'
-- '<session>/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz'
-- '<session>/${PHYSICALDIR}/T2w_acpc_dc_restore_brain.nii.gz'
-- '<session>/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz'
+opts_AddOptional '--custombrain' 'CustomBrain' 'NONE_or_MASK_or_CUSTOM' "If PreFreeSurfer has been run before and you have created a custom brain mask saved as '<session>/${physicalDir}/custom_acpc_dc_restore_mask.nii.gz', specify 'MASK'.  If PreFreeSurfer has been run before and you have created custom structural images, e.g.:
+- '<session>/${physicalDir}/T1w_acpc_dc_restore_brain.nii.gz'
+- '<session>/${physicalDir}/T1w_acpc_dc_restore.nii.gz'
+- '<session>/${physicalDir}/T2w_acpc_dc_restore_brain.nii.gz'
+- '<session>/${physicalDir}/T2w_acpc_dc_restore.nii.gz'
   to be used when peforming MNI152 Atlas registration, specify 'CUSTOM'.  When 'MASK' or 'CUSTOM' is specified, only the AtlasRegistration step is run.  If the parameter is omitted or set to NONE (the default), standard image processing will take place.  If using 'MASK' or 'CUSTOM', the data still needs to be staged properly by running FreeSurfer and PostFreeSurfer afterwards.  NOTE: This option allows manual correction of brain images in cases when they were not successfully processed and/or masked by the regular use of the pipelines.  Before using this option, first ensure that the pipeline arguments used were correct and that templates are a good match to the data." "NONE"
 
 opts_AddOptional '--processing-mode' 'ProcessingMode' 'HCPStyleData or LegacyStyleData' "'HCPStyleData' (the default) follows the processing steps described in Glasser et al. (2013) and requires 'HCP-Style' data acquistion.  'LegacyStyleData' allows additional processing functionality and use of some acquisitions that do not conform to 'HCP-Style' expectations.  In this script, it allows not having a high-resolution T2w image." "HCPStyleData"
@@ -298,6 +298,8 @@ opts_AddOptional '--betbiasfieldcor' 'BetBiasFieldCor' 'TRUE/FALSE' "Indicates w
 # ------------------------------------------------------------------------------
 #  Parse Arugments
 # ------------------------------------------------------------------------------
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -312,6 +314,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 #processing code goes here
 ${HCPPIPEDIR}/show_version
@@ -401,10 +405,10 @@ check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
 # Naming Conventions
 T1wImage="T1w"
-T1wFolder="${PHYSICALDIR}" #Location of T1w images
+T1wFolder="${physicalDir}" #Location of T1w images
 T2wImage="T2w"
 T2wFolder="T2w" #Location of T2w images
-AtlasSpaceFolder="${STANDARDDIR}"
+AtlasSpaceFolder="${standardDir}"
 
 # Build Paths
 T1wFolder=${StudyFolder}/${Session}/${T1wFolder}
@@ -468,7 +472,7 @@ if [ "$CustomBrain" = "ORIGMASK" ] ; then
 
     RunMode=2
 
-    log_Msg "Skipping the step GradientNonlinearityAverage to ACPC Alignment applying custom mask in original space (<subject>/${PHYSICALDIR}/custom_mask.nii.gz). The custom mask is also used for brain extraction. This overrides the option of --runmode."
+    log_Msg "Skipping the step GradientNonlinearityAverage to ACPC Alignment applying custom mask in original space (<subject>/${physicalDir}/custom_mask.nii.gz). The custom mask is also used for brain extraction. This overrides the option of --runmode."
     verbose_red_echo "---> Applying custom mask"
 
     if [ "$(imtest ${T1wFolder}/custom_mask)" != 1 ] ; then
@@ -481,7 +485,7 @@ elif [[ "$CustomBrain" = "MASK" || "$CustomBrain" = "CUSTOM" ]] ; then
     RunMode=5
 
     if [ "$CustomBrain" = "MASK" ] ; then
-        log_Msg "Skipping all the steps to Atlas registration, applying custom mask in ACPC space (<subject>/${PHYSICALDIR}/custom_acpc_dc_restore_mask.nii.gz). This overrides the option of --runmode."
+        log_Msg "Skipping all the steps to Atlas registration, applying custom mask in ACPC space (<subject>/${physicalDir}/custom_acpc_dc_restore_mask.nii.gz). This overrides the option of --runmode."
         verbose_red_echo "---> Applying custom mask"
 
         if [ "$(imtest ${T1wFolder}/custom_acpc_dc_restore_mask)" != 1 ] ; then
@@ -951,7 +955,7 @@ fi  # --- skipped all the way to here if using customized structural images (--c
 if [ "$RunMode" -lt 6 ]; then
 
     # Remove the file (warpfield) that serves as a proxy in FreeSurferPipeline for whether PostFreeSurfer has been run
-    # i.e., whether the ${PHYSICALDIR}/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
+    # i.e., whether the ${physicalDir}/T1w_acpc_dc* volumes reflect the PreFreeSurferPipeline versions (above)
     # or the PostFreeSurferPipeline versions.
     # Make sure that you rerun FreeSurfer and PostFreeSurfer if using --custombrain={CUSTOM|MASK}
     # or if otherwise simply re-running PreFreeSurfer on top of existing data [which is not advised;

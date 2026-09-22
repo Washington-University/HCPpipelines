@@ -30,6 +30,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 1 = interpreted MATLAB
 2 = Octave" '0'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -39,6 +41,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 useRCfiles=$(opts_StringToBool "$useRCfilesStr")
 
@@ -69,8 +73,8 @@ else
     RegString="_$RegName"
 fi
 
-T1wFolder="$StudyFolder"/"$Subject"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder"/"$Subject"/${STANDARDDIR}
+T1wFolder="$StudyFolder"/"$Subject"/${physicalDir}
+AtlasFolder="$StudyFolder"/"$Subject"/${standardDir}
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 
@@ -313,7 +317,7 @@ wb_command -volume-math "(Var * (Var > $PseudoTransmitThreshold)) / $PseudoTrans
     -var Var "$AtlasFolder"/PseudoTransmitField_Raw_Atlas.nii.gz
 wb_command -volume-dilate "$fieldtemp" 25 WEIGHTED "$AtlasFolder"/PseudoTransmitField_Norm_Atlas.nii.gz -data-roi "$GMWMtemplate"
 
-#NOTE: ${STANDARDDIR}/T1wDiv... always has RC applied already (via phase 1 outer script), unlike ${PHYSICALDIR}/
+#NOTE: ${standardDir}/T1wDiv... always has RC applied already (via phase 1 outer script), unlike ${physicalDir}/
 
 wb_command -volume-math "myelin / (transmit * $Slope + (1 - $Slope))" "$AtlasFolder"/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz -fixnan 0 \
     -var myelin "$AtlasFolder"/T1wDividedByT2w_Atlas.nii.gz \

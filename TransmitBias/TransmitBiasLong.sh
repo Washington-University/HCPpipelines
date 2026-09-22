@@ -64,7 +64,7 @@ opts_AddOptional '--pt-reference-value-file' 'PseudoTransmitReferenceValueFile' 
 #MFG: stay mandatory
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#MFG: ${PHYSICALDIR}/ outputs should use transmit resolution, ${STANDARDDIR}/ use grayordinates
+#MFG: ${physicalDir}/ outputs should use transmit resolution, ${standardDir}/ use grayordinates
 #MFG: should add default of 2 to PostFS if we have a default here
 opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates, default '2'" '2'
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res" ''
@@ -81,6 +81,8 @@ opts_AddOptional '--fslsub-queue' 'fslsub_queue' 'name' "FSLSUB queue name" ""
 opts_AddOptional '--max-jobs' 'max_jobs' 'number' "Maximum number of concurrent processes in BUILTIN mode. Set to -1 to auto-detect [-1]." -1
 opts_AddOptional '--logdir' 'LogDir' 'string' "directory where parallel logs in BUILTIN mode will be written (default: current directory)" ""
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -101,6 +103,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 IFS=@ read -r -a Sessions <<< "${SessionList}"
 
@@ -162,7 +166,7 @@ T1wDivT2wCorrAtlasArray=()
 MyelinMapCorrArray=()
 
 TemplateSession="$Subject.long.$TemplateLong"
-AtlasFolderTemplate="$StudyFolder/$TemplateSession/${STANDARDDIR}"
+AtlasFolderTemplate="$StudyFolder/$TemplateSession/${standardDir}"
 
 case "$mode" in
     AFI) suffix="Corr"; suffix1="Corr" ;;
@@ -173,7 +177,7 @@ esac
 
 for Session in "${Sessions[@]}"; do
     SessionLong="$Session".long."$TemplateLong"
-    AtlasFolder="$StudyFolder/$SessionLong/${STANDARDDIR}"
+    AtlasFolder="$StudyFolder/$SessionLong/${standardDir}"
     T1wDivT2wCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}.nii.gz")
     T1wDivT2wArray+=(-volume "$AtlasFolder/T1wDividedByT2w.nii.gz")
 

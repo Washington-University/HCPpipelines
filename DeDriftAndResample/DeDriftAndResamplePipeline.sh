@@ -73,6 +73,8 @@ opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, or 2' "defaults to $
 0 = compiled MATLAB
 1 = interpreted MATLAB
 2 = Octave" "$g_matlab_default_mode"
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -93,6 +95,8 @@ ${CARET7DIR}/wb_command -version
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 if [[ "${OutputRegName}" == "" ]]; then
 	OutputRegName="${RegName}"
@@ -211,10 +215,10 @@ fi
 CorrectionSigma=$(echo "sqrt ( 200 )" | bc -l)
 log_Msg "CorrectionSigma: ${CorrectionSigma}"
 
-AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
-T1wFolder="${StudyFolder}/${Subject}/${PHYSICALDIR}"
+T1wFolder="${StudyFolder}/${Subject}/${physicalDir}"
 log_Msg "T1wFolder: ${T1wFolder}"
 
 NativeFolder="${AtlasFolder}/Native"
@@ -558,13 +562,13 @@ do
 			            --study-folder="$StudyFolder"
 			            --subject="$Subject"
 			            --multirun-fix-names="${mrFIXNames[$i]}"
-			            --csv-out="$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
-			            --concat-cifti-input="$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
+			            --csv-out="$StudyFolder/$Subject/${standardDir}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Runs.csv"
+			            --concat-cifti-input="$StudyFolder/$Subject/${standardDir}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii"
 			            --surf-reg-name="$regname")
 		
 		if (( ${#mrFIXExtractConcatNamesArr[@]} > 0 )) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
 		then
-			mkdir -p "$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXExtractConcatNamesArr[$i]}"
+			mkdir -p "$StudyFolder/$Subject/${standardDir}/Results/${mrFIXExtractConcatNamesArr[$i]}"
 			
 			# Using clean_vn.dscalar.nii estimated from the full concat group for the extracted concat group as well.
 			# (i.e., estimate for the variance normalization map is based on the full concat group, not
@@ -584,11 +588,11 @@ do
 			#  residual to estimate the unstructured noise, whereas the individual run vn maps were computed using
 			#  PCA-based reconstruction of the unstructured noise in 'icaDim.m'.
 			
-			cp "$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
-			    "$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
+			cp "$StudyFolder/$Subject/${standardDir}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii" \
+			    "$StudyFolder/$Subject/${standardDir}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean_vn.dscalar.nii"
 			
 			extract_cmd+=(--multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
-			              --cifti-out="$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii")
+			              --cifti-out="$StudyFolder/$Subject/${standardDir}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_Atlas${regstring}_hp${HighPass}_clean.dtseries.nii")
 		fi
 		
 		"${extract_cmd[@]}"
@@ -597,16 +601,16 @@ do
 	if ((mrFIXExtractDoVolBool && ${#mrFIXExtractConcatNamesArr[@]} > 0)) && [[ "${mrFIXExtractConcatNamesArr[$i]}" != NONE && "${mrFIXExtractConcatNamesArr[$i]}" != "" ]]
 	then
 		# Using clean_vn.nii.gz estimated from the full concat group for the extracted concat group as well.
-		cp "$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
-		    "$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
+		cp "$StudyFolder/$Subject/${standardDir}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean_vn.nii.gz" \
+		    "$StudyFolder/$Subject/${standardDir}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean_vn.nii.gz"
 		
 		extract_cmd=("${HCPPIPEDIR}/global/scripts/ExtractFromMRFIXConcat.sh"
 		                --study-folder="$StudyFolder"
 		                --subject="$Subject"
 		                --multirun-fix-names="${mrFIXNames[$i]}"
 		                --multirun-fix-names-to-use="${mrFIXExtractNamesArr[$i]}"
-		                --volume-out="$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean.nii.gz"
-		                --concat-volume-input="$StudyFolder/$Subject/${STANDARDDIR}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean.nii.gz")
+		                --volume-out="$StudyFolder/$Subject/${standardDir}/Results/${mrFIXExtractConcatNamesArr[$i]}/${mrFIXExtractConcatNamesArr[$i]}_hp${HighPass}_clean.nii.gz"
+		                --concat-volume-input="$StudyFolder/$Subject/${standardDir}/Results/${mrFIXConcatNames[$i]}/${mrFIXConcatNames[$i]}_hp${HighPass}_clean.nii.gz")
 		
 		"${extract_cmd[@]}"
 	fi

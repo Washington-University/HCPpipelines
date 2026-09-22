@@ -73,6 +73,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabRunMode' '0, 1, 2' "defaults to 1
      1 = Use interpreted MATLAB
      2 = Use octave" "1"
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -82,6 +83,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 log_Check_Env_Var CARET7DIR
 log_Check_Env_Var FSLDIR
@@ -181,7 +183,7 @@ else
 fi
 
 # Naming Conventions and other variables
-AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
 ResultsFolder="${AtlasFolder}/Results/${fMRIName}"

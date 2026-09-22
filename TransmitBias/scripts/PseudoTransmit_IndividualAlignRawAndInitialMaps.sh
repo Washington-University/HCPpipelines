@@ -31,6 +31,8 @@ opts_AddOptional '--old-myelin-mapping' 'oldmappingStr' 'TRUE or FALSE' "if myel
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' 'longitudinal processing [FALSE]' 'FALSE'
 opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitudinal base template ID' ''
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -40,6 +42,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 oldmapping=$(opts_StringToBool "$oldmappingStr")
 IsLongitudinal=$(opts_StringToBool "$IsLongitudinal")
@@ -53,7 +57,7 @@ if (( IsLongitudinal )); then
     fi
     SessionLong="$SessionCross.long.$TemplateLong"
     Session="$SessionLong"
-    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/${PHYSICALDIR}/xfms/T1w_cross_to_T1w_long.mat"
+    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/${physicalDir}/xfms/T1w_cross_to_T1w_long.mat"
     if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
     	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
     fi
@@ -76,8 +80,8 @@ fi
 #Naming Conventions
 
 #Build Paths
-T1wFolder="$StudyFolder/$Session"/${PHYSICALDIR}
-AtlasFolder="$StudyFolder/$Session"/${STANDARDDIR}
+T1wFolder="$StudyFolder/$Session"/${physicalDir}
+AtlasFolder="$StudyFolder/$Session"/${standardDir}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -148,7 +152,7 @@ function align_bias_and_avg()
         		"$matrix" 	\
         		"${WorkingDIR}/xfms/str2${fMRIName}_${namepart}_gdc_dc_jac.mat"
         else
-            #we want the output in ${PHYSICALDIR}/ transmitRes space, not anatomical ($target), so don't use --output-image
+            #we want the output in ${physicalDir}/ transmitRes space, not anatomical ($target), so don't use --output-image
             "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
                 --input-image="$input" \
                 --init-xfm="$StudyFolder"/"$Session"/"$fMRIName"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/fMRI2str.mat \
@@ -178,7 +182,7 @@ function align_bias_and_avg()
         fovargs+=(-volume "$fovtemp"_resamp.nii.gz)
     done
     #average the resulting images, to improve SNR before division
-    #should all this stuff really be directly in ${PHYSICALDIR}/?
+    #should all this stuff really be directly in ${physicalDir}/?
     #MFG: probably already released
     #MFG: merged is good for checking registration, keep
     wb_command -volume-merge "$T1wFolder"/"$namepart"_gdc_dc_reg.nii.gz "${imageargs[@]}"
@@ -197,7 +201,7 @@ wb_command -volume-math "min(min(PhaseOne, PhaseTwo), SBRef)" "$T1wFolder"/Pseud
     -var PhaseTwo "$T1wFolder"/PhaseTwo_fov_all_min.nii.gz \
     -var SBRef "$T1wFolder"/SBRef_fov_all_min.nii.gz
 
-#These are in /${PHYSICALDIR}, decide whether these filenames are what we want
+#These are in /${physicalDir}, decide whether these filenames are what we want
 #MFG: probably already released
 mv "$T1wFolder"/SBRef_gdc_dc_reg_mean.nii.gz "$T1wFolder"/GRE.nii.gz
 

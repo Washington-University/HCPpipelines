@@ -118,6 +118,8 @@ opts_AddOptional '--merged-t1t2-vols' 'MergedT1T2volsStr' 'TRUE or FALSE' "make 
 
 opts_AddOptional '--label-vols' 'LabelVolsStr' 'TRUE or FALSE' "make group-consensus label volumes, default true" 'true'
 
+opts_AddOptional "--physical-dir" "PhysicalFolderName" "T1w" "Name of the physicalfoldername directory"
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -127,6 +129,8 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+physicalDir="$PhysicalFolderName"
+standardDir="$StandardFolderName"
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var CARET7DIR
@@ -202,7 +206,7 @@ ribbon="ribbon"
 # BuildPaths / Make Folders
 log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
-CommonAtlasFolder="${CommonFolder}/${STANDARDDIR}"
+CommonAtlasFolder="${CommonFolder}/${standardDir}"
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
 	CommonDownSampleFolders=`echo "${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "`
@@ -229,7 +233,7 @@ for Volume in ${T1wName} ${T2wName} ; do
 
 	MergeVolumeSTRING=""
 	for Subject in ${Subjlist} ; do
-	MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${STANDARDDIR}/${Volume}.nii.gz "`
+	MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${standardDir}/${Volume}.nii.gz "`
 	done
 	allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
 	avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
@@ -268,7 +272,7 @@ for Volume in ${wmparc} ${ribbon} ; do
 	if ((LabelVols)); then
 		MergeVolumeSTRING=""
 		for Subject in ${Subjlist} ; do
-			MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${STANDARDDIR}/${Volume}.nii.gz "`
+			MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${standardDir}/${Volume}.nii.gz "`
 		done
 		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
 		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
@@ -364,7 +368,7 @@ for Hemisphere in L R ; do
 			SurfaceSTRING=""
 			for Subject in $Subjlist ; do
 				#log_Msg "Subject: ${Subject}"
-				AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+				AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
 				if [ $Mesh = ${HighResMesh} ] ; then
 					Folder=${AtlasFolder}
 				else
@@ -375,7 +379,7 @@ for Hemisphere in L R ; do
 						fi
 						i=$(($i+1))
 					done
-					DownSampleFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/${DownSampleFolderName}"
+					DownSampleFolder="${StudyFolder}/${Subject}/${standardDir}/${DownSampleFolderName}"
 					Folder=${DownSampleFolder}
 				fi
 				SurfaceSTRING=`echo "${SurfaceSTRING} -surf ${Folder}/${Subject}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii "`
@@ -481,8 +485,8 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 
 		log_Msg "Subject: ${Subject}; Mesh: ${Mesh}"
 
-		AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
-		T1wFolder="${StudyFolder}/${Subject}/${PHYSICALDIR}"
+		AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
+		T1wFolder="${StudyFolder}/${Subject}/${physicalDir}"
 		if [ $Mesh = ${HighResMesh} ] ; then
 			Folder="${T1wFolder}"
 			MNIFolder="${AtlasFolder}"
@@ -531,8 +535,8 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 				fi
 				i=$(($i+1))
 			done
-			DownSampleFolder="${StudyFolder}/${Subject}/${PHYSICALDIR}/${DownSampleFolderName}"
-			MNIDownSampleFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/${DownSampleFolderName}"
+			DownSampleFolder="${StudyFolder}/${Subject}/${physicalDir}/${DownSampleFolderName}"
+			MNIDownSampleFolder="${StudyFolder}/${Subject}/${standardDir}/${DownSampleFolderName}"
 			Folder=${DownSampleFolder}
 			MNIFolder=${MNIDownSampleFolder}
 			for Hemisphere in L R ; do
@@ -577,8 +581,8 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 	# Cleanup/removal of individual subject va files
 	if [ $Mesh = ${HighResMesh} ] ; then
 		for Subject in ${Subjlist} ; do
-			T1wFolder="${StudyFolder}/${Subject}/${PHYSICALDIR}"
-			MNIFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+			T1wFolder="${StudyFolder}/${Subject}/${physicalDir}"
+			MNIFolder="${StudyFolder}/${Subject}/${standardDir}"
 			rm ${T1wFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 			rm ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 		done
@@ -590,7 +594,7 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 			fi
 			i=$(($i+1))
 		done
-		MNIDownSampleFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/${DownSampleFolderName}"
+		MNIDownSampleFolder="${StudyFolder}/${Subject}/${standardDir}/${DownSampleFolderName}"
 		MNIFolder=${MNIDownSampleFolder}
 		rm ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 	fi
@@ -672,7 +676,7 @@ for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 		fi
 		MapMerge=""
 		for Subject in ${Subjlist} ; do
-			AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
+			AtlasFolder="${StudyFolder}/${Subject}/${standardDir}"
 			if [ $Mesh = ${HighResMesh} ] ; then
 				Folder=${AtlasFolder}
 			else
@@ -683,7 +687,7 @@ for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 					fi
 					i=$(($i+1))
 				done
-				DownSampleFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/${DownSampleFolderName}"
+				DownSampleFolder="${StudyFolder}/${Subject}/${standardDir}/${DownSampleFolderName}"
 				Folder=${DownSampleFolder}
 			fi
 			MapMerge=`echo "${MapMerge} -cifti ${Folder}/${Subject}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii"`

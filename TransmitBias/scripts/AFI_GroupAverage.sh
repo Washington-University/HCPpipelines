@@ -33,6 +33,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 0
 1 = interpreted MATLAB
 2 = Octave" '0'
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -42,6 +43,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 this_script_dir=$(dirname "$0")
 
@@ -74,7 +76,7 @@ case "$MatlabMode" in
         ;;
 esac
 
-GroupAtlasFolder="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}
+GroupAtlasFolder="$StudyFolder"/"$GroupAverageName"/${standardDir}
 
 #allow this to work before doing a MakeAverageDataset, because why not
 mkdir -p "$GroupAtlasFolder"/fsaverage_LR"$LowResMesh"k
@@ -87,10 +89,10 @@ GoodSubjArray=()
 for Subject in "${SubjArray[@]}"
 do
     #check the _orig cifti version, since we are going to use it in the -cifti-average
-    if [[ -f "$StudyFolder"/"$Subject"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
+    if [[ -f "$StudyFolder"/"$Subject"/${standardDir}/fsaverage_LR"$LowResMesh"k/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
     then
         GoodSubjArray+=("$Subject")
-        AFIOrigCIFTIAvg+=(-cifti "$StudyFolder"/"$Subject"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii)
+        AFIOrigCIFTIAvg+=(-cifti "$StudyFolder"/"$Subject"/${standardDir}/fsaverage_LR"$LowResMesh"k/"$Subject".AFI_orig"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii)
     fi
 done
 avg_setSubjects "${GoodSubjArray[@]}"
@@ -114,7 +116,7 @@ fitParamsOutFile="${GroupAtlasFolder}/${TransmitGroupName}.AFI_groupfit.txt"
 #GMWM template, to find agreement on gray matter
 tempfiles_create GMWMmerge_XXXXXX.nii.gz gmwmtemp
 tempfiles_add "$gmwmtemp"_avg.nii.gz
-volmergeavg "${STANDARDDIR}/GMWMTemplate.nii.gz" "$gmwmtemp" "$gmwmtemp"_avg.nii.gz
+volmergeavg "${standardDir}/GMWMTemplate.nii.gz" "$gmwmtemp" "$gmwmtemp"_avg.nii.gz
 wb_command -volume-math 'x > 0.5' "$GMWMtemplate" -var x "$gmwmtemp"_avg.nii.gz
 
 if [[ "$myelinall" == "" ]]
@@ -128,19 +130,19 @@ then
         "$myelinall" \
         "$myelinavg" &
 else
-    ciftimergeavgsubj "${STANDARDDIR}/fsaverage_LR${LowResMesh}k" "MyelinMap${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
+    ciftimergeavgsubj "${standardDir}/fsaverage_LR${LowResMesh}k" "MyelinMap${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
         "$myelinall" \
         "$myelinavg" &
 fi
 
-volmergeavg "${STANDARDDIR}/AFI_orig.$lowvolres.nii.gz" \
+volmergeavg "${standardDir}/AFI_orig.$lowvolres.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.AFI_orig1.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.AFI_orig1.nii.gz" -subvolume 1 &
-volmergeavg "${STANDARDDIR}/AFI_orig.$lowvolres.nii.gz" \
+volmergeavg "${standardDir}/AFI_orig.$lowvolres.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.AFI_orig2.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.AFI_orig2.nii.gz" -subvolume 2 &
 
-ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k AFI"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+ciftimergeavgsubj ${standardDir}/fsaverage_LR"$LowResMesh"k AFI"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
     "$GroupAtlasFolder"/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.AFI"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
     "$GroupAtlasFolder"/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".AFI"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
 

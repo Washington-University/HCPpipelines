@@ -67,6 +67,7 @@ opts_AddMandatory '--flat-map-root-name' 'FlatMapRootName' 'name' "flat map root
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'template ID' "longitudinal template label" ""
 opts_AddOptional '--longitudinal-timepoints' 'LongitudinalTimepoints' 'list' "list of all timepoints, @ separated" ""
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -76,6 +77,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
@@ -447,30 +449,30 @@ for Hemisphere in L R ; do
         mkdir -p "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc
         if [ "$LongitudinalMode" == "NONE" ]; then
             cp "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere".sphere.rot.native.surf.gii "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/${Hemisphere}.sphere_rot.surf.gii
-            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf="$MSMSulcConf" --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/"$Session".HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf="$MSMSulcConf" --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --standard-dir="$standardDir" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/"$Session".HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
         elif [ "$LongitudinalMode" == "TEMPLATE" ]; then
             #average surfaces from different timepoints
             average_cmd_args=()
             for timepoint in $LongitudinalTimepoints; do
                 experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                average_cmd_args+=("-surf" "$experiment_root/${STANDARDDIR}/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
+                average_cmd_args+=("-surf" "$experiment_root/${standardDir}/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
             done
             ${CARET7DIR}/wb_command -surface-average "${average_cmd_args[@]}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
             #fix the averaged surface to convert it into sphere
             ${CARET7DIR}/wb_command -surface-modify-sphere "$AtlasSpaceFolder"/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii 100 "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc/"${Hemisphere}.sphere_rot.surf.gii"
 
             #run MSMSulc.sh on average surface
-            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf="$MSMSulcConf" --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/"$Session".HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
+            $HCPPIPEDIR/global/scripts/MSMSulc.sh --msm-conf="$MSMSulcConf" --subject-dir="$StudyFolder" --subject="$Session" --regname="$RegName" --hemi "$Hemisphere" --standard-dir="$standardDir" --refmesh="$AtlasSpaceFolder"/"$Session".HEMISPHERE.sphere."$HighResMesh"k_fs_LR.surf.gii --refdata="$AtlasSpaceFolder"/"$Session".HEMISPHERE.refsulc."$HighResMesh"k_fs_LR.shape.gii
             #copy the registration result to each timepoint
             for timepoint in $LongitudinalTimepoints; do
                 experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/${STANDARDDIR}/$NativeFolder/
+                cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/${standardDir}/$NativeFolder/
 
                 #copy the output of MSMSulc to each of the timepoint native folders
                 for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.*${RegName}.*; do
                     file_base=$(basename $file)
                     new_file=${file_base/${Session}/$timepoint.long.$LongitudinalTemplate}
-                    cp $file $experiment_root/${STANDARDDIR}/$NativeFolder/$new_file
+                    cp $file $experiment_root/${standardDir}/$NativeFolder/$new_file
                 done
             done
         fi

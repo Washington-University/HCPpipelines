@@ -86,6 +86,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to 1
 1 = Use interpreted MATLAB
 2 = Use interpreted Octave" "1"
 
+opts_AddOptional "--standard-dir" "StandardFolderName" "MNINonLinear" "Name of the standardfoldername directory"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -95,6 +96,7 @@ fi
 
 #display the parsed/default values
 opts_ShowValues
+standardDir="$StandardFolderName"
 
 Compliance="HCPStyleData"
 ComplianceMsg=""
@@ -177,7 +179,7 @@ have_hand_reclassification()
 	local fMRIName="${3}"
 	local HighPass="${4}"
 
-	[ -e "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+	[ -e "${StudyFolder}/${Session}/${standardDir}/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 }
 
 # ------------------------------------------------------------------------------
@@ -194,8 +196,8 @@ function copy_to_longitudinal()
 
 	local fmri S T
 	#copy for concatentated run
-	S="$StudyFolder/$SessionCross/${STANDARDDIR}/Results/$ConcatName"
-	T="$StudyFolder/$SessionLong/${STANDARDDIR}/Results/$ConcatName"
+	S="$StudyFolder/$SessionCross/${standardDir}/Results/$ConcatName"
+	T="$StudyFolder/$SessionLong/${standardDir}/Results/$ConcatName"
 	local file files_to_copy="Movement_Regressors_demean.txt ReclassifyAsNoise.txt ReclassifyAsSignal.txt"
 	mkdir -p "$T"
 	for file in $files_to_copy; do
@@ -240,8 +242,8 @@ function copy_to_longitudinal()
 
 	#copy for individual fMRI runs
 	for fmri in $fMRINames; do
-		S="$StudyFolder/$SessionCross/${STANDARDDIR}/Results/$fmri"
-		T="$StudyFolder/$SessionLong/${STANDARDDIR}/Results/$fmri"
+		S="$StudyFolder/$SessionCross/${standardDir}/Results/$fmri"
+		T="$StudyFolder/$SessionLong/${standardDir}/Results/$fmri"
 		mkdir -p "$T"/"$fmri"_hp"$HighPass".ica/mc
 		cp "$S"/"$fmri"_hp"$HighPass".ica/mc/prefiltered_func_data_mcf.par "$T"/"$fmri"_hp"$HighPass".ica/mc/
 	done
@@ -371,7 +373,7 @@ fi
 # ConcatName is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 ConcatNameOnly=$(basename $($FSLDIR/bin/remove_ext $ConcatName))
 # But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-ConcatName="${StudyFolder}/${Session}/${STANDARDDIR}/Results/${ConcatNameOnly}/${ConcatNameOnly}"
+ConcatName="${StudyFolder}/${Session}/${standardDir}/Results/${ConcatNameOnly}/${ConcatNameOnly}"
 
 # If we have a hand classification and no regname, reapply fix to the volume as well
 if have_hand_reclassification ${StudyFolder} ${Session} ${ConcatNameOnly} ${hp}
@@ -442,7 +444,7 @@ if (( regenConcatHP )); then
 		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-		fmri="${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fmriname}/${fmriname}"
+		fmri="${StudyFolder}/${Session}/${standardDir}/Results/${fmriname}/${fmriname}"
 
 		log_Msg "Top of loop through fmris: fmri: ${fmri}"
 
@@ -630,7 +632,7 @@ if (( regenConcatHP )); then
 		# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 		fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-		fmri="${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fmriname}/${fmriname}"
+		fmri="${StudyFolder}/${Session}/${standardDir}/Results/${fmriname}/${fmriname}"
 
 		log_Msg "Removing the individual run VN'ed and demeaned time series for ${fmri}"
 
@@ -838,7 +840,7 @@ for fmriname in $fmris ; do
 	# fmriname is expected to NOT include path info, or a nifti extension; make sure that is indeed the case
 	fmriname=$(basename $($FSLDIR/bin/remove_ext $fmriname))
 	# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-	fmri="${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fmriname}/${fmriname}"
+	fmri="${StudyFolder}/${Session}/${standardDir}/Results/${fmriname}/${fmriname}"
 
 	fmriNoExt=$($FSLDIR/bin/remove_ext $fmri)  # $fmriNoExt still includes leading directory components
 	NumTPS=`"${Caret7_Command}" -file-information ${fmriNoExt}_Atlas${RegString}.dtseries.nii -no-map-info -only-number-of-maps`
@@ -859,7 +861,7 @@ for fmriname in $fmris ; do
 		# Make sure that readme_fmri_name is indeed without path or extension
 		readme_fmri_name=$(basename $($FSLDIR/bin/remove_ext $readme_fmri_name))
 		# But, then generate the absolute path so we can reuse the code from hcp_fix_multi_run
-		readme_fmri="${StudyFolder}/${Session}/${STANDARDDIR}/Results/${readme_fmri_name}/${readme_fmri_name}"
+		readme_fmri="${StudyFolder}/${Session}/${standardDir}/Results/${readme_fmri_name}/${readme_fmri_name}"
 		echo "  ${readme_fmri}" >> ${readme_for_cifti_out}
 	done
 
