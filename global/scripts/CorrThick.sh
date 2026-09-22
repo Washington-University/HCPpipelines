@@ -46,9 +46,9 @@ opts_ShowValues
 SkC=$(opts_StringToBool "$SkipCompute")
 
 #set paths
-NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
+NonlinearFolder="$SubjectDir"/"$Subject"/${STANDARDDIR}
 NativeFolder="$NonlinearFolder"/Native
-T1wNativeFolder="$SubjectDir"/"$Subject"/T1w/Native
+T1wNativeFolder="$SubjectDir"/"$Subject"/${PHYSICALDIR}/Native
 
 #Make intermediate directory to save intermediate files
 mkdir -p "$NativeFolder"/CorrThick

@@ -2,10 +2,13 @@
 Find the neighbors of each vertex. 
 """
 
+import os
+
+STANDARDDIR = os.environ.get("STANDARDDIR", "MNINonLinear")
+
 def neighbor_info(a,b,c,x,y,z,subjects_dir,subject,hemi,surface,mesh):
     
     import numpy as np
-    import os
     
     neighbors_unsorted = [set() for _ in range(len(x))]
     triangles_unsorted = [set() for _ in range(len(x))]
@@ -102,7 +105,7 @@ def neighbor_info(a,b,c,x,y,z,subjects_dir,subject,hemi,surface,mesh):
     
     ######################## Save to asc file #############################
     connectivity = '{sub}.{h}.{s}.neighbor.asc'.format(sub=subject,h=hemi,s=surface) # first two neighbors are recurring for closing the triangle loop
-    save_file = os.path.join(subjects_dir, subject,'MNINonLinear','Native', 'CorrThick', connectivity)
+    save_file = os.path.join(subjects_dir, subject,STANDARDDIR,'Native', 'CorrThick', connectivity)
     np.savetxt(save_file, neighbors_sorted, fmt='%-4d', delimiter=' '' ')
     
     return neighbors_sorted

@@ -53,7 +53,7 @@ if (( IsLongitudinal )); then
     fi
     SessionLong="$SessionCross.long.$TemplateLong"
     Session="$SessionLong"
-    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat"
+    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/${PHYSICALDIR}/xfms/T1w_cross_to_T1w_long.mat"
     if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
     	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
     fi
@@ -76,8 +76,8 @@ fi
 #Naming Conventions
 
 #Build Paths
-T1wFolder="$StudyFolder/$Session"/T1w
-AtlasFolder="$StudyFolder/$Session"/MNINonLinear
+T1wFolder="$StudyFolder/$Session"/${PHYSICALDIR}
+AtlasFolder="$StudyFolder/$Session"/${STANDARDDIR}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -148,7 +148,7 @@ function align_bias_and_avg()
         		"$matrix" 	\
         		"${WorkingDIR}/xfms/str2${fMRIName}_${namepart}_gdc_dc_jac.mat"
         else
-            #we want the output in T1w/ transmitRes space, not anatomical ($target), so don't use --output-image
+            #we want the output in ${PHYSICALDIR}/ transmitRes space, not anatomical ($target), so don't use --output-image
             "$HCPPIPEDIR"/global/scripts/bbregister.sh --study-folder="$StudyFolder" --subject="$Session" \
                 --input-image="$input" \
                 --init-xfm="$StudyFolder"/"$Session"/"$fMRIName"/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased/fMRI2str.mat \
@@ -178,7 +178,7 @@ function align_bias_and_avg()
         fovargs+=(-volume "$fovtemp"_resamp.nii.gz)
     done
     #average the resulting images, to improve SNR before division
-    #should all this stuff really be directly in T1w/?
+    #should all this stuff really be directly in ${PHYSICALDIR}/?
     #MFG: probably already released
     #MFG: merged is good for checking registration, keep
     wb_command -volume-merge "$T1wFolder"/"$namepart"_gdc_dc_reg.nii.gz "${imageargs[@]}"
@@ -197,7 +197,7 @@ wb_command -volume-math "min(min(PhaseOne, PhaseTwo), SBRef)" "$T1wFolder"/Pseud
     -var PhaseTwo "$T1wFolder"/PhaseTwo_fov_all_min.nii.gz \
     -var SBRef "$T1wFolder"/SBRef_fov_all_min.nii.gz
 
-#These are in /T1w, decide whether these filenames are what we want
+#These are in /${PHYSICALDIR}, decide whether these filenames are what we want
 #MFG: probably already released
 mv "$T1wFolder"/SBRef_gdc_dc_reg_mean.nii.gz "$T1wFolder"/GRE.nii.gz
 

@@ -57,16 +57,16 @@ fi
 opts_ShowValues
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-InputStats="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/sICA/iq_$sICAdim.wb_annsub.csv"
+InputStats="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/sICA/iq_$sICAdim.wb_annsub.csv"
 
 # if Group sICA hand classifications exists, use it to filter the group sICA components before running tICA
-HandSignalFile="${OutGroupFolder}/MNINonLinear/Results/${fMRIConcatName}/sICA/HandSignal.txt" 
+HandSignalFile="${OutGroupFolder}/${STANDARDDIR}/Results/${fMRIConcatName}/sICA/HandSignal.txt" 
 if [ -e "${HandSignalFile}" ]; then
     tICADim=$(wc -w < "${HandSignalFile}")
 else
     tICADim="$sICAdim"
 fi
-OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$tICADim"
+OutputFolder="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/tICA_d$tICADim"
 
 OutTCSName="$OutputFolder/sICA_TCS_$sICAdim.sdseries.nii"
 OutTCSMaskName="$OutputFolder/sICA_TCSMASK_$sICAdim.sdseries.nii"
@@ -119,7 +119,7 @@ rm -f -- "$TCSListName" "$MapListName" "$VolMapListName" "$SpectraListName"
 
 for Subject in "${SubjList[@]}"
 do
-    FilePrefix="$StudyFolder/$Subject/MNINonLinear/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
+    FilePrefix="$StudyFolder/$Subject/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
     echo "${FilePrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii" >> "$TCSListName"
     echo "${FilePrefix}.${LowResMesh}k_fs_LR.dscalar.nii" >> "$MapListName"
     echo "${FilePrefix}_vol.${LowResMesh}k_fs_LR.dscalar.nii" >> "$VolMapListName"

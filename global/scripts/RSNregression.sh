@@ -109,8 +109,8 @@ then
     DoVol=1
 fi
 
-MNIFolder="$StudyFolder/$Subject/MNINonLinear"
-T1wFolder="$StudyFolder/$Subject/T1w"
+MNIFolder="$StudyFolder/$Subject/${STANDARDDIR}"
+T1wFolder="$StudyFolder/$Subject/${PHYSICALDIR}"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 

@@ -58,7 +58,7 @@ opts_AddOptional '--longitudinal-template' 'TemplateLong' 'Template ID' 'longitu
 #generic other settings
 opts_AddOptional '--scanner-grad-coeffs' 'GradientDistortionCoeffs' 'file' "Siemens gradient coefficients file" '' '--gdcoeffs'
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#MFG: T1w/ outputs should use transmit resolution, MNINonLinear/ use grayordinates
+#MFG: ${PHYSICALDIR}/ outputs should use transmit resolution, ${STANDARDDIR}/ use grayordinates
 #MFG: should add default of 2 to PostFS if we have a default here
 opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates, default '2'" '2' '--grayordinatesres'
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res"
@@ -131,8 +131,8 @@ WorkingDIR="$StudyFolder"/"$Session"/TransmitBias
 mkdir -p "$WorkingDIR"
 
 #Build Paths
-T1wFolder="$StudyFolder"/"$Session"/T1w
-AtlasFolder="$StudyFolder"/"$Session"/MNINonLinear
+T1wFolder="$StudyFolder"/"$Session"/${PHYSICALDIR}
+AtlasFolder="$StudyFolder"/"$Session"/${STANDARDDIR}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -162,7 +162,7 @@ then
         -bad-brainordinate-roi "$zerocheck"
 fi
 
-#NOTE: this script also generates T1w/T1w_acpc_dc_restore."$transmitRes".nii.gz
+#NOTE: this script also generates ${PHYSICALDIR}/T1w_acpc_dc_restore."$transmitRes".nii.gz
 "$scriptsdir"/CreateTransmitBiasROIs.sh \
     --study-folder="$StudyFolder" \
     --subject="$Session" \
@@ -175,7 +175,7 @@ fi
 #AFI is an interleaved 3D scan, can't have interpretable motion between TRs in image space, but can use it for alignment
 #B1Tx is phase-based, but magnitude is used for alignment
 
-#"T1w/ReceiveFieldCorrection.nii.gz" filename isn't obviously myelin-related, but the contents are
+#"${PHYSICALDIR}/ReceiveFieldCorrection.nii.gz" filename isn't obviously myelin-related, but the contents are
 #MFG: stuck, already packaged
 ReceiveBias=""
 if [[ "$T1wunprocstr" != "" ]]
@@ -240,16 +240,16 @@ then
         -var origmyelin "$T1wFolder"/T1wDividedByT2w.nii.gz \
         -var RC "$T1wFolder"/ReceiveFieldCorrection.nii.gz
 
-    #NOTE: MNINonLinear/T1wDivT2w will always be RC-corrected, but T1w/T1wDivT2w won't (already existed, also _ribbon version...)
+    #NOTE: ${STANDARDDIR}/T1wDivT2w will always be RC-corrected, but ${PHYSICALDIR}/T1wDivT2w won't (already existed, also _ribbon version...)
     wb_command -volume-math "clamp(T1w / T2w / (RC + (RC == 0)), 0, 100)" "$AtlasFolder"/T1wDividedByT2w.nii.gz -fixnan 0 \
-        -var T1w "$AtlasFolder"/T1w.nii.gz \
+        -var T1w "$AtlasFolder"/${PHYSICALDIR}.nii.gz \
         -var T2w "$AtlasFolder"/T2w.nii.gz \
         -var RC "$AtlasFolder"/ReceiveFieldCorrection.nii.gz
         
     #we will generate corrected _ribbon outputs (later) by masking full volume, ignoring the clamping difference of previous files
 else
     wb_command -volume-math 'clamp(T1w / T2w, 0, 100)' "$AtlasFolder"/T1wDividedByT2w.nii.gz -fixnan 0 \
-        -var T1w "$AtlasFolder"/T1w.nii.gz \
+        -var T1w "$AtlasFolder"/${PHYSICALDIR}.nii.gz \
         -var T2w "$AtlasFolder"/T2w.nii.gz
 fi
 

@@ -63,7 +63,7 @@ case "$contrast" in
         ;;
 esac
 
-T1wFolder="$StudyFolder/$Subject/T1w"
+T1wFolder="$StudyFolder/$Subject/${PHYSICALDIR}"
 
 if [[ "$fssubjectsdir" == "" ]]
 then
@@ -161,7 +161,7 @@ then
     fi
 fi
 
-#this is T1w/T1w_acpc_dc (not the flirt target) because that is what the surfaces align with, and makes it simpler to use the output xfm
+#this is ${PHYSICALDIR}/T1w_acpc_dc (not the flirt target) because that is what the surfaces align with, and makes it simpler to use the output xfm
 "$FREESURFER_HOME"/bin/tkregister2 --noedit --reg "$whichbbr" --mov "$flirttarget" --targ "$T1wFolder"/T1w_acpc_dc.nii.gz --fslregout "$bbrtemp".mat
 
 tempfiles_create bbregister_reorientmat_XXXXXX.mat reorientfinal

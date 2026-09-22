@@ -130,13 +130,13 @@ QUEUE=""
 for Subject in `echo $Subjlist | sed -e 's/@/ /g'` ; do
 
     #Input Variables
-    SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
-    T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
-    T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
+    SubjectDIR="${StudyFolder}/${Subject}/${PHYSICALDIR}" #Location to Put FreeSurfer Subject's Folder
+    T1wImage="${StudyFolder}/${Subject}/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+    T1wImageBrain="${StudyFolder}/${Subject}/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution) This is only used as an initial brainmask
     isFLAIR=false
 	isT1wDivFLAIR=false
-    if [ -e "${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" ] ; then
-        T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
+    if [ -e "${StudyFolder}/${Subject}/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz" ] ; then
+        T2wImage="${StudyFolder}/${Subject}/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
         T2wType="${T2wType:=T2w}" # T2w, FLAIR. Default is T2w
         if [ "$T2wType" = "FLAIR" ] ; then 
             isFLAIR=true

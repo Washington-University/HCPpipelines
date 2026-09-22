@@ -83,7 +83,7 @@ then
 fi
 
 #Naming Conventions
-CommonAtlasFolder="$StudyFolder/$GroupAverageName/MNINonLinear"
+CommonAtlasFolder="$StudyFolder/$GroupAverageName/${STANDARDDIR}"
 OutputFolder="$CommonAtlasFolder/Results/$OutputfMRIName"
 
 OutputPCA="$OutputFolder/${OutputfMRIName}${fMRIProcSTRING}"

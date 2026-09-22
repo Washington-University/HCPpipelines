@@ -64,7 +64,7 @@ opts_AddOptional '--pt-reference-value-file' 'PseudoTransmitReferenceValueFile' 
 #MFG: stay mandatory
 opts_AddMandatory '--reg-name' 'RegName' 'string' "surface registration to use, like MSMAll"
 opts_AddOptional '--low-res-mesh' 'LowResMesh' 'number' "resolution of grayordinates mesh, default '32'" '32'
-#MFG: T1w/ outputs should use transmit resolution, MNINonLinear/ use grayordinates
+#MFG: ${PHYSICALDIR}/ outputs should use transmit resolution, ${STANDARDDIR}/ use grayordinates
 #MFG: should add default of 2 to PostFS if we have a default here
 opts_AddOptional '--grayordinates-res' 'grayordRes' 'number' "resolution used in PostFreeSurfer for grayordinates, default '2'" '2'
 opts_AddOptional '--transmit-res' 'transmitRes' 'number' "resolution to use for transmit field, default equal to --grayordinates-res" ''
@@ -162,7 +162,7 @@ T1wDivT2wCorrAtlasArray=()
 MyelinMapCorrArray=()
 
 TemplateSession="$Subject.long.$TemplateLong"
-AtlasFolderTemplate="$StudyFolder/$TemplateSession/MNINonLinear"
+AtlasFolderTemplate="$StudyFolder/$TemplateSession/${STANDARDDIR}"
 
 case "$mode" in
     AFI) suffix="Corr"; suffix1="Corr" ;;
@@ -173,7 +173,7 @@ esac
 
 for Session in "${Sessions[@]}"; do
     SessionLong="$Session".long."$TemplateLong"
-    AtlasFolder="$StudyFolder/$SessionLong/MNINonLinear"
+    AtlasFolder="$StudyFolder/$SessionLong/${STANDARDDIR}"
     T1wDivT2wCorrArray+=(-volume "$AtlasFolder/T1wDividedByT2w_${suffix}.nii.gz")
     T1wDivT2wArray+=(-volume "$AtlasFolder/T1wDividedByT2w.nii.gz")
 

@@ -112,8 +112,8 @@ then
     RegString="_$RegName"
 fi
 
-MNIFolder="$StudyFolder/$Subject/MNINonLinear"
-T1wFolder="$StudyFolder/$Subject/T1w"
+MNIFolder="$StudyFolder/$Subject/${STANDARDDIR}"
+T1wFolder="$StudyFolder/$Subject/${PHYSICALDIR}"
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 
@@ -286,31 +286,31 @@ then
     #the correct _vn, _mean files don't have "_clean" like fMRIProcString does
     for fMRIName in "${SplitArray[@]}"
     do
-        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+        if [[ -f "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
         then
-            curLength=$(wb_command -file-information -only-number-of-maps "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii")
+            curLength=$(wb_command -file-information -only-number-of-maps "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii")
             tempfiles_create tICAPipeline-mrsplit-XXXXXX.dtseries.nii tempfile
             wb_command -cifti-merge "$tempfile" \
                 -cifti "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}.dtseries.nii" \
                     -column "$curStart" -up-to $((curStart + curLength - 1))
-            useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
-            useOrig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}_vn.dscalar.nii"
+            useMean="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
+            useOrig="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}_vn.dscalar.nii"
             if ((DoFixBias))
             then
                 #generate and use new-BC corrected mean
-                useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
-                useOrig="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_vn.dscalar.nii"
+                useMean="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
+                useOrig="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_vn.dscalar.nii"
                 wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
-                    -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
+                    -var mean "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
                     -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_bias.dscalar.nii" \
                     -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_real_bias.dscalar.nii"
                 wb_command -cifti-math 'origvn * oldbias / newbias' "$useOrig" \
-                    -var origvn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}_vn.dscalar.nii" \
+                    -var origvn "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_hp${HighPass}_vn.dscalar.nii" \
                     -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_bias.dscalar.nii" \
                     -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_real_bias.dscalar.nii"
             fi
             #use the new _vn written by the matlab part
-            wb_command -cifti-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
+            wb_command -cifti-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
                 -var split "$tempfile" \
                 -var mr_vn "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}_Atlas${RegString}${OutString}_vn.dscalar.nii" -select 1 1 -repeat \
                 -var orig_vn "$useOrig" -select 1 1 -repeat \
@@ -324,25 +324,25 @@ then
                 tempfiles_create tICAPipeline-mrsplit-XXXXXX.nii.gz tempfilevol
                 wb_command -volume-merge "$tempfilevol" \
                     -volume "$MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}.nii.gz" -subvolume "$curStart" -up-to $((curStart + curLength - 1))
-                useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
-                useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz"
+                useMeanVol="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
+                useOrigVol="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz"
                 if ((DoFixBias))
                 then
-                    useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
-                    useOrigVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_vn.nii.gz"
+                    useMeanVol="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
+                    useOrigVol="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${OutString}_vn.nii.gz"
                     #"$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz"
                     wb_command -volume-math 'mean * oldbias / newbias' "$useMeanVol" \
-                        -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
+                        -var mean "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
                         -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
                         -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_real_bias.nii.gz" \
                         -fixnan 0
                     wb_command -volume-math 'origvn * oldbias / newbias' "$useOrigVol" \
-                        -var origvn "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz" \
+                        -var origvn "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_hp${HighPass}_vn.nii.gz" \
                         -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
                         -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_real_bias.nii.gz" \
                         -fixnan 0
                 fi
-                wb_command -volume-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}.nii.gz" \
+                wb_command -volume-math 'split / mr_vn * orig_vn + mean' "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${OutString}.nii.gz" \
                     -var split "$tempfilevol" \
                     -var mr_vn $MNIFolder/Results/$MRFixConcatName/${MRFixConcatName}${OutString}_vn.nii.gz -subvolume 1 -repeat \
                     -var orig_vn "$useOrigVol" -subvolume 1 -repeat \
@@ -358,38 +358,38 @@ then
 else
     for fMRIName in "${SplitArray[@]}"
     do
-        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+        if [[ -f "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
         then
-            wb_command -cifti-reduce "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}.dtseries.nii" MEAN "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
-            useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
+            wb_command -cifti-reduce "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}.dtseries.nii" MEAN "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
+            useMean="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii"
             if ((DoFixBias))
             then
                 #generate and use new-BC corrected mean
-                useMean="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
+                useMean="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}_mean.dscalar.nii"
                 wb_command -cifti-math 'mean * oldbias / newbias' "$useMean" \
-                    -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
+                    -var mean "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_mean.dscalar.nii" \
                     -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_bias.dscalar.nii" \
                     -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}_real_bias.dscalar.nii"
             fi
             #use the new _vn written by the matlab part
-            wb_command -cifti-math 'fmri + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
+            wb_command -cifti-math 'fmri + mean' "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
                 -var fmri "$MNIFolder/Results/$fMRIName/${fMRIName}_Atlas${RegString}${OutString}.dtseries.nii" \
                 -var mean "$useMean" -select 1 1 -repeat 
                                     
             if ((DoVol))
             then
-                wb_command -volume-reduce "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}.nii.gz" MEAN "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
-                useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
+                wb_command -volume-reduce "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}.nii.gz" MEAN "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
+                useMeanVol="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_mean.nii.gz"
                 if ((DoFixBias))
                 then
-                    useMeanVol="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
+                    useMeanVol="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${OutString}_mean.nii.gz"
                     wb_command -volume-math 'mean * oldbias / newbias' "$useMeanVol" \
-                        -var mean "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
+                        -var mean "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_mean.nii.gz" \
                         -var oldbias "$MNIFolder/Results/$fMRIName/${fMRIName}_bias.nii.gz" \
                         -var newbias "$MNIFolder/Results/$fMRIName/${fMRIName}_real_bias.nii.gz" \
                         -fixnan 0
                 fi
-                wb_command -volume-math 'fmri + mean' "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}${OutString}.nii.gz" \
+                wb_command -volume-math 'fmri + mean' "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${OutString}.nii.gz" \
                     -var fmri "$MNIFolder/Results/$fMRIName/${fMRIName}${OutString}.nii.gz" \
                     -var mean "$useMeanVol" -subvolume 1 -repeat \
                     -fixnan 0

@@ -118,7 +118,7 @@ main() {
     evs_dir=${StudyFolder}/${Subject}/unprocessed/3T/${taskname}/LINKED_DATA/EPRIME/EVs
 
     # figure out where a copy of the EVs file should go
-    dest_dir=${StudyFolder}/${Subject}/MNINonLinear/Results/${taskname}
+    dest_dir=${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${taskname}
 
     # copy files
     cp -rv ${evs_dir} ${dest_dir}

@@ -51,7 +51,7 @@ function makeTemplateConcatRuns {
     IFS='@ ' read -r -a fMRIs <<< "${fMRIStr}"
     IFS='@ ' read -r -a sessions <<< "${sessionsStr}"
     local numSessions="${#sessions[@]}"
-    local OutDir="$TemplateDir/MNINonLinear/Results/$nameOut"
+    local OutDir="$TemplateDir/${STANDARDDIR}/Results/$nameOut"
     mkdir -p "$OutDir"
     
     #per fMRI run lists for concat/merge commands
@@ -66,7 +66,7 @@ function makeTemplateConcatRuns {
     for session in "${sessions[@]}"; do
         sessionLong="$session.long.$template"
         echo "Timepoint: $sessionLong"
-        resultsDir="$StudyFolder"/"$sessionLong"/MNINonLinear/Results
+        resultsDir="$StudyFolder"/"$sessionLong"/${STANDARDDIR}/Results
 
         # Average vn's in the atlas and native spaces. We assume that $nameOut exists in $sessionLong tICA output
         vn_average_cifti_array+=(-cifti "$resultsDir/$nameOut/${nameOut}_Atlas_${RegName}_hp${HighPass}_clean_tclean_vn.dscalar.nii")

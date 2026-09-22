@@ -78,7 +78,7 @@ if [[ -n "$fMRINames" ]]; then # Single-run FIX processing
   # Count the time samples in each run
   runLengths=()
   for Name in "${NamesArray[@]}"; do
-    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
+    fMRIFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${Name}"
     CleanedCIFTITCS="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
     if [[ -f "$CleanedCIFTITCS" ]]; then
       samp=$(fslval "$CleanedCIFTITCS" dim5 | xargs)
@@ -98,7 +98,7 @@ log_Msg "Processing subject ${Subject} with ${#NamesArray[@]} run(s)"
 fMRIExist=()
 for Name in "${NamesArray[@]}"
 do
-  fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
+  fMRIFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${Name}"
 
   # Check if cleaned data exists
   cleanedCIFTI="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}.dtseries.nii"
@@ -137,7 +137,7 @@ do
   log_Msg "Running fMRIStats on: ${Name}"
 
   # Construct filepaths
-  fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
+  fMRIFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${Name}"
   MeanCIFTI="${fMRIFolder}/${Name}_Atlas${RegString}_mean.dscalar.nii"
   MeanVolume="${fMRIFolder}/${Name}_mean.nii.gz"
   OrigCIFTITCS="${fMRIFolder}/${Name}_Atlas${RegString}.dtseries.nii"
@@ -286,7 +286,7 @@ done
 if [[ -z "$fMRINames" ]]; then
   log_Msg "Generating summary CSV files"
   for Name in "${fMRIExist[@]}"; do
-    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
+    fMRIFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${Name}"
     CIFTIOutput="${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
 
     # Call fMRIStats_SummaryCSV MATLAB function
@@ -317,7 +317,7 @@ else  # Single-run FIX processing - average across individual runs then create s
   ciftiFiles=()
   volFiles=()
   for Name in "${fMRIExist[@]}"; do
-    fMRIFolder="${StudyFolder}/${Subject}/MNINonLinear/Results/${Name}"
+    fMRIFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${Name}"
     ciftiFiles+=("${fMRIFolder}/${Name}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii")
     volFiles+=("${fMRIFolder}/${Name}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz")
   done
@@ -378,7 +378,7 @@ else  # Single-run FIX processing - average across individual runs then create s
   fi
 
   # Merge averaged MEAN and STD metrics back in original metric order
-  AveragedCIFTIOutput="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
+  AveragedCIFTIOutput="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.dscalar.nii"
 
   # Build merge indices to restore original order
   meanIdx=0
@@ -469,7 +469,7 @@ else  # Single-run FIX processing - average across individual runs then create s
     fi
 
     # Merge volumes in original metric order
-    AveragedVolumeOutput="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
+    AveragedVolumeOutput="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${ConcatName}/${ConcatName}_hp${HighPass}${ProcSTRING}_${ICAmode}fMRIStats.nii.gz"
     mergeVolCmd=()
     meanSubvolIdx=0
     stdSubvolIdx=0

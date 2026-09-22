@@ -513,7 +513,7 @@ make_t1wxt2w_qc_file()
 
 
 T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
-OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
+OutputOrigT1wToT1w="OrigT1w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the ${PHYSICALDIR}/${PHYSICALDIR}.nii.gz file; NOT FreeSurfer's "orig" space)
 
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
@@ -557,7 +557,7 @@ if ((! existing_session)); then
     # certain files need to be reverted to their PreFreeSurfer output versions
     if [ `imtest ${SessionDIR}/xfms/${OutputOrigT1wToT1w}` = 1 ]; then
         log_Err "The --existing-session flag was not invoked AND PostFreeSurfer has already been run."
-        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <session>/T1w/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
+        log_Err "If attempting to run FreeSurfer de novo, certain files (e.g., <session>/${PHYSICALDIR}/{T1w,T2w}_acpc_dc*) need to be reverted to their PreFreeSurfer outputs."
         log_Err_Abort "If this is the goal, delete ${SessionDIR}/${SessionID} AND re-run PreFreeSurfer, before invoking FreeSurfer again."
     fi
 

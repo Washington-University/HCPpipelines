@@ -53,7 +53,7 @@ if (( IsLongitudinal )); then
     fi
     SessionLong="$SessionCross.long.$TemplateLong"
     Session="$SessionLong"
-    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat"
+    xfmT1w2BaseTemplate="$StudyFolder/$SessionLong/${PHYSICALDIR}/xfms/T1w_cross_to_T1w_long.mat"
     if [ ! -f "$xfmT1w2BaseTemplate" ]; then 
     	log_Err_Abort "Structural MRI to base template transform $xfmT1w2BaseTemplate not found. Has longitudinal PostFreesurfer pipeline been run?"
     fi
@@ -89,8 +89,8 @@ fi
 #TSC: other two don't have /reg
 #MFG: can make it consistent
 #Build Paths
-T1wFolder="$StudyFolder/$Session"/T1w
-AtlasFolder="$StudyFolder/$Session"/MNINonLinear
+T1wFolder="$StudyFolder/$Session"/${PHYSICALDIR}
+AtlasFolder="$StudyFolder/$Session"/${STANDARDDIR}
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 WorkingDirectory="$AFIFolder"

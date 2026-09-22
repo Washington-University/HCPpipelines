@@ -54,7 +54,7 @@ log_Check_Env_Var CARET7DIR
 Subjlist=${Subjlist//@/ }
 log_Msg "Subjlist: ${Subjlist}"
 
-CommonAtlasFolder="${CommonFolder}/MNINonLinear"
+CommonAtlasFolder="${CommonFolder}/${STANDARDDIR}"
 log_Msg "CommonAtlasFolder: ${CommonAtlasFolder}"
 
 #CommonDownSampleFolder="${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k"
@@ -81,7 +81,7 @@ for Hemisphere in L R ; do
 	for Subject in ${Subjlist} ; do
 		log_Msg "Working on subject: ${Subject}"
 
-		AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
+		AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
 		log_Msg "AtlasFolder: ${AtlasFolder}"
 		NativeFolder="${AtlasFolder}/Native"
 		log_Msg "NativeFolder: ${NativeFolder}"
@@ -109,7 +109,7 @@ for Hemisphere in L R ; do
 		# line length is.)
 
 		#SurfAverageSTRING=`echo "${SurfAverageSTRING} -surf ${AtlasFolder}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"`
-		SurfAverageSTRING+=" -surf ${Subject}/MNINonLinear/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"
+		SurfAverageSTRING+=" -surf ${Subject}/${STANDARDDIR}/${Subject}.${Hemisphere}.sphere.${InRegName}_${TargetRegName}.${HighResMesh}k_fs_LR.surf.gii"
 
 		log_Msg "SurfAverageSTRING: ${SurfAverageSTRING}"
 		#log_Msg "Length of SurfAverageSTRING: ${#SurfAverageSTRING}"

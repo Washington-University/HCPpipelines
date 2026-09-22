@@ -66,8 +66,8 @@ case "$MatlabMode" in
 esac
 
 #Build Paths
-T1wFolder="$StudyFolder"/"$Subject"/T1w
-AtlasFolder="$StudyFolder"/"$Subject"/MNINonLinear
+T1wFolder="$StudyFolder"/"$Subject"/${PHYSICALDIR}
+AtlasFolder="$StudyFolder"/"$Subject"/${STANDARDDIR}
 T1wResultsFolder="$T1wFolder"/Results
 ResultsFolder="$AtlasFolder"/Results
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
@@ -235,7 +235,7 @@ wb_command -cifti-math "myelin / (transmit * $Slope + (1 - $Slope))" "$DownSampl
 
 #Transmit Field Correction Application Volume
 
-#NOTE: MNINonLinear/T1wDividedByT2w.nii.gz already has RC-correction as needed, unlike T1w/
+#NOTE: ${STANDARDDIR}/T1wDividedByT2w.nii.gz already has RC-correction as needed, unlike ${PHYSICALDIR}/
 wb_command -volume-math "(myelin / (transmit * $Slope + (1 - $Slope))) * MASK" "$AtlasFolder"/T1wDividedByT2w_Corr.nii.gz -fixnan 0 \
     -var myelin "$AtlasFolder"/T1wDividedByT2w.nii.gz \
     -var transmit "$AtlasFolder"/rB1Tx.nii.gz \

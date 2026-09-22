@@ -24,7 +24,7 @@ defaultopt() {
 ################################################## OPTION PARSING #####################################################
 # Input Variables
 
-FreeSurferSubjectFolder=$(getopt1 "--t1folder" "$@")  # "$1" #${StudyFolder}/${Session}/T1w
+FreeSurferSubjectFolder=$(getopt1 "--t1folder" "$@")  # "$1" #${StudyFolder}/${Session}/${PHYSICALDIR}
 FreeSurferSubjectID=$(getopt1 "--session" "$@")       # "$2" #Session ID
 WorkingDirectory=$(getopt1 "--workingdir" "$@")       # "$3" #Path to registration working dir, e.g. ${StudyFolder}/${Session}/Diffusion/reg
 DataDirectory=$(getopt1 "--datadiffdir" "$@")         # "$4" #Path to diffusion space diffusion data, e.g. ${StudyFolder}/${Session}/Diffusion/data

@@ -186,7 +186,7 @@ if ((verbose)); then
 fi
 
 # Define some convenience variables
-AtlasSpaceFolder="$StudyFolder/$Session/MNINonLinear"
+AtlasSpaceFolder="$StudyFolder/$Session/${STANDARDDIR}"
 mesh="164k_fs_LR"
 
 if [[ -d "$AtlasSpaceFolder/xfms" ]]; then
@@ -194,7 +194,7 @@ if [[ -d "$AtlasSpaceFolder/xfms" ]]; then
         echo "Session folder appears to be okay."
     fi
 else
-    log_Err_Abort "ERROR:  Session folder missing expected directory MNINonLinear/xfms"
+    log_Err_Abort "ERROR:  Session folder missing expected directory ${STANDARDDIR}/xfms"
 fi
 
 # Replace dummy strings in the template scenes to generate
@@ -217,13 +217,13 @@ for regName in FS MSMSulc MSMAll; do
 done
 
 ## Map the T1w_acpc space volume into MNI152 space, using just the affine (linear) component
-## [Similar to the 'MNINonLinear/xfms/T1w_acpc_dc_restore_brain_to_MNILinear.nii.gz' volume
+## [Similar to the '${STANDARDDIR}/xfms/T1w_acpc_dc_restore_brain_to_MNILinear.nii.gz' volume
 ## (created in AtlasRegistrationToMNI152_FLIRTandFNIRT.sh) 
 ## except applied to the NON-brain-extracted volume].
 acpc2MNILinear="$AtlasSpaceFolder/xfms/acpc2MNILinear.mat"
 if [[ -e "$acpc2MNILinear" ]]; then
     nativeVol=T1w_acpc_dc_restore
-    volumeIn="$AtlasSpaceFolder/../T1w/$nativeVol.nii.gz"
+    volumeIn="$AtlasSpaceFolder/../${PHYSICALDIR}/$nativeVol.nii.gz"
     volumeRef="$AtlasSpaceFolder/T1w_restore.nii.gz"
     volumeOut="$OutputSceneFolder/$Session.${nativeVol}_to_MNILinear.nii.gz"
     if [[ "$maskDilate" != "-1" ]]
@@ -251,7 +251,7 @@ if [[ -e "$acpc2MNILinear" ]]; then
 fi
 
 ## Create a surface-mapped version of the FNIRT volume distortion (for easy visualization).
-## We could use wb_command -volume-distortion on MNINonLinear/xfms/acpc_dc2standard.nii.gz, 
+## We could use wb_command -volume-distortion on ${STANDARDDIR}/xfms/acpc_dc2standard.nii.gz, 
 ## but its "isotropic" distortion (1st volume) is basically the same as the -jout (Jacobian) 
 ## output of fnirt (highly correlated, but there is a small bias between the two, perhaps
 ## because the fnirt jacobian doesn't include the affine component)?

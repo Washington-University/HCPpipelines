@@ -30,8 +30,8 @@ fi
 opts_ShowValues
 
 #Build Paths
-T1wFolder="$StudyFolder/$Subject"/T1w
-AtlasFolder="$StudyFolder/$Subject"/MNINonLinear
+T1wFolder="$StudyFolder/$Subject"/${PHYSICALDIR}
+AtlasFolder="$StudyFolder/$Subject"/${STANDARDDIR}
 
 #create low-res T1w-space image for completeness
 #special case, if resolutions are equal, borrow the fMRI grid (legacy reasons), otherwise do a new applyisoxfm

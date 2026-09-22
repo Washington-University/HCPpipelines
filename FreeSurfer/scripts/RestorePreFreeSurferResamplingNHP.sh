@@ -29,7 +29,7 @@ log_Check_Env_Var FSLDIR
 
 StudyFolder=$1
 Subject=$2
-T1wFolder="$StudyFolder"/"$Subject"/T1w
+T1wFolder="$StudyFolder"/"$Subject"/${PHYSICALDIR}
 T2wFolder="$StudyFolder"/"$Subject"/T2w
 
 log_Msg "START: RestorePreFreeSurferResamplingNHP.sh"

@@ -116,7 +116,7 @@ ProcSTRING=`getopt1 "--procstring" $@`
 # 3) Add creation of a Lev3Contrasts.txt file (describing the Lev3 contrasts).
 
 ##Naming Conventions
-CommonAtlasFolder="${GroupFolder}/MNINonLinear"
+CommonAtlasFolder="${GroupFolder}/${STANDARDDIR}"
 CommonResultsFolder="${CommonAtlasFolder}/Results"
 
 ##Set up some things
@@ -171,7 +171,7 @@ echo $StartTime
 
 LevelTwoFEATDirSTRING=""
 for Subject in $SubjectList ; do 
-  AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
+  AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
   ResultsFolder="${AtlasFolder}/Results"
   LevelTwoFEATDir="${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${ParcellationString}.feat"
   if [ -d ${LevelTwoFEATDir} ] ; then

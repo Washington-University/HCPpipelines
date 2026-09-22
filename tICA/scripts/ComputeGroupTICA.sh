@@ -64,7 +64,7 @@ fi
 opts_ShowValues
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$tICAdim"
+OutputFolder="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/tICA_d$tICAdim"
 
 TCSConcatName="$OutputFolder/sICA_TCS_$tICAdim.sdseries.nii"
 TCSMaskName="$OutputFolder/sICA_TCSMASK_$tICAdim.sdseries.nii"
@@ -118,7 +118,7 @@ rm -f -- "$TCSListName" "$SpectraListName" "$SubjListName" "$fMRIListName"
 
 for Subject in "${SubjList[@]}"
 do
-    FilePrefix="$StudyFolder/$Subject/MNINonLinear/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
+    FilePrefix="$StudyFolder/$Subject/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/$Subject.${sICAProcString}${RegString}"
     echo "${FilePrefix}_ts.${LowResMesh}k_fs_LR.sdseries.nii" >> "$TCSListName"
     echo "${FilePrefix}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" >> "$SpectraListName"
     echo "$Subject" >> "$SubjListName"
@@ -126,7 +126,7 @@ done
 
 for fMRIName in "${fMRIList[@]}"
 do
-    echo "MNINonLinear/Results/$fMRIName/${fMRIName}_Atlas${RegString}.dtseries.nii" >> "$fMRIListName"
+    echo "${STANDARDDIR}/Results/$fMRIName/${fMRIName}_Atlas${RegString}.dtseries.nii" >> "$fMRIListName"
 done
 
 #shortcut in case the folder gets renamed

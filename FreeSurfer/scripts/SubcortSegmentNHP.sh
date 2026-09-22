@@ -26,7 +26,7 @@ mri_segment_args="$@"
 
 source $HCPPIPEDIR/global/scripts/debug.shlib "$@"  # command failure reporting, also sources log.shlib
 
-AtlasFolder="$SubjectDIR/../MNINonLinear"
+AtlasFolder="$SubjectDIR/../${STANDARDDIR}"
 # ----------------------------------------------------------------------
 log_Msg "Start: $(basename $0)"
 # ----------------------------------------------------------------------

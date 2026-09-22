@@ -81,7 +81,7 @@ if (( nSessions < 1 )); then
 
 elif (( nSessions > 1 )); then #normal case.
     for session in "${SessionsArray[@]}"; do
-        cmd_mov+=("$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz")
+        cmd_mov+=("$StudyFolder/$session/${PHYSICALDIR}/$session/mri/orig/T2raw.mgz")
         cmd_lta+=("$TemplateDir/T2w/xfms/${session}_t2w2bootstrap_average.lta")
     done
 
@@ -103,7 +103,7 @@ else #exactly one session, use single T2w to create template.
     # Plus, to the extent there is a difference, it is only in the creation of the 'base', and not
     # in the longitudinal processing of the individual time points themselves.
     session=${SessionsArray[0]}
-    mgz="$StudyFolder/$session/T1w/$session/mri/orig/T2raw.mgz"
+    mgz="$StudyFolder/$session/${PHYSICALDIR}/$session/mri/orig/T2raw.mgz"
     nii="$StudyFolder/$session/T2w/T2w.nii.gz"
     mkdir -p "$TemplateDir/T2w/xfms"
     cp -f "$nii" "$TemplateDir/T2w/bootstrap_average.nii.gz"

@@ -145,18 +145,18 @@ do
     NumTPs=0
     if ((testVol))
     then
-        if [[ ! -f "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" ]]
+        if [[ ! -f "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}.nii.gz" ]]
         then
-            log_Msg "missing run: '$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz'"
+            log_Msg "missing run: '$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}.nii.gz'"
         else
-            NumTPs=$(fslval "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}.nii.gz" dim4)
+            NumTPs=$(fslval "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}.nii.gz" dim4)
         fi
     else
-        if [[ ! -f "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" ]]
+        if [[ ! -f "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" ]]
         then
-            log_Msg "missing run: '$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii'"
+            log_Msg "missing run: '$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii'"
         else
-            NumTPs=$(wb_command -file-information "$StudyFolder/$Subject/MNINonLinear/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
+            NumTPs=$(wb_command -file-information "$StudyFolder/$Subject/${STANDARDDIR}/Results/$fmriName/${fmriName}_Atlas$RegString.dtseries.nii" -only-number-of-maps)
         fi
     fi
     curTimepoints=$((curTimepoints + NumTPs))

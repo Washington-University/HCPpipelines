@@ -91,7 +91,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
 
     BrainTemplate="Mac30BS"
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage" #Template Dir with FreeSurfer NHP GCA and TIF files
-    TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton.nii.gz"
+    TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/${STANDARDDIR}/${BrainTemplate}_wmskeleton.nii.gz"
 
   elif [[ "$SPECIES" == *Cyno* ]] ; then                        # Cynomolgus (Macaca fascicularis)
 
@@ -101,7 +101,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
     GCA="SpecMac25cyno_2024-02-23.gca"
     GCASkull="SpecMac25cyno_withskull_2024-02-23.gca"
-    TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton_0.5mm.nii.gz"
+    TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/${STANDARDDIR}/${BrainTemplate}_wmskeleton_0.5mm.nii.gz"
 
   elif [[ "$SPECIES" == *Rhesus* ]] ; then                      # Rhesus (Macaca mulatta)
 
@@ -109,7 +109,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
     GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
     GCA="SpecMac25Rhesus_2024-01-23.gca"
     GCASkull="SpecMac25Rhesus_withskull_2024-01-23.gca"
-    TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton_0.5mm.nii.gz"
+    TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/${STANDARDDIR}/${BrainTemplate}_wmskeleton_0.5mm.nii.gz"
 
   elif [[ "$SPECIES" == *Snow* ]] ; then                        # Japanese snow monkey (Macaca fuscata)
 
@@ -140,7 +140,7 @@ elif [[ "$SPECIES" == *Macaque* ]] ; then                            # tuned by 
   if ((isFLAIR)) ; then                                       # control with FLAIR for pial tuning
     NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
     NSigmaBelow="3"                                           # T2w/FLAIR version, default=3
-  elif ((isT1wDivFLAIR)) ; then                               # control with T1w/FLAIR
+  elif ((isT1wDivFLAIR)) ; then                               # control with ${PHYSICALDIR}/FLAIR
     NSigmaAbove="3"                                           # 3: highres FLAIR (Autio et al.)
     NSigmaBelow="4"                                           # 4: highres FLAIR (Autio et al.)
   else                                                        # control with T2w
@@ -189,7 +189,7 @@ elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU
   if ((isFLAIR)) ; then                                       # control T2 pial
     NSigmaAbove="3"                                           # T2w/FLAIR version, default=3
     NSigmaBelow="3"                                           # T2w/FLAIR version, default=3
-  elif ((isT1wDivFLAIR)) ; then                               # control with T1w/FLAIR
+  elif ((isT1wDivFLAIR)) ; then                               # control with ${PHYSICALDIR}/FLAIR
     NSigmaAbove="3"                                           # 3: highres FLAIR (Autio et al.)
     NSigmaBelow="4"                                           # 4: highres FLAIR (Autio et al.)
   else                                                        # control T2-FLAIR pial
@@ -206,7 +206,7 @@ elif [[ "$SPECIES" = Marmoset ]] ; then                            # tuned by AU
   GreySigmaFS5="5"                                            # FS5.3.0 HighResPial
   mris_register_args="-dist 20 -max_degrees 30"               # to suppress surface registration failure in lissencephalic brain
   BrainTemplate="MarmosetRIKEN25"
-  TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_wmskeleton_0.2mm.nii.gz"
+  TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/${STANDARDDIR}/${BrainTemplate}_wmskeleton_0.2mm.nii.gz"
   GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
   GCA="MarmosetRIKEN25_2025-08-23.gca"
   GCASkull="MarmosetRIKEN25_2025-08-23.gca"
@@ -248,7 +248,7 @@ elif [[ "$SPECIES" = NightMonkey ]] ; then                         # tuned by TH
   MaxThicknessFS5="4"                                         # FS5.3.0 HighResPial
   GreySigmaFS5="5"                                            # FS5.3.0 HighResPial
   BrainTemplate="NightMonkeyRIKEN9"
-  TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/MNINonLinear/${BrainTemplate}_Averagewmskeleton.nii.gz"
+  TemplateWMSkeleton="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/${STANDARDDIR}/${BrainTemplate}_Averagewmskeleton.nii.gz"
   GCAdir="${HCPPIPEDIR_Templates}/NHP_NNP/${BrainTemplate}/fsaverage"
   GCA="RB_all_2016-05-10.vc700.gca"
   GCASkull="RB_all_withskull_2016-05-10.gca"

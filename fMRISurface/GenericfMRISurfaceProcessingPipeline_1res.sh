@@ -124,8 +124,8 @@ fi
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
 
 #Naming Conventions
-AtlasSpaceFolder="MNINonLinear"
-T1wFolder="T1w"
+AtlasSpaceFolder="${STANDARDDIR}"
+T1wFolder="${PHYSICALDIR}"
 NativeFolder="Native"
 ResultsFolder="Results"
 DownSampleFolder="fsaverage_LR${LowResMesh}k"

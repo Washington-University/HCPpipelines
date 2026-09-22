@@ -244,7 +244,7 @@ b0dist=45               # Minimum distance in volumes between b0s considered for
 
 # Establish output directory paths
 outdir=${StudyFolder}/${Session}/${DWIName}
-outdirT1w=${StudyFolder}/${Session}/T1w/${DWIName}
+outdirT1w=${StudyFolder}/${Session}/${PHYSICALDIR}/${DWIName}
 
 # Delete any existing output sub-directories
 if [ -d ${outdir} ]; then

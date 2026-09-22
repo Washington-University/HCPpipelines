@@ -97,10 +97,10 @@ PipelineScripts="$HCPPIPEDIR_PostFS"
 #  Do NOT include spaces in any of these names
 # ------------------------------------------------------------------------------
 T1wImage="T1w_acpc_dc"
-T1wFolder="T1w" #Location of T1w images
+T1wFolder="${PHYSICALDIR}" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
-AtlasSpaceFolder="MNINonLinear"
+AtlasSpaceFolder="${STANDARDDIR}"
 NativeFolder="Native"
 FreeSurferFolder="$Subject"
 FreeSurferInput="T1w_acpc_dc_restore_1mm"

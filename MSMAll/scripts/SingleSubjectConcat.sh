@@ -29,7 +29,7 @@ opts_AddOptional '--end-frame' 'EndFrame' 'integer' "the ending frame to choose 
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE or FALSE' "longitudinal mode [FALSE]" "FALSE"
 opts_AddOptional '--subject-long' 'SubjectLong' 'id' "subject ID in longitudinal mode" ""
 opts_AddOptional '--fmri-config-long' 'fMRIConfigLong' 'file_name' "longitudinal runs configuration file [fmri_list.txt].
-Only supply file name without path. The file is expected to be in [Longitudinal template folder]/MNINonLinear/Results" "fmri_list.txt"
+Only supply file name without path. The file is expected to be in [Longitudinal template folder]/${STANDARDDIR}/Results" "fmri_list.txt"
 opts_AddOptional '--template-long' 'TemplateLong' 'template ID' "Longitudinal template ID" ""
 
 opts_ParseArguments "$@"
@@ -84,7 +84,7 @@ if (( IsLongitudinal )); then
         log_Err_Abort "Longitudinal template ID cannot be empty"
     fi
     #Read longitudinal run names from the configuration file.
-    conf="${StudyFolder}/$SubjectLong.long.$TemplateLong/MNINonLinear/Results/$fMRIConfigLong"
+    conf="${StudyFolder}/$SubjectLong.long.$TemplateLong/${STANDARDDIR}/Results/$fMRIConfigLong"
     IFS='@' read -ra TemplateRuns < <(sed -n '1p' "$conf")
     IFS='@' read -ra Timepoints < <(sed -n '2p' "$conf")
     IFS='@' read -ra fMRIRunsCross < <(sed -n '3p' "$conf")
@@ -102,7 +102,7 @@ if [ "${OutputProcSTRING}" = "NONE" ]; then
 fi
 log_Msg "OutputProcSTRING: ${OutputProcSTRING}"
 
-AtlasFolder="${StudyFolder}/${Session}/MNINonLinear"
+AtlasFolder="${StudyFolder}/${Session}/${STANDARDDIR}"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
 OutputFolder="${AtlasFolder}/Results/${OutputfMRIName}"
@@ -206,7 +206,7 @@ for ((index = 0; index < ${#fMRINamesArray[@]}; ++index)) ; do
     if (( IsLongitudinal )); then 
         Timepoint=$(val4key TemplateRuns Timepoints $fMRIName)
         ConcatNameTimepoint=$(val4key TemplateRuns ConcatNamesCross $fMRIName)
-        OutputVN="${StudyFolder}/$Timepoint.long.$TemplateLong/MNINonLinear/Results/$ConcatNameTimepoint/$ConcatNameTimepoint${fMRIProcSTRING}_vn.dscalar.nii"
+        OutputVN="${StudyFolder}/$Timepoint.long.$TemplateLong/${STANDARDDIR}/Results/$ConcatNameTimepoint/$ConcatNameTimepoint${fMRIProcSTRING}_vn.dscalar.nii"
     fi
     log_File_Must_Exist "$OutputVN"
     

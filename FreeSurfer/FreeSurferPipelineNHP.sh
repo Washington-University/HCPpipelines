@@ -142,7 +142,7 @@ opts_AddOptional '--seed' 'recon_all_seed' "Seed" 'recon-all seed value'
 
 opts_AddOptional '--flair' 'flair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -FLAIR/-FLAIRpial options (rather than the -T2/-T2pial options).  The FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
-opts_AddOptional '--t1wdivflair' 't1wdivflair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -T1wDivFLAIR/-T1wDivFLAIRpial options (rather than the -T2/-T2pial options).  The T1w/FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
+opts_AddOptional '--t1wdivflair' 't1wdivflair' 'TRUE/FALSE' "Indicates that recon-all is to be run with the -T1wDivFLAIR/-T1wDivFLAIRpial options (rather than the -T2/-T2pial options).  The ${PHYSICALDIR}/FLAIR input image itself should still be provided via the '--t2' argument. NOTE: This is experimental" "FALSE"
 
 opts_AddOptional '--existing-subject' 'existing_subject' 'TRUE/FALSE' "Indicates that the script is to be run on top of an already existing analysis/subject.  This excludes the '-i' and '-T2/-FLAIR' flags from the invocation of recon-all (i.e., uses previous input volumes).  The --t1w-image, --t1w-brain and --t2w-image arguments, if provided, are ignored.  It also excludes the -all' flag from the invocation of recon-all.  Consequently, user needs to explicitly specify which recon-all stage(s) to run using the --extra-reconall-arg flag.  This flag allows for the application of FreeSurfer edits." "FALSE" "--existing-subject"
 
@@ -457,7 +457,7 @@ make_t1wxt2w_qc_file()
 
 
 T2wtoT1wFile="T2wtoT1w.mat"      # Calling this file T2wtoT1w.mat regardless of whether the input to recon-all was -T2 or -FLAIR
-OutputOrigT2wToT1w="OrigT2w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the T1w/T1w.nii.gz file; NOT FreeSurfer's "orig" space)
+OutputOrigT2wToT1w="OrigT2w2T1w" # Needs to match name used in PostFreeSurfer (N.B. "OrigT1" here refers to the ${PHYSICALDIR}/${PHYSICALDIR}.nii.gz file; NOT FreeSurfer's "orig" space)
 
 # ----------------------------------------------------------------------
 log_Msg "Starting main functionality"
@@ -509,7 +509,7 @@ else
 		mv "$SubjectDIR"/"$SubjectID"_scaled "$SubjectDIR"/"$SubjectID"
 	fi
 	if [ `imtest ${SubjectDIR}/xfms/${OutputOrigT2wToT1w}` = 1 ] ; then
-		if [ $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/T1w/T1w_acpc_dc_restore.nii.gz -nt $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/T1w/T1w_acpc_dc_restore_scaled.nii.gz ] ; then
+		if [ $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz -nt $(dirname $(dirname "$SubjectDIR"))/"$SubjectID"/${PHYSICALDIR}/T1w_acpc_dc_restore_scaled.nii.gz ] ; then
 			log_Msg "restore PreFreeSurfer resampling"
 			${HCPPIPEDIR_FS}/RestorePreFreeSurferResamplingNHP.sh $(dirname $(dirname "$SubjectDIR")) "$SubjectID"
 		fi

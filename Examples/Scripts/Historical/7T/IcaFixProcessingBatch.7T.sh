@@ -150,7 +150,7 @@ main() {
 		do
 			echo "  ${fmri}"
 			
-			InputDir="${StudyFolder}/${Subject}/MNINonLinear/Results/${fmri}"
+			InputDir="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fmri}"
 			InputFile="${InputDir}/${fmri}.nii.gz"
 
 			bandpass=2000

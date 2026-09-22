@@ -64,7 +64,7 @@
 # Main output directories
 #
 # * <code>DiffFolder=${StudyFolder}/${Session}/Diffusion</code>
-# * <code>T1wDiffFolder=${StudyFolder}/${Session}/T1w/Diffusion</code>
+# * <code>T1wDiffFolder=${StudyFolder}/${Session}/${PHYSICALDIR}/Diffusion</code>
 #
 # All outputs are within the directory: <code>${StudyFolder}/${Session}</code>
 #
@@ -78,7 +78,7 @@
 # * <code>$T1wDiffFolder</code>
 #
 # Also assumes that T1 preprocessing has been carried out with results in
-# <code>${StudyFolder}/${Session}/T1w</code>
+# <code>${StudyFolder}/${Session}/${PHYSICALDIR}</code>
 #
 # <!-- References -->
 #
@@ -353,7 +353,7 @@ if (( IsLongitudinal )); then
     if [ ! -d "$StudyFolder/$SessionLong" ]; then
         log_Err_Abort "the --longitudinal-session must be specified and folder must exist in longitudinal mode"
     fi
-    T1wCross2LongXfm=$StudyFolder/$SessionLong/T1w/xfms/T1w_cross_to_T1w_long.mat
+    T1wCross2LongXfm=$StudyFolder/$SessionLong/${PHYSICALDIR}/xfms/T1w_cross_to_T1w_long.mat
     if [ ! -f "$T1wCross2LongXfm" ]; then
         log_Err_Abort "Longitudinal session $SessionLong: cross-sectional to longitudinal transform $T1wCross2LongXfm does not exist. Has longtudinal PostFreesurfer been run?"
     fi
@@ -436,7 +436,7 @@ if (( ! IsLongitudinal )); then
 else #copy cross-sectional output to longitudinal session
     log_Msg "Longitudinal mode, copying cross-sectional output of Pre-Eddy and Eddy steps to longitudinal session"
     cp -rf "$StudyFolder/$Session/Diffusion" "$StudyFolder/$SessionLong/Diffusion"
-    cp -rf "$StudyFolder/$Session/T1w/Diffusion" "$StudyFolder/$SessionLong/T1w/Diffusion"
+    cp -rf "$StudyFolder/$Session/${PHYSICALDIR}/Diffusion" "$StudyFolder/$SessionLong/${PHYSICALDIR}/Diffusion"
 fi
 
 #PostEddy step must be run on longitudinal session rather than copied from cross-sectional.

@@ -33,7 +33,7 @@ do
 				--subject=${subject} \
 				--taskname=tfMRI_${task}_${direction} \
 				--templatedir=../../fsf_templates \
-				--outdir=${StudyFolder}/${subject}/MNINonLinear/Results/tfMRI_${task}_${direction}
+				--outdir=${StudyFolder}/${subject}/${STANDARDDIR}/Results/tfMRI_${task}_${direction}
 
 			../copy_evs_into_results.sh \
 				--studyfolder=${StudyFolder} \
@@ -44,8 +44,8 @@ do
 
 		# Prepare for Level 2
 
-		mkdir -p ${StudyFolder}/${subject}/MNINonLinear/Results/tfMRI_${task}
-		cp -v ../../fsf_templates/tfMRI_${task}_hp200_s4_level2.fsf ${StudyFolder}/${subject}/MNINonLinear/Results/tfMRI_${task}
+		mkdir -p ${StudyFolder}/${subject}/${STANDARDDIR}/Results/tfMRI_${task}
+		cp -v ../../fsf_templates/tfMRI_${task}_hp200_s4_level2.fsf ${StudyFolder}/${subject}/${STANDARDDIR}/Results/tfMRI_${task}
 
 	done
 

@@ -83,12 +83,12 @@ Usage: $log_ToolName arguments...
 #help info for option gets printed like "--foo=<$3> - $4"
 opts_AddMandatory '--study-folder' 'Path' '/path/to/study/folder' "directory containing imaging data for all subjects"
 opts_AddMandatory '--subject' 'Subject' 'SubjectID' ""
-opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List of task fMRI scan names, which are the prefixes of the time series filename for the TaskName task. Multiple task fMRI scan names should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/MNINonLinear/Results directory. Also assumes that timeseries image filename begins with this string.
+opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List of task fMRI scan names, which are the prefixes of the time series filename for the TaskName task. Multiple task fMRI scan names should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/${STANDARDDIR}/Results directory. Also assumes that timeseries image filename begins with this string.
 opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName1@DesignName2' "List of design names, which are the prefixes of the fsf filenames for each scan run. Should contain same number of design files as time series images in --lvl1tasks option. (N-th design will be used for N-th time series image.) Separate multiple design names by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks."
 opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'tfMRI_TaskName' "Name of Level2 subdirectory in which all Level2 feat directories are written for TaskName. Default is 'NONE', which means that no Level2 analysis will run." 'NONE'
 opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'DesignName_TaskName' "Prefix of design.fsf filename for the Level2 analysis for TaskName. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task."
 opts_AddOptional '--summaryname' 'SummaryName' 'tfMRI_TaskName/DesignName_TaskName' "Name used for single-subject summary directory. Mandatory when running Level1 analysis only. Default when running Level2 analysis is derived from --lvl2task and --lvl2fsf options \"tfMRI_TaskName/DesignName_TaskName\"" 'NONE'
-opts_AddOptional '--confound' 'Confound' 'filename' "Confound matrix text filename (e.g., output of fsl_motion_outliers). Assumes file is located in <SubjectID>/MNINonLinear/Results/<ScanName>. Default='NONE'" 'NONE'
+opts_AddOptional '--confound' 'Confound' 'filename' "Confound matrix text filename (e.g., output of fsl_motion_outliers). Assumes file is located in <SubjectID>/${STANDARDDIR}/Results/<ScanName>. Default='NONE'" 'NONE'
 opts_AddOptional '--origsmoothingFWHM' 'OriginalSmoothingFWHM' 'number' "Value (in mm FWHM) of smoothing applied during surface registration in fMRISurface pipeline. Default=2, which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
 opts_AddOptional '--finalsmoothingFWHM' 'FinalSmoothingFWHM' 'number' "Value (in mm FWHM) of total desired smoothing, reached by calculating the additional smoothing required and applying that additional amount to data previously smoothed in fMRISurface. Default=2, which is no additional smoothing above HCP minimal preprocessing pipelines outputs." '2'
 opts_AddOptional '--highpassfilter' 'TemporalFilter' 'integer' "Apply *additional* highpass filter (in seconds) to time series and task design. This is above and beyond temporal filter applied during preprocessing. To apply no additional filtering, set to 'NONE'. Default=200" '200'
@@ -170,7 +170,7 @@ log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"
 
 
 # Determine locations of necessary directories (using expected naming convention)
-ResultsFolder="${Path}/${Subject}/MNINonLinear/Results"
+ResultsFolder="${Path}/${Subject}/${STANDARDDIR}/Results"
 
 # Determine which analyses need to be packaged into summary directory
 # initialize list variables

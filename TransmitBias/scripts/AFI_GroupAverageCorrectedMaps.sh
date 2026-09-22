@@ -68,7 +68,7 @@ case "$MatlabMode" in
         ;;
 esac
 
-GroupAtlasFolder="$StudyFolder"/"$GroupAverageName"/MNINonLinear
+GroupAtlasFolder="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}
 
 source "$HCPPIPEDIR"/TransmitBias/scripts/mergeavg.shlib
 
@@ -87,13 +87,13 @@ for ((i = 0; i < ${#SubjArray[@]}; ++i))
 do
     Subject="${SubjArray[$i]}"
     #test the same file as the first group average script
-    if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Subject}.AFI_orig${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" ]]
+    if [[ -f "${StudyFolder}/${Subject}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/${Subject}.AFI_orig${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" ]]
     then
         GoodSubjArray+=("$Subject")
         GoodVoltagesArray+=("${VoltagesArray[$i]}")
         
-        cat "${StudyFolder}/${Subject}/T1w/AFI_stats.txt" >> "$StatsFile"
-        cat "${StudyFolder}/${Subject}/MNINonLinear/AFI_CSFStats.txt" >> "$CSFStatsFile"
+        cat "${StudyFolder}/${Subject}/${PHYSICALDIR}/AFI_stats.txt" >> "$StatsFile"
+        cat "${StudyFolder}/${Subject}/${STANDARDDIR}/AFI_CSFStats.txt" >> "$CSFStatsFile"
     fi
 done
 avg_setSubjects "${GoodSubjArray[@]}"
@@ -112,30 +112,30 @@ rAFI="${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.rA
 tempfiles_create AFImerge_XXXXXX.nii.gz afimergetemp
 tempfiles_add "$afimergetemp"_2.nii.gz "$afimergetemp"_3.nii.gz "$afimergetemp"_4.nii.gz
 #extra arguments on the end are added per-file
-volmergeavg "MNINonLinear/AFI_orig_Atlas.nii.gz" "$afimergetemp" "$afimergetemp"_3.nii.gz -subvolume 1 &
-volmergeavg "MNINonLinear/AFI_orig_Atlas.nii.gz" "$afimergetemp"_2.nii.gz "$afimergetemp"_4.nii.gz -subvolume 2 &
+volmergeavg "${STANDARDDIR}/AFI_orig_Atlas.nii.gz" "$afimergetemp" "$afimergetemp"_3.nii.gz -subvolume 1 &
+volmergeavg "${STANDARDDIR}/AFI_orig_Atlas.nii.gz" "$afimergetemp"_2.nii.gz "$afimergetemp"_4.nii.gz -subvolume 2 &
 
-volmergeavg "MNINonLinear/T1wDividedByT2w_Atlas.nii.gz" \
+volmergeavg "${STANDARDDIR}/T1wDividedByT2w_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.T1wDividedByT2w_Atlas.nii.gz" \
     "$AvgMyelinVolFile" &
 
-volmergeavg "MNINonLinear/AFI_Atlas.nii.gz" \
+volmergeavg "${STANDARDDIR}/AFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.AFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.AFI_Atlas.nii.gz" &
 
-ciftimergeavgsubj "MNINonLinear/fsaverage_LR${LowResMesh}k" "rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
+ciftimergeavgsubj "${STANDARDDIR}/fsaverage_LR${LowResMesh}k" "rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
     "$rAFI" \
     "${GroupAtlasFolder}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.rAFI${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" &
 
-volmergeavg "MNINonLinear/rAFI_Atlas.nii.gz" \
+volmergeavg "${STANDARDDIR}/rAFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.rAFI_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.rAFI_Atlas.nii.gz" &
 
-ciftimergeavgsubj "MNINonLinear/fsaverage_LR${LowResMesh}k" "MyelinMap_Corr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
+ciftimergeavgsubj "${STANDARDDIR}/fsaverage_LR${LowResMesh}k" "MyelinMap_Corr${RegString}.${LowResMesh}k_fs_LR.dscalar.nii" \
     "$IndCorrMyelinAll" \
     "$AvgIndCorrMyelin" &
 
-volmergeavg "MNINonLinear/T1wDividedByT2w_Corr_Atlas.nii.gz" \
+volmergeavg "${STANDARDDIR}/T1wDividedByT2w_Corr_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.All.T1wDividedByT2w_IndCorr_Atlas.nii.gz" \
     "${GroupAtlasFolder}/${TransmitGroupName}.T1wDividedByT2w_IndCorr_Atlas.nii.gz" &
 

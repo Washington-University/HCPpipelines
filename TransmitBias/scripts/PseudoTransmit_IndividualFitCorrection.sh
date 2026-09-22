@@ -69,8 +69,8 @@ else
     RegString="_$RegName"
 fi
 
-T1wFolder="$StudyFolder"/"$Subject"/T1w
-AtlasFolder="$StudyFolder"/"$Subject"/MNINonLinear
+T1wFolder="$StudyFolder"/"$Subject"/${PHYSICALDIR}
+AtlasFolder="$StudyFolder"/"$Subject"/${STANDARDDIR}
 T1wDownSampleFolder="$T1wFolder"/fsaverage_LR"$LowResMesh"k
 DownSampleFolder="$AtlasFolder"/fsaverage_LR"$LowResMesh"k
 
@@ -313,7 +313,7 @@ wb_command -volume-math "(Var * (Var > $PseudoTransmitThreshold)) / $PseudoTrans
     -var Var "$AtlasFolder"/PseudoTransmitField_Raw_Atlas.nii.gz
 wb_command -volume-dilate "$fieldtemp" 25 WEIGHTED "$AtlasFolder"/PseudoTransmitField_Norm_Atlas.nii.gz -data-roi "$GMWMtemplate"
 
-#NOTE: MNINonLinear/T1wDiv... always has RC applied already (via phase 1 outer script), unlike T1w/
+#NOTE: ${STANDARDDIR}/T1wDiv... always has RC applied already (via phase 1 outer script), unlike ${PHYSICALDIR}/
 
 wb_command -volume-math "myelin / (transmit * $Slope + (1 - $Slope))" "$AtlasFolder"/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz -fixnan 0 \
     -var myelin "$AtlasFolder"/T1wDividedByT2w_Atlas.nii.gz \

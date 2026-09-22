@@ -181,7 +181,7 @@ else
 fi
 
 # Naming Conventions and other variables
-AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
+AtlasFolder="${StudyFolder}/${Subject}/${STANDARDDIR}"
 log_Msg "AtlasFolder: ${AtlasFolder}"
 
 ResultsFolder="${AtlasFolder}/Results/${fMRIName}"

@@ -203,7 +203,7 @@ main() {
 	for Subject in ${Subjlist}; do
 		echo ${Subject}
 
-		ResultsFolder="${StudyFolder}/${Subject}/MNINonLinear/Results"
+		ResultsFolder="${StudyFolder}/${Subject}/${STANDARDDIR}/Results"
 
 		#Uncomment below if needing Single Run FIX (deprecated)
 		#if [ -z "${ConcatNames}" ]; then

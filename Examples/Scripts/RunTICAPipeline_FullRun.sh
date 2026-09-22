@@ -11,7 +11,7 @@ set -eu
 # 1. run this example script
 # 2. after 'ComputeTICAFeatures' step is finished, manually classify the group tICA components and make text file listing all the nuisance components to remove from data
 # 3. rerun the script after changing the $StartStep to be 'CleanData', $ComponentsToRemoveTxt to point to a text file containing the components you want removed, and set $sICADim according to the automatically derived sICA dimension
-# notice that in step3 if $ComponentsToRemoveTxt is an empty string in the launcher, it by default means that the nuisance text list is located in "$StudyFolder/$GroupAverageName/MNINonLinear/Results/${OutputfMRIName}/tICA_d${sICADim}/Noise.txt"
+# notice that in step3 if $ComponentsToRemoveTxt is an empty string in the launcher, it by default means that the nuisance text list is located in "$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/${OutputfMRIName}/tICA_d${sICADim}/Noise.txt"
 # otherwise, please specify the $ComponentsToRemoveTxt with the actual text file path
 
 # Global default values

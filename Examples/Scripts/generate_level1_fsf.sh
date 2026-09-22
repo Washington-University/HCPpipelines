@@ -22,7 +22,7 @@ usage() {
     echo "   <out-dir>      - output directory in which to place generated level 1 FSF file"
     echo ""
     echo " Image file for which to produce an FSF file will be expected to be found at: "
-    echo "   <study-folder>/<subject-id>/MNINonLinear/Results/<task-name>/<task-name>.nii.gz"
+    echo "   <study-folder>/<subject-id>/${STANDARDDIR}/Results/<task-name>/<task-name>.nii.gz"
     echo ""
     echo " Template file for generation of an FSF file will be expected to be found at: "
     echo "   <template-dir>/<task-name>_hp200_s4_level1.fsf"
@@ -158,7 +158,7 @@ main() {
     get_options $@
 
     # figure out where the task image file is
-    taskfile=${StudyFolder}/${Subject}/MNINonLinear/Results/${taskname}/${taskname}.nii.gz
+    taskfile=${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${taskname}/${taskname}.nii.gz
 
     echo ""
     echo "Preparing FSF file for: "

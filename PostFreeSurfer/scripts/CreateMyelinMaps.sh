@@ -184,7 +184,7 @@ if (( IsLongitudinal==0 )); then #In the longitudinal case, this functionality i
 	fi
 fi
 
-# Create T1w/T2w maps
+# Create ${PHYSICALDIR}/T2w maps
 if [ "${T2wPresent}" = "YES" ] ; then
   ${CARET7DIR}/wb_command -volume-math "clamp((T1w / T2w), 0, 100)" "$T1wFolder"/T1wDividedByT2w.nii.gz -var T1w "$OutputT1wImage".nii.gz -var T2w "$OutputT2wImage".nii.gz -fixnan 0
   ${CARET7DIR}/wb_command -volume-palette "$T1wFolder"/T1wDividedByT2w.nii.gz MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
@@ -267,14 +267,14 @@ for STRING in "$AtlasSpaceFolder"/"$NativeFolder"@native@roi "$AtlasSpaceFolder"
 done
 
 # Create surface on HighResMesh in session's T1w space
-${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii \
+${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/${PHYSICALDIR}/${NativeFolder}/${Session}.L.midthickness.native.surf.gii \
 	${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii \
 	${AtlasSpaceFolder}/${Session}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
-	BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii
-${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii \
+	BARYCENTRIC ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii
+${CARET7DIR}/wb_command -surface-resample ${StudyFolder}/${Session}/${PHYSICALDIR}/${NativeFolder}/${Session}.R.midthickness.native.surf.gii \
 	${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii \
 	${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
-	BARYCENTRIC ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+	BARYCENTRIC ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
 
 # BC processing
 if [ "${T2wPresent}" = "YES" ] ; then
@@ -303,11 +303,11 @@ if [ "${T2wPresent}" = "YES" ] ; then
 	case "$RefResMesh" in
 		(${HighResMesh})
 			SphereFolder=${AtlasSpaceFolder}
-			T1wSurfFolder=${StudyFolder}/${Session}/T1w
+			T1wSurfFolder=${StudyFolder}/${Session}/${PHYSICALDIR}
 			;;
 		(*)
 			SphereFolder=${AtlasSpaceFolder}/fsaverage_LR${RefResMesh}k
-			T1wSurfFolder=${StudyFolder}/${Session}/T1w/fsaverage_LR${RefResMesh}k
+			T1wSurfFolder=${StudyFolder}/${Session}/${PHYSICALDIR}/fsaverage_LR${RefResMesh}k
 			;;
 	esac
 
@@ -325,9 +325,9 @@ if [ "${T2wPresent}" = "YES" ] ; then
 				${MyelinTargetFile} \
 				-surface-postdilate 40 \
 				-left-spheres ${SphereFolder}/${Session}.L.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-left-area-surfs ${T1wSurfFolder}/${Session}.L.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
+				-left-area-surfs ${T1wSurfFolder}/${Session}.L.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
 				-right-spheres ${SphereFolder}/${Session}.R.sphere.${RefResMesh}k_fs_LR.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-right-area-surfs ${T1wSurfFolder}/${Session}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				-right-area-surfs ${T1wSurfFolder}/${Session}.R.midthickness.${RefResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 	fi
 	# the gifti files from reference maps are generated in previous versions
 	${CARET7DIR}/wb_command -cifti-separate "$ReferenceMyelinMaps" COLUMN \
@@ -374,16 +374,16 @@ if [ "${T2wPresent}" = "YES" ] ; then
 			${AtlasSpaceFolder}/${Session}.${MyelinMap}_BC.${HighResMesh}k_fs_LR.dscalar.nii \
 			-surface-postdilate 40 \
 			-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/${Session}.L.sphere.${HighResMesh}k_fs_LR.surf.gii \
-			-left-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii \
+			-left-area-surfs ${StudyFolder}/${Session}/${PHYSICALDIR}/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii \
 			-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/${Session}.R.sphere.${HighResMesh}k_fs_LR.surf.gii \
-			-right-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+			-right-area-surfs ${StudyFolder}/${Session}/${PHYSICALDIR}/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
 		# gifti files
 		${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/${Session}.${MyelinMap}_BC.${HighResMesh}k_fs_LR.dscalar.nii COLUMN \
 			-metric CORTEX_LEFT ${AtlasSpaceFolder}/${Session}.L.${MyelinMap}_BC.${HighResMesh}k_fs_LR.func.gii \
 			-metric CORTEX_RIGHT ${AtlasSpaceFolder}/${Session}.R.${MyelinMap}_BC.${HighResMesh}k_fs_LR.func.gii
 	done
 	# remove intermediate files
-	# rm ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+	# rm ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
 	# create cifti and gift MyelinMap in the low res mesh spaces
 	for LowResMesh in "${LowResMeshesArray[@]}" ; do
 		for MyelinMap in MyelinMap SmoothedMyelinMap ; do
@@ -393,9 +393,9 @@ if [ "${T2wPresent}" = "YES" ] ; then
 				${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii \
 				-surface-postdilate 40 \
 				-left-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-left-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
+				-left-area-surfs ${StudyFolder}/${Session}/${PHYSICALDIR}/${NativeFolder}/${Session}.L.midthickness.native.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/fsaverage_LR${LowResMesh}k/${Session}.L.midthickness.${LowResMesh}k_fs_LR.surf.gii \
 				-right-spheres ${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.sphere.MSMSulc.native.surf.gii ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.R.sphere.${LowResMesh}k_fs_LR.surf.gii \
-				-right-area-surfs ${StudyFolder}/${Session}/T1w/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/T1w/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
+				-right-area-surfs ${StudyFolder}/${Session}/${PHYSICALDIR}/${NativeFolder}/${Session}.R.midthickness.native.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/fsaverage_LR${LowResMesh}k/${Session}.R.midthickness.${LowResMesh}k_fs_LR.surf.gii
 			# gifti files
 			${CARET7DIR}/wb_command -cifti-separate ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.${MyelinMap}_BC.${LowResMesh}k_fs_LR.dscalar.nii COLUMN \
 				-metric CORTEX_LEFT ${AtlasSpaceFolder}/fsaverage_LR${LowResMesh}k/${Session}.L.${MyelinMap}_BC.${LowResMesh}k_fs_LR.func.gii \
@@ -428,6 +428,6 @@ for STRING in "$T1wFolder"/"$NativeFolder"@"$AtlasSpaceFolder"/"$NativeFolder"@n
   done
 done
 
-rm ${StudyFolder}/${Session}/T1w/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/T1w/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
+rm ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.L.midthickness.${HighResMesh}k_fs_LR.surf.gii ${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}.R.midthickness.${HighResMesh}k_fs_LR.surf.gii
 
 log_Msg "END"

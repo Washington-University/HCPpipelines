@@ -77,7 +77,7 @@ for Subject in "${SubjArray[@]}"
 do
     #original code doesn't have a separate group name for the good subjects (AFI used "Partial"), so it isn't clear what to do
     #so, probably error for any bad subject as long as Patial. isn't supported
-    if [[ ! -f "$StudyFolder"/"$Subject"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$Subject".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
+    if [[ ! -f "$StudyFolder"/"$Subject"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$Subject".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
     then
         log_Err_Abort "subject $Subject does not appear to have completed Phase1 for PseudoTransmit"
     fi
@@ -85,20 +85,20 @@ done
 avg_setSubjects "${SubjArray[@]}"
 avg_setStudyFolder "$StudyFolder"
 
-mkdir -p "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k
+mkdir -p "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k
 
 tempfiles_create GMWMmerge_XXXXXX.nii.gz gmwmtemp
 tempfiles_add "$gmwmtemp"_avg.nii.gz
-volmergeavg "MNINonLinear/GMWMTemplate.nii.gz" "$gmwmtemp" "$gmwmtemp"_avg.nii.gz
+volmergeavg "${STANDARDDIR}/GMWMTemplate.nii.gz" "$gmwmtemp" "$gmwmtemp"_avg.nii.gz
 wb_command -volume-math 'x > 0.5' "$GMWMtemplate" -var x "$gmwmtemp"_avg.nii.gz
 
-volmergeavg MNINonLinear/PseudoTransmitField_Raw."$lowvolres".nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".All.PseudoTransmitField_Raw."$lowvolres".nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".PseudoTransmitField_Raw."$lowvolres".nii.gz &
+volmergeavg ${STANDARDDIR}/PseudoTransmitField_Raw."$lowvolres".nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".All.PseudoTransmitField_Raw."$lowvolres".nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".PseudoTransmitField_Raw."$lowvolres".nii.gz &
 
-ciftimergeavgsubjnooutliers MNINonLinear/fsaverage_LR"$LowResMesh"k PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
+ciftimergeavgsubjnooutliers ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
 
 if [[ "$myelinCiftiAll" == "" ]]
 then
@@ -111,14 +111,14 @@ then
         "$myelinCiftiAll" \
         "$myelinCiftiAvg" &
 else
-    ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
         "$myelinCiftiAll" \
         "$myelinCiftiAvg" &
 fi
 
 wait
 
-avgPTFieldFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+avgPTFieldFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
 
 argvarlist=(myelinCiftiAvg avgPTFieldFile ReferenceValOutFile)
 

@@ -68,7 +68,7 @@ fi
 opts_ShowValues
 
 #FIXME: hardcoded naming conventions, move these to high level script when ready
-OutputFolder="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/tICA_d$tICAdim"
+OutputFolder="$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/$OutputfMRIName/tICA_d$tICAdim"
 
 RegString=""
 if [[ "$RegName" != "" && "$RegName" != "MSMSulc" ]]

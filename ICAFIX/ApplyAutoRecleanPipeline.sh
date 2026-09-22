@@ -118,8 +118,8 @@ if [ -z ${MRFixConcatName} ]; then
         --subject="$Subject" \
         --fmri-name="$fMRIName" \
         --high-pass="$HighPass" \
-        --reclassify-as-signal-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsSignalFile}" \
-        --reclassify-as-noise-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${ReclassifyAsNoiseFile}" \
+        --reclassify-as-signal-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${ReclassifyAsSignalFile}" \
+        --reclassify-as-noise-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${ReclassifyAsNoiseFile}" \
         --matlab-run-mode="$MatlabMode"
 
         # MSMAll
@@ -156,8 +156,8 @@ else
         --subject="$Subject" \
         --fmri-name="$MRFixConcatName" \
         --high-pass="$HighPass" \
-        --reclassify-as-signal-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${ReclassifyAsSignalFile}" \
-        --reclassify-as-noise-file="${StudyFolder}/${Subject}/MNINonLinear/Results/${MRFixConcatName}/${ReclassifyAsNoiseFile}" \
+        --reclassify-as-signal-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${MRFixConcatName}/${ReclassifyAsSignalFile}" \
+        --reclassify-as-noise-file="${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${MRFixConcatName}/${ReclassifyAsNoiseFile}" \
         --matlab-run-mode="$MatlabMode"
 
     #MR FIX config support for non-HCP settings
@@ -166,7 +166,7 @@ else
 
     fMRINamesExist=()
     for fMRIName in "${fMRINamesArray[@]}"; do
-        if [[ -e "$StudyFolder/$Subject/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_MSMAll.dtseries.nii" ]]; then
+        if [[ -e "$StudyFolder/$Subject/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_Atlas_MSMAll.dtseries.nii" ]]; then
             fMRINamesExist+=("$fMRIName")
         fi
     done

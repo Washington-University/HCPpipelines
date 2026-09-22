@@ -1,4 +1,6 @@
 function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListName, fMRIListName, tICAdim, RunsXNumTimePoints, TCSConcatName, TCSMaskName, AvgTCSName, sICAAvgSpectraName, sICAMapsAvgName, sICAVolMapsAvgName, OutputFolder, OutString, RegName, LowResMesh, tICAmode, tICAMM)
+STANDARDDIR = getenv('STANDARDDIR');
+if isempty(STANDARDDIR), STANDARDDIR = 'MNINonLinear'; end
     
     %% handle arguments and set filepath parts
     %if isdeployed()
@@ -241,7 +243,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             tICATCS = sICATCS;
             %tICATCS.cdata = pinv(tICAmix) * sICATCS.cdata;
             tICATCS.cdata = squeeze(tICAtcsAll(:, std(tICAtcsAll(:, :, i), [], 1) > 0, i));
-            tICATCS_fName = [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'];
+            tICATCS_fName = [SubjFolder 'STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'];
             cifti_write_sdseries(tICATCS.cdata, tICATCS_fName, 'unit', TCSTemplate.diminfo{2}.seriesUnit, 'step', TCSTemplate.diminfo{2}.seriesStep, 'start', TCSTemplate.diminfo{2}.seriesStart);%FIXME: how to deal with subject ID in this filename without hardcoding conventions?
 
             ts.Nnodes = size(tICATCS.cdata, 1);
@@ -249,7 +251,7 @@ function ComputeGroupTICA(StudyFolder, SubjListName, TCSListName, SpectraListNam
             ts.ts = tICATCS.cdata';
             ts.NtimepointsPerSubject = size(tICATCS.cdata, 2);
             cdata = nets_spectra_sp(ts)';
-            tICASPEC_fName = [SubjFolder 'MNINonLinear/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'];
+            tICASPEC_fName = [SubjFolder 'STANDARDDIR '/fsaverage_LR' LowResMesh 'k/' SubjectList{i} '.' OutString '_tICA' RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'];
             cifti_write_sdseries(cdata, tICASPEC_fName, 'unit', SpectraTemplate.diminfo{2}.seriesUnit, 'step', SpectraTemplate.diminfo{2}.seriesStep, 'start', SpectraTemplate.diminfo{2}.seriesStart);%FIXME
         end
     end

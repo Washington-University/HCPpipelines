@@ -85,10 +85,10 @@ for Session in $Sessionlist ; do
 
   #Input Variables
   SessionID="$Session" #FreeSurfer Subject ID Name
-  SessionDIR="${StudyFolder}/${Session}/T1w" #Location to Put FreeSurfer Subject's Folder
-  T1wImage="${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
-  T1wImageBrain="${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
-  T2wImage="${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
+  SessionDIR="${StudyFolder}/${Session}/${PHYSICALDIR}" #Location to Put FreeSurfer Subject's Folder
+  T1wImage="${StudyFolder}/${Session}/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+  T1wImageBrain="${StudyFolder}/${Session}/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+  T2wImage="${StudyFolder}/${Session}/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
 
   if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
       echo "About to locally run ${HCPPIPEDIR}/FreeSurfer/FreeSurferPipeline.sh"

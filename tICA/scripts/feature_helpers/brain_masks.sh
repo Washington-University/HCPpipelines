@@ -67,7 +67,7 @@ done
 #                ${MaskSavePath}/${GroupAverageName}_brainboundary_${erode_mm_final[6]}mm_${OutputfMRIName}.${fMRIResolution}.dscalar.nii
 #                ${MaskSavePath}/${GroupAverageName}_brainboundary_${erode_mm_final[7]}mm_${OutputfMRIName}.${fMRIResolution}.dscalar.nii)
 
-MNIPath=${StudyFolder}/${GroupAverageName}/MNINonLinear
+MNIPath=${StudyFolder}/${GroupAverageName}/${STANDARDDIR}
 mkdir -p "$MaskSavePath"
 
 # specific brain region masks

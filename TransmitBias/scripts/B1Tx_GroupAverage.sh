@@ -72,17 +72,17 @@ case "$MatlabMode" in
 esac
 
 #allow this to work before doing a MakeAverageDataset, because why not
-mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k"
+mkdir -p "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k"
 
 #some naming conventions
-phaseCiftiAvg="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+phaseCiftiAvg="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
 
 source "$HCPPIPEDIR"/TransmitBias/scripts/mergeavg.shlib
 
 GoodSubjArray=()
 for Subject in "${SubjArray[@]}"
 do
-    if [[ -f "$StudyFolder"/"$Subject"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$Subject".B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
+    if [[ -f "$StudyFolder"/"$Subject"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$Subject".B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
     then
         GoodSubjArray+=("$Subject")
     fi
@@ -90,15 +90,15 @@ done
 avg_setSubjects "${GoodSubjArray[@]}"
 avg_setStudyFolder "$StudyFolder"
 
-volmergeavg MNINonLinear/B1Tx_mag."$lowvolres".nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".All.B1Tx_mag."$lowvolres".nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_mag."$lowvolres".nii.gz &
-volmergeavg MNINonLinear/B1Tx_phase."$lowvolres".nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".All.B1Tx_phase."$lowvolres".nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_phase."$lowvolres".nii.gz &
+volmergeavg ${STANDARDDIR}/B1Tx_mag."$lowvolres".nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".All.B1Tx_mag."$lowvolres".nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".B1Tx_mag."$lowvolres".nii.gz &
+volmergeavg ${STANDARDDIR}/B1Tx_phase."$lowvolres".nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".All.B1Tx_phase."$lowvolres".nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".B1Tx_phase."$lowvolres".nii.gz &
 
-ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
     "$phaseCiftiAvg" &
 
 if [[ "$myelinCiftiAll" == "" ]]
@@ -113,7 +113,7 @@ then
         "$myelinCiftiAll" \
         "$myelinCiftiAvg" &
 else
-    ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k MyelinMap"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
         "$myelinCiftiAll" \
         "$myelinCiftiAvg" &
 fi
@@ -121,17 +121,17 @@ fi
 #GMWM template, to find agreement on gray matter
 tempfiles_create GMWMmerge_XXXXXX.nii.gz gmwmtemp
 tempfiles_add "$gmwmtemp"_avg.nii.gz
-volmergeavg "MNINonLinear/GMWMTemplate.nii.gz" "$gmwmtemp" "$gmwmtemp"_avg.nii.gz &
+volmergeavg "${STANDARDDIR}/GMWMTemplate.nii.gz" "$gmwmtemp" "$gmwmtemp"_avg.nii.gz &
 
 wait
 
 wb_command -volume-math 'x > 0.5' "$GMWMtemplate" -var x "$gmwmtemp"_avg.nii.gz
 
-myelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-phaseAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".B1Tx_phase_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-myelinCorrOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_GroupCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-myelinCorrAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_GroupCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-fitParamsOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_groupfit.txt
+myelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+phaseAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".B1Tx_phase_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+myelinCorrOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_GroupCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+myelinCorrAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_GroupCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+fitParamsOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".B1Tx_groupfit.txt
 
 #this sets the function args for both compiled and interactive matlab/octave
 argvarlist=(myelinCiftiAvg myelinAsymmOutFile \

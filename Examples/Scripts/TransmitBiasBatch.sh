@@ -57,10 +57,10 @@ then
 else
     RegStr="_$RegName"
 fi
-GMWMtemplate="$StudyFolder"/"$GroupName"/MNINonLinear/GMWMTemplate.nii.gz
-GroupCorrected="$StudyFolder"/"$GroupName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$partialname".MyelinMap_GroupCorr"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
-GroupUncorrectedMyelin="$StudyFolder"/"$GroupName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$partialname".MyelinMap"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
-AllSubjUncorrected="$StudyFolder"/"$GroupName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$partialname".All.MyelinMap"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
+GMWMtemplate="$StudyFolder"/"$GroupName"/${STANDARDDIR}/GMWMTemplate.nii.gz
+GroupCorrected="$StudyFolder"/"$GroupName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$partialname".MyelinMap_GroupCorr"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
+GroupUncorrectedMyelin="$StudyFolder"/"$GroupName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$partialname".MyelinMap"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
+AllSubjUncorrected="$StudyFolder"/"$GroupName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$partialname".All.MyelinMap"$RegStr"."$LowResMesh"k_fs_LR.dscalar.nii
 PTRefValFile="$StudyFolder"/"$GroupName"/PT_refval.txt
 
 source "$EnvironmentScript"

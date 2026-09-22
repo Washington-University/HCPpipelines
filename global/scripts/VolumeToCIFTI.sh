@@ -59,11 +59,11 @@ esac
 case "$volspace" in
     (MNINonLinear)
         warpfield=""
-        curbrainmask="$StudyFolder"/"$Subject"/MNINonLinear/T1w_restore_brain.nii.gz
+        curbrainmask="$StudyFolder"/"$Subject"/${STANDARDDIR}/T1w_restore_brain.nii.gz
         ;;
     (T1w)
-        warpfield="$StudyFolder"/"$Subject"/MNINonLinear/xfms/acpc_dc2standard.nii.gz
-        curbrainmask="$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore_brain.nii.gz
+        warpfield="$StudyFolder"/"$Subject"/${STANDARDDIR}/xfms/acpc_dc2standard.nii.gz
+        curbrainmask="$StudyFolder"/"$Subject"/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz
         ;;
     (*)
         log_Err_Abort "unrecognized volume space '$volspace', use MNINonLinear or T1w"
@@ -109,16 +109,16 @@ function mapToSurf()
     then
         wb_command -metric-dilate "$tempgii" "$midsurf" "$surfdil" "$tempgii"_dil.func.gii \
             -bad-vertex-roi "$tempgii"_badverts.func.gii \
-            -data-roi "$StudyFolder"/"$Subject"/MNINonLinear/Native/"$Subject"."$hem".roi.native.shape.gii
+            -data-roi "$StudyFolder"/"$Subject"/${STANDARDDIR}/Native/"$Subject"."$hem".roi.native.shape.gii
     else
         #in fix zeros mode, rely on ribbon mapping bad vertices also being zero
         totaldil=$(bc -l <<<"$surfdil + $fzdil")
         wb_command -metric-dilate "$tempgii" "$midsurf" "$totaldil" "$tempgii"_dil.func.gii \
-            -data-roi "$StudyFolder"/"$Subject"/MNINonLinear/Native/"$Subject"."$hem".roi.native.shape.gii
+            -data-roi "$StudyFolder"/"$Subject"/${STANDARDDIR}/Native/"$Subject"."$hem".roi.native.shape.gii
     fi
     
-    nativeT1wMidthick="$StudyFolder"/"$Subject"/T1w/Native/"$Subject"."$hem".midthickness.native.surf.gii
-    downsampT1wMidthick="$StudyFolder"/"$Subject"/T1w/fsaverage_LR"$outMesh"k/"$Subject"."$hem".midthickness"$RegString"."$outMesh"k_fs_LR.surf.gii
+    nativeT1wMidthick="$StudyFolder"/"$Subject"/${PHYSICALDIR}/Native/"$Subject"."$hem".midthickness.native.surf.gii
+    downsampT1wMidthick="$StudyFolder"/"$Subject"/${PHYSICALDIR}/fsaverage_LR"$outMesh"k/"$Subject"."$hem".midthickness"$RegString"."$outMesh"k_fs_LR.surf.gii
     if [[ ! -f "$downsampT1wMidthick" ]]
     then
         #don't create files/folders in the subject folder the user didn't ask for, make a temporary
@@ -129,12 +129,12 @@ function mapToSurf()
     then
         wb_command -metric-resample "$tempgii"_dil.func.gii "$regNativeSphere" "$atlasSphere" ADAP_BARY_AREA "$giiout" \
             -area-surfs "$nativeT1wMidthick" "$downsampT1wMidthick" \
-            -current-roi "$StudyFolder"/"$Subject"/MNINonLinear/Native/"$Subject"."$hem".roi.native.shape.gii
+            -current-roi "$StudyFolder"/"$Subject"/${STANDARDDIR}/Native/"$Subject"."$hem".roi.native.shape.gii
     else
         tempfiles_add "$tempgii"_resample.func.gii
         wb_command -metric-resample "$tempgii"_dil.func.gii "$regNativeSphere" "$atlasSphere" ADAP_BARY_AREA "$tempgii"_resample.func.gii \
             -area-surfs "$nativeT1wMidthick" "$downsampT1wMidthick" \
-            -current-roi "$StudyFolder"/"$Subject"/MNINonLinear/Native/"$Subject"."$hem".roi.native.shape.gii
+            -current-roi "$StudyFolder"/"$Subject"/${STANDARDDIR}/Native/"$Subject"."$hem".roi.native.shape.gii
         smoothcmd=(wb_command -metric-smoothing "$downsampT1wMidthick" "$tempgii"_resample.func.gii "$smoothfwhm" -fwhm "$giiout")
         if [[ "$fzdil" != "" ]]
         then
@@ -171,7 +171,7 @@ do
         "$StudyFolder"/"$Subject"/"$volspace"/Native/"$Subject"."$hem".midthickness.native.surf.gii \
         "$StudyFolder"/"$Subject"/"$volspace"/Native/"$Subject"."$hem".pial.native.surf.gii \
         "$hem" \
-        "$StudyFolder"/"$Subject"/MNINonLinear/Native/"$Subject"."$hem".sphere."$RegName".native.surf.gii \
+        "$StudyFolder"/"$Subject"/${STANDARDDIR}/Native/"$Subject"."$hem".sphere."$RegName".native.surf.gii \
         "$HCPPIPEDIR"/global/templates/standard_mesh_atlases/"$hem".sphere."$outMesh"k_fs_LR.surf.gii \
         "$thistemp"
 done
@@ -203,7 +203,7 @@ fi
 resampcmd=(wb_command -cifti-resample "$resampinput" COLUMN "$tempAtlasSubcort" COLUMN BARYCENTRIC CUBIC "$tempROIs"_resampled.dscalar.nii -volume-predilate "$voldil")
 if [[ "$warpfield" != "" ]]
 then
-    resampcmd+=(-warpfield "$warpfield" -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz)
+    resampcmd+=(-warpfield "$warpfield" -fnirt "$StudyFolder"/"$Subject"/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz)
 fi
 "${resampcmd[@]}"
 

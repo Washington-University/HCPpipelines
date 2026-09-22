@@ -53,7 +53,7 @@ log_Check_Env_Var FSLDIR
 Sigma=`echo "$SmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
 Caret7_Command="${CARET7DIR}"/wb_command
 
-T1wFolder="${SubjectFolder}/T1w" #brainmask, wmparc, ribbon
+T1wFolder="${SubjectFolder}/${PHYSICALDIR}" #brainmask, wmparc, ribbon
 
 #take inputs from specified directory (likely some working dir), so we don't have to put initial-registration files into the output folders temporarily
 ${FSLDIR}/bin/fslmaths ${InputDir}/PhaseOne_gdc_dc.nii.gz -add ${InputDir}/PhaseTwo_gdc_dc.nii.gz -Tmean ${WD}/SpinEchoMean.nii.gz

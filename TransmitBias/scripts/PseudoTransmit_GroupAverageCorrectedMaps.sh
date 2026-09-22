@@ -70,8 +70,8 @@ source "$HCPPIPEDIR"/TransmitBias/scripts/mergeavg.shlib
 GoodSubjArray=()
 GoodVoltageArray=()
 
-StatsFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/PseudoTransmit_stats.txt
-CSFStatsFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/PseudoTransmit_CSFStats.txt
+StatsFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/PseudoTransmit_stats.txt
+CSFStatsFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/PseudoTransmit_CSFStats.txt
 
 rm -f "$StatsFile" "$CSFStatsFile"
 
@@ -79,61 +79,61 @@ rm -f "$StatsFile" "$CSFStatsFile"
 for ((i = 0; i < ${#SubjArray[@]}; ++i))
 do
     Subject="${SubjArray[$i]}"
-    cat "$StudyFolder"/"$Subject"/MNINonLinear/PseudoTransmit_CSFStats.txt >> "$CSFStatsFile"
-    cat "$StudyFolder"/"$Subject"/T1w/PseudoTransmit_stats.txt >> "$StatsFile"
+    cat "$StudyFolder"/"$Subject"/${STANDARDDIR}/PseudoTransmit_CSFStats.txt >> "$CSFStatsFile"
+    cat "$StudyFolder"/"$Subject"/${PHYSICALDIR}/PseudoTransmit_stats.txt >> "$StatsFile"
 done
 avg_setSubjects "${SubjArray[@]}"
 avg_setStudyFolder "$StudyFolder"
 
 #second pass
-ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k PseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.PseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
+ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k PseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.PseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
 
-volmergeavg MNINonLinear/PseudoTransmitField_Norm_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".All.PseudoTransmitField_Norm_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".PseudoTransmitField_Norm_Atlas.nii.gz &
+volmergeavg ${STANDARDDIR}/PseudoTransmitField_Norm_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".All.PseudoTransmitField_Norm_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".PseudoTransmitField_Norm_Atlas.nii.gz &
 
-ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
+ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
 
-volmergeavg MNINonLinear/rPseudoTransmitField_Norm_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".All.rPseudoTransmitField_Norm_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".rPseudoTransmitField_Norm_Atlas.nii.gz &
+volmergeavg ${STANDARDDIR}/rPseudoTransmitField_Norm_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".All.rPseudoTransmitField_Norm_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".rPseudoTransmitField_Norm_Atlas.nii.gz &
 
-volmergeavg MNINonLinear/PseudoTransmitField_Raw_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".All.PseudoTransmitField_Raw_Atlas.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".PseudoTransmitField_Raw_Atlas.dscalar.nii &
+volmergeavg ${STANDARDDIR}/PseudoTransmitField_Raw_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".All.PseudoTransmitField_Raw_Atlas.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".PseudoTransmitField_Raw_Atlas.dscalar.nii &
 
-volmergeavg MNINonLinear/T1wDividedByT2w_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".All.T1wDividedByT2w_Atlas.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".T1wDividedByT2w_Atlas.nii.gz &
+volmergeavg ${STANDARDDIR}/T1wDividedByT2w_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".All.T1wDividedByT2w_Atlas.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".T1wDividedByT2w_Atlas.nii.gz &
 
 #NOTE: PseudoCorr -> IndPseudoCorr
-ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k MyelinMap_PseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
+ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k MyelinMap_PseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii &
 
-volmergeavg MNINonLinear/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".All.T1wDividedByT2w_IndPseudoCorr_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$GroupAverageName".T1wDividedByT2w_IndPseudoCorr_Atlas.nii.gz &
+volmergeavg ${STANDARDDIR}/T1wDividedByT2w_PseudoCorr_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".All.T1wDividedByT2w_IndPseudoCorr_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$GroupAverageName".T1wDividedByT2w_IndPseudoCorr_Atlas.nii.gz &
 
 wait
 
-myelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-avgPTFieldFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-AvgPTFieldAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-GCorrMyelinOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_GroupTFCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-GCorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_GroupTFCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-AvgICorrMyelinFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-ICorrMyelinAllFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-AvgICorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-PTStatsFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/PseudoTransmit_stats.txt
-rPTNormFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-CSFStatsFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/PseudoTransmit_CSFStats.txt
-RegCorrMyelinOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr_Reg"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-CovariatesOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/Covariates.csv
+myelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+avgPTFieldFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+AvgPTFieldAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".PseudoTransmitField_Raw_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+GCorrMyelinOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_GroupTFCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+GCorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_GroupTFCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+AvgICorrMyelinFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+ICorrMyelinAllFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+AvgICorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".MyelinMap_IndPseudoCorr_LRDIFF"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+PTStatsFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/PseudoTransmit_stats.txt
+rPTNormFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.rPseudoTransmitField_Norm"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+CSFStatsFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/PseudoTransmit_CSFStats.txt
+RegCorrMyelinOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$GroupAverageName".All.MyelinMap_IndPseudoCorr_Reg"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+CovariatesOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/Covariates.csv
 
 argvarlist=(myelinCiftiAvg myelinAsymmOutFile \
     avgPTFieldFile AvgPTFieldAsymmOutFile \

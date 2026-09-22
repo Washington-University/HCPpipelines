@@ -44,7 +44,7 @@ PossibleVisits="V1_MR V2_MR V3_MR"
 Templates=(HCA6002236_V1_V2_V3)
 
 #all modes
-GMWMTemplate="/group-directory/MNINonLinear/GMWMTemplate.nii.gz"
+GMWMTemplate="/group-directory/${STANDARDDIR}/GMWMTemplate.nii.gz"
 
 #general settings
 #set this to a text file that has the scanner transmit voltages for all subjects in the provided list, in order
@@ -57,8 +57,8 @@ MatlabMode=1
 fMRINames=rfMRI_REST1_AP@rfMRI_REST1_PA
 ptbbrthresh=0.5
 #set this to an already transmit-corrected group average myelin map
-ReferenceTemplate="/path/Group/MNINonLinear/fsaverage_LR32k/GoodAFI.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
-GroupUncorrectedMyelin="/path/Group/MNINonLinear/fsaverage_LR32k/GoodAFI.MyelinMap_MSMAll.32k_fs_LR.dscalar.nii"
+ReferenceTemplate="/path/Group/${STANDARDDIR}/fsaverage_LR32k/GoodAFI.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
+GroupUncorrectedMyelin="/path/Group/${STANDARDDIR}/fsaverage_LR32k/GoodAFI.MyelinMap_MSMAll.32k_fs_LR.dscalar.nii"
 PTRefValFile="/path/PT_refval.txt"
 
 #B1Tx-specific settings
@@ -72,7 +72,7 @@ AFITRtwo=120
 AFITargetFlipAngle=50
 
 #setting shared by B1Tx and AFI
-GroupCorrectedMyelin="/group-directory/MNINonLinear/fsaverage_LR32k/Partial.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
+GroupCorrectedMyelin="/group-directory/${STANDARDDIR}/fsaverage_LR32k/Partial.MyelinMap_GroupCorr_MSMAll.32k_fs_LR.dscalar.nii"
 
 
 for (( i=0; i<${#Subjlist[@]}; i++ )); do

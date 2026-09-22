@@ -35,7 +35,7 @@ opts_ShowValues
 
 #set paths
 SurfaceTemplateFolder="$HCPPIPEDIR"/global/templates/standard_mesh_atlases
-NonlinearFolder="$SubjectDir"/"$Subject"/MNINonLinear
+NonlinearFolder="$SubjectDir"/"$Subject"/${STANDARDDIR}
 NativeFolder="$NonlinearFolder"/Native
 
 #If the config file doesn't have a directory separator, treat it as relative to $MSMCONFIGDIR

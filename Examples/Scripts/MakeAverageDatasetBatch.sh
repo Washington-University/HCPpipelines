@@ -98,15 +98,15 @@ if [ -n "${command_line_specified_symlink_study_folder}" ]; then
     mkdir -p ${SymLinkStudyFolder}
     for subj in $Subjlist ; do
 	echo "Symlinking selected contents of ${StudyFolder}/${subj} into ${SymLinkStudyFolder}/${subj}"
-	mkdir -p $SymLinkStudyFolder/$subj/MNINonLinear
-	mkdir -p $SymLinkStudyFolder/$subj/T1w
+	mkdir -p $SymLinkStudyFolder/$subj/${STANDARDDIR}
+	mkdir -p $SymLinkStudyFolder/$subj/${PHYSICALDIR}
 	# A recursive symlinking of *all* the files for each subject is time consuming.
 	# The following set of files/directories appears to be sufficient
-	cp -psu $StudyFolder/$subj/MNINonLinear/* $SymLinkStudyFolder/$subj/MNINonLinear 2> /dev/null
-	cp -rpsu $StudyFolder/$subj/MNINonLinear/fsaverage* $SymLinkStudyFolder/$subj/MNINonLinear/.  2> /dev/null
-	cp -rpsu $StudyFolder/$subj/MNINonLinear/Native $SymLinkStudyFolder/$subj/MNINonLinear/.  2> /dev/null
-	cp -rpsu $StudyFolder/$subj/T1w/fsaverage* $SymLinkStudyFolder/$subj/T1w/. 2> /dev/null
-	cp -rpsu $StudyFolder/$subj/T1w/Native $SymLinkStudyFolder/$subj/T1w/. 2> /dev/null
+	cp -psu $StudyFolder/$subj/${STANDARDDIR}/* $SymLinkStudyFolder/$subj/${STANDARDDIR} 2> /dev/null
+	cp -rpsu $StudyFolder/$subj/${STANDARDDIR}/fsaverage* $SymLinkStudyFolder/$subj/${STANDARDDIR}/.  2> /dev/null
+	cp -rpsu $StudyFolder/$subj/${STANDARDDIR}/Native $SymLinkStudyFolder/$subj/${STANDARDDIR}/.  2> /dev/null
+	cp -rpsu $StudyFolder/$subj/${PHYSICALDIR}/fsaverage* $SymLinkStudyFolder/$subj/${PHYSICALDIR}/. 2> /dev/null
+	cp -rpsu $StudyFolder/$subj/${PHYSICALDIR}/Native $SymLinkStudyFolder/$subj/${PHYSICALDIR}/. 2> /dev/null
     done
     # Use this as our new "StudyFolder" for the purposes of MakeAverageDataset.sh
     StudyFolder=$SymLinkStudyFolder

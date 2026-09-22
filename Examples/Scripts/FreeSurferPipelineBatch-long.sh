@@ -97,10 +97,10 @@ for i in ${!Subjects[@]}; do
 
   #Longitudinal FreeSurfer Input Variables
   SubjectID="$Subject" #FreeSurfer Subject ID Name
-  SubjectDIR="${StudyFolder}/${Subject}/T1w" #Location to Put FreeSurfer Subject's Folder
-  T1wImage="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
-  T1wImageBrain="${StudyFolder}/${Subject}/T1w/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
-  T2wImage="${StudyFolder}/${Subject}/T1w/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
+  SubjectDIR="${StudyFolder}/${Subject}/${PHYSICALDIR}" #Location to Put FreeSurfer Subject's Folder
+  T1wImage="${StudyFolder}/${Subject}/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+  T1wImageBrain="${StudyFolder}/${Subject}/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz" #T1w FreeSurfer Input (Full Resolution)
+  T2wImage="${StudyFolder}/${Subject}/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz" #T2w FreeSurfer Input (Full Resolution)
 
   if [ "$parallel_mode" != FSLSUB ]; then #fsl_sub does not allow nested submissions
     if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
@@ -133,7 +133,7 @@ for i in ${!Subjects[@]}; do
   "${cmd[@]}"
 
   # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
-  # echo set --subject=$Subject --subjectDIR=$SubjectDIR --t1=$T1wImage --t1brain=$T1wImageBrain --t2=$T2wImage --extra-reconall-arg-long="-i \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore.nii.gz -emregmask \"$SubjectDIR\"/T1w/T1w_acpc_dc_restore_brain.nii.gz -T2 $SubjectDIR\"/T1w/T2w_acpc_dc_restore.nii.gz -T2pial"
+  # echo set --subject=$Subject --subjectDIR=$SubjectDIR --t1=$T1wImage --t1brain=$T1wImageBrain --t2=$T2wImage --extra-reconall-arg-long="-i \"$SubjectDIR\"/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz -emregmask \"$SubjectDIR\"/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz -T2 $SubjectDIR\"/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz -T2pial"
   #echo ". ${EnvironmentScript}"
 
 done

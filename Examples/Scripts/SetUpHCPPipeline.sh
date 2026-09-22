@@ -55,7 +55,7 @@ export PHYSICALDIR='T1w' # Files in this directory contain data in the rigid-ali
                          # in these files, physical space called "acpc_dc" and standard space is called "standard"
 
 export STANDARDDIR='MNINonLinear' # Files in this directory contain data in the standard space of the template brain, 
-                                  # typiucally, deformed by non-linear registration. 
+                                  # typically, deformed by non-linear registration. 
                                   # Most pipeline outputs, including fMRI results are in this space
                                   # While surface data (e.g. func.gii metric files or dscalar.nii cifti files) in this directory 
                                   # can be shown on $PHYSICALDIR surfaces, due to their shared topology and surface registration,

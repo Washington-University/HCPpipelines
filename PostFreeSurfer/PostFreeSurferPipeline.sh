@@ -113,8 +113,8 @@ For the FreesurferPipeline-long, these are also supplied as timepoint labels, as
 Then the same are supplied to PostFreeSurferPipelineLongPrep and PostFreesurferPipeline in longitudinal mode.
 internally, longitudinal timepoint directories will be named as: <Session>.long.<Template>
 Longitudinal template directory is named <Subject>.long.<Template>. 
-Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Template>/T1w/<Session>.long.<Temlate>. 
-Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/T1w/<Template>. " "NONE"
+Longitudinal Freesurfer files for timepoints are stored under <Session>.long.<Template>/${PHYSICALDIR}/<Session>.long.<Temlate>. 
+Longitudinal Freesurfer files for template are stored under <Subject>.long.<Template>/${PHYSICALDIR}/<Template>. " "NONE"
 
 opts_AddOptional '--longitudinal-template' 'LongitudinalTemplate' 'FS longitudial template label' "Longitudinal template if LongitudinalMode!=NONE"
 opts_AddOptional '--sessions' 'SessionList' 'FS longitudial timepoint list' "Longitudinal timepoint (session) list @ separated, if LongitudinalMode==TEMPLATE"
@@ -248,10 +248,10 @@ echo ExperimentRoot: $ExperimentRoot
 #  Do NOT include spaces in any of these names
 # ------------------------------------------------------------------------------
 T1wImage="T1w_acpc_dc"
-T1wFolder="T1w" #Location of T1w images
+T1wFolder="${PHYSICALDIR}" #Location of T1w images
 T2wFolder="T2w" #Location of T1w images
 T2wImage="T2w_acpc_dc"
-AtlasSpaceFolder="MNINonLinear"
+AtlasSpaceFolder="${STANDARDDIR}"
 NativeFolder="Native"
 
 if [ "$LongitudinalMode" == "TEMPLATE" ]; then
@@ -468,10 +468,10 @@ if [ "$LongitudinalMode" == "TEMPLATE" ]; then
     NativeFolderTemplate="$Subject.long.$LongitudinalTemplate"
     for tp in ${Sessions[@]}; do
         NativeFolderTP="$tp.long.$LongitudinalTemplate"
-        mkdir -p "$StudyFolder/$NativeFolderTP/MNINonLinear/Native"
+        mkdir -p "$StudyFolder/$NativeFolderTP/${STANDARDDIR}/Native"
         for Hemisphere in L R; do
-            cp "$StudyFolder/$NativeFolderTemplate/MNINonLinear/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
-            "$StudyFolder/$NativeFolderTP/MNINonLinear/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
+            cp "$StudyFolder/$NativeFolderTemplate/${STANDARDDIR}/Native/$NativeFolderTemplate.${Hemisphere}.roi.native.shape.gii" \
+            "$StudyFolder/$NativeFolderTP/${STANDARDDIR}/Native/$NativeFolderTP.${Hemisphere}.roi.native.shape.gii"
         done
     done
 fi

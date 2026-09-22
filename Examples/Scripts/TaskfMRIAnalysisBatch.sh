@@ -93,7 +93,7 @@ do
     LowResMesh="32" #32 if using HCP minimal preprocessing pipeline outputs
     GrayOrdinatesResolution="2" #2mm if using HCP minimal preprocessing pipeline outputs
     OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
-    Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
+    Confound="NONE" #File located in ${SubjectID}/${STANDARDDIR}/Results/${fMRIName} or NONE
     HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
     VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
     RegNames="NONE" # Use NONE to use the default surface registration

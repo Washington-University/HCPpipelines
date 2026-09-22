@@ -56,9 +56,9 @@ UseIndMeanBool=$(opts_StringToBool "$UseIndMean")
 # default folders
 SubjFolder=${StudyFolder}/${Subject}
 log_Msg "SubjFolder: $SubjFolder"
-AtlasSpaceFolder=${SubjFolder}/MNINonLinear
+AtlasSpaceFolder=${SubjFolder}/${STANDARDDIR}
 log_Msg "AtlasSpaceFolder: $AtlasSpaceFolder"
-T1wFolder=${SubjFolder}/T1w
+T1wFolder=${SubjFolder}/${PHYSICALDIR}
 log_Msg "T1wFolder: $T1wFolder"
 NativeFolder=${AtlasSpaceFolder}/Native
 log_Msg "NativeFolder: $NativeFolder"

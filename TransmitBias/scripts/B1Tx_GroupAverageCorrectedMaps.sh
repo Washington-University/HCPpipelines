@@ -71,8 +71,8 @@ source "$HCPPIPEDIR"/TransmitBias/scripts/mergeavg.shlib
 GoodSubjArray=()
 GoodVoltageArray=()
 
-StatsFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/B1Tx_stats.txt"
-CSFStatsFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/CSFStats.txt"
+StatsFile="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/B1Tx_stats.txt"
+CSFStatsFile="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/CSFStats.txt"
 rm -f "$StatsFile" "$CSFStatsFile"
 
 #read stops at newline, doesn't like empty string for line delimiter, mac doesn't have readarray/mapfile
@@ -82,13 +82,13 @@ i=0
 for ((i = 0; i < ${#SubjArray[@]}; ++i))
 do
     Subject="${SubjArray[$i]}"
-    if [[ -f "$StudyFolder"/"$Subject"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$Subject".B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
+    if [[ -f "$StudyFolder"/"$Subject"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$Subject".B1Tx_phase"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii ]]
     then
         GoodSubjArray+=("$Subject")
         GoodVoltageArray+=("${VoltageArray[$i]}")
         
-        cat "${StudyFolder}/${Subject}/T1w/B1Tx_stats.txt" >> "$StatsFile"
-        cat "${StudyFolder}/${Subject}/MNINonLinear/B1Tx_CSFStats.txt" >> "$CSFStatsFile"
+        cat "${StudyFolder}/${Subject}/${PHYSICALDIR}/B1Tx_stats.txt" >> "$StatsFile"
+        cat "${StudyFolder}/${Subject}/${STANDARDDIR}/B1Tx_CSFStats.txt" >> "$CSFStatsFile"
     fi
     i=$((i + 1))
 done
@@ -97,46 +97,46 @@ avg_setSubjects "${GoodSubjArray[@]}"
 avg_setStudyFolder "$StudyFolder"
 
 #naming conventions for things used in matlab
-IndCorrMyelinAvgFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_IndCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-IndCorrAllMyelinFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.MyelinMap_IndCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
-SB1TxFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.rB1Tx"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+IndCorrMyelinAvgFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_IndCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+IndCorrAllMyelinFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.MyelinMap_IndCorr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+SB1TxFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".All.rB1Tx"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
 
-ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k rB1Tx"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k rB1Tx"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
     "$SB1TxFile" \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".rB1Tx"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".rB1Tx"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii
 
 #NOTE: name change from _Corr to _IndCorr
-ciftimergeavgsubj MNINonLinear/fsaverage_LR"$LowResMesh"k MyelinMap_Corr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
+ciftimergeavgsubj ${STANDARDDIR}/fsaverage_LR"$LowResMesh"k MyelinMap_Corr"$RegString"."$LowResMesh"k_fs_LR.dscalar.nii \
     "$IndCorrAllMyelinFile" \
     "$IndCorrMyelinAvgFile"
 
 #_Atlas volumes
-volmergeavg MNINonLinear/B1Tx_phase_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".All.B1Tx_phase_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_phase_Atlas.nii.gz
+volmergeavg ${STANDARDDIR}/B1Tx_phase_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".All.B1Tx_phase_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".B1Tx_phase_Atlas.nii.gz
 
-volmergeavg MNINonLinear/rB1Tx_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".All.rB1Tx_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".rB1Tx_Atlas.nii.gz
+volmergeavg ${STANDARDDIR}/rB1Tx_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".All.rB1Tx_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".rB1Tx_Atlas.nii.gz
 
-volmergeavg MNINonLinear/T1wDividedByT2w_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".All.T1wDividedByT2w_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".T1wDividedByT2w_Atlas.nii.gz
+volmergeavg ${STANDARDDIR}/T1wDividedByT2w_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".All.T1wDividedByT2w_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".T1wDividedByT2w_Atlas.nii.gz
 
-volmergeavg MNINonLinear/T1wDividedByT2w_Corr_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".All.T1wDividedByT2w_IndCorr_Atlas.nii.gz \
-    "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".T1wDividedByT2w_IndCorr_Atlas.nii.gz
+volmergeavg ${STANDARDDIR}/T1wDividedByT2w_Corr_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".All.T1wDividedByT2w_IndCorr_Atlas.nii.gz \
+    "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".T1wDividedByT2w_IndCorr_Atlas.nii.gz
 
 #apply slope/intercept to myelin _Atlas volume (because _Atlas files weren't available until now)
-read slope intercept < "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_groupfit.txt
-wb_command -volume-math "myelin / (b1tx * $slope + $intercept)" "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".T1wDividedByT2w_GroupCorr_Atlas.dscalar.nii -fixnan 0 \
-    -var myelin "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".T1wDividedByT2w_Atlas.nii.gz \
-    -var b1tx "$StudyFolder"/"$GroupAverageName"/MNINonLinear/"$TransmitGroupName".B1Tx_phase_Atlas.nii.gz
+read slope intercept < "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".B1Tx_groupfit.txt
+wb_command -volume-math "myelin / (b1tx * $slope + $intercept)" "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".T1wDividedByT2w_GroupCorr_Atlas.dscalar.nii -fixnan 0 \
+    -var myelin "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".T1wDividedByT2w_Atlas.nii.gz \
+    -var b1tx "$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/"$TransmitGroupName".B1Tx_phase_Atlas.nii.gz
 
 #matlab output naming
-IndCorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/MNINonLinear/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_IndCorr_LRDIFF."$LowResMesh"k_fs_LR.dscalar.nii
-CovariatesOutFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/Covariates.csv"
-RegressedMyelinOutFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.MyelinMap_IndCorr_Reg${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+IndCorrMyelinAsymmOutFile="$StudyFolder"/"$GroupAverageName"/${STANDARDDIR}/fsaverage_LR"$LowResMesh"k/"$TransmitGroupName".MyelinMap_IndCorr_LRDIFF."$LowResMesh"k_fs_LR.dscalar.nii
+CovariatesOutFile="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/Covariates.csv"
+RegressedMyelinOutFile="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/${TransmitGroupName}.All.MyelinMap_IndCorr_Reg${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
 
 tempfiles_create transmit_goodvoltages_XXXXXX.txt GoodVoltagesFile
 (IFS=$'\n'; echo "${GoodVoltageArray[*]}") > "$GoodVoltagesFile"

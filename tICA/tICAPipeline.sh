@@ -116,7 +116,7 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 opts_ParseArguments "$@"
 
 # if Group sICA hand classifications exists, use it to filter the group sICA components before projecting to individuals
-HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
+HandSignalFile="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
 if [ -e "${HandSignalFile}" ]; then
     # Import the contents of $HandSignalFile as an array
     read -a sigIdx < "${HandSignalFile}"
@@ -271,7 +271,7 @@ then
 fi
 
 #generate a new brainmask if we don't have one for this resolution
-VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
+VolumeTemplateFile="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.dscalar.nii"
 
 tICACleaningGroupAverageName="$GroupAverageName"
 tICACleaningFolder="${StudyFolder}/${GroupAverageName}"
@@ -292,9 +292,9 @@ then
     tICACleaningGroupAverageName="$precomputeGroupName"
 
     #if we have a brainmask for the current fmri resolution, use it instead of making a new one, to support running CleanData in a per-session fashion
-    if [[ -f "$tICACleaningFolder/MNINonLinear/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate_${tICACleaningfMRIName}.${fMRIResolution}.dscalar.nii" ]]
+    if [[ -f "$tICACleaningFolder/${STANDARDDIR}/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate_${tICACleaningfMRIName}.${fMRIResolution}.dscalar.nii" ]]
     then
-        VolumeTemplateFile="$tICACleaningFolder/MNINonLinear/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate_${tICACleaningfMRIName}.${fMRIResolution}.dscalar.nii"
+        VolumeTemplateFile="$tICACleaningFolder/${STANDARDDIR}/${tICACleaningGroupAverageName}_CIFTIVolumeTemplate_${tICACleaningfMRIName}.${fMRIResolution}.dscalar.nii"
     fi
 
     #TODO: can't run USE/INITIALIZE modes using outputs generated with an extra suffix without another optional parameter, do we need to support this?
@@ -324,7 +324,7 @@ fi
 
 #this doesn't get changed later, it is for convenience
 #we only write things here in NEW (sICA ESTIMATE) mode, which means tICACleaningfMRIName is OutputfMRIName and tICACleaningGroupAverageName is OutputfMRIName
-sICAoutfolder="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA"
+sICAoutfolder="${tICACleaningFolder}/${STANDARDDIR}/Results/${tICACleaningfMRIName}/sICA"
 
 #functions so that we can do certain things across sessions in parallel
 function sessionMaxBrainmask()
@@ -333,14 +333,14 @@ function sessionMaxBrainmask()
     local subjMergeArgs=()
     for fMRIName in "${fMRINamesArray[@]}"
     do
-        if [[ -f "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+        if [[ -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
         then
-            if [[ -f "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz" ]]
+            if [[ -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz" ]]
             then
-                subjMergeArgs+=(-volume "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz")
-            elif [[ -f "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz" ]]
+                subjMergeArgs+=(-volume "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_brain_mask.nii.gz")
+            elif [[ -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz" ]]
             then
-                subjMergeArgs+=(-volume "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz")
+                subjMergeArgs+=(-volume "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/brainmask_fs.${fMRIResolution}.nii.gz")
             else
                 log_Err_Abort "Session $1 doesn't have a brainmask for run $fMRIName, please remove the ${fMRIName}${fMRIProcSTRING}.dtseries.nii file if processing was unsuccessful"
             fi
@@ -350,13 +350,13 @@ function sessionMaxBrainmask()
     then
         log_Err_Abort "No valid fMRI runs found for session $1"
     fi
-    wb_command -volume-merge "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+    wb_command -volume-merge "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
         "${subjMergeArgs[@]}"
-    wb_command -volume-reduce "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+    wb_command -volume-reduce "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
         MAX \
-        "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+        "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
     #remove this early rather than waiting for tempfiles to clean up
-    rm -f "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+    rm -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
 }
 
 for ((stepInd = startInd; stepInd <= stopAfterInd; ++stepInd))
@@ -369,7 +369,7 @@ do
                 #skip to next pipeline stage
                 continue
             fi
-            migpResumeFile="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_MIGP_resume.mat"
+            migpResumeFile="$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_MIGP_resume.mat"
             if ((! migpResumeBool)) && [[ -f "$migpResumeFile" ]]
             then
                 mv -f "$migpResumeFile" "$migpResumeFile".disabled
@@ -400,9 +400,9 @@ do
                 continue
             fi
             "$HCPPIPEDIR"/tICA/scripts/GroupSICA.sh \
-                --data="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_PCA.dtseries.nii" \
-                --vn-file="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_meanvn.dscalar.nii" \
-                --wf-out-name="$StudyFolder/$GroupAverageName/MNINonLinear/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_PCA"_WF"$numWisharts".dtseries.nii \
+                --data="$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_PCA.dtseries.nii" \
+                --vn-file="$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_meanvn.dscalar.nii" \
+                --wf-out-name="$StudyFolder/$GroupAverageName/${STANDARDDIR}/Results/$OutputfMRIName/${OutputfMRIName}${fMRIProcSTRING}_PCA"_WF"$numWisharts".dtseries.nii \
                 --out-folder="$sICAoutfolder" \
                 --num-wishart="$numWisharts" \
                 --icadim-iters="$sicadimIters" \
@@ -441,33 +441,33 @@ do
                 mergeArgs=()
                 for Session in "${Sesslist[@]}"
                 do
-                    tempfiles_add "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                        "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                    tempfiles_add "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                        "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
                     #this function is above the stepInd loop
                     par_addjob sessionMaxBrainmask "$Session"
-                    mergeArgs+=(-volume "${StudyFolder}/${Session}/MNINonLinear/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz")
+                    mergeArgs+=(-volume "${StudyFolder}/${Session}/${STANDARDDIR}/Results/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz")
                 done
                 par_runjobs "$parLimit"
 
-                tempfiles_add "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                tempfiles_add "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
+                    "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
 
-                    #"${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \ should be kept for feature processing
-                wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    #"${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \ should be kept for feature processing
+                wb_command -volume-merge "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                     "${mergeArgs[@]}"
-                wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                wb_command -volume-reduce "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
                     MAX \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                    "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz"
                 #this is a big file, don't keep it around
-                rm -f "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
-                echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt"
-                wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
-                    "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                rm -f "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_all_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                echo $'OTHER\n1 255 255 255 255' > "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt"
+                wb_command -volume-label-import "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                    "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/${GroupAverageName}_CIFTIVolumeTemplate_${OutputfMRIName}.${fMRIResolution}.txt" \
+                    "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
                 wb_command -cifti-create-dense-scalar "$VolumeTemplateFile" \
-                    -volume "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
-                        "${StudyFolder}/${GroupAverageName}/MNINonLinear/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
+                    -volume "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_max_${OutputfMRIName}.${fMRIResolution}.nii.gz" \
+                        "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/brain_mask_label_${OutputfMRIName}.${fMRIResolution}.nii.gz"
             fi
 
             for Session in "${Sesslist[@]}"
@@ -480,7 +480,7 @@ do
                     fMRIExist=()
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        if [[ -f "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+                        if [[ -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
                         then
                             fMRIExist+=("${fMRIName}")
                         fi
@@ -520,9 +520,9 @@ do
             if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
             OutputString="$OutputfMRIName"_d"$tICADim"_WF"$numWisharts"_"$tICACleaningGroupAverageName""$extraSuffixSTRING"
 
-            mkdir -p "${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA"
-            sicaAnnsub="${tICACleaningFolder}/MNINonLinear/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv"
-            ticaAnnsub="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/iq_${tICADim}.wb_annsub.csv"
+            mkdir -p "${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/Results/${OutputfMRIName}/sICA"
+            sicaAnnsub="${tICACleaningFolder}/${STANDARDDIR}/Results/${tICACleaningfMRIName}/sICA/iq_${sICAActualDim}.wb_annsub.csv"
+            ticaAnnsub="${StudyFolder}/${GroupAverageName}/${STANDARDDIR}/Results/${OutputfMRIName}/sICA/iq_${tICADim}.wb_annsub.csv"
             if [[ "$sicaAnnsub" != "$ticaAnnsub" ]] && [[ "$sICAActualDim" == "$tICADim" ]]; then
                 cp "$sicaAnnsub" "$ticaAnnsub"
             else
@@ -572,7 +572,7 @@ do
             then
                 #current mixing matrix naming convention is in ComputeGroupTICA.sh/m
                 #"sICADim" is the --ica-dim argument, which is actually the tICA dim
-                #OutputFolder="$OutGroupFolder/MNINonLinear/Results/$fMRIConcatName/tICA_d$sICAdim"
+                #OutputFolder="$OutGroupFolder/${STANDARDDIR}/Results/$fMRIConcatName/tICA_d$sICAdim"
 
                 #tICAmixNamePart = 'melodic_mix';
                 #nlfunc = 'tanh';
@@ -595,7 +595,7 @@ do
 
                 #    nameParamPart = ['_' num2str(tICAdim) '_' nlfunc IT];
                 #    dlmwrite([OutputFolder '/' tICAmixNamePart nameParamPart], tICAmix, '\t');
-                tica_cmd+=(--tICA-mixing-matrix="$tICACleaningFolder/MNINonLinear/Results/$tICACleaningfMRIName/tICA_d$tICADim/melodic_mix_${tICADim}_tanhF")
+                tica_cmd+=(--tICA-mixing-matrix="$tICACleaningFolder/${STANDARDDIR}/Results/$tICACleaningfMRIName/tICA_d$tICADim/melodic_mix_${tICADim}_tanhF")
             fi
 
             "${tica_cmd[@]}"
@@ -622,7 +622,7 @@ do
                     fMRIExist=()
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        if [[ -f "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+                        if [[ -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
                         then
                             fMRIExist+=("${fMRIName}")
                         fi
@@ -632,7 +632,7 @@ do
     #Comment:
     #OutString=${OutputfMRIName}_d${sICAActualDim}_WF${numWisharts}_${GroupAverageName}_WR #OutString for --timeseries
     #if [ ${Method} == "single" ] ; then
-       #Timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR32k/${Session}.${OutString}_${RegName}_ts.32k_fs_LR.sdseries.nii" #2.0mm Used this
+       #Timeseries="${StudyFolder}/${Session}/${STANDARDDIR}/fsaverage_LR32k/${Session}.${OutString}_${RegName}_ts.32k_fs_LR.sdseries.nii" #2.0mm Used this
     #fi
     #--output-string="${OutputfMRIName}_d${sICAActualDim}_WF${numWisharts}_${GroupAverageName}_WR_tICA" #This is correct
     #--group-maps is not needed
@@ -640,7 +640,7 @@ do
                 par_addjob "$HCPPIPEDIR"/global/scripts/RSNregression.sh \
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
-                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
+                    --timeseries="${StudyFolder}/${Session}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --surf-reg-name="$RegName" \
                     --low-res="$LowResMesh" \
@@ -706,7 +706,7 @@ do
         (CleanData)
             if [[ "$NuisanceListTxt" == "" ]]
             then
-                NuisanceListTxt="$tICACleaningFolder/MNINonLinear/Results/${tICACleaningfMRIName}/tICA_d${tICADim}/Noise.txt"
+                NuisanceListTxt="$tICACleaningFolder/${STANDARDDIR}/Results/${tICACleaningfMRIName}/tICA_d${tICADim}/Noise.txt"
             fi
             for Session in "${Sesslist[@]}"
             do
@@ -714,7 +714,7 @@ do
                 fMRIExist=()
                 for fMRIName in "${fMRINamesArray[@]}"
                 do
-                    if [[ -f "${StudyFolder}/${Session}/MNINonLinear/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
+                    if [[ -f "${StudyFolder}/${Session}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}${fMRIProcSTRING}.dtseries.nii" ]]
                     then
                         fMRIExist+=("${fMRIName}")
                     fi
@@ -725,7 +725,7 @@ do
                     --study-folder="$StudyFolder" \
                     --subject="$Session" \
                     --noise-list="$NuisanceListTxt" \
-                    --timeseries="${StudyFolder}/${Session}/MNINonLinear/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
+                    --timeseries="${StudyFolder}/${Session}/${STANDARDDIR}/fsaverage_LR${LowResMesh}k/${Session}.${OutputString}_WR_tICA${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" \
                     --subject-timeseries="$fMRINamesForSub" \
                     --subject-concat-timeseries="$MRFixConcatName" \
                     --fix-high-pass="$HighPass" \

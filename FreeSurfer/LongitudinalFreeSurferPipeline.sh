@@ -261,18 +261,18 @@ log_Msg "extra_reconall_args_base: $extra_reconall_args_base"
 log_Msg "extra_reconall_args_long: $extra_reconall_args_long"
 log_Msg "After delimiter substitution, Sessions: ${Sessions}"
 
-TemplateT1wDir="${StudyFolder}/${SubjectID}.long.${TemplateID}/T1w"
+TemplateT1wDir="${StudyFolder}/${SubjectID}.long.${TemplateID}/${PHYSICALDIR}"
 mkdir -p "${TemplateT1wDir}"
 
 if (( start_stage < 1 )); then
 
   #prepare session folder structure
   for Session in ${Sessions} ; do
-    Source="${StudyFolder}/${Session}/T1w/${Session}"
+    Source="${StudyFolder}/${Session}/${PHYSICALDIR}/${Session}"
     Target="${TemplateT1wDir}/${Session}"
     log_Msg "Creating a link: ${Source} => ${Target}"
     #symlinks review: changed from absolute to relative.
-    ( cd "${TemplateT1wDir}" && ln -sf "../../${Session}/T1w/$Session" "$Session" )
+    ( cd "${TemplateT1wDir}" && ln -sf "../../${Session}/${PHYSICALDIR}/$Session" "$Session" )
   done
 
   # ----------------------------------------------------------------------
@@ -330,7 +330,7 @@ if (( end_stage > 0 )); then
     recon_all_cmd+=" -long ${Session} ${TemplateID} -all -conf2hires"
 
     recon_all_cmd+=" $extra_reconall_args_long "
-    T2w=${StudyFolder}/${Session}/T1w/T2w_acpc_dc_restore.nii.gz
+    T2w=${StudyFolder}/${Session}/${PHYSICALDIR}/T2w_acpc_dc_restore.nii.gz
 
     if [ -f "$T2w" ]; then
       recon_all_cmd+=" -T2 $T2w"
@@ -338,8 +338,8 @@ if (( end_stage > 0 )); then
         log_Msg "WARNING: No T2-weighted image $T2w, T2-weighted processing will not run."
     fi
 
-    T1w=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore.nii.gz
-    emregmask=${StudyFolder}/${Session}/T1w/T1w_acpc_dc_restore_brain.nii.gz
+    T1w=${StudyFolder}/${Session}/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz
+    emregmask=${StudyFolder}/${Session}/${PHYSICALDIR}/T1w_acpc_dc_restore_brain.nii.gz
 
     if [ -f "$emregmask" ]; then
       recon_all_cmd+=" -emregmask $emregmask"
@@ -364,7 +364,7 @@ fi
 for Session in ${Sessions} ; do
   rm -f "${TemplateT1wDir}/${Session}"
   LongSession=${Session}.long.${TemplateID}
-  LongSessionT1wDir="$StudyFolder/${LongSession}/T1w"
+  LongSessionT1wDir="$StudyFolder/${LongSession}/${PHYSICALDIR}"
   rm -rf "$LongSessionT1wDir"
   mkdir -p "$LongSessionT1wDir"
   mv "${TemplateT1wDir}/${LongSession}" "${LongSessionT1wDir}"/

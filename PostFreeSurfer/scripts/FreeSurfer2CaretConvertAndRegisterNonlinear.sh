@@ -453,7 +453,7 @@ for Hemisphere in L R ; do
             average_cmd_args=()
             for timepoint in $LongitudinalTimepoints; do
                 experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                average_cmd_args+=("-surf" "$experiment_root/MNINonLinear/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
+                average_cmd_args+=("-surf" "$experiment_root/${STANDARDDIR}/$NativeFolder/$timepoint.long.$LongitudinalTemplate.$Hemisphere.sphere.rot.native.surf.gii")
             done
             ${CARET7DIR}/wb_command -surface-average "${average_cmd_args[@]}" "$AtlasSpaceFolder/$NativeFolder/MSMSulc/${Hemisphere}.sphere_rot_average.surf.gii"
             #fix the averaged surface to convert it into sphere
@@ -464,13 +464,13 @@ for Hemisphere in L R ; do
             #copy the registration result to each timepoint
             for timepoint in $LongitudinalTimepoints; do
                 experiment_root="$StudyFolder/$timepoint.long.$LongitudinalTemplate"
-                cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/MNINonLinear/$NativeFolder/
+                cp -r "$AtlasSpaceFolder"/"$NativeFolder"/MSMSulc $experiment_root/${STANDARDDIR}/$NativeFolder/
 
                 #copy the output of MSMSulc to each of the timepoint native folders
                 for file in "$AtlasSpaceFolder"/"$NativeFolder"/${Session}.*${RegName}.*; do
                     file_base=$(basename $file)
                     new_file=${file_base/${Session}/$timepoint.long.$LongitudinalTemplate}
-                    cp $file $experiment_root/MNINonLinear/$NativeFolder/$new_file
+                    cp $file $experiment_root/${STANDARDDIR}/$NativeFolder/$new_file
                 done
             done
         fi

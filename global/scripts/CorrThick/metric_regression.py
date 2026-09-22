@@ -6,11 +6,14 @@ Created on Tue Aug 20 11:10:05 2024
 @author: brainmappers
 """
 
+import os
+
+STANDARDDIR = os.environ.get("STANDARDDIR", "MNINonLinear")
+
 
 def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights):
 
     import multiprocessing
-    import os
     from concurrent.futures import ProcessPoolExecutor
 
     import nibabel as nib
@@ -24,7 +27,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
         d[str(curv) + "_img"] = os.path.join(
             subjects_dir,
             subject,
-            "MNINonLinear",
+            STANDARDDIR,
             "Native",
             "CorrThick",
             "{sub}.{h}.{s}.{c}.smooth.shape.gii".format(
@@ -37,7 +40,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
     t_img = os.path.join(
         subjects_dir,
         subject,
-        "MNINonLinear",
+        STANDARDDIR,
         "Native",
         "CorrThick",
         "{sub}.{h}.thickness.{m}.resample.shape.gii".format(
@@ -57,7 +60,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
             os.path.join(
                 subjects_dir,
                 subject,
-                "MNINonLinear",
+                STANDARDDIR,
                 "Native",
                 "CorrThick",
                 "{sub}.{h}.{s}.{c}.smooth.shape.gii".format(
@@ -76,7 +79,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(curv))
     curv_name = "{sub}.{h}.{s}.curvs.shape.gii".format(sub=subject, h=hemi, s=surface)
     curv_name = os.path.join(
-        subjects_dir, subject, "MNINonLinear", "Native", "CorrThick", curv_name
+        subjects_dir, subject, STANDARDDIR, "Native", "CorrThick", curv_name
     )
     nib.save(data, curv_name)
 
@@ -184,7 +187,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
     Tcorr_name = os.path.join(
         subjects_dir,
         subject,
-        "MNINonLinear",
+        STANDARDDIR,
         "Native",
         "CorrThick",
         "{sub}.{h}.{s}.corrthickness.shape.gii".format(
@@ -201,7 +204,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
     data.add_gifti_data_array(nib.gifti.gifti.GiftiDataArray(coeff))
     coeff_name = "{sub}.{h}.{s}.coeffs.shape.gii".format(sub=subject, h=hemi, s=surface)
     coeff_name = os.path.join(
-        subjects_dir, subject, "MNINonLinear", "Native", "CorrThick", coeff_name
+        subjects_dir, subject, STANDARDDIR, "Native", "CorrThick", coeff_name
     )
     nib.save(data, coeff_name)
 
@@ -213,7 +216,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
         sub=subject, h=hemi, s=surface
     )
     coeff_name = os.path.join(
-        subjects_dir, subject, "MNINonLinear", "Native", "CorrThick", coeff_name
+        subjects_dir, subject, STANDARDDIR, "Native", "CorrThick", coeff_name
     )
     nib.save(data, coeff_name)
 
@@ -225,7 +228,7 @@ def metric_regression(subjects_dir, subject, hemi, surface, mesh, rois, weights)
         sub=subject, h=hemi, s=surface
     )
     intercept_name = os.path.join(
-        subjects_dir, subject, "MNINonLinear", "Native", "CorrThick", intercept_name
+        subjects_dir, subject, STANDARDDIR, "Native", "CorrThick", intercept_name
     )
     nib.save(data, intercept_name)
 

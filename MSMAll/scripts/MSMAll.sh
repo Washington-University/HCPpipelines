@@ -80,11 +80,11 @@ opts_ShowValues
 # ------------------------------------------------------------------------------
 # Naming Conventions and other variables
 Caret7_Command=${CARET7DIR}/wb_command
-AtlasFolder="${StudyFolder}/${Session}/MNINonLinear"
+AtlasFolder="${StudyFolder}/${Session}/${STANDARDDIR}"
 DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
 NativeFolder="${AtlasFolder}/Native"
 ResultsFolder="${AtlasFolder}/Results/${OutputfMRIName}"
-T1wFolder="${StudyFolder}/${Session}/T1w"
+T1wFolder="${StudyFolder}/${Session}/${PHYSICALDIR}"
 DownSampleT1wFolder="${T1wFolder}/fsaverage_LR${LowResMesh}k"
 NativeT1wFolder="${T1wFolder}/Native"
 

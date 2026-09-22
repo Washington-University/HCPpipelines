@@ -117,9 +117,9 @@ fi
 ############################################################################################################
 # The next block computes the transform from T1w_acpc_dc (cross) to T1w_acpc_dc (long_template).
 Timepoint_long=$Timepoint_cross.long.$Template
-T1w_dir_cross=$StudyFolder/$Timepoint_cross/T1w
-T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
-T1w_dir_template=$StudyFolder/$Subject.long.$Template/T1w
+T1w_dir_cross=$StudyFolder/$Timepoint_cross/${PHYSICALDIR}
+T1w_dir_long=$StudyFolder/$Timepoint_long/${PHYSICALDIR}
+T1w_dir_template=$StudyFolder/$Subject.long.$Template/${PHYSICALDIR}
 
 if (( TemplateProcessing == 0 )); then #timepoint mode
 
@@ -160,7 +160,7 @@ if (( TemplateProcessing == 0 )); then
     convertwarp --premat="$T1w_dir_cross/xfms/acpc.mat" --ref=$MNI_hires_template \
         --warp1=$T1w_dir_cross/xfms/T1w_dc.nii.gz --postmat=$T1w_dir_long/xfms/T1w_cross_to_T1w_long.mat --out=$T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz
     #second, apply warp.
-    applywarp --interp=spline -i $T1w_dir_cross/T1w.nii.gz -r $MNI_hires_template \
+    applywarp --interp=spline -i $T1w_dir_cross/${PHYSICALDIR}.nii.gz -r $MNI_hires_template \
         -w $T1w_dir_long/xfms/T1w_acpc_dc_long.nii.gz -o $T1w_dir_long/T1w_acpc_dc.nii.gz
 fi
 #nothing to do in template mode for this block.
@@ -217,7 +217,7 @@ fi
 T1wImageBrainMask_orig="$T1wImageBrainMask"_orig
 
 if (( TemplateProcessing == 0 )); then
-    FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/T1w/$Timepoint_long"
+    FreeSurferFolder_TP_long="$StudyFolder/$Timepoint_long/${PHYSICALDIR}/$Timepoint_long"
     log_Msg "Timepoint $Timepoint_long: creating brain mask in template acpc_dc space"
     mri_convert -rt nearest -rl "$T1w_dir_long/T1w_acpc_dc.nii.gz" "$FreeSurferFolder_TP_long"/mri/wmparc.mgz "$T1w_dir_long"/wmparc_1mm.nii.gz
     applywarp --rel --interp=nn -i "$T1w_dir_long"/wmparc_1mm.nii.gz -r "$T1w_dir_long"/"T1w_acpc_dc".nii.gz --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$T1w_dir_long"/wmparc.nii.gz
@@ -289,19 +289,19 @@ else #make tempate images
     nTP=${#timepoints[@]}
     tp=${timepoints[0]}
 
-    brainmask_cmd="fslmaths $StudyFolder/$tp.long.$Template/T1w/$T1wImageBrainMask_orig"
-    template_cmd="fslmaths $StudyFolder/$tp.long.$Template/T1w/T1w_acpc_dc_restore"
-    template_cmd_unrestore="fslmaths $StudyFolder/$tp.long.$Template/T1w/T1w_acpc_dc"
-    template_cmd_t2w="fslmaths $StudyFolder/$tp.long.$Template/T1w/T2w_acpc_dc_restore"
-    template_cmd_t2w_unrestore="fslmaths $StudyFolder/$tp.long.$Template/T1w/T2w_acpc_dc"
+    brainmask_cmd="fslmaths $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/$T1wImageBrainMask_orig"
+    template_cmd="fslmaths $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T1w_acpc_dc_restore"
+    template_cmd_unrestore="fslmaths $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T1w_acpc_dc"
+    template_cmd_t2w="fslmaths $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T2w_acpc_dc_restore"
+    template_cmd_t2w_unrestore="fslmaths $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T2w_acpc_dc"
 
     for (( i=1; i<nTP; i++)); do
         tp=${timepoints[i]}
-        brainmask_cmd+=" -max $StudyFolder/$tp.long.$Template/T1w/$T1wImageBrainMask_orig"
-        template_cmd+=" -add $StudyFolder/$tp.long.$Template/T1w/T1w_acpc_dc_restore"
-        template_cmd_unrestore+=" -add $StudyFolder/$tp.long.$Template/T1w/T1w_acpc_dc"
-        template_cmd_t2w+=" -add $StudyFolder/$tp.long.$Template/T1w/T2w_acpc_dc_restore"
-        template_cmd_t2w_unrestore+=" -add $StudyFolder/$tp.long.$Template/T1w/T2w_acpc_dc"
+        brainmask_cmd+=" -max $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/$T1wImageBrainMask_orig"
+        template_cmd+=" -add $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T1w_acpc_dc_restore"
+        template_cmd_unrestore+=" -add $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T1w_acpc_dc"
+        template_cmd_t2w+=" -add $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T2w_acpc_dc_restore"
+        template_cmd_t2w_unrestore+=" -add $StudyFolder/$tp.long.$Template/${PHYSICALDIR}/T2w_acpc_dc"
     done
 
     brainmask_cmd+=" $OutputBrainMask -odt float"
@@ -330,7 +330,7 @@ fi
 # Register template to MNI space and resample all timepoints to MNI space using acquired transform.
 
 if (( TemplateProcessing ==  1 )); then
-    AtlasSpaceFolder_template=$StudyFolder/$Subject.long.$Template/MNINonLinear
+    AtlasSpaceFolder_template=$StudyFolder/$Subject.long.$Template/${STANDARDDIR}
     WARP=xfms/acpc_dc2standard.nii.gz
     INVWARP=xfms/standard2acpc_dc.nii.gz
     WARP_JACOBIANS=xfms/NonlinearRegJacobians.nii.gz
@@ -355,7 +355,7 @@ if (( TemplateProcessing ==  1 )); then
         --ref2mmmask=${Template2mmMask} \
         --owarp=${AtlasSpaceFolder_template}/$WARP \
         --oinvwarp=${AtlasSpaceFolder_template}/$INVWARP \
-        --ot1=${AtlasSpaceFolder_template}/T1w \
+        --ot1=${AtlasSpaceFolder_template}/${PHYSICALDIR} \
         --ot1rest=${AtlasSpaceFolder_template}/T1w_restore \
         --ot1restbrain=${AtlasSpaceFolder_template}/T1w_restore_brain \
         --ot2=${AtlasSpaceFolder_template}/T2w \
@@ -373,8 +373,8 @@ if (( TemplateProcessing ==  1 )); then
         log_Msg "Timepoint $tp: applying MNI152 atlas transform and brain mask"
         #These variables are redefined
         Timepoint_long=$tp.long.$Template
-        AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/MNINonLinear
-        T1w_dir_long=$StudyFolder/$Timepoint_long/T1w
+        AtlasSpaceFolder_timepoint=$StudyFolder/$Timepoint_long/${STANDARDDIR}
+        T1w_dir_long=$StudyFolder/$Timepoint_long/${PHYSICALDIR}
         Timepoint_brain_mask_acpc_dc="$T1w_dir_long"/"$T1wImageBrainMask".nii.gz
         Timepoint_brain_mask_MNI="${AtlasSpaceFolder_timepoint}"/"$T1wImageBrainMask".nii.gz
 
@@ -401,7 +401,7 @@ if (( TemplateProcessing ==  1 )); then
         verbose_echo " --> Generarting T1w set of warped outputs"
 
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/T1w_acpc_dc -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
-            -o ${AtlasSpaceFolder_timepoint}/T1w
+            -o ${AtlasSpaceFolder_timepoint}/${PHYSICALDIR}
         ${FSLDIR}/bin/applywarp --rel --interp=spline -i $T1w_dir_long/T1w_acpc_dc_restore -r ${T1wTemplate} -w ${AtlasSpaceFolder_template}/$WARP \
             -o ${AtlasSpaceFolder_timepoint}/T1w_restore
         #mask in MNI space

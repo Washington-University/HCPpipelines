@@ -125,9 +125,9 @@ have_hand_reclassification()
 	local HighPass="${4}"
 
 	if (( HighPass >= 0 )); then
-		[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
+		[ -e "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}_hp${HighPass}.ica/HandNoise.txt" ]
 	else
-		[ -e "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}.ica/HandNoise.txt" ]
+		[ -e "${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}/${fMRIName}.ica/HandNoise.txt" ]
 	fi
 }
 
@@ -202,7 +202,7 @@ fi
 log_Msg "Use fixlist=$fixlist"
 
 DIR=$(pwd)
-cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
+cd ${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}
 
 # Note: fix_3_clean does NOT filter the volume (NIFTI) data -- it assumes
 # that any desired filtering has already been done outside of fix.
@@ -389,7 +389,7 @@ log_Msg "Done running fix_3_clean"
 
 # Remove any existing old versions of the cleaned data (normally they should be overwritten
 # in the renaming that follows, but this ensures that any old versions don't linger)
-cd ${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}
+cd ${StudyFolder}/${Subject}/${STANDARDDIR}/Results/${fMRIName}
 fmri=${fMRIName}
 if (( hp >= 0 )); then
 	fmrihp=${fmri}_hp${hp}

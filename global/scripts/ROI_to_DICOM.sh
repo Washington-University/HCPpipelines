@@ -117,27 +117,27 @@ fi
 
 tempfiles_create ROIdicom_XXXXXX.nii.gz rawnifti
 
-if [[ -f "$StudyFolder"/"$Subject"/T1w/AverageT1wImages ]]
+if [[ -f "$StudyFolder"/"$Subject"/${PHYSICALDIR}/AverageT1wImages ]]
 then
     log_Err_Abort "subjects that used an average of multiple T1w images are not currently supported"
 else
-    acpcdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/OrigT1w2T1w_PreFS.nii.gz
-    gdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w1_gdc_warp.nii.gz
+    acpcdcwarpfield="$StudyFolder"/"$Subject"/${PHYSICALDIR}/xfms/OrigT1w2T1w_PreFS.nii.gz
+    gdcwarpfield="$StudyFolder"/"$Subject"/${PHYSICALDIR}/xfms/T1w1_gdc_warp.nii.gz
     
-    t1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/raw_T1w1_to_T1w_PreFS.nii.gz
-    fnirtarg="$StudyFolder"/"$Subject"/T1w/T1w1_gdc.nii.gz
+    t1wwarpfield="$StudyFolder"/"$Subject"/${PHYSICALDIR}/xfms/raw_T1w1_to_T1w_PreFS.nii.gz
+    fnirtarg="$StudyFolder"/"$Subject"/${PHYSICALDIR}/T1w1_gdc.nii.gz
     
     if [[ -f "$gdcwarpfield" ]]
     then
         echo "Concatenating with gradient distortion warp field"
-        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
+        convertwarp --rel --relout --ref="$StudyFolder/$Subject/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
     else
         #assume scanner-applied gdc
         cp "$acpcdcwarpfield" "$t1wwarpfield"
     fi
     
     echo "inverting the warp field"
-    invt1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w_PreFS_to_raw_T1w1.nii.gz
+    invt1wwarpfield="$StudyFolder"/"$Subject"/${PHYSICALDIR}/xfms/T1w_PreFS_to_raw_T1w1.nii.gz
     downsampref="$rawnifti"_downsampref.nii.gz
     tempfiles_add "$downsampref"
     #invert at lower resolution for speed - readout and gradient distortion should be small changes, so 3mm is probably fine
@@ -187,7 +187,7 @@ function warpSurface()
     surfType="$1"
     outName="$2"
     wb_command -surface-apply-warpfield \
-        "$StudyFolder"/"$Subject"/T1w/fsaverage_LR"$ciftiMesh"k/"$Subject"."$surfType""$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
+        "$StudyFolder"/"$Subject"/${PHYSICALDIR}/fsaverage_LR"$ciftiMesh"k/"$Subject"."$surfType""$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
         "$t1wwarpfield" \
         "$outName" \
         -fnirt "$fnirtarg"
@@ -268,10 +268,10 @@ then
             "$rawnifti" \
             TRILINEAR \
             "$tempVolResamp" \
-            -warp "$StudyFolder"/"$Subject"/MNINonLinear/xfms/standard2acpc_dc.nii.gz \
-                -fnirt "$StudyFolder"/"$Subject"/MNINonLinear/T1w_restore.nii.gz \
+            -warp "$StudyFolder"/"$Subject"/${STANDARDDIR}/xfms/standard2acpc_dc.nii.gz \
+                -fnirt "$StudyFolder"/"$Subject"/${STANDARDDIR}/T1w_restore.nii.gz \
             -warp "$invt1wwarpfield" \
-                -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz
+                -fnirt "$StudyFolder"/"$Subject"/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz
         
         wb_command -volume-math 'x > 0.5' "$tempVolResampBin" \
             -var x "$tempVolResamp"
@@ -303,15 +303,15 @@ then
     wb_command -volume-math 'x > 0' "$tempVolBin" \
         -var x "$volRoiIn"
     
-    if [[ "$volSpace" == "MNINonLinear" ]]
+    if [[ "$volSpace" == "${STANDARDDIR}" ]]
     then
-        xfmargs=(-warp "$StudyFolder"/"$Subject"/MNINonLinear/xfms/standard2acpc_dc.nii.gz \
-            -fnirt "$StudyFolder"/"$Subject"/MNINonLinear/T1w_restore.nii.gz)
+        xfmargs=(-warp "$StudyFolder"/"$Subject"/${STANDARDDIR}/xfms/standard2acpc_dc.nii.gz \
+            -fnirt "$StudyFolder"/"$Subject"/${STANDARDDIR}/T1w_restore.nii.gz)
     else
         xfmargs=()
     fi
     xfmargs+=(-warp "$invt1wwarpfield" \
-        -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz)
+        -fnirt "$StudyFolder"/"$Subject"/${PHYSICALDIR}/T1w_acpc_dc_restore.nii.gz)
     
     wb_command -volume-resample "$tempVolBin" \
         "$rawnifti" \
@@ -352,7 +352,7 @@ then
     #we don't know if the user has requested a smaller radius than the vertex spacing, so use dilation's "one neighbor minimum" to keep the roi centered-ish on the vertex
     #start with distance of 0 to get just the vertex
     wb_command -surface-geodesic-rois \
-        "$StudyFolder"/"$Subject"/T1w/fsaverage_LR"$ciftiMesh"k/"$Subject"."$hem".midthickness"$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
+        "$StudyFolder"/"$Subject"/${PHYSICALDIR}/fsaverage_LR"$ciftiMesh"k/"$Subject"."$hem".midthickness"$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
         0 \
         "$vertTxt" \
         "$tempVertMetric"
@@ -365,7 +365,7 @@ then
         #it's binary, so -nearest is faster and equivalent
         wb_command -metric-dilate \
             "$tempVertMetric" \
-            "$StudyFolder"/"$Subject"/T1w/fsaverage_LR"$ciftiMesh"k/"$Subject"."$hem".midthickness"$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
+            "$StudyFolder"/"$Subject"/${PHYSICALDIR}/fsaverage_LR"$ciftiMesh"k/"$Subject"."$hem".midthickness"$RegString"."$ciftiMesh"k_fs_LR.surf.gii \
             "$vertexDist" \
             "$tempVertMetricDil" \
             -nearest

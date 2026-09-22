@@ -449,7 +449,7 @@ main()
 	get_options $@
 
 	# Naming Conventions
-	AtlasFolder="${g_path_to_study_folder}/${g_subject}/MNINonLinear"
+	AtlasFolder="${g_path_to_study_folder}/${g_subject}/${STANDARDDIR}"
 	log_Msg "AtlasFolder: ${AtlasFolder}"
 
 	NativeFolder="${AtlasFolder}/Native"
