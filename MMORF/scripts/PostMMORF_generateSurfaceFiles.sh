@@ -77,26 +77,29 @@ log_Msg "HighResMesh: ${HighResMesh}"
 LowResMeshes="${9}"
 log_Msg "LowResMeshes: ${LowResMeshes}"
 
-AtlasTransform="${10}"
+DiffusionMesh="${10}"
+log_Msg "DiffusionMesh: ${DiffusionMesh}"
+
+AtlasTransform="${11}"
 log_Msg "AtlasTransform: ${AtlasTransform}"
 
-InverseAtlasTransform="${11}"
+InverseAtlasTransform="${12}"
 log_Msg "InverseAtlasTransform: ${InverseAtlasTransform}"
 
-AtlasSpaceT1wImage="${12}"
+AtlasSpaceT1wImage="${13}"
 log_Msg "AtlasSpaceT1wImage: ${AtlasSpaceT1wImage}"
 
-AtlasSpaceT2wImage="${13}"
+AtlasSpaceT2wImage="${14}"
 log_Msg "AtlasSpaceT2wImage: ${AtlasSpaceT2wImage}"
 
 
-RegName="${14}"
+RegName="${15}"
 log_Msg "RegName: ${RegName}"
 
-RegNameOrig="${15}"
+RegNameOrig="${16}"
 log_Msg "RegNameOrig: ${RegNameOrig}"
 
-InflateExtraScale="${16}"
+InflateExtraScale="${17}"
 log_Msg "InflateExtraScale: ${InflateExtraScale}"
 
 
@@ -105,6 +108,8 @@ MNINonLinearFolder="$StudyFolder"/"$Session"/"MNINonLinear"
 
 LowResMeshes=${LowResMeshes//@/ }
 log_Msg "LowResMeshes: ${LowResMeshes}"
+
+LowResMeshes="${LowResMeshes} ${DiffusionMesh}"
 
 
 if [ ! -e "$AtlasSpaceFolder"/"$NativeFolder" ] ; then
@@ -439,7 +444,9 @@ process_mesh_folder() {
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
                 Path="${MNINonLinearFolder}/${File}"
             fi
-            resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
+            if [[ "$MeshFolder" == "fsaverage_LR${DiffusionMesh}k" ]]; then
+                resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
+            fi
         fi
         add_to_spec "$Spec" "$Path"
     done
@@ -457,7 +464,9 @@ process_mesh_folder() {
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
                 Path="${MNINonLinearFolder}/${File}"
             fi
-            resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
+            if [[ "$MeshFolder" == "fsaverage_LR${DiffusionMesh}k" ]]; then
+                resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" ""
+            fi
         fi
         add_to_spec "$Spec" "$Path"
     done
@@ -475,7 +484,9 @@ process_mesh_folder() {
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
                 Path="${MNINonLinearFolder}/${File}"
             fi
-            resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" "$RegName"
+            if [[ "$MeshFolder" == "fsaverage_LR${DiffusionMesh}k" ]]; then
+                resample_cifti_to_mesh "$InCifti" "$Mesh" "$MeshFolder" "$RegName"
+            fi
         fi
         add_to_spec "$Spec" "$Path"
     done

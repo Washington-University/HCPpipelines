@@ -2,7 +2,8 @@
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData"
 Subjectlist="100307 100610"
 highResMesh='164'
-lowResMeshes='32@79'
+lowResMeshes='32'
+diffusionMesh='79'
 regName="MSMAll"
 regNameOrig="MSMSulc"
 inflateExtraScale='1'
@@ -30,6 +31,7 @@ for subj in $Subjectlist; do
         --t1-template="${T1wTemplate}" \
         --hiresmesh="${highResMesh}" \
         --lowresmesh="${lowResMeshes}" \
+        --diffusionmesh="${diffusionMesh}" \
         --regname="${regName}" \
         --regnameorig="${regNameOrig}" \
         --inflatescale="${inflateExtraScale}"

@@ -16,7 +16,8 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study fol
 opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w template image"
 opts_AddOptional '--hiresmesh' 'HighResMesh' 'number' 'High resolution mesh, default 164' '164'
-opts_AddOptional '--lowresmesh' 'LowResMeshes' 'num@num' 'Low resolution meshes delimited by @, default 32@79' '32@79'
+opts_AddOptional '--lowresmesh' 'LowResMeshes' 'num@num' 'Low resolution meshes delimited by @, default 32' '32'
+opts_AddOptional '--diffusionmesh' 'DiffusionMesh' 'number' 'Diffusion mesh, default 79' '79'
 opts_AddOptional '--regname' 'RegName' 'MSMAll' 'Registration name, default MSMAll' "MSMAll"
 opts_AddOptional '--regnameorig' 'RegNameOrig' 'MSMSulc' 'Registration name for original, default MSMSulc' "MSMSulc"
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' 'Additional scaling beyond linear to deal with a lowres mesh greater than 32k, default 1 (linear)' "1"
@@ -90,12 +91,13 @@ argList+=("$T1wRestoreImage")           # ${6}  Called T1wImage in FreeSurfer2Ca
 argList+=("$T2wRestoreImage")           # ${7}
 argList+=("$HighResMesh")        # ${8}  
 argList+=("$LowResMeshes")              # ${9}
-argList+=("$AtlasTransform")            # ${10}
-argList+=("$InverseAtlasTransform")     # ${11}
-argList+=("$AtlasSpaceT1wImage")        # ${12}
-argList+=("$AtlasSpaceT2wImage")        # ${13}
-argList+=("$RegName")                   # ${14}
-argList+=("$RegNameOrig")                   # ${15}
-argList+=("$InflateExtraScale")         # ${16}
+argList+=("$DiffusionMesh")             # ${10}
+argList+=("$AtlasTransform")            # ${11}
+argList+=("$InverseAtlasTransform")     # ${12}
+argList+=("$AtlasSpaceT1wImage")        # ${13}
+argList+=("$AtlasSpaceT2wImage")        # ${14}
+argList+=("$RegName")                   # ${15}
+argList+=("$RegNameOrig")                   # ${16}
+argList+=("$InflateExtraScale")         # ${17}
     
 ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_generateSurfaceFiles.sh "${argList[@]}"
