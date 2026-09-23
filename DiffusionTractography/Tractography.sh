@@ -15,7 +15,7 @@ source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  # Command line option 
 
 
 # Perform the steps of the HCP Diffusion Preprocessing Pipeline
-opts_SetScriptDescription "Actual run Tractography"
+opts_SetScriptDescription "Run probabilistic tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject"
