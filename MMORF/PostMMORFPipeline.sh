@@ -35,7 +35,6 @@ echo "Launching Post MMORF registration for session ${Session}"
 T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
-T2wFolderName="T2w"
 AtlasSpaceFolderName="HCPMultiModalNonLinear"
 
 
