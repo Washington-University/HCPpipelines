@@ -1,5 +1,3 @@
-#!/bin/bash
-
 get_batch_options() {
     local arguments=("$@")
 
@@ -118,8 +116,11 @@ if [[ "$RunLocal" == "TRUE" || -z "$QUEUE" ]] ; then
 else
 
     echo "About to use fsl_sub to queue ${HCPPIPEDIR}/HippUnfoldHCP/HippUnfoldHCP.sh"
-    queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE" -l "$LogFolder")
+    queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
 
+    if [[ -n "$LogFolder" ]]; then
+        queuing_command+=(-l "$LogFolder")
+    fi
 fi
 
 "${queuing_command[@]}" \
