@@ -163,21 +163,6 @@ for LowResMesh in ${LowResMeshes} ; do
 done
 
 
-LabelStems=(
-    aparc.a2009s
-    aparc
-    BA
-)
-
-ScalarStems=(
-    corrThickness
-    curvature
-    MyelinMap_BC
-    SmoothedMyelinMap_BC
-    sulc
-    thickness
-    MRcorrThickness
-)
 
 # -----------------------------
 # Function: add a file to a spec
@@ -337,6 +322,22 @@ for Hemisphere in L R ; do
     done
 done
 
+
+LabelStems=(
+    aparc.a2009s
+    aparc
+    BA
+)
+
+ScalarStems=(
+    corrThickness
+    curvature
+    MyelinMap_BC
+    SmoothedMyelinMap_BC
+    sulc
+    thickness
+    MRcorrThickness
+)
 # -----------------------------
 # Function: resample CIFTI to mesh if missing
 # -----------------------------
@@ -459,6 +460,10 @@ process_mesh_folder() {
         else
             # LowResMesh: resample from native if missing
             local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dscalar.nii"
+            if [[ ! -f "${InCifti}" ]]; then
+                echo "Missing: ${InCifti}, skipping..."
+                return
+            fi
             File="${Session}.${Stem}.${Mesh}_fs_LR.dscalar.nii"
             Path="${MNINonLinearFolder}/${MeshFolder}/${File}"  
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
@@ -479,6 +484,10 @@ process_mesh_folder() {
         else
             # LowResMesh: resample from native if missing
             local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dscalar.nii"
+            if [[ ! -f "${InCifti}" ]]; then
+                echo "Missing: ${InCifti}, skipping..."
+                return
+            fi
             File="${Session}.${Stem}_${RegName}.${Mesh}_fs_LR.dscalar.nii"
             Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
