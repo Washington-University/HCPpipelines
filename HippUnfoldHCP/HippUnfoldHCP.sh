@@ -3,14 +3,13 @@ set -eu
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
-  # pipedirguessed=1
-   #fix this if the script is more than one level below HCPPIPEDIR
-   export HCPPIPEDIR="$(dirname -- "$0")/.."
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
-
 
 opts_SetScriptDescription "Make some BIDS structures and run HippUnfold"
 
@@ -27,96 +26,122 @@ fi
 
 opts_ShowValues
 
-T1wFolder="$StudyFolder/$Subject/T1w"       # input data
+T1wFolder="$StudyFolder/$Subject/T1w"
 
-if [ -z ${HippUnfoldDIR} ] ; then
-  HippUnfoldDIR="${T1wFolder}/HippUnfold"
+
+if [[ -z "${HippUnfoldDIR:-}" ]]; then
+    HippUnfoldDIR="${T1wFolder}/HippUnfold"
 fi
-
-HippUnfoldT1wFolder="$HippUnfoldDIR/T1w/hippunfold"
-HippUnfoldT2wFolder="$HippUnfoldDIR/T2w/hippunfold"
-HippUnfoldT1wT2wFolder="$HippUnfoldDIR/T1wT2w/hippunfold"
 
 T1wImage="$T1wFolder/T1w_acpc_dc_restore.nii.gz"
 T2wImage="$T1wFolder/T2w_acpc_dc_restore.nii.gz"
 
 
-if [ ! -f "$T1wImage" ]; then
+if [[ ! -f "$T1wImage" ]]
+then
     echo "Error: T1w image not found at $T1wImage" >&2
     exit 1
 fi
 
-if [ ! -f "$T2wImage" ]; then
+if [[ ! -f "$T2wImage" ]]
+then
     echo "Error: T2w image not found at $T2wImage" >&2
     exit 1
 fi
 
 
-mkdir -p "$HippUnfoldT1wFolder" "$HippUnfoldT2wFolder" "$HippUnfoldT1wT2wFolder"
+# ---------------------------------------------------------------------
+# Create HippUnfold input directory
+# ---------------------------------------------------------------------
 
-ln -sf "$T1wImage" "$HippUnfoldT1wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-ln -sf "$T2wImage" "$HippUnfoldT1wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
-ln -sf "$T1wImage" "$HippUnfoldT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-ln -sf "$T2wImage" "$HippUnfoldT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
-ln -sf "$T1wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
-ln -sf "$T2wImage" "$HippUnfoldT1wT2wFolder/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+mkdir -p "$HippUnfoldDIR"
 
-log_Msg "Created folder structure under $HippUnfoldDIR and copied T1w and T2w images"
+ln -sf "$T1wImage" "$HippUnfoldDIR/s_${Subject}_T1w_acpc_dc_restore.nii.gz"
+ln -sf "$T2wImage" "$HippUnfoldDIR/s_${Subject}_T2w_acpc_dc_restore.nii.gz"
+
+log_Msg "Created folder structure under $HippUnfoldDIR and linked T1w and T2w images"
 log_Msg "Starting HippUnfold pipeline for subject: $Subject"
 
-export APPTAINER_BINDPATH=${HIPPUNFOLD_CACHE_DIR}:${HIPPUNFOLD_CACHE_DIR}
-export APPTAINER_CACHEDIR=${HIPPUNFOLD_CACHE_DIR}/apptainer
-export APPTAINERENV_HIPPUNFOLD_CACHE_DIR=${HIPPUNFOLD_CACHE_DIR} #This one actually did something
+# ---------------------------------------------------------------------
+# Construct HippUnfold command
+# ---------------------------------------------------------------------
 
-#export HIPPUNFOLD_CACHE_DIR=${HippUnfoldDIR}/cache #Keep for QuNex?
-#export APPTAINER_BINDPATH=${StudyFolder}:${StudyFolder}
-#export APPTAINER_CACHEDIR=${HippUnfoldDIR}/apptainer
-#export APPTAINERENV_HIPPUNFOLD_CACHE_DIR=${HippUnfoldDIR}/cache #This one actually did something
-#mkdir -p ${HIPPUNFOLD_CACHE_DIR}
-#mkdir -p ${APPTAINER_CACHEDIR}
-
-
-if [[ "${HIPPUNFOLDPATH:-}" == "" ]]
-then
-    hippcmd=(hippunfold --use-conda)
+if [[ -z "${HIPPUNFOLDPATH:-}" || ! -f "$HIPPUNFOLDPATH" ]]; then
+    log_Err_Abort "HippUnfold SIF file not found. Please supply the SIF file location in /HCPpipelines/Examples/Scripts"
 else
-    hippcmd=(apptainer run --bind "$StudyFolder" -e "$HIPPUNFOLDPATH")
+    # Place all HippUnfold cache files next to the SIF
+    HippUnfoldCacheDIR="$(dirname "$HIPPUNFOLDPATH")/cache"
+
+    # Separate cache and conda directory for each subject
+    JobCache="${HippUnfoldCacheDIR}/job-cache/${JOB_ID:-local}_${Subject}"
+    JobCondaPrefix="${JobCache}/snakemake-conda"
+    JobCondaPkgs="${JobCache}/conda-pkgs"
+
+    HippUnfoldResourceCache="${JobCache}/resources"
+
+    mkdir -p "$JobCondaPrefix"
+    mkdir -p "$JobCondaPkgs"
+    mkdir -p "$HippUnfoldResourceCache"
+
+    CondaPrefix="$JobCondaPrefix"
+
+    hippcmd=(
+        apptainer run
+            --bind "$StudyFolder"
+            --bind "${JobCache}:${JobCache}"
+            --bind "${HippUnfoldResourceCache}:${HippUnfoldResourceCache}"
+            --env HIPPUNFOLD_CACHE_DIR="$HippUnfoldResourceCache"
+            --env CONDA_PKGS_DIRS="$JobCondaPkgs"
+            -e
+            "$HIPPUNFOLDPATH"
+            hippunfold
+    )
 fi
 
-log_Msg "Running T1w HippUnfold for subject: $Subject"
+# Additional arguments
+# Seriously: don't put a $ on {subject} and don't capitalize the S...
+hippargs=(
+    "$HippUnfoldDIR"
+    "$HippUnfoldDIR"
+    participant
+    --modality T2w
+    --path-T1w "$HippUnfoldDIR/s_{subject}_T1w_acpc_dc_restore.nii.gz"
+    --path-T2w "$HippUnfoldDIR/s_{subject}_T2w_acpc_dc_restore.nii.gz"
+)
+
+#In cases previous attempts terminated prematurely, snakemake may leave a lock on subject that needs to be removed
+SnakemakeLockDir="${HippUnfoldDIR}/.snakemake/locks"
+if [[ -d "${SnakemakeLockDir}" ]]; then
+    log_Msg "Removing stale Snakemake lock for subject: ${Subject}"
+    "${hippcmd[@]}" "${hippargs[@]}" \
+        --conda-prefix "$CondaPrefix" \
+        --unlock
+fi
+# ---------------------------------------------------------------------
+# Run HippUnfold
+# ---------------------------------------------------------------------
+
+log_Msg "Running HippUnfold for subject: $Subject"
+
 #Seriously: don't put a $ on {subject} and don't capitalize the S...
-"${hippcmd[@]}" "$HippUnfoldT1wFolder" "$HippUnfoldT1wFolder" participant \
-    --modality T1w \
-    --path-T1w "$HippUnfoldT1wFolder"/s_{subject}_T1w_acpc_dc_restore.nii.gz \
-    --path-T2w "$HippUnfoldT1wFolder"/s_{subject}_T2w_acpc_dc_restore.nii.gz \
-    --cores all \
-    --force-output \
-    --generate_myelin_map \
-    --output-density native 512 2k 8k 18k 
-log_Msg "T1w HippUnfold completed."
-
-log_Msg "Running T2w HippUnfold for subject: $Subject"
-"${hippcmd[@]}" "$HippUnfoldT2wFolder" "$HippUnfoldT2wFolder" participant \
+"${hippcmd[@]}" "$HippUnfoldDIR" "$HippUnfoldDIR" participant \
     --modality T2w \
-    --path-T1w "$HippUnfoldT2wFolder"/s_{subject}_T1w_acpc_dc_restore.nii.gz \
-    --path-T2w "$HippUnfoldT2wFolder"/s_{subject}_T2w_acpc_dc_restore.nii.gz \
-    --cores all \
-    --force-output \
-    --generate_myelin_map \
-    --output-density native 512 2k 8k 18k 
-log_Msg "T2w HippUnfold completed."
-
-log_Msg "Running T1wT2w HippUnfold for subject: $Subject"
-"${hippcmd[@]}" "$HippUnfoldT1wT2wFolder" "$HippUnfoldT1wT2wFolder" participant \
-    --modality T2w \
-    --path-T1w "$HippUnfoldT1wT2wFolder"/s_{subject}_T1w_acpc_dc_restore.nii.gz \
-    --path-T2w "$HippUnfoldT1wT2wFolder"/s_{subject}_T2w_acpc_dc_restore.nii.gz \
+    --path-T1w "$HippUnfoldDIR/s_{subject}_T1w_acpc_dc_restore.nii.gz" \
+    --path-T2w "$HippUnfoldDIR/s_{subject}_T2w_acpc_dc_restore.nii.gz" \
     --cores all \
     --force-output \
     --generate_myelin_map \
     --output-density native 512 2k 8k 18k \
-    --force-nnunet-model T1T2w
-log_Msg "T1wT2w HippUnfold completed."
+    --force-nnunet-model maguire_T2w \
+    --inner-outer-reg-smoothing 0 \
+    --conda-prefix "$CondaPrefix" \
+    --latency-wait 60 \
+    --rerun-incomplete
+    
+# Remove temporary cache only after HippUnfold completes successfully
+if [[ -d "$JobCache" ]]; then
+    log_Msg "Removing job cache: $JobCache"
+    rm -rf "$JobCache"
+fi
 
 log_Msg "HippUnfold pipeline completed successfully for subject: $Subject"
-
