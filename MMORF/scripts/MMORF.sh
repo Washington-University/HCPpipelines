@@ -17,8 +17,8 @@ opts_AddMandatory '--refmask' 'ReferenceMask' 'mask' 'reference brain mask'
 opts_AddMandatory '--DTIref' 'DTIref' 'mask' 'reference for DTI'
 opts_AddMandatory '--DTIrefmask' 'DTIrefMask' 'mask' 'reference brain mask for DTI'
 opts_AddMandatory "--DTImask" "DTImask" "image" "Mask for DTI"
-opts_AddMandatory '--ref' 'Reference1' 'image' 'reference image'
-opts_AddMandatory '--ref2' 'Reference2' 'image' 'reference image 2'
+opts_AddMandatory '--ref-t1w' 'ReferenceT1w' 'image' 'T1w reference image'
+opts_AddMandatory '--ref-t2w' 'ReferenceT2w' 'image' 'T2w reference image'
 opts_AddMandatory '--t1restore' 'T1wRestore' 'image' 'bias corrected t1w image'
 opts_AddMandatory '--t2restore' 'T2wRestore' 'image' 'bias corrected t2w image'
 opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
