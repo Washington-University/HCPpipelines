@@ -47,32 +47,32 @@ for BedpostXFolderName in ${BedpostXFolders} ; do
   if [[ -n "$WhimMask" ]]; then
     BedpostXFolder="${T1wFolder}/${BedpostXFolderName}"
     ${Caret7_Command} -convert-fiber-orientations \
-    $WhimMask \
-    ${BedpostXFolder}/${BedpostXFolderName}_${trajectory}_${DiffusionResolution}.fiberTEMP.nii \
-  -fiber \
-    ${BedpostXFolder}/f_1_std.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-    ${BedpostXFolder}/theta_1_std.nii.gz \
-    ${BedpostXFolder}/phi_1_std.nii.gz \
-    ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-  -fiber \
-    ${BedpostXFolder}/f_2_std.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-    ${BedpostXFolder}/theta_2_std.nii.gz \
-    ${BedpostXFolder}/phi_2_std.nii.gz \
-    ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-  -fiber \
-    ${BedpostXFolder}/f_3_std.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-    ${BedpostXFolder}/theta_3_std.nii.gz \
-    ${BedpostXFolder}/phi_3_std.nii.gz \
-    ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-    ${HCPPIPEDIR}/global/templates/small_values.nii.gz
+      $WhimMask \
+      ${BedpostXFolder}/${BedpostXFolderName}_${trajectory}_${DiffusionResolution}.fiberTEMP.nii \
+      -fiber \
+        ${BedpostXFolder}/f_1_std.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        ${BedpostXFolder}/theta_1_std.nii.gz \
+        ${BedpostXFolder}/phi_1_std.nii.gz \
+        ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+      -fiber \
+        ${BedpostXFolder}/f_2_std.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        ${BedpostXFolder}/theta_2_std.nii.gz \
+        ${BedpostXFolder}/phi_2_std.nii.gz \
+        ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+      -fiber \
+        ${BedpostXFolder}/f_3_std.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        ${BedpostXFolder}/theta_3_std.nii.gz \
+        ${BedpostXFolder}/phi_3_std.nii.gz \
+        ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        ${HCPPIPEDIR}/global/templates/small_values.nii.gz
   else
     BedpostXFolder="${StudyFolder}/${Subject}/T1w/${BedpostXFolderName}"
     echo "Creating Fiber File for Connectome Workbench"
