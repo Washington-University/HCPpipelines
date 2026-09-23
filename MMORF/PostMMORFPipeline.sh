@@ -35,7 +35,7 @@ echo "Launching Post MMORF registration for session ${Session}"
 T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
-AtlasSpaceFolderName="HCPMultiModalNonLinear"
+AtlasSpaceFolderName="MMORFNonLinear"
 
 
 
@@ -53,8 +53,8 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
     --t2restbrain="${T1wFolder}/${T2wImage}_acpc_dc_restore_brain" \
     --ref="${T1wTemplate}" \
     --diffusion="${Diffusion}" \
-    --owarp="${AtlasSpaceFolder}/xfms/acpc_dc2mmorf.nii.gz" \
-    --oinvwarp="${AtlasSpaceFolder}/xfms/mmorf2acpc_dc.nii.gz" \
+    --owarp="${AtlasSpaceFolder}/xfms/acpc_dc2standard.nii.gz" \
+    --oinvwarp="${AtlasSpaceFolder}/xfms/standard2acpc_dc.nii.gz" \
     --ot1="${AtlasSpaceFolder}/${T1wImage}" \
     --ot1rest="${AtlasSpaceFolder}/${T1wImage}_restore" \
     --ot1restbrain="${AtlasSpaceFolder}/${T1wImage}_restore_brain" \
@@ -68,8 +68,8 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
 
 NativeFolder="Native"
 
-AtlasTransform="acpc_dc2mmorf"
-InverseAtlasTransform="mmorf2acpc_dc"
+AtlasTransform="acpc_dc2standard"
+InverseAtlasTransform="standard2acpc_dc"
 AtlasSpaceT1wImage="T1w_restore"
 AtlasSpaceT2wImage="T2w_restore"
 T1wRestoreImage="T1w_acpc_dc_restore"

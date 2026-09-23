@@ -77,14 +77,14 @@ tensor_default_args=(
 )
 
 arglist=()
-arglist+=(--img_warp_space "${Reference1}"
+arglist+=(--img_warp_space "${ReferenceT1w}"
           "${warp_default_args[@]}"
         )
-arglist+=(--img_ref_scalar "${Reference1}"
+arglist+=(--img_ref_scalar "${ReferenceT1w}"
           --img_mov_scalar "${T1wRestore}"
           "${scalar_default_args[@]}"
         )
-arglist+=(--img_ref_scalar "${Reference2}"
+arglist+=(--img_ref_scalar "${ReferenceT2w}"
           --img_mov_scalar "${T2wRestore}"
           "${scalar_default_args[@]}"
         )

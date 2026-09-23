@@ -32,7 +32,7 @@ opts_ShowValues
 T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
-AtlasSpaceFolderName="HCPMultiModalNonLinear"
+AtlasSpaceFolderName="MMORFNonLinear"
 
 
 T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
@@ -47,8 +47,8 @@ ${HCPPIPEDIR}/MMORF/scripts/MMORF.sh \
     --outputfolder="${AtlasSpaceFolder}" \
     --t1restore="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --t2restore="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
-    --ref="${T1wTemplate}" \
-    --ref2="${T2wTemplate}" \
+    --ref-t1w="${T1wTemplate}" \
+    --ref-t2w="${T2wTemplate}" \
     --refmask="${refmask}" \
     --diffusion="${Diffusion}" \
     --DTImask="${Diffusion}/nodif_brain_mask.nii.gz" \

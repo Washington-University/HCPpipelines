@@ -34,7 +34,8 @@ log_Check_Env_Var FSLDIR
 T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
-AtlasSpaceFolderName="HCPMultiModalNonLinear"
+AtlasSpaceFolderName="MMORFNonLinear"
+GradNonLin=$(opts_StringToBool "$GradNonLin") 
 
 T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
 AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
