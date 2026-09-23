@@ -49,8 +49,7 @@ T1wRestore=${T1wFolder}/${T1wImage}_acpc_dc_restore
 
 
 
-T1wRestoreBasename=`${FSLDIR}/bin/remove_ext $T1wRestore`;
-T1wRestoreBasename=`basename $T1wRestoreBasename`;
+T1wRestoreBasename=$(basename "$(remove_ext "$T1wRestore")")
 #T1wRestoreBrainBasename=`remove_ext $T1wRestoreBrain`;
 #T1wRestoreBrainBasename=`basename $T1wRestoreBrainBasename`;
 
