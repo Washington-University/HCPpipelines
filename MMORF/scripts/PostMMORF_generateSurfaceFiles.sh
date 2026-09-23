@@ -383,8 +383,8 @@ resample_cifti_to_mesh() {
         R_SPHERE_NATIVE="${MNINonLinearFolder}/${NativeFolder}/${Session}.R.sphere.${RegName}.native.surf.gii"
     fi
 
-    local L_AREA_NATIVE="${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.midthickness.native.surf.gii"
-    local R_AREA_NATIVE="${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.midthickness.native.surf.gii"
+    local LeftMidthickNative="${AtlasSpaceFolder}/${NativeFolder}/${Session}.L.midthickness.native.surf.gii"
+    local RightMidthickNative="${AtlasSpaceFolder}/${NativeFolder}/${Session}.R.midthickness.native.surf.gii"
 
     # --- Output geometry ---
     local L_SPHERE_OUT
@@ -408,9 +408,9 @@ resample_cifti_to_mesh() {
         "$GREYORD" COLUMN \
         ADAP_BARY_AREA CUBIC "$OutCifti" \
         -left-spheres "$L_SPHERE_NATIVE" "$L_SPHERE_OUT" \
-        -left-area-surfs "$L_AREA_NATIVE" "$L_AREA_OUT" \
+        -left-area-surfs "$LeftMidthickNative" "$L_AREA_OUT" \
         -right-spheres "$R_SPHERE_NATIVE" "$R_SPHERE_OUT" \
-        -right-area-surfs "$R_AREA_NATIVE" "$R_AREA_OUT"
+        -right-area-surfs "$RightMidthickNative" "$R_AREA_OUT"
 }
 
 
