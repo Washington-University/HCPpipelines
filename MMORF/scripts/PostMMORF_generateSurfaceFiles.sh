@@ -134,6 +134,10 @@ if [ ! -e "$AtlasSpaceFolder"/Results ] ; then
     mkdir "$AtlasSpaceFolder"/Results
 fi
 
+if [[ ! -d "${MNINonLinearFolder}/fsaverage_LR"$DiffusionMesh"k" ]]; then
+    mkdir -p "${MNINonLinearFolder}/fsaverage_LR"$DiffusionMesh"k"
+fi
+
 
 if [ "${T2wImage}" != "NONE" ]; then
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec INVALID "$AtlasSpaceFolder"/"$AtlasSpaceT2wImage".nii.gz
@@ -267,9 +271,6 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".very_inflated_${RegName}."$HighResMesh"k_fs_LR.surf.gii
     for LowResMesh in ${LowResMeshes} ; do
         #Create downsampled fs_LR spec file in structural space.
-        if [[ ! -d "${MNINonLinearFolder}/fsaverage_LR"$DiffusionMesh"k" ]]; then
-            mkdir -p "${MNINonLinearFolder}/fsaverage_LR"$DiffusionMesh"k"
-        fi
 
 
         LowResMeshTemp="${LowResMesh}k"
