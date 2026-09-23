@@ -461,7 +461,7 @@ process_mesh_folder() {
             local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dscalar.nii"
             if [[ ! -f "${InCifti}" ]]; then
                 echo "Missing: ${InCifti}, skipping..."
-                return
+                continue
             fi
             File="${Session}.${Stem}.${Mesh}_fs_LR.dscalar.nii"
             Path="${MNINonLinearFolder}/${MeshFolder}/${File}"  
