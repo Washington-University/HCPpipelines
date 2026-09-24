@@ -326,16 +326,23 @@ else
     fi
 fi
 
-if [[ "${RegName}" == "FS" ]]; then
-    log_Warn "FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
-    log_Warn "  HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
-    log_Warn "  alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
-    log_Warn "  dramatically higher surface distortion (both isotropic and anisotropic). These things"
-    log_Warn "  occur because FreeSurfer's registration has too little regularization of folding patterns"
-    log_Warn "  that are imperfectly correlated with function and cortical areas, resulting in overfitting"
-    log_Warn "  of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS"
-    log_Warn "  for more details."
-fi
+case "$RegName" in
+    (MSMSulc)
+        ;;
+    (FS)
+        log_Warn "FreeSurfer's surface registration (based on cortical folding) is deprecated in the"
+        log_Warn "  HCP Pipelines as it results in poorer cross-subject functional and cortical areal "
+        log_Warn "  alignment relative to MSMSulc. Additionally, FreeSurfer registration results in "
+        log_Warn "  dramatically higher surface distortion (both isotropic and anisotropic). These things"
+        log_Warn "  occur because FreeSurfer's registration has too little regularization of folding patterns"
+        log_Warn "  that are imperfectly correlated with function and cortical areas, resulting in overfitting"
+        log_Warn "  of folding patterns. See Robinson et al 2014, 2018 Neuroimage, and Coalson et al 2018 PNAS"
+        log_Warn "  for more details."
+        ;;
+    (*)
+        log_Err_Abort "unknown registration requested: '$RegName', recognized types are 'MSMSulc' or (not recommended) 'FS'"
+        ;;
+esac
 
 check_mode_compliance "${ProcessingMode}" "${Compliance}" "${ComplianceMsg}"
 
