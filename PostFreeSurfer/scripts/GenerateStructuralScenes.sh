@@ -13,22 +13,8 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/relativePath.shlib" "$@"
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: makes QC scenes and captures for HCP FreeSurfer pipelines
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
+#description of this script to use in usage
+opts_SetScriptDescription "makes QC scenes and captures for HCP FreeSurfer pipelines"
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
