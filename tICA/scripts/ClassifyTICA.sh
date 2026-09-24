@@ -17,9 +17,8 @@ opts_AddMandatory '--study-folder' 'StudyFolder' 'path' "folder containing all s
 opts_AddMandatory '--out-group-name' 'GroupAverageName' 'string' 'name to use for the group output folder'
 opts_AddMandatory '--fmri-output-name' 'OutputfMRIName' 'string' "name for the output fMRI data, like 'rfMRI_REST_7T'"
 opts_AddMandatory '--ica-dim' 'tICAdim' 'integer' "number of temporal ICA components"
-
-opts_AddOptional '--python-singularity' 'PythonSingularity' 'string' "the file path of the singularity, specify empty string to use native environment instead" ""
-opts_AddOptional '--python-singularity-mount-path' 'PythonSingularityMountPath' 'string' "the file path of the mount path for singularity" ""
+opts_AddOptional '--singularity-image' 'PythonSingularity' 'string' "the file path of the classifier singularity container, instead of using native python" ""
+opts_AddOptional '--singularity-mount-path' 'PythonSingularityMountPath' 'string' "the --bind argument to get the data mounted into singularity" ""
 opts_AddOptional '--python-interpreter' 'PythonInterpreter' 'string' "the python executable, default 'python3' (from PATH)" "python3"
 opts_AddOptional '--model-folder' 'ModelFolder' 'string' "folder containing the converted .onnx tICA classifier models" "$HCPPIPEDIR/tICA/classify_models"
 opts_AddOptional '--keep-features-json' 'KeepFeaturesJson' 'string' "feature column config used at training time" "$HCPPIPEDIR/global/config/tICA/keep_features_v1.json"
@@ -35,21 +34,22 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-if [[ "$PythonSingularity" != "" && "$PythonInterpreter" != "" ]]; then
-    log_Err_Abort "please only specify one of --python-singularity and --python-interpreter"
-fi
-
-UseLocalPython="TRUE"
 if [[ "$PythonSingularity" != "" ]]; then
-    if [ ! -f "$PythonSingularity" ]; then
+    if [[ ! -f "$PythonSingularity" ]]; then
         log_Err_Abort "the singularity container doesn't exist: $PythonSingularity"
     fi
     if ! command -v singularity &> /dev/null; then
         log_Err_Abort "Singularity is not installed or not in PATH."
     fi
-    UseLocalPython="FALSE"
-    PythonCmd=(singularity exec --bind "$PythonSingularityMountPath" "$PythonSingularity" python3)
+    bindArgs=()
+    if [[ "$PythonSingularityMountPath" != "" ]]; then
+        bindArgs=(--bind "$PythonSingularityMountPath")
+    fi
+    PythonCmd=(singularity exec "${bindArgs[@]+"${bindArgs[@]}"}" "$PythonSingularity" python3)
 else
+    if ! command -v "$PythonInterpreter" &> /dev/null; then
+        log_Err_Abort "python interpreter not found: $PythonInterpreter"
+    fi
     PythonCmd=("$PythonInterpreter")
 fi
 
@@ -73,11 +73,7 @@ pythonCode=(
     --output_proba_csv="$ProbaCsv"
 )
 
-if [ "$UseLocalPython" = "FALSE" ]; then
-    PythonLaunchCommand=("${singularity_command[@]}" "${pythonCode[@]}")
-else
-    PythonLaunchCommand=("${PythonInterpreter}" "${pythonCode[@]}")
-fi
+PythonLaunchCommand=("${PythonCmd[@]}" "${pythonCode[@]}")
 
 log_Msg "Run tICA classification..."
 log_Msg "${PythonLaunchCommand[@]}"
