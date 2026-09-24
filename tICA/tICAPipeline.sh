@@ -86,7 +86,10 @@ opts_AddOptional '--low-sica-dims' 'LowsICADims' 'num@num@num...' "the low sICA 
 opts_AddOptional '--reclean-mode' 'RecleanModeString' 'YES or NO' 'whether the data should use ReCleanSignal.txt for DVARS' 'NO'
 
 #tICA Component Classification
-#not integrated yet
+opts_AddOptional '--singularity-image' 'PythonSingularity' 'string' "the file path of the classifier singularity container, instead of using native python" ""
+opts_AddOptional '--singularity-mount-path' 'PythonSingularityMountPath' 'string' "the --bind argument to get the data mounted into singularity" ""
+opts_AddOptional '--python-interpreter' 'PythonInterpreter' 'string' "the python executable, default 'python3' (from PATH)" "python3"
+opts_AddOptional '--noise-file-name' 'ClassifyNoiseFileName' 'string' "output file name (within the tICA_d<dim> folder) for the ClassifyTICA noise component list, defaults to Noise.txt -- override for testing so you don't overwrite the file CleanData expects" "Noise.txt"
 
 #tICA Cleanup
 opts_AddOptional '--manual-components-to-remove' 'NuisanceListTxt' 'file' "text file containing the component numbers to be removed by cleanup, separated by spaces, requires either --ica-mode=REUSE_TICA or --starting-step=CleanData"
@@ -115,8 +118,16 @@ opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_m
 
 opts_ParseArguments "$@"
 
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+#display the parsed/default values
+opts_ShowValues
+#processing code goes here
 # if Group sICA hand classifications exists, use it to filter the group sICA components before projecting to individuals
-HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt" 
+HandSignalFile="${StudyFolder}/${GroupAverageName}/MNINonLinear/Results/${OutputfMRIName}/sICA/HandSignal.txt"
 if [ -e "${HandSignalFile}" ]; then
     # Import the contents of $HandSignalFile as an array
     read -a sigIdx < "${HandSignalFile}"
@@ -125,15 +136,7 @@ else
     tICADim=""
 fi
 
-if ((pipedirguessed))
-then
-    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
-fi
 
-#display the parsed/default values
-opts_ShowValues
-
-#processing code goes here
 IFS='@' read -a fMRINamesArray <<<"$fMRINames"
 
 FixLegacyBias=$(opts_StringToBool "$FixLegacyBiasString")
@@ -693,15 +696,27 @@ do
                 --matlab-run-mode="$MatlabMode"
             ;;
         (ClassifyTICA)
-            #REUSE_TICA mode shouldn't attempt this (or give an error)
+            #REUSE_TICA mode shouldn't attempt this 
             if [[ "$tICAmode" == "USE" ]]
             then
                 #skip to next pipeline stage
                 continue
             fi
-            #don't abort for "not implemented", we still want it to write the config if possible
-            log_Err "automated classification not currently implemented, please classify manually, then rerun with '--starting-step=CleanData'"
-            break
+            if [[ "$sicadimOverride" ]]; then
+                sICAActualDim="$sicadimOverride"
+            else
+                sICAActualDim=$(cat "$sICAoutfolder/most_recent_dim.txt")
+            fi
+            if [[ "$tICADim" == "" ]]; then tICADim="$sICAActualDim"; fi
+            "$HCPPIPEDIR"/tICA/scripts/ClassifyTICA.sh \
+                --study-folder="$StudyFolder" \
+                --out-group-name="$GroupAverageName" \
+                --fmri-output-name="$OutputfMRIName" \
+                --ica-dim="$tICADim" \
+                --singularity-image="${PythonSingularity}" \
+                --singularity-mount-path="${PythonSingularityMountPath}" \
+                --python-interpreter="${PythonInterpreter}" \
+                --noise-file-name="${ClassifyNoiseFileName}"
             ;;
         (CleanData)
             if [[ "$NuisanceListTxt" == "" ]]
