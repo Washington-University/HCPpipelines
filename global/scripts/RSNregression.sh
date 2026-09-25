@@ -1,6 +1,19 @@
 #!/bin/bash
 set -eu
 
+if [[ -z "${HCPCIFTIRWDIR:-}" ]] ; then
+    # The script requires HCPCIFTIRWDIR, which is defined in the environment script.
+    # Edit this path if your environment script is located elsewhere.
+    EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh"
+
+    if [[ ! -f "$EnvironmentScript" ]] ; then
+        echo "ERROR: HCPCIFTIRWDIR is not set and the environment script does not exist: $EnvironmentScript" >&2
+        exit 1
+    fi
+
+    source "$EnvironmentScript"
+fi
+
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
@@ -34,6 +47,7 @@ opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddOptional  '--group-maps' 'GroupMaps' 'file' "the group template spatial maps for weighted or dual regression"
 opts_AddOptional  '--timeseries' 'Timeseries' 'file' "the timeseries for single regression"
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
+opts_AddOptional '--structure' 'Structure' 'Hippocampus or Cortex' "structure to analyze: Hippocampus or Cortex" 'Cortex'
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
 opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
@@ -64,6 +78,14 @@ if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+case "$Structure" in
+    (Hippocampus | Cortex)
+        ;;
+    (*)
+        log_Err_Abort "unrecognized structure '$Structure', use Hippocampus or Cortex"
+        ;;
+esac
 
 #display the parsed/default values
 opts_ShowValues
@@ -111,18 +133,40 @@ fi
 
 MNIFolder="$StudyFolder/$Subject/MNINonLinear"
 T1wFolder="$StudyFolder/$Subject/T1w"
-DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
-DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
+
+case "$Structure" in
+    (Hippocampus)
+        DownSampleMNIFolder="$MNIFolder/HippUnfold/${LowResMesh}k"
+        DownSampleT1wFolder="$T1wFolder/HippUnfold/${LowResMesh}k"
+        ;;
+    (Cortex)
+        DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
+        DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
+        ;;
+esac
 
 tempfiles_create rsn_regr_matlab_XXXXXX tempname
 tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
 IFS='@' read -a InputArray <<< "$InputList"
 #use newline-delimited text files for matlab
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
+
 for fmri in "${InputArray[@]}"
 do
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}.dtseries.nii" >> "$tempname.input.txt"
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+    case "$Structure" in
+        (Hippocampus)
+            HippBOLDResults="${MNIFolder}/Results/${fmri}"
+            HippMappingResults="${HippBOLDResults}/HippocampalVolumeToSurfaceMapping"
+
+            echo "${HippBOLDResults}/${fmri}_AtlasHipp${ProcString}.${LowResMesh}k.dtseries.nii" >> "$tempname.input.txt"
+            echo "${HippMappingResults}/${fmri}_AtlasHipp${ProcString}_vn.${LowResMesh}k.dscalar.nii" >> "$tempname.inputvn.txt"
+        ;;
+        (Cortex)
+            echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}.dtseries.nii" >> "$tempname.input.txt"
+            echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+        ;;
+    esac
+
     if ((DoFixBias))
     then
         echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_real_bias.dscalar.nii" >> "$tempname.goodbias.txt"
@@ -136,16 +180,32 @@ do
             echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
         fi
     fi
-done
+done 
 #only used if DoFixBias
 OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
 OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
 #spectra output files want the correct TR, so save the first input filename
 SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${ProcString}.dtseries.nii"
 
-#matlab can't take strings containing newlines, so it is left@right
-SurfString="$DownSampleT1wFolder/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii@$DownSampleT1wFolder/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
-VANormOnlySurf="$DownSampleT1wFolder/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
+
+case "$Structure" in
+    (Hippocampus)
+        HippResultsFolder="$MNIFolder/Results/${InputArray[0]}"
+
+        "${HCPPIPEDIR}/global/scripts/CreateHippocampalRSNInputs.sh" \
+            "$MNIFolder" "$HippResultsFolder" "$Subject" "$GroupMaps" \
+            "$LowResMesh" "${InputArray[0]}" "$ProcString"
+
+        SurfString="$DownSampleMNIFolder/${Subject}.L.hipp_midthickness.${LowResMesh}k.surf.gii@$DownSampleMNIFolder/${Subject}.R.hipp_midthickness.${LowResMesh}k.surf.gii@$DownSampleMNIFolder/${Subject}.L.dentate_midthickness.${LowResMesh}k.surf.gii@$DownSampleMNIFolder/${Subject}.R.dentate_midthickness.${LowResMesh}k.surf.gii"
+        VANormOnlySurf="$HippResultsFolder/${Subject}.Hipp_midthickness_va_norm.${LowResMesh}k.dscalar.nii"
+        HippGroupMaps="$HippResultsFolder/${Subject}.HippGroupMaps.${LowResMesh}k.dscalar.nii"
+        ;;
+    (Cortex)
+        # matlab can't take strings containing newlines, so it is left@right
+        SurfString="$DownSampleT1wFolder/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii@$DownSampleT1wFolder/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+        VANormOnlySurf="$DownSampleT1wFolder/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
+        ;;
+esac
 
 case "$Method" in
     (weighted)
@@ -199,7 +259,15 @@ else
   WFstr=""
 fi
 
-OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+case "$Structure" in
+    (Hippocampus)
+        OutBeta="$HippResultsFolder/${Subject}.${OutString}_${MethodStr}${WFstr}.${LowResMesh}k.dscalar.nii"
+        ;;
+    (Cortex)
+        OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+        ;;
+esac
+
 OutputVolBeta=""
 if ((DoVol))
 then
@@ -237,12 +305,24 @@ fi
 
 #fix the _va_norm file being surface-only
 #extract the all-voxels ROI file and use it in -from-template
-if [[ ! ${Method} == "single" ]]
+if [[ "$Method" != "single" ]]
 then
-    tempfiles_create XXXXXX.roi.nii.gz tempfile
-    tempfiles_add "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
-    wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
-    wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
+    case "$Structure" in
+        (Hippocampus)
+            GroupMapsForMatlab="$HippGroupMaps"
+            VAWeightsForMatlab="$VANormOnlySurf"
+        ;;
+        (Cortex)
+            tempfiles_create XXXXXX.roi.nii.gz tempfile
+            tempfiles_add "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
+
+            wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
+            wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
+
+            GroupMapsForMatlab="$GroupMaps"
+            VAWeightsForMatlab="$tempfile.91k.dscalar.nii"
+        ;;
+    esac
 fi
 
 #all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side -- can do argument lists for each matlab mode with the same code
@@ -250,8 +330,8 @@ fi
 matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma")
 if [[ "$Method" != "single" ]]
 then
-    matlab_argarray+=("GroupMaps" "$GroupMaps")
-    matlab_argarray+=("VAWeightsName" "$tempfile.91k.dscalar.nii")
+    matlab_argarray+=("GroupMaps" "$GroupMapsForMatlab")
+    matlab_argarray+=("VAWeightsName" "$VAWeightsForMatlab")
 fi
 if [[ "$Method" == "tICA_weighted" ]]
 then
@@ -341,3 +421,4 @@ then
     rm -f -- "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
 fi
 
+log_Msg "RSNregression completed successfully"
