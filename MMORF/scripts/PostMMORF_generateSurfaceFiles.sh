@@ -233,13 +233,13 @@ for Hemisphere in L R ; do
 
     NewSphere="${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii"
 
-    add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
-    add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
-    add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$HighResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
 
-    add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
-    add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
-    add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/${Session}.${Hemisphere}.sphere."$HighResMesh"k_fs_LR.surf.gii"
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/${Session}.${Hemisphere}.atlasroi."$HighResMesh"k_fs_LR.shape.gii"
+    ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/${Session}.${Hemisphere}.flat."$HighResMesh"k_fs_LR.surf.gii"
 
 
     #Populate Highres fs_LR spec file.  Deform surfaces and other data according to native to folding-based registration selected above.  Regenerate inflated surfaces.
@@ -282,13 +282,13 @@ for Hemisphere in L R ; do
             cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
         fi
         
-        add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
-        add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
-        add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
 
-        add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
-        add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
-        add_to_spec "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
+        ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$RegName"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
 
 
         for Surface in white midthickness pial ; do
