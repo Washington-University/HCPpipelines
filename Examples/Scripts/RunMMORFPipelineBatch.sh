@@ -7,11 +7,11 @@ EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeli
 
 source "${EnvironmentScript}"
 
-T1wTemplate="${TemplateDir}/MMORF_T1.nii.gz"
-T2wTemplate="${TemplateDir}/MMORF_T2.nii.gz"
-refmask="${TemplateDir}/MMORF_T1_brainmask_fs.nii.gz"
-DiffusionRef="${TemplateDir}/MMORF_DiffusionRef.nii.gz"
-DTIRefMask="${TemplateDir}/MMORF_nodif_brainmask.nii.gz"
+T1wTemplate="${TemplateDir}/MMORF_T1_0.7mm.nii.gz"
+T2wTemplate="${TemplateDir}/MMORF_T2_0.7mm.nii.gz"
+refmask="${TemplateDir}/MMORF_T1_0.7mm_brain_mask.nii.gz"
+DiffusionRef="${TemplateDir}/MMORF_DTI_0.7mm_tensor.nii.gz"
+DTIRefMask="${TemplateDir}/MMORF_DTI_0.7mm_brain_mask.nii.gz"
 
 QUEUE=""
 
