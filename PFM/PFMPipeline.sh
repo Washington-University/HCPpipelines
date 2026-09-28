@@ -133,7 +133,8 @@ if [[ "$RegName" != "" ]]
 then
     RegString="_$RegName"
 fi
-TemplateDir="MNINonLinear"
+T1wFolder="T1w" # location of individuals' ACPC-aligned physical-space images
+AtlasSpaceFolder="MNINonLinear" # location of template-space images
 
 for ((stepInd = startInd; stepInd <= stopAfterInd; ++stepInd))
 do
@@ -166,7 +167,7 @@ do
                 do
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        inputFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                        inputFile="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                         wfFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                         if [[ -f "$inputFile" ]] && [[ ! -f "$wfFile" ]]
                         then
@@ -187,8 +188,8 @@ do
                         if [[ "$ConcatName" != "" ]] # multi_run data
                         then
                             # Use already concatenated file
-                            concatFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                            clean_VN="${StudyFolder}/${Subject}/${TemplateDir}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                            concatFile="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                            clean_VN="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
                             concatOutFile="${WFDir}/${Subject}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                             if [[ -f "$concatFile" ]]
                             then
@@ -201,7 +202,7 @@ do
 
                                 if [[ "$VAweightBool" == 1 ]]; then
                                     # create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
-                                    VAnorm=${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
+                                    VAnorm=${StudyFolder}/${Subject}/${T1wFolder}/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
                                     tempfiles_create "tmp_VAgray_XXXXXX.dscalar.nii" tmp_VAgray_file
                                     tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
                                     tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
@@ -213,7 +214,7 @@ do
                                 cumTP=0
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
-                                    origFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    origFile="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
@@ -254,10 +255,10 @@ do
                             vnArray=()
                             for fMRIName in "${fMRINamesArray[@]}"
                             do
-                                origFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                origFile="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                 if [[ -f "$origFile" ]]
                                 then
-                                    runVN="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                    runVN="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
                                     if [[ ! -f "$runVN" ]]
                                     then
                                         log_Err_Abort "single-run data requires the per-run variance normalization file '$runVN'"
@@ -300,7 +301,7 @@ do
 
                                 if [[ "$VAweightBool" == 1 ]]; then
                                     # create temporary VA_norm cifti with volume grayordinates filled with mean areas for weighting
-                                    VAnorm=${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
+                                    VAnorm=${StudyFolder}/${Subject}/${T1wFolder}/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
                                     tempfiles_create "tmp_VAgray_XXXXXX.dscalar.nii" tmp_VAgray_file
                                     tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
                                     tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
@@ -314,7 +315,7 @@ do
                                 cumTP=0
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
-                                    origFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    origFile="${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
@@ -497,7 +498,7 @@ do
                     fMRINamesForSub=""
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        if [[ -f "${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii" ]]
+                        if [[ -f "${StudyFolder}/${Subject}/${AtlasSpaceFolder}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii" ]]
                         then
                             if [[ "$fMRINamesForSub" != "" ]]
                             then
