@@ -147,7 +147,7 @@
     "${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${WorkingDirectory}" "${Subject}" "${SmoothingFWHM}" "${Meshes}"
 
     #Integration of the 4 hippocampal structures into single CIFTI files and cleanup of intermediate files
-    "${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" "${ResultsFolder}" "${WorkingDirectory}" "${Subject}" "${NameOffMRI}" "${ProcString}" "${Meshes}" "${doGoodVoxels}" "${SmoothingFWHM}" "${VolumefMRI}"
-
+    "${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" --results-folder="${ResultsFolder}" --working-directory="${WorkingDirectory}" --subject="${Subject}" --fmri-name="${NameOffMRI}" --proc-string="${ProcString}" --meshes="${Meshes}" --good-voxels="${doGoodVoxels}" --smoothing-fwhm="${SmoothingFWHM}" --volume-fmri="${VolumefMRI}"
+    
     log_Msg "GenericHippocampusfMRISurfaceProcessingPipeline Completed!"
 

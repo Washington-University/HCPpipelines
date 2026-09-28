@@ -1,82 +1,50 @@
 #!/bin/bash
+set -eu
 
-# --------------------------------------------------------------------------------
-# A script for the conversion of 4 structures (L hipp, R hipp, L dentate, R dentate) 
-# into a single CIFTI file and deletion of intermediate func.gii file
-# --------------------------------------------------------------------------------
+# Convert the four hippocampal and dentate GIFTI structures into CIFTI files.
+# Remove intermediate func.gii files after successful conversion.
 
-script_name=$(basename "${0}")
+script_name=$(basename -- "$0")
 
-show_usage() {
-    cat <<EOF
-
-${script_name}: Sub-script of GenericHippocampusfMRISurfaceProcessingPipeline.sh
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+pipedirguessed=0
+if [[ -z "${HCPPIPEDIR:-}" ]]; then
+    pipedirguessed=1
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
 
-# ------------------------------------------------------------------------------
-#  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
+source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
-if [ -z "${HCPPIPEDIR}" ]; then
-    echo "${script_name}: ABORTING: HCPPIPEDIR environment variable must be set"
-    exit 1
+opts_SetScriptDescription "Create hippocampal CIFTI files from left/right hippocampus and dentate GIFTI files."
+
+opts_AddMandatory '--results-folder'    'ResultsFolder'    'path'   "folder for the fMRI dense timeseries"
+opts_AddMandatory '--working-directory' 'WorkingDirectory' 'path'   "folder containing intermediate GIFTI files"
+opts_AddMandatory '--subject'           'Subject'          'ID'     "subject ID"
+opts_AddMandatory '--fmri-name'         'NameOffMRI'       'name'   "fMRI run name"
+opts_AddMandatory '--proc-string'       'ProcString'       'string' "processing suffix"
+opts_AddMandatory '--meshes'            'Meshes'           'list'   "space-separated mesh names"
+opts_AddMandatory '--good-voxels'       'doGoodVoxels'     'YES/NO' "good-voxels setting"
+opts_AddMandatory '--smoothing-fwhm'    'SmoothingFWHM'    'mm'     "smoothing FWHM"
+opts_AddMandatory '--volume-fmri'       'VolumefMRI'       'path'   "volume fMRI file used to read the TR"
+
+opts_ParseArguments "$@"
+
+if (( pipedirguessed )); then
+    log_Err_Abort "HCPPIPEDIR is not set; source your edited Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/opts.shlib"               # Command line option functions
 
-opts_ShowVersionIfRequested "$@"
-
-if opts_CheckForHelpRequest "$@"; then
-    show_usage
-    exit 0
-fi
-
-# ------------------------------------------------------------------------------
-#  Verify required environment variables are set and log value
-# ------------------------------------------------------------------------------
-
-log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var CARET7DIR
-
-# ------------------------------------------------------------------------------
-#  Loop that detects func.gii for all 4 structures (L hipp, R hipp, L dentate, R dentate),
-#  merges them into CIFTI files, and deletes the func.gii
-# ------------------------------------------------------------------------------
-
-log_Msg "START"
-
-ResultsFolder="$1"
-WorkingDirectory="$2"
-Subject="$3"
-NameOffMRI="$4"
-ProcString="$5"
-Meshes="$6"
-doGoodVoxels="$7"
-SmoothingFWHM="$8"
-VolumefMRI="$9"
+opts_ShowValues
 
 TR=$(wb_command -file-information "$VolumefMRI" -only-step-interval)
-
 log_Msg "fMRI TR: ${TR} seconds"
+log_Msg "START"
+
 for Mesh in ${Meshes}; do
-
     for LeftHipp in "${WorkingDirectory}/${Subject}.L.hipp_"*.${Mesh}.func.gii; do
+        [[ -e "$LeftHipp" ]] || continue
 
-        if [[ ! -e "${LeftHipp}" ]]; then
-            continue
-        fi
-
-        BaseName=$(basename "${LeftHipp}")
-
+        BaseName=$(basename -- "$LeftHipp")
         DataName="${BaseName#${Subject}.L.hipp_}"
         DataName="${DataName%.${Mesh}.func.gii}"
 
@@ -84,43 +52,49 @@ for Mesh in ${Meshes}; do
         LeftDentate="${WorkingDirectory}/${Subject}.L.dentate_${DataName}.${Mesh}.func.gii"
         RightDentate="${WorkingDirectory}/${Subject}.R.dentate_${DataName}.${Mesh}.func.gii"
 
-        if [[ -f "${LeftHipp}" &&
-              -f "${RightHipp}" &&
-              -f "${LeftDentate}" &&
-              -f "${RightDentate}" ]]; then
-
-            if [[ "${DataName}" == fMRI_s* ]]; then
-
-                OutputFile="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii"
-
-                wb_command -cifti-create-dense-timeseries "${OutputFile}" \
-                    -metric HIPPOCAMPUS_LEFT "${LeftHipp}" \
-                    -metric HIPPOCAMPUS_RIGHT "${RightHipp}" \
-                    -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" \
-                    -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}" \
-                    -timestep "${TR}"
-            else
-
-                OutputName="${DataName#fMRI_}"
-
-                OutputFile="${WorkingDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_${OutputName}.${Mesh}.dscalar.nii"
-
-                wb_command -cifti-create-dense-scalar "${OutputFile}" \
-                    -metric HIPPOCAMPUS_LEFT "${LeftHipp}" \
-                    -metric HIPPOCAMPUS_RIGHT "${RightHipp}" \
-                    -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" \
-                    -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
-            fi
-
-            rm -f \
-                "${LeftHipp}" \
-                "${RightHipp}" \
-                "${LeftDentate}" \
-                "${RightDentate}"
-
-            log_Msg "Generated CIFTI file: ${OutputFile}"
+        if [[ ! -f "$RightHipp" || ! -f "$LeftDentate" || ! -f "$RightDentate" ]]; then
+            continue
         fi
 
+        if [[ "$DataName" == fMRI_s* ]]; then
+            OutputFile="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii"
+
+            wb_command -cifti-create-dense-timeseries "$OutputFile" \
+                -metric HIPPOCAMPUS_LEFT "$LeftHipp" \
+                -metric HIPPOCAMPUS_RIGHT "$RightHipp" \
+                -metric HIPPOCAMPUS_DENTATE_LEFT "$LeftDentate" \
+                -metric HIPPOCAMPUS_DENTATE_RIGHT "$RightDentate" \
+                -timestep "$TR"
+        else
+            if [[ "$Mesh" == "native" ]]; then
+                OutputDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping"
+            else
+                OutputDirectory="${ResultsFolder}"
+            fi
+
+            case "$OutputName" in
+                vn)
+                    OutputFile="${OutputDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_vn.${Mesh}.dscalar.nii"
+                    ;;
+                *)
+                    OutputFile="${OutputDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_${OutputName}.${Mesh}.dscalar.nii"
+                    ;;
+            esac
+
+            wb_command -cifti-create-dense-scalar "$OutputFile" \
+                -metric HIPPOCAMPUS_LEFT "$LeftHipp" \
+                -metric HIPPOCAMPUS_RIGHT "$RightHipp" \
+                -metric HIPPOCAMPUS_DENTATE_LEFT "$LeftDentate" \
+                -metric HIPPOCAMPUS_DENTATE_RIGHT "$RightDentate"
+        fi
+
+        rm -f "$LeftHipp" "$RightHipp" "$LeftDentate" "$RightDentate"
+        log_Msg "Generated CIFTI file: ${OutputFile}"
     done
 
+    for Hemisphere in L R; do
+        for Structure in hipp dentate; do
+            rm -f "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
+        done
+    done
 done
