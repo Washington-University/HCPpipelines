@@ -87,7 +87,7 @@ opts_AddOptional '--reclean-mode' 'RecleanModeString' 'YES or NO' 'whether the d
 
 #tICA Component Classification
 opts_AddOptional '--singularity-image' 'PythonSingularity' 'string' "the file path of the classifier singularity container, instead of using native python" ""
-opts_AddOptional '--singularity-mount-path' 'PythonSingularityMountPath' 'string' "the --bind argument to get the data mounted into singularity" ""
+opts_AddOptional '--singularity-mount-path' 'PythonSingularityMountPath' 'hostpath:containedpath' "only the argument to --bind, to get your data folder mounted into singularity, like '/data:/data'" ""
 opts_AddOptional '--python-interpreter' 'PythonInterpreter' 'string' "the python executable, default 'python3' (from PATH)" "python3"
 opts_AddOptional '--noise-file-name' 'ClassifyNoiseFileName' 'string' "output file name (within the tICA_d<dim> folder) for the ClassifyTICA noise component list, defaults to Noise.txt -- override for testing so you don't overwrite the file CleanData expects" "Noise.txt"
 
