@@ -133,7 +133,7 @@ if [[ "$RegName" != "" ]]
 then
     RegString="_$RegName"
 fi
-
+TemplateDir="MNINonLinear"
 
 for ((stepInd = startInd; stepInd <= stopAfterInd; ++stepInd))
 do
@@ -166,7 +166,7 @@ do
                 do
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                        inputFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                         wfFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                         if [[ -f "$inputFile" ]] && [[ ! -f "$wfFile" ]]
                         then
@@ -187,8 +187,8 @@ do
                         if [[ "$ConcatName" != "" ]] # multi_run data
                         then
                             # Use already concatenated file
-                            concatFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                            clean_VN="${StudyFolder}/${Subject}/MNINonLinear/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                            concatFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                            clean_VN="${StudyFolder}/${Subject}/${TemplateDir}/Results/${ConcatName}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
                             concatOutFile="${WFDir}/${Subject}/${ConcatName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
                             if [[ -f "$concatFile" ]]
                             then
@@ -213,7 +213,7 @@ do
                                 cumTP=0
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
-                                    origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    origFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
@@ -241,9 +241,9 @@ do
                                         fi
 
                                         cumTP=$endIdx
-                                    fi
-                                done
-                            fi
+                                    fi  # if [[ "$VAweightBool" == 1 ]];then
+                                done  # for fMRIName in "${fMRINamesArray[@]}"
+                            fi  # if [[ -f "$concatFile" ]]
                         else # single run data
                             # No pre-existing concat file, so build one ourselves, as in hcp_fix_multi_run:
                             # demean and variance normalize each run by its own _vn file, concatenate,
@@ -254,10 +254,10 @@ do
                             vnArray=()
                             for fMRIName in "${fMRINamesArray[@]}"
                             do
-                                origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                origFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                 if [[ -f "$origFile" ]]
                                 then
-                                    runVN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                    runVN="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
                                     if [[ ! -f "$runVN" ]]
                                     then
                                         log_Err_Abort "single-run data requires the per-run variance normalization file '$runVN'"
@@ -314,7 +314,7 @@ do
                                 cumTP=0
                                 for fMRIName in "${fMRINamesArray[@]}"
                                 do
-                                    origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    origFile="${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
                                     if [[ -f "$origFile" ]]
                                     then
                                         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
@@ -338,12 +338,13 @@ do
                                         fi
 
                                         cumTP=$endIdx
-                                    fi
-                                done
-                            fi
-                        fi
-                    done
-                fi
+                                    fi  # if [[ -f "$origFile" ]]
+                                done  # for fMRIName in "${fMRINamesArray[@]}"
+                            fi  # if ((${#demeanVNArray[@]} > 0))
+                        fi  # if [[ "$ConcatName" != "" ]] / else (single-run data)
+                    done  # for Subject in "${Subjlist[@]}"
+                fi  # if [[ "$NumWishart" -gt 0 ]]
+
                 # Build JSON pointing at WF files
                 ProfumoConfigToUse="${WFDir}/wishart_dataLocations.json"
                 echo '{' > "$ProfumoConfigToUse"
@@ -496,7 +497,7 @@ do
                     fMRINamesForSub=""
                     for fMRIName in "${fMRINamesArray[@]}"
                     do
-                        if [[ -f "${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii" ]]
+                        if [[ -f "${StudyFolder}/${Subject}/${TemplateDir}/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii" ]]
                         then
                             if [[ "$fMRINamesForSub" != "" ]]
                             then
