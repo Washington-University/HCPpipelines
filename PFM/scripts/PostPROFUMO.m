@@ -59,10 +59,18 @@ for s = 1:numel(Subjlist)
   
     %% Process subject if valid runs found
     if numel(subfMRINames) ~= 0
-    
+                % VN file(s): the concat _vn for multi-run data, or each run's _vn for single runs
+        if ~strcmp(ConcatName, '')
+            vnFiles = {[StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName fMRIProcSTRING '_vn.dscalar.nii']};
+        else
+            vnFiles = cell(1, numel(subfMRINames));
+            for r = 1:numel(subfMRINames)
+                vnFiles{r} = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' subfMRINames{r} '/' subfMRINames{r} fMRIProcSTRING '_vn.dscalar.nii'];
+            end
+        end
         if VAweightBool
           %  create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
-          ciftiTemplate = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName RegString fMRIProcSTRING '_vn.dscalar.nii']; % use clean_VN as cifti template
+          ciftiTemplate = vnFiles{1}; % any _vn file works as the grayordinate template
           VAnorm = [StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.' LowResMesh 'k_fs_LR.dscalar.nii'];
           tmp_VAgray_file = [tempname '.dscalar.nii'];
           tmp_jnk_file = [tempname '.nii.gz'];
@@ -117,8 +125,12 @@ for s = 1:numel(Subjlist)
         % restore variance
         if VarNormBool
             fprintf('Restoring variance\n');
-            clean_VN_Name = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName RegString fMRIProcSTRING '_vn.dscalar.nii'];
-            clean_VN = ciftiopen(clean_VN_Name, wbcommand).cdata;
+                        % average VN across runs (a single file for multi-run concat)
+            clean_VN = 0;
+            for v = 1:numel(vnFiles)
+                clean_VN = clean_VN + ciftiopen(vnFiles{v}, wbcommand).cdata;
+            end
+            clean_VN = clean_VN / numel(vnFiles);
             mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
             maps = ciftiopen(mapFile, wbcommand);
             maps.cdata = maps.cdata .* clean_VN;
@@ -128,7 +140,7 @@ for s = 1:numel(Subjlist)
         % divide out vertex area weights
         if VAweightBool
             fprintf('Dividing out vertex area weights\n');
-            VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand).cdata;
+            VAgray = ciftiopen(tmp_VAgray_file, wbcommand).cdata;
             mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
             maps = ciftiopen(mapFile, wbcommand);
             maps.cdata = maps.cdata ./ VAgray;

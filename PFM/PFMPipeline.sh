@@ -245,61 +245,105 @@ do
                                 done
                             fi
                         else # single run data
-                            echo ToDO
-                            # No concat file not supplied so create a temporary one for Wishart filtering
-                            # demeanVNarray=()
-                            # vnScalarArray=()
-                            # for fMRIName in "${fMRINamesArray[@]}"
-                            # do
-                            #     inputFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                            #     vnScalarFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
-                            #     meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
-                            #     outputFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-              
-                            #     # demean and variance normalize runs
-                            #     wb_command -cifti-math "(TCS - MEAN) / VN" "$outputFile" -var TCS "$inputFile" -var MEAN "$meanFile" -var VN "$vnScalarFile" -select 1 1 -repeat
-                            #     demeanVNarray+=("$outputFile")
-                            #     vnScalarArray+=("$vnScalarFile")
-                            # done
+                            # No pre-existing concat file, so build one ourselves, as in hcp_fix_multi_run:
+                            # demean and variance normalize each run by its own _vn file, concatenate,
+                            # then un-variance normalize by the average of the runs' _vn files and
+                            # restore the grand mean, so WF sees one series with consistent noise variance.
+                            demeanVNArray=()
+                            meanArray=()
+                            vnArray=()
+                            for fMRIName in "${fMRINamesArray[@]}"
+                            do
+                                origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                if [[ -f "$origFile" ]]
+                                then
+                                    runVN="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                    if [[ ! -f "$runVN" ]]
+                                    then
+                                        log_Err_Abort "single-run data requires the per-run variance normalization file '$runVN'"
+                                    fi
+                                    runMeanFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_mean.dscalar.nii"
+                                    runDemeanVNFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_demean_vn.dtseries.nii"
+                                    wb_command -cifti-reduce "$origFile" MEAN "$runMeanFile"
+                                    wb_command -cifti-math "(TCS - MEAN) / VN" "$runDemeanVNFile" \
+                                        -var TCS "$origFile" \
+                                        -var MEAN "$runMeanFile" -select 1 1 -repeat \
+                                        -var VN "$runVN" -select 1 1 -repeat
+                                    demeanVNArray+=(-cifti "$runDemeanVNFile")
+                                    meanArray+=(-cifti "$runMeanFile")
+                                    vnArray+=(-cifti "$runVN")
+                                fi
+                            done
 
-                            # # concatenate the demeaned+VN files
-                            # concatOutFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                            # wb_shortcuts -cifti-concatenate "${concatOutFile}" "${demeanVNarray[*]}"
-                            
+                            if ((${#demeanVNArray[@]} > 0))
+                            then
+                                concatDemeanVNFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}_demean_vn.dtseries.nii"
+                                concatMeanFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}_mean.dscalar.nii"
+                                concatVNFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
+                                concatInFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                concatOutFile="${WFDir}/${Subject}/CONCAT_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
 
-                            # log_Msg "Applying Wishart filter for subject $Subject"
-                            # "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
-                            #     --input="$concatOutFile" \
-                            #     --output="$concatOutFile" \
-                            #     --num-wishart="$NumWishart" \
-                            #     --matlab-run-mode="$MatlabMode"
+                                wb_command -cifti-merge "$concatDemeanVNFile" "${demeanVNArray[@]}"
+                                wb_command -cifti-average "$concatMeanFile" "${meanArray[@]}"
+                                wb_command -cifti-average "$concatVNFile" "${vnArray[@]}"
+                                wb_command -cifti-math "(TCS * VN) + MEAN" "$concatInFile" \
+                                    -var TCS "$concatDemeanVNFile" \
+                                    -var VN "$concatVNFile" -select 1 1 -repeat \
+                                    -var MEAN "$concatMeanFile" -select 1 1 -repeat
 
-                            # # deconcatenate the Wishart filtered data back into individual runs
-                            # # (each run has its own VN file, so un-VN with each separately)
-                            # cumTP=0
-                            # for fMRIName in "${fMRINamesArray[@]}"
-                            # do
-                            #     origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
-                            #     vnScalarFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_vn.dscalar.nii"
-                            #     meanFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas_mean.dscalar.nii"
-                            #     if [[ -f "$origFile" ]]
-                            #     then
-                            #         nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
-                            #         startIdx=$((cumTP + 1))
-                            #         endIdx=$((cumTP + nTP))
-                            #         outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
-                            #         wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx"
-                                    
-                            #         # un-variance normalize and un-demean each post-WF run
-                            #         wb_command -cifti-math "(TCS / VN) + MEAN" "$outFile" -var TCS "$outFile" -var MEAN "$meanFile" -var VN "$vnScalarFile" -select 1 1 -repeat
-                                  
-                            #         cumTP=$endIdx
-                            #     fi
-                            # done
+                                log_Msg "Applying Wishart filter to concatenated single-run data for subject $Subject"
+                                "$HCPPIPEDIR"/PFM/scripts/ApplyWFProfumo.sh \
+                                    --input="$concatInFile" \
+                                    --output="$concatOutFile" \
+                                    --num-wishart="$NumWishart" \
+                                    --matlab-run-mode="$MatlabMode"
+
+                                if [[ "$VAweightBool" == 1 ]]; then
+                                    # create temporary VA_norm cifti with volume grayordinates filled with mean areas for weighting
+                                    VAnorm=${StudyFolder}/${Subject}/T1w/fsaverage_LR${LowResMesh}k/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii
+                                    tempfiles_create "tmp_VAgray_XXXXXX.dscalar.nii" tmp_VAgray_file
+                                    tempfiles_create "tmp_jnk_XXXXXX.nii.gz" tmp_jnk_file
+                                    tempfiles_create "tmp_roi_XXXXXX.nii.gz" tmp_roi_file
+                                    wb_command -cifti-separate "${concatOutFile}" COLUMN -volume-all "$tmp_jnk_file" -roi "$tmp_roi_file" -crop
+                                    wb_command -cifti-create-dense-from-template "${concatOutFile}" "$tmp_VAgray_file" -cifti "$VAnorm" -volume-all "$tmp_roi_file" -from-cropped
+                                fi
+
+                                # Split back into runs. The WF output keeps the grand mean and average-VN
+                                # scaling, so (like the multi-run branch) runs are simply deconcatenated.
+                                # If VN is requested, reapply the average VN, analogous to _clean_vn for multi-run.
+                                cumTP=0
+                                for fMRIName in "${fMRINamesArray[@]}"
+                                do
+                                    origFile="${StudyFolder}/${Subject}/MNINonLinear/Results/${fMRIName}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}.dtseries.nii"
+                                    if [[ -f "$origFile" ]]
+                                    then
+                                        nTP=$(wb_command -file-information "$origFile" -only-number-of-maps)
+                                        startIdx=$((cumTP + 1))
+                                        endIdx=$((cumTP + nTP))
+                                        outFile="${WFDir}/${Subject}/${fMRIName}_Atlas${RegString}_${fMRIProcSTRING}_WF.dtseries.nii"
+                                        wb_command -cifti-merge "$outFile" -direction ROW -cifti "$concatOutFile" -index "$startIdx" -up-to "$endIdx" # naive splitting
+
+                                        if [[ "$VarNormBool" == 1 ]];then
+                                            log_Msg "Normalizing variance by the average of the runs' VN files"
+                                            wb_command -cifti-math "(TCS / VN)" ${outFile} \
+                                                -var TCS ${outFile} \
+                                                -var VN ${concatVNFile} -select 1 1 -repeat
+                                        fi
+
+                                        if [[ "$VAweightBool" == 1 ]];then
+                                            log_Msg "Weighting data by average vertex areas"
+                                            wb_command -cifti-math "(TCS * VA)" ${outFile} \
+                                                -var TCS ${outFile} \
+                                                -var VA ${tmp_VAgray_file} -select 1 1 -repeat
+                                        fi
+
+                                        cumTP=$endIdx
+                                    fi
+                                done
+                            fi
                         fi
                     done
                 fi
-                
                 # Build JSON pointing at WF files
                 ProfumoConfigToUse="${WFDir}/wishart_dataLocations.json"
                 echo '{' > "$ProfumoConfigToUse"
@@ -339,8 +383,11 @@ do
                 # ignore errors due to nfs silly renamed files, or similar
             fi
 
+            # PROFUMO does not create its own output directory; it aborts if Analysis.pfm is missing
+            mkdir -p "${PFM_PATH}"
+
             # Build optional initialMaps argument
-            InitialMapsArg=""
+            InitialMapsArg=""           
             if [[ -n "${InitialMaps}" && -f "${InitialMaps}" ]]
             then
                 InitialMapsArg="--initialMaps ${InitialMaps}"
