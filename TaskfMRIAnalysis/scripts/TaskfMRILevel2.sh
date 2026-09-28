@@ -29,9 +29,7 @@ if [ -z "${HCPPIPEDIR-}" ]; then
   exit 1
 fi
 
-#source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-
+source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
 
@@ -306,7 +304,7 @@ else
 fi
 
 # Edit template.fsf and place it in LevelTwoFEATDir
-sed -e "s|_hp200_s4_level1|${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}|g" -e "s|_hp200_s4_level2|${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}|g" "${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf" > "${LevelTwoFEATDir}/design.fsf"
+cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf | sed -e "s/_hp200_s4\.feat/${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat/g" -e "s/^set fmri(outputdir) .*/set fmri(outputdir) \"${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}\"/" > ${LevelTwoFEATDir}/design.fsf
 # Make additional design files required by flameo
 log_Msg "Make design files"
 cd ${LevelTwoFEATDir}; # Run feat_model inside LevelTwoFEATDir so relative paths work
@@ -525,7 +523,6 @@ for Analysis in ${Analyses} ; do
 	zMergeSTRING=""
 	bMergeSTRING=""
 	vMergeSTRING=""
-	#touch ${LevelTwoFEATDir}/Contrasttemp.txt # line can be removed because the line below (echo "${Subject}...) now creates the text file instead of overwriting it. > instead of >>
 	[ "${Analysis}" = "StandardVolumeStats" ] && touch ${LevelTwoFEATDir}/wbtemp.txt
 	[ -e "${LevelTwoFEATDir}/Contrasts.txt" ] && rm ${LevelTwoFEATDir}/Contrasts.txt
 
