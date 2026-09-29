@@ -39,7 +39,7 @@ for s = 1:numel(Subjlist)
     subfMRINames = {};
     if ~strcmp(ConcatName, '')
         % Multi-run data: check if concatenated dataset exists
-        if exist([StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'],'file')
+        if exist([StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'],'file')
             c = 1;
             for r = 1:numel(fMRINames)
                 if exist([StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')

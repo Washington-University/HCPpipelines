@@ -34,7 +34,7 @@ if nargin < 8; error('All arguments are required.'); end % Validate all inputs
 %% Load and accumulate individual subject results
 for iS = 1:nS
   subj = subjList{iS};
-  subjDir = [StudyFolder '/' subjDir = [StudyFolder '/' subj '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k'];
+  subjDir = [StudyFolder '/' subj '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k'];
   fprintf('Processing %s ... \n', subj);
   
   %% Load individual PFM results from standard subject locations

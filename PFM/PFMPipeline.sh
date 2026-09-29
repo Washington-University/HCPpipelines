@@ -274,7 +274,7 @@ do
                                     meanArray+=(-cifti "$runMeanFile")
                                     vnArray+=(-cifti "$runVN")
                                 fi
-                            done
+                            done # for fMRIName in "${fMRINamesArray[@]}"
 
                             if ((${#demeanVNArray[@]} > 0))
                             then
