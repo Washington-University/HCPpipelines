@@ -26,6 +26,8 @@ TR = str2double(TR);
 VarNormBool = logical(str2double(VarNormBool));
 VAweightBool = logical(str2double(VAweightBool));
 wbcommand = 'wb_command';
+T1wFolder='T1w'; % location of individuals' ACPC-aligned physical-space images
+AtlasSpaceFolder='MNINonLinear'; % location of template-space images
 
 %% Main loop: Process each subject
 for s = 1:numel(Subjlist)
@@ -37,10 +39,10 @@ for s = 1:numel(Subjlist)
     subfMRINames = {};
     if ~strcmp(ConcatName, '')
         % Multi-run data: check if concatenated dataset exists
-        if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'],'file')
+        if exist([StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' ConcatName '/' ConcatName fMRIProcSTRING '.dtseries.nii'],'file')
             c = 1;
             for r = 1:numel(fMRINames)
-                if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')
+                if exist([StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')
                     subfMRINames{c} = fMRINames{r};
                     c = c + 1;
                 end
@@ -50,7 +52,7 @@ for s = 1:numel(Subjlist)
         % Single-run data: check which runs exist
         c = 1;
         for r = 1:numel(fMRINames)
-            if exist([StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')
+            if exist([StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' fMRINames{r} '/' fMRINames{r} fMRIProcSTRING '.dtseries.nii'],'file')
                 subfMRINames{c} = fMRINames{r};
                 c = c + 1;
             end
@@ -59,11 +61,19 @@ for s = 1:numel(Subjlist)
   
     %% Process subject if valid runs found
     if numel(subfMRINames) ~= 0
-    
+        % VN file(s): the concat _vn for multi-run data, or each run's _vn for single runs
+        if ~strcmp(ConcatName, '')
+            vnFiles = {[StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' ConcatName '/' ConcatName fMRIProcSTRING '_vn.dscalar.nii']};
+        else
+            vnFiles = cell(1, numel(subfMRINames));
+            for r = 1:numel(subfMRINames)
+                vnFiles{r} = [StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/Results/' subfMRINames{r} '/' subfMRINames{r} fMRIProcSTRING '_vn.dscalar.nii'];
+            end
+        end
         if VAweightBool
           %  create temporary VA_norm cifti with volume grayordinates filled with ones areas for weighting 
-          ciftiTemplate = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName RegString fMRIProcSTRING '_vn.dscalar.nii']; % use clean_VN as cifti template
-          VAnorm = [StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.' LowResMesh 'k_fs_LR.dscalar.nii'];
+          ciftiTemplate = vnFiles{1}; % any _vn file works as the grayordinate template
+          VAnorm = [StudyFolder '/' Subjlist{s} '/' T1wFolder '/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.' LowResMesh 'k_fs_LR.dscalar.nii'];
           tmp_VAgray_file = [tempname '.dscalar.nii'];
           tmp_jnk_file = [tempname '.nii.gz'];
           tmp_roi_file = [tempname '.nii.gz'];
@@ -107,18 +117,22 @@ for s = 1:numel(Subjlist)
 
         %% Save non-map results
         % Save original and amplitude-modulated time courses and spectra
-        ciftisave(PFMTCSorig, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_ts_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-        ciftisave(PFMSpectraorig, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_spectra_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+        ciftisave(PFMTCSorig, [StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_ts_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+        ciftisave(PFMSpectraorig, [StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_spectra_orig.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
 
-        ciftisave(PFMTCS, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
-        ciftisave(PFMSpectra, [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+        ciftisave(PFMTCS, [StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_ts.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
+        ciftisave(PFMSpectra, [StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_spectra.' LowResMesh 'k_fs_LR.sdseries.nii'], wbcommand);
 
         %% Handle maps
         % restore variance
         if VarNormBool
             fprintf('Restoring variance\n');
-            clean_VN_Name = [StudyFolder '/' Subjlist{s} '/MNINonLinear/Results/' ConcatName '/' ConcatName RegString fMRIProcSTRING '_vn.dscalar.nii'];
-            clean_VN = ciftiopen(clean_VN_Name, wbcommand).cdata;
+                        % average VN across runs (a single file for multi-run concat)
+            clean_VN = 0;
+            for v = 1:numel(vnFiles)
+                clean_VN = clean_VN + ciftiopen(vnFiles{v}, wbcommand).cdata;
+            end
+            clean_VN = clean_VN / numel(vnFiles);
             mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
             maps = ciftiopen(mapFile, wbcommand);
             maps.cdata = maps.cdata .* clean_VN;
@@ -128,15 +142,15 @@ for s = 1:numel(Subjlist)
         % divide out vertex area weights
         if VAweightBool
             fprintf('Dividing out vertex area weights\n');
-            VAgray = ciftiopen([StudyFolder '/' Subjlist{s} '/T1w/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.midthickness' RegString '_va_norm.grayordinates.' LowResMesh 'k_fs_LR.dscalar.nii'], wbcommand).cdata;
+            VAgray = ciftiopen(tmp_VAgray_file, wbcommand).cdata;
             mapFile = [PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'];
             maps = ciftiopen(mapFile, wbcommand);
             maps.cdata = maps.cdata ./ VAgray;
             ciftisave(maps, mapFile, wbcommand);
         end
         
-        % Copy PFM maps from PFM folder to subject's MNINonLinear/fsaverage_LR<LowResMesh> space directory
-        copyfile([PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'], [StudyFolder '/' Subjlist{s} '/MNINonLinear/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
+        % Copy PFM maps from PFM folder to subject's AtlasSpaceFolder/fsaverage_LR<LowResMesh> space directory
+        copyfile([PFMFolder '/Results.ppp/Maps/sub-' Subjlist{s} '.dscalar.nii'], [StudyFolder '/' Subjlist{s} '/' AtlasSpaceFolder '/fsaverage_LR' LowResMesh 'k/' Subjlist{s} '.' OutputSTRING RegString '_origmaps.' LowResMesh 'k_fs_LR.dscalar.nii']);
 
         % clean up temporary files
         if VAweightBool
