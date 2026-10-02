@@ -117,33 +117,44 @@ fi
 
 tempfiles_create ROIdicom_XXXXXX.nii.gz rawnifti
 
-if [[ -f "$StudyFolder"/"$Subject"/T1w/AverageT1wImages ]]
+acpcdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/OrigT1w2T1w_PreFS.nii.gz
+gdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w1_gdc_warp.nii.gz
+
+t1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/raw_T1w1_to_T1w_PreFS.nii.gz
+fnirtarg="$StudyFolder"/"$Subject"/T1w/T1w1_gdc.nii.gz
+
+#with several T1w images, OrigT1w2T1w_PreFS starts from their average, so the first image's transform to the average has to be included
+tohalfmat=""
+if [[ -d "$StudyFolder"/"$Subject"/T1w/AverageT1wImages ]]
 then
-    log_Err_Abort "subjects that used an average of multiple T1w images are not currently supported"
-else
-    acpcdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/OrigT1w2T1w_PreFS.nii.gz
-    gdcwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w1_gdc_warp.nii.gz
-    
-    t1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/raw_T1w1_to_T1w_PreFS.nii.gz
-    fnirtarg="$StudyFolder"/"$Subject"/T1w/T1w1_gdc.nii.gz
-    
-    if [[ -f "$gdcwarpfield" ]]
+    tohalfmat="$StudyFolder"/"$Subject"/T1w/AverageT1wImages/ToHalfTrans0001.mat
+    if [[ ! -f "$tohalfmat" ]]
     then
-        echo "Concatenating with gradient distortion warp field"
-        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
-    else
-        #assume scanner-applied gdc
-        cp "$acpcdcwarpfield" "$t1wwarpfield"
+        log_Err_Abort "T1w images were averaged, but the transform of the first T1w image to the average is missing: $tohalfmat"
     fi
-    
-    echo "inverting the warp field"
-    invt1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w_PreFS_to_raw_T1w1.nii.gz
-    downsampref="$rawnifti"_downsampref.nii.gz
-    tempfiles_add "$downsampref"
-    #invert at lower resolution for speed - readout and gradient distortion should be small changes, so 3mm is probably fine
-    flirt -interp spline -in "$fnirtarg" -ref "$fnirtarg" -applyisoxfm 3 -out "$downsampref" -noresampblur
-    invwarp -w "$t1wwarpfield" -o "$invt1wwarpfield" -r "$downsampref"
 fi
+
+if [[ -f "$gdcwarpfield" ]]
+then
+    echo "Concatenating with gradient distortion warp field"
+    convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" ${tohalfmat:+--midmat="$tohalfmat"} --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
+elif [[ "$tohalfmat" != "" ]]
+then
+    #assume scanner-applied gdc
+    echo "Concatenating with the transform of the first T1w image to the T1w average"
+    convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --premat="$tohalfmat" --warp1="$acpcdcwarpfield" --out="$t1wwarpfield"
+else
+    #assume scanner-applied gdc
+    cp "$acpcdcwarpfield" "$t1wwarpfield"
+fi
+
+echo "inverting the warp field"
+invt1wwarpfield="$StudyFolder"/"$Subject"/T1w/xfms/T1w_PreFS_to_raw_T1w1.nii.gz
+downsampref="$rawnifti"_downsampref.nii.gz
+tempfiles_add "$downsampref"
+#invert at lower resolution for speed - readout and gradient distortion should be small changes, so 3mm is probably fine
+flirt -interp spline -in "$fnirtarg" -ref "$fnirtarg" -applyisoxfm 3 -out "$downsampref" -noresampblur
+invwarp -w "$t1wwarpfield" -o "$invt1wwarpfield" -r "$downsampref"
 
 #due to "convert the whole folder" behavior, out filename arguments are unusual
 rawbase=$(basename "${rawnifti%.nii.gz}")
