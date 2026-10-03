@@ -136,16 +136,23 @@ fi
 
 if [[ -f "$gdcwarpfield" ]]
 then
-    echo "Concatenating with gradient distortion warp field"
-    convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" ${tohalfmat:+--midmat="$tohalfmat"} --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
-elif [[ "$tohalfmat" != "" ]]
-then
-    #assume scanner-applied gdc
-    echo "Concatenating with the transform of the first T1w image to the T1w average"
-    convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --premat="$tohalfmat" --warp1="$acpcdcwarpfield" --out="$t1wwarpfield"
+    if [[ "$tohalfmat" != "" ]]
+    then
+        echo "Concatenating with gradient distortion warp field and the transform of the first T1w image to the T1w average"
+        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --midmat="$tohalfmat" --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
+    else
+        echo "Concatenating with gradient distortion warp field"
+        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --warp1="$gdcwarpfield" --warp2="$acpcdcwarpfield" --out="$t1wwarpfield"
+    fi
 else
     #assume scanner-applied gdc
-    cp "$acpcdcwarpfield" "$t1wwarpfield"
+    if [[ "$tohalfmat" != "" ]]
+    then
+        echo "Concatenating with the transform of the first T1w image to the T1w average"
+        convertwarp --rel --relout --ref="$StudyFolder/$Subject/T1w/T1w_acpc_dc_restore.nii.gz" --premat="$tohalfmat" --warp1="$acpcdcwarpfield" --out="$t1wwarpfield"
+    else
+        cp "$acpcdcwarpfield" "$t1wwarpfield"
+    fi
 fi
 
 echo "inverting the warp field"
@@ -219,10 +226,10 @@ then
                 sepStruct=CORTEX_RIGHT
                 ;;
         esac
-        
+
         tempMetric="$rawnifti"_sep."$hem".func.gii
         tempfiles_add "$tempMetric"
-        
+
         #support single-hemisphere cifti, etc
         if wb_command -cifti-separate "$ciftiRoiIn" COLUMN \
             -metric "$sepStruct" "$tempMetric" &> /dev/null
@@ -232,18 +239,18 @@ then
             tempMid="$rawnifti"_midthickness."$hem".surf.gii
             tempPial="$rawnifti"_pial."$hem".surf.gii
             tempfiles_add "$tempMetricBin" "$tempWhite" "$tempMid" "$tempPial"
-            
+
             warpSurface "$hem".white "$tempWhite"
             warpSurface "$hem".midthickness "$tempMid"
             warpSurface "$hem".pial "$tempPial"
-            
+
             wb_command -metric-math 'x > 0' "$tempMetricBin" \
                 -var x "$tempMetric"
-            
+
             tempVol="$rawnifti"_"$hem".nii.gz
             tempVolBin="$rawnifti"_"$hem"_bin.nii.gz
             tempfiles_add "$tempVol" "$tempVolBin"
-            
+
             wb_command -metric-to-volume-mapping \
                 "$tempMetricBin" \
                 "$tempMid" \
@@ -269,10 +276,10 @@ then
         tempVolResamp="$rawnifti"_sepVol_resamp.nii.gz
         tempVolResampBin="$rawnifti"_sepVol_resampBin.nii.gz
         tempfiles_add "$tempVolBin" "$tempVolResamp" "$tempVolResampBin"
-        
+
         wb_command -volume-math 'x > 0' "$tempVolBin" \
             -var x "$tempVol"
-        
+
         #voxels in cifti standard space are MNINonLinear, so reverse that warp first
         wb_command -volume-resample \
             "$tempVolBin" \
@@ -283,7 +290,7 @@ then
                 -fnirt "$StudyFolder"/"$Subject"/MNINonLinear/T1w_restore.nii.gz \
             -warp "$invt1wwarpfield" \
                 -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz
-        
+
         wb_command -volume-math 'x > 0.5' "$tempVolResampBin" \
             -var x "$tempVolResamp"
         mergeArgs+=(-volume "$tempVolResampBin")
@@ -310,10 +317,10 @@ then
     tempVolResamp="$rawnifti"_sepVol_resamp.nii.gz
     tempVolResampBin="$rawnifti"_sepVol_resampBin.nii.gz
     tempfiles_add "$tempVolBin" "$tempVolResamp" "$tempVolResampBin"
-    
+
     wb_command -volume-math 'x > 0' "$tempVolBin" \
         -var x "$volRoiIn"
-    
+
     if [[ "$volSpace" == "MNINonLinear" ]]
     then
         xfmargs=(-warp "$StudyFolder"/"$Subject"/MNINonLinear/xfms/standard2acpc_dc.nii.gz \
@@ -323,13 +330,13 @@ then
     fi
     xfmargs+=(-warp "$invt1wwarpfield" \
         -fnirt "$StudyFolder"/"$Subject"/T1w/T1w_acpc_dc_restore.nii.gz)
-    
+
     wb_command -volume-resample "$tempVolBin" \
         "$rawnifti" \
         TRILINEAR \
         "$tempVolResamp" \
         "${xfmargs[@]}"
-    
+
     wb_command -volume-math 'x > 0.5' "$tempVolResampBin" \
         -var x "$tempVolResamp"
     roiFile="$tempVolResampBin"
@@ -346,7 +353,7 @@ then
             hem=R
             ;;
     esac
-    
+
     vertTxt="$rawnifti"_vertlist.txt
     tempVertMetric="$rawnifti"_vert.func.gii
     tempVertMetricDil="$rawnifti"_vertdil.func.gii
@@ -354,11 +361,11 @@ then
     tempMid="$rawnifti"_midthickness."$hem".surf.gii
     tempPial="$rawnifti"_pial."$hem".surf.gii
     tempfiles_add "$vertTxt" "$tempVertMetric" "$tempVertMetricDil" "$tempWhite" "$tempMid" "$tempPial"
-    
+
     warpSurface "$hem".white "$tempWhite"
     warpSurface "$hem".midthickness "$tempMid"
     warpSurface "$hem".pial "$tempPial"
-    
+
     echo "$vertexIn" > "$vertTxt"
     #we don't know if the user has requested a smaller radius than the vertex spacing, so use dilation's "one neighbor minimum" to keep the roi centered-ish on the vertex
     #start with distance of 0 to get just the vertex
@@ -367,7 +374,7 @@ then
         0 \
         "$vertTxt" \
         "$tempVertMetric"
-    
+
     if [[ $(echo "$vertexDist == 0" | bc) == 1* ]]
     then
         useMetric="$tempVertMetric"
@@ -384,7 +391,7 @@ then
     tempVol="$rawnifti"_"$hem".nii.gz
     tempVolBin="$rawnifti"_"$hem"_bin.nii.gz
     tempfiles_add "$tempVol" "$tempVolBin"
-    
+
     wb_command -metric-to-volume-mapping \
         "$useMetric" \
         "$tempMid" \
@@ -460,4 +467,3 @@ cmd=(python "$HCPPIPEDIR/global/scripts/nifti2dcm.py" \
 )
 echo "${cmd[*]}"
 "${cmd[@]}"
-
