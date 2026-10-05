@@ -24,7 +24,7 @@ opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh num
 opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'path@path' 'BEDPOSTX Folders delimited by @'
 opts_AddMandatory '--regname' 'RegName' 'MSMAll' 'RegName such as MSMAll or MSMSulc'
 opts_AddOptional '--matrix4' 'Matrix4' 'YES or NO' 'If we are running matrix 4, default YES' 'YES'
-opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'what seeding strategy to use' #FIXME: tried to have a default of "true"?!?
+opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'Matrix3'
 opts_AddOptional '--nsamples' 'nsamples' 'integer' 'number of samples we run per seed, has linear effect on runtime, default 100' '100'
 opts_AddOptional '--nsteps' 'nsteps' 'integer' 'number of steps we take per streamline, default 2000' '2000'
 opts_AddOptional '--whim' 'Whim' 'full path to whim folder' ""
