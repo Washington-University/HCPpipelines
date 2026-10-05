@@ -42,22 +42,22 @@ STEPLENGTH=$(printf "%g" "$STEPLENGTH")   # removes trailing zeros
 PipelineScripts=${HCPPIPEDIR}/DiffusionTractography/scripts #TODO: Delete when commited and in setup script
 
 
-if [[ "$SeedingStrategy" == "Matrix3" ]]; then
-    mkdir -p "${StudyFolder}/${Subject}/${Folder}/Results/Matrix3WholeBrainTractography"
-fi
-if [[ "$SeedingStrategy" == "Matrix1" ]]; then
-    mkdir -p "${StudyFolder}/${Subject}/${Folder}/Results/Matrix1WholeBrainTractography"
-fi
-
-if [[ "$SeedingStrategy" == "Matrix3" ]]; then
-    OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix3WholeBrainTractography"
-    SEED="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
-    mkdir -p "$OUTDIR"
-else
-    OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix1WholeBrainTractography"
-    SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
-    mkdir -p "$OUTDIR"
-fi
+case "$SeedingStrategy" in
+    Matrix3)
+        OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix3WholeBrainTractography"
+        SEED="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
+        mkdir -p "$OUTDIR"
+        ;;
+    Matrix1)
+        OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix1WholeBrainTractography"
+        SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        mkdir -p "$OUTDIR"
+        ;;
+    *)
+        echo "ERROR: Invalid SeedingStrategy '$SeedingStrategy'. Expected 'Matrix1' or 'Matrix3'." >&2
+        exit 1
+        ;;
+esac
 
 COMMON_ARGS=(
     --samples="${BedpostXFolders}"
