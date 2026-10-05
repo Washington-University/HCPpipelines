@@ -46,33 +46,37 @@ log_Check_Env_Var HCPPIPEDIR
 for BedpostXFolderName in ${BedpostXFolders} ; do
   if [[ -n "$WhimMask" ]]; then
     BedpostXFolder="${T1wFolder}/${BedpostXFolderName}"
+    tempfiles_create diffusion_UODFs_zero_XXXXXX.nii.gz zeroFile
+    tempfiles_create diffusion_UODFs_smallval_XXXXXX.nii.gz smallValFile
+    wb_command -volume-math '0' "$zeroFile" -var x "$BedpostXFolder"/f_1_std.nii.gz
+    wb_command -volume-math '0.001' "$smallValFile" -var x "$BedpostXFolder"/f_1_std.nii.gz
     ${Caret7_Command} -convert-fiber-orientations \
       $WhimMask \
       ${BedpostXFolder}/${BedpostXFolderName}_${trajectory}_${DiffusionResolution}.fiberTEMP.nii \
       -fiber \
         ${BedpostXFolder}/f_1_std.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        "$smallValFile" \
         ${BedpostXFolder}/theta_1_std.nii.gz \
         ${BedpostXFolder}/phi_1_std.nii.gz \
-        ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        "$zeroFile" \
+        "$smallValFile" \
+        "$smallValFile" \
       -fiber \
         ${BedpostXFolder}/f_2_std.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        "$smallValFile" \
         ${BedpostXFolder}/theta_2_std.nii.gz \
         ${BedpostXFolder}/phi_2_std.nii.gz \
-        ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        "$zeroFile" \
+        "$smallValFile" \
+        "$smallValFile" \
       -fiber \
         ${BedpostXFolder}/f_3_std.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
+        "$smallValFile" \
         ${BedpostXFolder}/theta_3_std.nii.gz \
         ${BedpostXFolder}/phi_3_std.nii.gz \
-        ${HCPPIPEDIR}/global/templates/psi_zero.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz \
-        ${HCPPIPEDIR}/global/templates/small_values.nii.gz
+        "$zeroFile" \
+        "$smallValFile" \
+        "$smallValFile"
   else
     BedpostXFolder="${StudyFolder}/${Subject}/T1w/${BedpostXFolderName}"
     echo "Creating Fiber File for Connectome Workbench"
