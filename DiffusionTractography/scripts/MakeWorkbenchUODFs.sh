@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
