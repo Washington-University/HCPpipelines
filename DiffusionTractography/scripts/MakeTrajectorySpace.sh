@@ -29,7 +29,6 @@ opts_AddOptional '--rightsubcorticallabels' 'RightSubcorticalLabels' 'file' 'rig
 opts_AddOptional '--wholebrainwhitelabels' 'WholeBrainWhiteLabels' 'file' 'whole brain white matter labels'
 opts_AddOptional '--freesurferlabels' 'FreeSurferLabels' 'file' 'FreeSurfer labels'
 
-opts_AddMandatory '--warp' 'Warp' 'file' 'warp from T1w to trajectory space'
 opts_AddOptional '--whimmask' 'WhimMask' 'file' 'path to WHIM mask'
 
 opts_ParseArguments "$@"
@@ -92,7 +91,7 @@ if [[ -n "$WhimMask" ]]; then
   if [ "$TrajectorySpaceFolderName" = "T1w" ]; then
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i "$TrajectorySpaceFolder"/wmparc_1mm.nii.gz -r "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution"
   else
-    ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${StudyFolder}/${Subject}/T1w/wmparc_1mm.nii.gz -r "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" --warp="$Warp" -o "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution"
+    ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${StudyFolder}/${Subject}/T1w/wmparc_1mm.nii.gz -r "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" --warp="$TrajectorySpaceFolder"/xfms/acpc_dc2standard -o "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution"
   fi
   ${Caret7_Command} -volume-label-import "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution".nii.gz "$FreeSurferLabels" "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution".nii.gz -drop-unused-labels
 fi
