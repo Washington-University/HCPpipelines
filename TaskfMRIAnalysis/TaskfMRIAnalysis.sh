@@ -53,7 +53,7 @@ then
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
-source "$HCPPIPEDIR/global/scripts/log.shlib" "$@"
+source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"	# Function for getting FSL version
 
 
