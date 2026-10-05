@@ -17,7 +17,7 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 
 opts_SetScriptDescription "Create hippocampal CIFTI files from left/right hippocampus and dentate GIFTI files."
 
-opts_AddMandatory '--results-folder'    'ResultsFolder'    'path'   "folder for the fMRI dense timeseries"
+opts_AddMandatory '--results-folder'    'ResultsDirectory'    'path'   "folder for the fMRI dense timeseries"
 opts_AddMandatory '--working-directory' 'WorkingDirectory' 'path'   "folder containing intermediate GIFTI files"
 opts_AddMandatory '--subject'           'Subject'          'ID'     "subject ID"
 opts_AddMandatory '--fmri-name'         'NameOffMRI'       'name'   "fMRI run name"
@@ -40,13 +40,21 @@ TR=$(wb_command -file-information "$VolumefMRI" -only-step-interval)
 log_Msg "fMRI TR: ${TR} seconds"
 log_Msg "START"
 
+
 for Mesh in ${Meshes}; do
+    for Hemisphere in L R; do
+        for Structure in hipp dentate; do
+            rm -f "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
+        done
+    done
+
     for LeftHipp in "${WorkingDirectory}/${Subject}.L.hipp_"*.${Mesh}.func.gii; do
         [[ -e "$LeftHipp" ]] || continue
 
         BaseName=$(basename -- "$LeftHipp")
         DataName="${BaseName#${Subject}.L.hipp_}"
         DataName="${DataName%.${Mesh}.func.gii}"
+
 
         RightHipp="${WorkingDirectory}/${Subject}.R.hipp_${DataName}.${Mesh}.func.gii"
         LeftDentate="${WorkingDirectory}/${Subject}.L.dentate_${DataName}.${Mesh}.func.gii"
@@ -57,8 +65,12 @@ for Mesh in ${Meshes}; do
         fi
 
         if [[ "$DataName" == fMRI_s* ]]; then
-            OutputFile="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii"
 
+            if [[ "$Mesh" == "native" ]]; then
+                OutputFile="${WorkingDirectory}/${NameOffMRI}_AtlasHipp${ProcString}.${Mesh}.dtseries.nii"
+            else
+                OutputFile="${ResultsDirectory}/${NameOffMRI}_AtlasHipp${ProcString}.dtseries.nii"
+            fi
             wb_command -cifti-create-dense-timeseries "$OutputFile" \
                 -metric HIPPOCAMPUS_LEFT "$LeftHipp" \
                 -metric HIPPOCAMPUS_RIGHT "$RightHipp" \
@@ -66,21 +78,15 @@ for Mesh in ${Meshes}; do
                 -metric HIPPOCAMPUS_DENTATE_RIGHT "$RightDentate" \
                 -timestep "$TR"
         else
-            if [[ "$Mesh" == "native" ]]; then
-                OutputDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping"
+            if [[ "$DataName" == *_vn ]]; then
+                if [[ "$Mesh" == "native" ]]; then
+                    OutputFile="${WorkingDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_vn.${Mesh}.dscalar.nii"
+                else
+                    OutputFile="${ResultsDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_vn.dscalar.nii"
+                fi
             else
-                OutputDirectory="${ResultsFolder}"
+                OutputFile="${WorkingDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_${DataName}.${Mesh}.dscalar.nii"
             fi
-
-            case "$OutputName" in
-                vn)
-                    OutputFile="${OutputDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_vn.${Mesh}.dscalar.nii"
-                    ;;
-                *)
-                    OutputFile="${OutputDirectory}/${NameOffMRI}_AtlasHipp${ProcString}_${OutputName}.${Mesh}.dscalar.nii"
-                    ;;
-            esac
-
             wb_command -cifti-create-dense-scalar "$OutputFile" \
                 -metric HIPPOCAMPUS_LEFT "$LeftHipp" \
                 -metric HIPPOCAMPUS_RIGHT "$RightHipp" \
@@ -90,11 +96,5 @@ for Mesh in ${Meshes}; do
 
         rm -f "$LeftHipp" "$RightHipp" "$LeftDentate" "$RightDentate"
         log_Msg "Generated CIFTI file: ${OutputFile}"
-    done
-
-    for Hemisphere in L R; do
-        for Structure in hipp dentate; do
-            rm -f "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
-        done
     done
 done

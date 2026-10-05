@@ -40,7 +40,6 @@ fi
 # ------------------------------------------------------------------------------
 
 log_Check_Env_Var HCPPIPEDIR
-log_Check_Env_Var CARET7DIR
 
 # ------------------------------------------------------------------------------
 #  Start work
@@ -66,9 +65,13 @@ for Mesh in ${Meshes}; do
             else
                 MeshFolder="${Mesh}"
             fi
-            wb_command -metric-smoothing "${HippUnfoldFolder}/${MeshFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii" "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma}" "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii" -roi "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii"
+            if [[ "${SmoothingFWHM}" == "0" ]] ; then
+                cp "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii"
+            else
+                wb_command -metric-smoothing ${HippUnfoldFolder}/${MeshFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma} ${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii -roi ${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii
+            fi
         done
     done
 done
 
-log_Msg "END"
+log_Msg "HippocampalSmoothing complete"

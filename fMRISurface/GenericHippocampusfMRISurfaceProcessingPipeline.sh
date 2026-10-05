@@ -45,8 +45,6 @@
     fi
 
     source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"          # Debugging functions; also sources log.shlib
-    source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"          # Debugging functions; also sources log.shlib
-
     source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
     source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib" # Check processing mode requirements
 
