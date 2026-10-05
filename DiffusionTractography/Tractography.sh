@@ -27,8 +27,8 @@ opts_AddOptional '--matrix4' 'Matrix4' 'YES or NO' 'If we are running matrix 4, 
 opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'Matrix3'
 opts_AddOptional '--nsamples' 'nsamples' 'integer' 'number of samples we run per seed, has linear effect on runtime, default 100' '100'
 opts_AddOptional '--nsteps' 'nsteps' 'integer' 'number of steps we take per streamline, default 2000' '2000'
-opts_AddOptional '--whim' 'Whim' 'full path to whim folder' ""
-opts_AddOptional '--mask' 'Mask' 'full path to Whim group mask' ""
+opts_AddOptional '--whim' 'Whim' 'path' "full path to whim folder"
+opts_AddOptional '--mask' 'Mask' 'file' "full path to Whim group mask"
 opts_ParseArguments "$@"
 
 opts_ShowValues
