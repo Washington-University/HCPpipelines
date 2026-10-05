@@ -1,7 +1,5 @@
 #!/bin/bash
 set -e
-echo -e "\n START: MakeWorkbenchUODFs"
-
 
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
@@ -41,8 +39,9 @@ NativeFolder="${StudyFolder}/${Subject}/T1w/Native"
 BedpostXFolders=`defaultopt $BedpostXFolders Diffusion.bedpostX`
 BedpostXFolders=`echo ${BedpostXFolders} | sed 's/@/ /g'`
 
-##We might want to resample tbe psi_zero and small_values.
 log_Check_Env_Var HCPPIPEDIR
+echo -e "\n START: MakeWorkbenchUODFs"
+
 
 for BedpostXFolderName in ${BedpostXFolders} ; do
   if [[ -n "$WhimMask" ]]; then
