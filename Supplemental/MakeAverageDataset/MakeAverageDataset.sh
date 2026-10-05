@@ -233,8 +233,9 @@ log_Msg "Scalar Volumes"
 for Volume in ${T1wName} ${T2wName} ; do
 	for CommonAtlasFolder in ${CommonAtlasFolders} ; do
 		MergeVolumeSTRING=""
+		foldername="${CommonAtlasFolder##*/}"
 		for Subject in ${Subjlist} ; do
-		MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
+			MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "`
 		done
 		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
 		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
@@ -274,8 +275,9 @@ for Volume in ${wmparc} ${ribbon} ; do
 	for CommonAtlasFolder in ${CommonAtlasFolders} ; do
 		if ((LabelVols)); then
 			MergeVolumeSTRING=""
+			foldername="${CommonAtlasFolder##*/}"
 			for Subject in ${Subjlist} ; do
-				MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
+				MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "`
 			done
 			allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
 			avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
@@ -366,13 +368,13 @@ for CommonAtlasFolder in ${CommonAtlasFolders} ; do
 			surf_file=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
 
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
-
+			foldername="${CommonAtlasFolder##*/}"
 			for Surface in white midthickness pial ; do
 				log_Msg "Surface: ${Surface}; Mesh: ${Mesh}"
 				SurfaceSTRING=""
 				for Subject in $Subjlist ; do
 					#log_Msg "Subject: ${Subject}"
-					AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
+					AtlasFolder="${StudyFolder}/${Subject}/${foldername}"
 					if [ $Mesh = ${HighResMesh} ] ; then
 						Folder=${AtlasFolder}
 					else
@@ -383,7 +385,7 @@ for CommonAtlasFolder in ${CommonAtlasFolders} ; do
 							fi
 							i=$(($i+1))
 						done
-						DownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/${DownSampleFolderName}"
+						DownSampleFolder="${StudyFolder}/${Subject}/${foldername}/${DownSampleFolderName}"
 						Folder=${DownSampleFolder}
 					fi
 					SurfaceSTRING=`echo "${SurfaceSTRING} -surf ${Folder}/${Subject}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii "`
