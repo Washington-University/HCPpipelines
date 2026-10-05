@@ -24,11 +24,14 @@ opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh num
 opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX Folder or whim folder'
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'NONE for MSMSulc, else RegName such as MSMAll'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
-opts_AddMandatory '--group' 'whim' 'true or false' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
+opts_AddMandatory '--group' 'whim' 'bool' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
 opts_AddOptional '--cleanup' 'cleanup' 'bool' "indicate if you want to cleanup the intermediate files. Default is false" "false"
 
 
 opts_ParseArguments "$@"
+
+whim=$(opts_StringToBool "$whim") 
+cleanup=$(opts_StringToBool "$cleanup")
 
 if ((pipedirguessed))
 then
@@ -71,13 +74,13 @@ elif [ ${Matrix} -eq 3 ] ; then
 else
   log_Err_Abort "Matrix Type Not Supported"
 fi
-if [ "${whim}" == "true" ]; then
+if ((whim)); then
   ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPath}/${BedpostXFolder}_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
 else
   ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPathT1w}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
 fi
 
-if [ "${cleanup}" == "true" ]; then
+if ((cleanup)); then
   rm -f ${TractographyResultsFolder}/fdt_matrix4_1.mtx
   rm -f ${TractographyResultsFolder}/fdt_matrix4_2.mtx
   rm -f ${TractographyResultsFolder}/fdt_matrix4_3.mtx
