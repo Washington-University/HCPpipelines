@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -64,7 +64,7 @@ echo "$@"
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE="dyn.q"
+QUEUE=""
 #QUEUE="hcp_priority.q"
 
 ########################################## INPUTS ########################################## 
@@ -102,18 +102,8 @@ for Subject in $Subjlist ; do
         FinalfMRIResolution="2" #Needs to match what is in fMRIVolume, i.e. 2mm for 3T HCP data and 1.6mm for 7T HCP data
         SmoothingFWHM="2" #Recommended to be roughly the grayordinates spacing, i.e 2mm on HCP data 
         GrayordinatesResolution="2" #Needs to match what is in PostFreeSurfer. 2mm gives the HCP standard grayordinates space with 91282 grayordinates.  Can be different from the FinalfMRIResolution (e.g. in the case of HCP 7T data at 1.6mm)
-        RegName="MSMAll" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
+        RegName="MSMSulc" #MSMSulc is recommended, if binary is not available use FS (FreeSurfer)
 
-        ProcString="_hp0_clean_rclean_tclean" #Processing suffix identifying previously executed MRI preprocessing stages
-        HippSmoothingFWHM="0" #Hippocampal surface smoothing FWHM in mm; 0 means no smoothing
-        doGoodVoxels="YES" #Exclude noisy voxels during hippocampal volume-to-surface mapping; YES or NO
-        factor="1.5" #Good-voxel upper threshold is MEAN + factor * STD of the normalized, locally adjusted coefficient of variation; larger values exclude fewer voxels
-        MeshString="2k" #Resampled HippUnfold mesh: 512, 2k, 8k, or 18k; native mesh is also processed by the pipeline
-        if [[ "${fMRIName}" == rfMRI_* ]] ; then
-            ProcString="_hp2000_clean_rclean_tclean"
-        else
-            ProcString="_hp0_clean_rclean_tclean"
-        fi
         if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
             echo "About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
             queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
@@ -121,7 +111,7 @@ for Subject in $Subjlist ; do
             echo "About to use fsl_sub to queue ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
             queuing_command=("$FSLDIR/bin/fsl_sub" -q "$QUEUE")
         fi
-        echo 'GenericfMRISurfaceProcessingPipeline'
+
         "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
             --path="$StudyFolder" \
             --subject="$Subject" \
@@ -142,27 +132,6 @@ for Subject in $Subjlist ; do
             --smoothingFWHM=$SmoothingFWHM \
             --grayordinatesres=$GrayordinatesResolution \
             --regname=$RegName"
-
-        echo 'GenericHippocampusfMRISurfaceProcessingPipeline'
-        # Hippocampal surface/CIFTI processing
-        "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericHippocampusfMRISurfaceProcessingPipeline.sh \
-            --studyfolder="$StudyFolder" \
-            --subject="$Subject" \
-            --fmriname="$fMRIName" \
-            --procstring="$ProcString" \
-            --smoothingFWHM="$HippSmoothingFWHM" \
-            --goodvoxel="$doGoodVoxels" \
-            --factor="$factor" \
-            --resample_mesh="$MeshString"
-
-        echo "set -- --studyfolder=$StudyFolder \
-            --subject=$Subject \
-            --fmriname=$fMRIName \
-            --procstring=$ProcString \
-            --smoothingFWHM=$HippSmoothingFWHM \
-            --goodvoxel=$doGoodVoxels \
-            --factor=$factor \
-            --resample_mesh=$MeshString"
 
         echo ". ${EnvironmentScript}"
 
