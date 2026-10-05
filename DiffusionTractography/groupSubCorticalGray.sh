@@ -16,24 +16,14 @@ source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  # Command line option 
 
 opts_SetScriptDescription "Generate group Subcortical Gray from group Wmparc"
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
-opts_AddMandatory '--results-folder' 'Folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
+opts_AddMandatory '--results-folder' 'Folder' 'Name' 'The specific folder in which the seed of tractography is located. This should follow HCP standards'
+opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
 opts_AddOptional '--groupname' 'GroupName' 'Group Folder_Name' ""
 opts_ParseArguments "$@"
 
 T1wFolder=${StudyFolder}/${GroupName}/${Folder}
 wmparc=${GroupName}_Averagewmparc
-for dir in "$StudyFolder"/*; do
-    Subject=$(basename "$dir")
 
-    [[ -d "$dir" ]] || continue
-    [[ "$Subject" =~ ^[0-9]+$ ]] || continue
-
-    echo "$Subject"
-    break
-done
-
-T1wDiffusionFolder="${StudyFolder}/${Subject}/T1w/Diffusion"
-DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
 DiffusionResolution=`printf "%0.2f" ${DiffusionResolution}`
 mkdir -p ${T1wFolder}/temp
 ROIsFolder=${T1wFolder}
