@@ -68,8 +68,7 @@ for Hemisphere in L R ; do
   fi
 done
 
-#TODO: Currently unique per individual
-##Need group name here
+
 if [[ -n "$WhimMask" ]]; then
   fslmaths ${StudyFolder}/${GroupName}/${Folder}/Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz -bin ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz
   echo "OTHER" > ${ROIsTrajectorySpaceFolder}/tmp.txt
@@ -83,7 +82,6 @@ else
 fi
 rm ${ROIsTrajectorySpaceFolder}/tmp.txt
 
-###Add conditional to detect whether to change this to individual vs group.
 if [[ -n "$WhimMask" ]]; then
   ${CARET7DIR}/wb_command -cifti-create-dense-scalar ${FolderMeshFolder}/Grey.dscalar.nii -left-metric ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.L.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -roi-left ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.L.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -right-metric ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.R.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -roi-right ${AtlasFolder}/fsaverage_LR${DiffResMesh}k/${Subject}.R.atlasroi.${DiffResMesh}k_fs_LR.shape.gii -volume ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz ${ROIsTrajectorySpaceFolder}/Atlas_Whole_Brain_SubCortical_GreyMatter_${DiffusionResolution}.nii.gz
 else
