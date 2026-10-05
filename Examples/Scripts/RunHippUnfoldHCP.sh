@@ -4,9 +4,6 @@ get_batch_options() {
     command_line_specified_study_folder=""
     command_line_specified_subject=""
     command_line_specified_run_local=""
-    command_line_specified_queue=""
-    command_line_specified_log_folder=""
-    command_line_specified_environment_script=""
 
     local index=0
     local numArgs=${#arguments[@]}
@@ -28,18 +25,6 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
             ;;
-            --QUEUE=*)
-                command_line_specified_queue=${argument#*=}
-                index=$((index + 1))
-            ;;
-            --LogFolder=*)
-                command_line_specified_log_folder=${argument#*=}
-                index=$((index + 1))
-            ;;     
-            --EnvironmentScript=*)
-                command_line_specified_environment_script=${argument#*=}
-                index=$((index + 1))
-            ;;
             *)
                 echo ""
                 echo "ERROR: Unrecognized Option: ${argument}"
@@ -52,8 +37,6 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-###################################### DEFAULT PARAMETERS ######################################
-# Edit these values as needed. Command-line options override the corresponding defaults.
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by SubjectID) 
 Subjlist="100307 100610" #Space delimited list of subject IDs 
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
@@ -62,11 +45,6 @@ EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.
 # DO NOT include "-q " at the beginning
 QUEUE=""
 #QUEUE="hcp_priority.q"
-################################################################################################
-
-if [[ -n "$command_line_specified_environment_script" ]] ; then
-    EnvironmentScript="$command_line_specified_environment_script"
-fi
 
 if [[ ! -f "$EnvironmentScript" ]] ; then
     echo "ERROR: Environment script does not exist: $EnvironmentScript" >&2
@@ -99,10 +77,6 @@ if [[ -n "$command_line_specified_log_folder" ]] ; then
 fi
 mkdir -p "$LogFolder"
 cd "$LogFolder"
-
-if [[ -n "$command_line_specified_queue" ]] ; then
-    QUEUE="$command_line_specified_queue"
-fi
 
 ######################################### DO WORK ##########################################
 
