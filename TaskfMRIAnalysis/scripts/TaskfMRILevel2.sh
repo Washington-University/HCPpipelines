@@ -29,7 +29,7 @@ if [ -z "${HCPPIPEDIR-}" ]; then
   exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
 

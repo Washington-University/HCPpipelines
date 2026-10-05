@@ -272,7 +272,7 @@ fi
 
 if $runHippocampus
 then
-    Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.${HippMesh}.dtseries.nii"
+    Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.L.hipp_midthickness.${HippMesh}.surf.gii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.R.hipp_midthickness.${HippMesh}.surf.gii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.L.dentate_midthickness.${HippMesh}.surf.gii"
@@ -476,8 +476,8 @@ then
         log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: AdditionalSigma: ${AdditionalSigma}"
         log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: Applying additional surface smoothing to hippocampal CIFTI dense data"
 
-        wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.${HippMesh}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
-            "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}.dtseries.nii" \
+        wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
+            "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii" \
             -surface HIPPOCAMPUS_LEFT "${HippDownSampleFolder}/${Subject}.L.hipp_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_RIGHT "${HippDownSampleFolder}/${Subject}.R.hipp_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_DENTATE_LEFT "${HippDownSampleFolder}/${Subject}.L.dentate_midthickness.${HippMesh}.surf.gii" \
@@ -490,7 +490,7 @@ then
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: WARNING: Requested smoothing (${FinalSmoothingFWHM}) is less than smoothing already applied (${OriginalSmoothingFWHM})"
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: Continuing with ${OriginalSmoothingFWHM} mm of total surface smoothing"
         fi
-        cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.${HippMesh}.dtseries.nii" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}.dtseries.nii"
+        cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii"
     fi
 fi
 
@@ -580,7 +580,7 @@ if [[ "${TemporalFilter}" == "-1" && "${LowPassFilter}" == "-1" ]]; then
 	fi
 
 	if $runHippocampus; then
-		cp ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}.dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${TemporalFilterString}${SmoothingString}${ProcSTRING}.${HippMesh}.dtseries.nii
+		cp ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${TemporalFilterString}${SmoothingString}${ProcSTRING}.dtseries.nii
 	fi
 else
 	# Compute smoothing kernel sigma: By default, feat_model divides by 2 as an approximation
@@ -620,7 +620,7 @@ else
 		log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to hippocampal CIFTI file"
 
 		# Convert hippocampal CIFTI to "fake" NIFTI
-		wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}.dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI.nii.gz
+		wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI.nii.gz
 
 		# Save mean image
 		fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI.nii.gz -Tmean ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI_mean.nii.gz
@@ -629,7 +629,7 @@ else
  		fslmaths ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI.nii.gz -bptf ${hp_sigma} ${lp_sigma} -add ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI_mean.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${TemporalFilterString}${ProcSTRING}${LowPassSTRING}.${HippMesh}_FAKENIFTI.nii.gz
 
 		# Convert "fake" NIFTI back to hippocampal CIFTI
-		wb_command -cifti-convert -from-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${TemporalFilterString}${ProcSTRING}${LowPassSTRING}.${HippMesh}_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}.dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.${HippMesh}.dtseries.nii
+		wb_command -cifti-convert -from-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${TemporalFilterString}${ProcSTRING}${LowPassSTRING}.${HippMesh}_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.dtseries.nii
 
 		# Cleanup the hippocampal "fake" NIFTI files
 		rm ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.${HippMesh}_FAKENIFTI_mean.nii.gz ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${TemporalFilterString}${ProcSTRING}${LowPassSTRING}.${HippMesh}_FAKENIFTI.nii.gz	
@@ -759,7 +759,7 @@ if $runHippocampus; then
 	log_Msg "MAIN: RUN_GLM: Separate hippocampal CIFTI into four surface structures"
 
 	# Separate hippocampal CIFTI into four surface structures
-	wb_command -cifti-separate ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.${HippMesh}.dtseries.nii COLUMN -metric HIPPOCAMPUS_LEFT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.hipp.${HippMesh}.func.gii -metric HIPPOCAMPUS_RIGHT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.hipp.${HippMesh}.func.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.dentate.${HippMesh}.func.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.dentate.${HippMesh}.func.gii
+	wb_command -cifti-separate ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.dtseries.nii COLUMN -metric HIPPOCAMPUS_LEFT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.hipp.func.gii -metric HIPPOCAMPUS_RIGHT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.hipp.func.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.dentate.func.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.dentate.func.gii
 
 	# Run film_gls separately on each hippocampal structure
 	log_Msg "MAIN: RUN_GLM: Run film_gls on hippocampal surface data"
@@ -769,7 +769,7 @@ if $runHippocampus; then
 			log_Msg "MAIN: RUN_GLM: Run film_gls on ${Hemisphere}.${HippStructure}"
 
 			# Metric dilation is not used for hippocampal data
-			film_gls --rn=${FEATDir}/${Hemisphere}_${HippStructure}_SurfaceStats --sa --ms=15 --epith=5 --in2=${HippDownSampleFolder}/${Subject}.${Hemisphere}.${HippStructure}_midthickness.${HippMesh}.surf.gii --in=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.${Hemisphere}.${HippStructure}.${HippMesh}.func.gii --pd=${DesignMatrix} --con=${DesignContrasts} ${ExtraArgs} --mode=surface
+			film_gls --rn=${FEATDir}/${Hemisphere}_${HippStructure}_SurfaceStats --sa --ms=15 --epith=5 --in2=${HippDownSampleFolder}/${Subject}.${Hemisphere}.${HippStructure}_midthickness.${HippMesh}.surf.gii --in=${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.${Hemisphere}.${HippStructure}.func.gii --pd=${DesignMatrix} --con=${DesignContrasts} ${ExtraArgs} --mode=surface
 		done
 	done
 
@@ -792,7 +792,7 @@ if $runHippocampus; then
 		wb_command -cifti-create-dense-timeseries ${FEATDir}/HippocampusStats/${File}.dtseries.nii -metric HIPPOCAMPUS_LEFT ${FEATDir}/L_hipp_SurfaceStats/${File}.func.gii -metric HIPPOCAMPUS_RIGHT ${FEATDir}/R_hipp_SurfaceStats/${File}.func.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${FEATDir}/L_dentate_SurfaceStats/${File}.func.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${FEATDir}/R_dentate_SurfaceStats/${File}.func.gii
 	done
 
-	rm ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.hipp.${HippMesh}.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.hipp.${HippMesh}.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.dentate.${HippMesh}.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.dentate.${HippMesh}.func.gii
+	rm ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.hipp.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.hipp.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.L.dentate.func.gii ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}${ProcSTRING}${LowPassSTRING}.R.dentate.func.gii
 	rm -r ${FEATDir}/L_hipp_SurfaceStats ${FEATDir}/R_hipp_SurfaceStats ${FEATDir}/L_dentate_SurfaceStats ${FEATDir}/R_dentate_SurfaceStats
 fi
 
