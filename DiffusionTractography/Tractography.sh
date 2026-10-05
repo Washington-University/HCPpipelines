@@ -41,6 +41,11 @@ STEPLENGTH=$(echo "$DiffusionResolution / 4" | bc -l)
 STEPLENGTH=$(printf "%g" "$STEPLENGTH")   # removes trailing zeros
 PipelineScripts=${HCPPIPEDIR}/DiffusionTractography/scripts #TODO: Delete when commited and in setup script
 
+RegString="" 
+ if [[ "$RegName" != "" ]] 
+ then 
+     RegString="_$RegName" 
+ fi 
 
 case "$SeedingStrategy" in
     Matrix3)
@@ -50,7 +55,7 @@ case "$SeedingStrategy" in
         ;;
     Matrix1)
         OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix1WholeBrainTractography"
-        SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         mkdir -p "$OUTDIR"
         ;;
     *)
@@ -64,8 +69,8 @@ COMMON_ARGS=(
     --mask="${StudyFolder}/${Subject}/T1w/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
     --seed="${SEED}"
     --waypoints="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
-    --stop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.StopROI_${RegName}.${DiffResMesh}k_fs_LR.txt"
-    --wtstop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+    --stop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.StopROI${RegString}.${DiffResMesh}k_fs_LR.txt"
+    --wtstop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
     --seedref="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
     --dir="${OUTDIR}"
     --nsamples="${nsamples}"
@@ -89,7 +94,7 @@ EXTRA_ARGS=()
 
 if [[ "$SeedingStrategy" == "Matrix3" ]]; then
     EXTRA_ARGS+=(
-        --target3="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        --target3="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         --distthresh3=0
         --omatrix3
     )
@@ -108,7 +113,7 @@ if [[ "$Matrix4" == "true" ]]; then
 
     if [[ "$SeedingStrategy" == "Matrix3" ]]; then
         EXTRA_ARGS+=(
-            --colmask4="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI_${RegName}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+            --colmask4="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         )
     fi
 fi
