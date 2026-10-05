@@ -13,6 +13,7 @@ fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"    # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  
+source "${HCPPIPEDIR}/global/scripts/tempfiles.shlib" "$@"  
 
 opts_SetScriptDescription "Make workbench UODFs for Tractography"
 opts_AddMandatory '--path' 'StudyFolder' 'folder' 'path to Generic Study folder'
