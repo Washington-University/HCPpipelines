@@ -101,7 +101,6 @@ LeftGreyRibbonValue="3"
 LeftWhiteMaskValue="2"
 RightGreyRibbonValue="42"
 RightWhiteMaskValue="41"
-###OK in theory we don't need this either if we have whim. But it is also good to have??
 for Hemisphere in L R ; do
   if [ $Hemisphere = "L" ] ; then
     GreyRibbonValue="$LeftGreyRibbonValue"
