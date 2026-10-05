@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-echo -e "\n START: MakeTrajectorySpace"
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
@@ -36,10 +35,12 @@ opts_AddOptional '--whimmask' 'WhimMask' 'file' 'path to WHIM mask'
 opts_ParseArguments "$@"
 
 opts_ShowValues
+echo -e "\n START: MakeTrajectorySpace"
+
 
 Caret7_Command=${CARET7DIR}/wb_command
 
-TrajectorySpaceFolderCopy=$TrajectorySpaceFolder
+TrajectorySpaceFolderName=$TrajectorySpaceFolder
 #NamingConventions
 NativeFolder="Native"
 #If not T1w, adjust to T1w
@@ -76,21 +77,19 @@ if [ -e "$ROIsFolder"/temp ] ; then
 else
   mkdir "$ROIsFolder"/temp
 fi
-####Note not all inputs have 1.25. We need to make that then.
-#Inputs: wmparc at DiffusionResolution
-#Inputs: Ribbon Volume at DiffusionResolution
-##Again if not T1w, do apply warp only with xfms
+
+
 ###We are creating the diffusion resolution reference
 if [ ! -e "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" ] ; then
   ${FSLDIR}/bin/flirt -interp spline -in "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -ref "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -applyisoxfm "$DiffusionResolution" -out "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution"
 fi
 if [[ -n "$WhimMask" ]]; then
   if [ ! -e "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz ] ; then
-    FreeSurferFolder="$TrajectorySpaceFolder"/"$Subject"
-    mri_convert -rt nearest -rl "$TrajectorySpaceFolder"/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "$TrajectorySpaceFolder"/wmparc_1mm.nii.gz
+    FreeSurferFolder="${StudyFolder}"/"${Subject}"/T1w/"$Subject"
+    mri_convert -rt nearest -rl "${StudyFolder}"/"${Subject}"/T1w/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz
   fi
 
-  if [ "$TrajectorySpaceFolderCopy" = "T1w" ]; then
+  if [ "$TrajectorySpaceFolderName" = "T1w" ]; then
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i "$TrajectorySpaceFolder"/wmparc_1mm.nii.gz -r "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution"
   else
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${StudyFolder}/${Subject}/T1w/wmparc_1mm.nii.gz -r "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" --warp="$Warp" -o "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution"
