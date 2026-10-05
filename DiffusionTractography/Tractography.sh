@@ -21,12 +21,12 @@ opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject"
 opts_AddMandatory '--results-folder' 'Folder' 'folder' "folder"
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
-opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'Full path to bedpostx folders' 'BEDPOSTX Folders delimited by @'
-opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'NONE for MSMSulc, else RegName such as MSMAll'
-opts_AddMandatory '--matrix4' 'Matrix4' 'If we are running matrix 4' 'true'
-opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'true'
-opts_AddMandatory '--nsamples' 'nsamples' 'number of samples we run per voxel for speed.' '100'
-opts_AddMandatory '--nsteps' 'nsteps' 'number of steps we take per streamline.' '2000'
+opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'path@path' 'BEDPOSTX Folders delimited by @'
+opts_AddMandatory '--regname' 'RegName' 'MSMAll' 'RegName such as MSMAll or MSMSulc'
+opts_AddOptional '--matrix4' 'Matrix4' 'YES or NO' 'If we are running matrix 4, default YES' 'YES'
+opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'what seeding strategy to use' #FIXME: tried to have a default of "true"?!?
+opts_AddOptional '--nsamples' 'nsamples' 'integer' 'number of samples we run per seed, has linear effect on runtime, default 100' '100'
+opts_AddOptional '--nsteps' 'nsteps' 'integer' 'number of steps we take per streamline, default 2000' '2000'
 opts_AddOptional '--whim' 'Whim' 'full path to whim folder' ""
 opts_AddOptional '--mask' 'Mask' 'full path to Whim group mask' ""
 opts_ParseArguments "$@"
