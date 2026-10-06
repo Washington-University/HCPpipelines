@@ -22,7 +22,7 @@ opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddOptional '--bpxdirs' 'BedpostXFolders' 'folder@folder' "names of folders containing fiber estimations, default Diffusion.bedpostX" "Diffusion.bedpostX"
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
-opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
 opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for group volume labeled whim mask"
 opts_AddOptional '--groupname' 'GroupName' 'string' "Average Group Name"
 
