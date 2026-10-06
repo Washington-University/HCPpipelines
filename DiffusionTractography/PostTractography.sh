@@ -22,7 +22,6 @@ opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX Folder or whim folder'
-opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'NONE for MSMSulc, else RegName such as MSMAll'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
 opts_AddMandatory '--group' 'whim' 'bool' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
 opts_AddOptional '--cleanup' 'cleanup' 'bool' "indicate if you want to cleanup the intermediate files. Default is false" "false"
