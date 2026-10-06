@@ -20,7 +20,7 @@ fi
 
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
+source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 
 opts_SetScriptDescription "Tool for non-linearly registering T1w and T2w to MNI space (T1w and T2w must already be registered together)"
 

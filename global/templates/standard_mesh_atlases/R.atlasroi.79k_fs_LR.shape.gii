@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexRight]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[/media/myelin/alexz/HCPpipelines/global/templates/standard_mesh_atlases/R.atlasroi.80k_fs_LR.shape.gii:
+/home/brainmappers/workbench/fetchdir/wb_command.3113214 -metric-resample /media/myelin/alexz/HCPpipelines/global/templates/standard_mesh_atlases/R.atlasroi.164k_fs_LR.shape.gii /media/myelin/alexz/HCPpipelines/global/templates/standard_mesh_atlases/R.sphere.164k_fs_LR.surf.gii /media/myelin/alexz/HCPpipelines/global/templates/standard_mesh_atlases/R.sphere.80k_fs_LR.surf.gii BARYCENTRIC /media/myelin/alexz/HCPpipelines/global/templates/standard_mesh_atlases/R.atlasroi.80k_fs_LR.shape.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.1.7
+Qt Compiled Version: 6.9.1
+Qt Runtime Version: 6.9.1
+Commit: 40e1dfd4b6ea47f8547239018d8910b248b183b4
+Commit Date: 2026-03-02 22:18:17 -0600
+Compiler: g++ (/usr/bin)
+Compiler Version: 9.4.0
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/home/brainmappers/workbench/fetchdir/wb_command.3121976 -metric-math 'x > 0.5' /tmp/R.atlasroi.80k_fs_LR_thr.shape.gii -var x /media/myelin/alexz/HCPpipelines/global/templates/standard_mesh_atlases/R.atlasroi.80k_fs_LR.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/home/brainmappers]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="79212"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[Atlas_Cortex_ROI]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt2QFuGzcQBVDdLFfL0QMjELyxIomrJTkz5PvAQ4sk8M7/qxa1e7v9/nV76iuvfv8seZ+ee7P3ZzB6a++lb2w7JvbsH5v2jS37xY59Ysfrsd+12O/z2O6z2Ox8bHYu9mqPrdpio/ex0evY5nl8dv4fuzzGJv/GHt+xw9/47zob7Nx/15/P6Lx+9536tnat3vdsz4p9z3Ss+E5X7rdqt096Ze/2aaesva70ydZJj+jLv3P1cxXdpfL9PW6PuL/i3b1unnV3z3tH313l1gp3jrix562Z78t628i7Pr0t202Z7hl9S+s9M+54d8usG57dEfn8mc8+Pn/2cwEAKpiV6J4AAAAA8IqfZbXvY6f329jHLmc22XWb1tz/bPS9GbZY/XNzdYcV9uiR6A76x3WvuEHvRPfRee++oxLda1bPTF1X77hyv9FZtVdEt9U6rdRnlS6zosOa91e9fWZ2vbnSvVVurXDn7Kx0X9bbMt6V7Sa35HxHOz8/6tkrP/P+XBERWTtXvl8DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB6NSPX7eyX63QIAAIzkeyCbzdzKXrayk42i2efcPtH3ZOAzYxN72KLHFtH32ED/yP7Rt3jn3rV37N22do2+w7v0Dnd6dyv2Wq3Tin2ib9Cjfofq/1xUvb3i3dVurnYvAADArlq+f2v9ufK7P/czz349KtHvAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeHTP/e+j78nouM+ZRN8dtVXPRPexXX6jE92v4mar7WYvW9lpvY2i+2XeJ7qbbertUnWbGYnumG2PKrvMTnTfLDtk3CIy9+cf/7pT/9bs3P1ndu19zI6dj9mt71eOvVbvKiIiIiIiIvmT+fvRrLdlvCvbTZl+1uGOPDdEfi52eu7sZ858r7OeNeM5o58x8utX+rq9v2bPrxf972SR1kT8P39o4bMbs230bVXZ1J5Z2dKOWdhwzHb2s53d8rCZvSL2ir4rGzvZaNRG0TdlYRu7XNkl+p4M7GGLV1tE32ED/SP7R9+gNwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABDnD7BIGvw=</Data>
+</DataArray>
+</GIFTI>
