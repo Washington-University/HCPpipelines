@@ -13,7 +13,7 @@ EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeli
 
 source "${EnvironmentScript}"
 
-T1wTemplateBrain="${TemplateDir}/MMORF_T1_0.7mm_Brain.nii.gz"
+T1wTemplateBrain="${TemplateDir}/MMORF_T1_0.7mm_brain.nii.gz"
 
 QUEUE=""
 
