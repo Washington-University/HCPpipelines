@@ -20,6 +20,13 @@ opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolu
 opts_AddOptional '--groupname' 'GroupName' 'Group Folder_Name' ""
 opts_ParseArguments "$@"
 
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+opts_ShowValues
+
 T1wFolder=${StudyFolder}/${GroupName}/${Folder}
 wmparc=${GroupName}_Averagewmparc
 
