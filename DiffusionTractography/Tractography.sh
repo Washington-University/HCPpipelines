@@ -42,7 +42,7 @@ STEPLENGTH=$(printf "%g" "$STEPLENGTH")   # removes trailing zeros
 PipelineScripts=${HCPPIPEDIR}/DiffusionTractography/scripts #TODO: Delete when commited and in setup script
 
 RegString="" 
- if [[ "$RegName" != "NONE" ]] 
+ if [[ "$RegName" != "NONE" && "$RegName" != "MSMSulc" ]] 
  then 
      RegString="_$RegName" 
  fi 
