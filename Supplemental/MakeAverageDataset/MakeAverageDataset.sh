@@ -206,7 +206,7 @@ CommonAtlasFolders=("${CommonFolder}/MNINonLinear", "${CommonFolder}/MMORFNonLin
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
 	for CommonAtlasFolder in ${CommonAtlasFolders} ; do
-		CommonDownSampleFolders=`echo "${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "`
+		CommonDownSampleFolders="${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "
 	done
 done
 
