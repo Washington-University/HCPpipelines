@@ -47,7 +47,7 @@ def voxel_array_from_sorted_dicoms(dicomsSorted):
     if len(dicomsSorted) < 1: return None
     ds0=dicomsSorted[0]['dataset']
     
-    imwidth,imheight,imdepth=ds0.Rows,ds0.Columns,len(dicomsSorted)
+    imwidth,imheight,imdepth=ds0.Columns,ds0.Rows,len(dicomsSorted)
     pixeldata_type=ds0.pixel_array.dtype
     voxels=np.zeros([imwidth,imheight,imdepth],dtype=pixeldata_type)
     
