@@ -16,7 +16,7 @@ source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"  # Command line option 
 opts_SetScriptDescription "Generate group Subcortical Gray from group Wmparc"
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--results-folder' 'Folder' 'Name' 'The specific folder in which the seed of tractography is located. This should follow HCP standards'
-opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
+opts_AddMandatory '--diff-res' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
 opts_AddOptional '--groupname' 'GroupName' 'Group Folder_Name' ""
 opts_ParseArguments "$@"
 
