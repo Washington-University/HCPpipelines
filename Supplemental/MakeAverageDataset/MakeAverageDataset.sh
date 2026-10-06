@@ -466,6 +466,7 @@ for CommonAtlasFolder in ${CommonAtlasFolders} ; do
 	done
 done
 
+#Since CIFTIs are stored in MNI space, we can just use the MNINonLinear folder. Currently no plans to support VA in MMORF space. 
 CommonAtlasFolder="${CommonFolder}/MNINonLinear"
 
 log_Msg "Completed generation of average surfaces"
