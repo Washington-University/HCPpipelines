@@ -277,7 +277,7 @@ for Volume in ${wmparc} ${ribbon} ; do
 			MergeVolumeSTRING=""
 			foldername="${CommonAtlasFolder##*/}"
 			for Subject in ${Subjlist} ; do
-				MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "`
+				MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "
 			done
 			allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
 			avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
