@@ -64,20 +64,25 @@ BedpostXFolderPath="${TrajectorySpaceFolder}/${BedpostXFolder}"
 BedpostXFolderPathT1w="${StudyFolder}/${Subject}/T1w/${BedpostXFolder}" 
 
 log_Msg "Converting Probtrackx Matrices"
+if ((whim)); then
+  GreyDScalar="${DiffMeshFolder}/Grey_whim.dscalar.nii"
+else
+  GreyDScalar="${DiffMeshFolder}/Grey.dscalar.nii"
+fi
 
 if [ ${Matrix} -eq 1 ] ; then
-  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix1.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix1.dconn.wbsparse -row-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -col-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -transpose
-  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix1_lengths.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix1_lengths.dconn.wbsparse -row-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -col-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -transpose
+  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix1.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix1.dconn.wbsparse -row-cifti ${GreyDScalar} -col-cifti ${GreyDScalar} COLUMN -transpose
+  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix1_lengths.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix1_lengths.dconn.wbsparse -row-cifti ${GreyDScalar} COLUMN -col-cifti ${GreyDScalar} COLUMN -transpose
 elif [ ${Matrix} -eq 3 ] ; then
-  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix3.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix3.dconn.wbsparse -row-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -col-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -transpose -make-symmetric
-  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix3_lengths.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix3_lengths.dconn.wbsparse -row-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -col-cifti ${DiffMeshFolder}/Grey.dscalar.nii COLUMN -transpose -make-symmetric
+  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix3.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix3.dconn.wbsparse -row-cifti ${GreyDScalar} -col-cifti ${GreyDScalar} COLUMN -transpose -make-symmetric
+  ${CARET7DIR}/wb_command -probtrackx-dot-convert ${TractographyResultsFolder}/fdt_matrix3_lengths.dot WBSPARSE ${TractographyResultsFolder}/fdt_matrix3_lengths.dconn.wbsparse -row-cifti ${GreyDScalar} COLUMN -col-cifti ${GreyDScalar} COLUMN -transpose -make-symmetric
 else
   log_Err_Abort "Matrix Type Not Supported"
 fi
 if ((whim)); then
-  ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPath}/${BedpostXFolder}_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
+  ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPath}/${BedpostXFolder}_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${GreyDScalar} COLUMN
 else
-  ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPathT1w}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${DiffMeshFolder}/Grey.dscalar.nii COLUMN
+  ${CARET7DIR}/wb_command -convert-matrix4-to-workbench-sparse ${TractographyResultsFolder}/fdt_matrix4_1.mtx ${TractographyResultsFolder}/fdt_matrix4_2.mtx ${TractographyResultsFolder}/fdt_matrix4_3.mtx ${BedpostXFolderPathT1w}/Diffusion.bedpostX_Whole_Brain_Trajectory_1.25.fiberTEMP.nii ${TractographyResultsFolder}/tract_space_coords_for_fdt_matrix4 ${TractographyResultsFolder}/fdt_matrix4.trajTEMP.wbsparse -cifti-seeds ${GreyDScalar} COLUMN
 fi
 
 if ((cleanup)); then

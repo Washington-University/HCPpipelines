@@ -46,7 +46,10 @@ RegString=""
  then 
      RegString="_$RegName" 
  fi 
-
+Whim_Tagged_RegString="${RegString}"
+if [[ -n "${Whim:-}" ]]; then
+    Whim_Tagged_RegString="${Whim_Tagged_RegString}_whim"
+fi
 case "$SeedingStrategy" in
     Matrix3)
         OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix3WholeBrainTractography"
@@ -55,7 +58,7 @@ case "$SeedingStrategy" in
         ;;
     Matrix1)
         OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix1WholeBrainTractography"
-        SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         mkdir -p "$OUTDIR"
         ;;
     *)
@@ -69,8 +72,8 @@ COMMON_ARGS=(
     --mask="${StudyFolder}/${Subject}/T1w/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
     --seed="${SEED}"
     --waypoints="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
-    --stop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.StopROI${RegString}.${DiffResMesh}k_fs_LR.txt"
-    --wtstop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+    --stop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.StopROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR.txt"
+    --wtstop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
     --seedref="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
     --dir="${OUTDIR}"
     --nsamples="${nsamples}"
@@ -94,7 +97,7 @@ EXTRA_ARGS=()
 
 if [[ "$SeedingStrategy" == "Matrix3" ]]; then
     EXTRA_ARGS+=(
-        --target3="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        --target3="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         --distthresh3=0
         --omatrix3
     )
@@ -104,7 +107,7 @@ else
         --omatrix1
     )
 fi
-
+###Target4 is reserved for T1w, whim overwrites it so it is fine to keep both.
 if [[ "$Matrix4" == "true" ]]; then
     EXTRA_ARGS+=(
         --target4="${StudyFolder}/${Subject}/T1w/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
@@ -113,7 +116,7 @@ if [[ "$Matrix4" == "true" ]]; then
 
     if [[ "$SeedingStrategy" == "Matrix3" ]]; then
         EXTRA_ARGS+=(
-            --colmask4="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+            --colmask4="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         )
     fi
 fi
