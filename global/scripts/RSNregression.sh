@@ -7,7 +7,6 @@ then
     pipedirguessed=1
     export HCPPIPEDIR="$(dirname "$0")/../.."
 fi
-
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
@@ -45,6 +44,8 @@ opts_AddOptional '--tICA-mixing-matrix' 'tICAMM' 'filename' "path to a previousl
 
 #outputs
 opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like group_ICA_d127"
+opts_AddOptional '--hippocampal-output' 'HippocampalOutputString' 'YES or NO' "YES generates additional hippocampal RSN maps" 'NO'
+opts_AddOptional '--hippocampal-mesh' 'HippMesh' '512, 2k, 8k, or 18k' "hippocampal mesh density; allowed values: 512, 2k, 8k, or 18k" '2k'
 opts_AddOptional '--output-spectra' 'nTPsForSpectra' 'number' "number of samples to use when computing frequency spectrum" '0'
 opts_AddOptional '--volume-template-cifti' 'VolCiftiTemplate' 'file' "to generate voxel-based outputs, provide a cifti file setting the voxels to use"
 opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from the regression" 'NO'
@@ -53,10 +54,11 @@ opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from t
 opts_AddOptional '--fix-legacy-bias' 'DoFixBiasString' 'YES or NO' "use YES if you are using HCP YA data (because it used an older bias field computation)" 'NO'
 opts_AddOptional '--scale-factor' 'ScaleFactor' 'number' "multiply the input timeseries by some factor before processing"
 opts_AddOptional '--wf' 'WF' 'number' "number of Wishart Distributions for Wishart Filtering, set to zero to turn off (default)"
-opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to $g_matlab_default_mode
+opts_AddOptional '--matlab-run-mode' 'MatlabMode' '0, 1, or 2' "defaults to ${g_matlab_default_mode}
 0 = compiled MATLAB
 1 = interpreted MATLAB
-2 = Octave" "$g_matlab_default_mode"
+2 = Octave" \
+"${g_matlab_default_mode}"
 
 opts_ParseArguments "$@"
 
@@ -65,6 +67,18 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+HippocampalOutput=$(opts_StringToBool "$HippocampalOutputString")
+if ((HippocampalOutput))
+then
+    case "$HippMesh" in
+        (512 | 2k | 8k | 18k)
+            ;;
+        (*)
+            log_Err_Abort \
+                "unrecognized hippocampal mesh '$HippMesh', use 512, 2k, 8k, or 18k"
+            ;;
+    esac
+fi
 #display the parsed/default values
 opts_ShowValues
 
@@ -111,18 +125,42 @@ fi
 
 MNIFolder="$StudyFolder/$Subject/MNINonLinear"
 T1wFolder="$StudyFolder/$Subject/T1w"
+
 DownSampleMNIFolder="$MNIFolder/fsaverage_LR${LowResMesh}k"
 DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
+HippDownSampleMNIFolder="$MNIFolder/HippUnfold/${HippMesh}"
 
 tempfiles_create rsn_regr_matlab_XXXXXX tempname
 tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
+tempfiles_add "$tempname.hippinput.txt" "$tempname.hippinputvn.txt"
 IFS='@' read -a InputArray <<< "$InputList"
 #use newline-delimited text files for matlab
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
+
 for fmri in "${InputArray[@]}"
 do
     echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}.dtseries.nii" >> "$tempname.input.txt"
     echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+
+    if ((HippocampalOutput))
+    then
+        HippResultsFolder="$MNIFolder/Results/$fmri"
+
+        HippInput="$HippResultsFolder/${fmri}_AtlasHipp${ProcString}.${HippMesh}.dtseries.nii"
+        HippInputVN="$HippResultsFolder/${fmri}_AtlasHipp${ProcString}_vn.${HippMesh}.dscalar.nii"
+        if [[ ! -f "$HippInput" ]]
+        then
+            log_Err_Abort "hippocampal timeseries does not exist: $HippInput"
+        fi
+
+        if [[ ! -f "$HippInputVN" ]]
+        then
+            log_Err_Abort "hippocampal VN file does not exist: $HippInputVN"
+        fi
+
+        echo "$HippInput" >> "$tempname.hippinput.txt"
+        echo "$HippInputVN" >> "$tempname.hippinputvn.txt"
+    fi
     if ((DoFixBias))
     then
         echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_real_bias.dscalar.nii" >> "$tempname.goodbias.txt"
@@ -136,15 +174,16 @@ do
             echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
         fi
     fi
-done
+done 
 #only used if DoFixBias
 OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
 OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
 #spectra output files want the correct TR, so save the first input filename
 SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${ProcString}.dtseries.nii"
 
-#matlab can't take strings containing newlines, so it is left@right
+# MATLAB cannot take strings containing newlines, so the surfaces are left@right.
 SurfString="$DownSampleT1wFolder/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii@$DownSampleT1wFolder/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+
 VANormOnlySurf="$DownSampleT1wFolder/${Subject}.midthickness${RegString}_va_norm.${LowResMesh}k_fs_LR.dscalar.nii"
 
 case "$Method" in
@@ -218,11 +257,47 @@ then
         OutputVolZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
     fi
 fi
-SpectraParams=""
-if [[ nTPsForSpectra -gt 0 ]] && [[ ! ${Method} == "single" ]]
+
+OutputHippBeta=""
+OutputHippZ=""
+OutputHippZMM=""
+
+if ((HippocampalOutput))
 then
-    #these files are temporary anyway
-    SpectraParams="$nTPsForSpectra@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
+    mkdir -p "$HippDownSampleMNIFolder"
+
+    OutputHippBeta="$HippDownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}.Hipp.${HippMesh}.dscalar.nii"
+
+    if ((DoZ))
+    then
+        OutputHippZ="$HippDownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z.Hipp.${HippMesh}.dscalar.nii"
+        OutputHippZMM="$HippDownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM.Hipp.${HippMesh}.dscalar.nii"
+    fi
+fi
+
+SpectraParams=""
+
+RSNTimeseriesText="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt"
+RSNTimeseriesCifti="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii"
+SpectraText="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
+
+if ((HippocampalOutput))
+then
+    if [[ "$Method" != "dual" ]]
+    then
+        log_Err_Abort "Hippocampus can only be processed with method 'dual'; requested method was '$Method'"
+    fi
+
+    if ((nTPsForSpectra <= 0))
+    then
+        # Determines how many timepoints are in the whole-brain fMRI CIFTI
+        nTPsForSpectra=$(wb_command -file-information "$SpectraTRFile" -only-number-of-maps)
+    fi
+fi
+
+if [[ "$nTPsForSpectra" -gt 0 ]] && [[ "$Method" != "single" ]]
+then
+    SpectraParams="$nTPsForSpectra@$RSNTimeseriesText@$SpectraText"
 elif [[ ${Method} == "single" ]]
 then
     SpectraParams="${Timeseries}"
@@ -237,12 +312,16 @@ fi
 
 #fix the _va_norm file being surface-only
 #extract the all-voxels ROI file and use it in -from-template
-if [[ ! ${Method} == "single" ]]
+if [[ "$Method" != "single" ]]
 then
     tempfiles_create XXXXXX.roi.nii.gz tempfile
     tempfiles_add "$tempfile.junk.nii.gz" "$tempfile.91k.dscalar.nii"
+
     wb_command -cifti-separate "$GroupMaps" COLUMN -volume-all "$tempfile.junk.nii.gz" -roi "$tempfile" -crop
     wb_command -cifti-create-dense-from-template "$GroupMaps" "$tempfile.91k.dscalar.nii" -cifti "$VANormOnlySurf" -volume-all "$tempfile" -from-cropped
+
+    GroupMapsForMatlab="$GroupMaps"
+    VAWeightsForMatlab="$tempfile.91k.dscalar.nii"
 fi
 
 #all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side -- can do argument lists for each matlab mode with the same code
@@ -250,8 +329,8 @@ fi
 matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma")
 if [[ "$Method" != "single" ]]
 then
-    matlab_argarray+=("GroupMaps" "$GroupMaps")
-    matlab_argarray+=("VAWeightsName" "$tempfile.91k.dscalar.nii")
+    matlab_argarray+=("GroupMaps" "$GroupMapsForMatlab")
+    matlab_argarray+=("VAWeightsName" "$VAWeightsForMatlab")
 fi
 if [[ "$Method" == "tICA_weighted" ]]
 then
@@ -336,8 +415,90 @@ then
     wb_command -file-information "$GroupMaps" -only-map-names > "$tempname.mapnames.txt"
     TR=$(wb_command -file-information "$SpectraTRFile" -only-step-interval)
     FTmixStep=$(echo "scale = 7; 1 / ($nTPsForSpectra * $TR)" | bc -l)
-    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series SECOND 0 "$TR"
-    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
-    rm -f -- "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
+    wb_command -cifti-create-scalar-series "$RSNTimeseriesText" "$RSNTimeseriesCifti" -transpose -name-file "$tempname.mapnames.txt" -series SECOND 0 "$TR"
+    wb_command -cifti-create-scalar-series "$SpectraText" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
+
+    rm -f -- "$RSNTimeseriesText" "$SpectraText"
 fi
 
+if ((HippocampalOutput))
+then
+    if [[ ! -f "$RSNTimeseriesCifti" ]]
+    then
+        log_Err_Abort "whole-brain RSN time-course CIFTI was not created: $RSNTimeseriesCifti"
+    fi
+
+    hipp_matlab_argarray=(
+        "$tempname.hippinput.txt"
+        "$tempname.hippinputvn.txt"
+        "single"
+        "$tempname.params.txt"
+        "$OutputHippBeta"
+        "SpectraParams" "$RSNTimeseriesCifti"
+    )
+
+    if ((DoZ))
+    then
+        hipp_matlab_argarray+=(
+            "OutputZ" "$OutputHippZ"
+            "OutputZMM" "$OutputHippZMM"
+        )
+    fi
+
+    if [[ "$ScaleFactor" != "" ]]
+    then
+        hipp_matlab_argarray+=(
+            "ScaleFactor" "$ScaleFactor"
+        )
+    fi
+
+    if [[ "$WF" != "" ]]
+    then
+        hipp_matlab_argarray+=(
+            "WF" "$WF"
+        )
+    fi
+
+    case "$MatlabMode" in
+        (0)
+            hipp_matlab_cmd=(
+                "$this_script_dir/Compiled_RSNregression/run_RSNregression.sh"
+                "$MATLAB_COMPILER_RUNTIME"
+                "${hipp_matlab_argarray[@]}"
+            )
+
+            log_Msg "Run compiled MATLAB for hippocampal output: ${hipp_matlab_cmd[*]}"
+
+            "${hipp_matlab_cmd[@]}"
+            ;;
+
+        (1 | 2)
+            hipp_matlab_args=""
+
+            for thisarg in "${hipp_matlab_argarray[@]}"
+            do
+                if [[ "$hipp_matlab_args" != "" ]]
+                then
+                    hipp_matlab_args+=", "
+                fi
+
+                hipp_matlab_args+="'$thisarg'"
+            done
+
+            hipp_matlab_code="
+                addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+                addpath('$HCPCIFTIRWDIR');
+                addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
+                addpath('$HCPPIPEDIR/global/matlab');
+                addpath('$this_script_dir');
+                RSNregression($hipp_matlab_args);"
+
+            log_Msg "running hippocampal MATLAB code: $hipp_matlab_code"
+
+            "${matlab_interpreter[@]}" <<<"$hipp_matlab_code"
+            echo
+            ;;
+    esac
+fi
+
+log_Msg "RSNregression completed successfully"
