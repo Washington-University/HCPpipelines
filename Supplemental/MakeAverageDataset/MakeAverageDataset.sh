@@ -214,9 +214,7 @@ if [ ! -e ${CommonFolder} ] ; then
 	mkdir ${CommonFolder}
 fi
 for CommonAtlasFolder in ${CommonAtlasFolders} ; do
-	if [ ! -e ${CommonAtlasFolder} ] ; then
-		mkdir ${CommonAtlasFolder}
-	fi
+	mkdir -p ${CommonAtlasFolder}
 done
 
 for CommonDownSampleFolder in ${CommonDownSampleFolders} ; do
