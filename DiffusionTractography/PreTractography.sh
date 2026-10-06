@@ -23,7 +23,7 @@ opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh num
 opts_AddOptional '--bpxdirs' 'BedpostXFolders' 'folder@folder' "names of folders containing fiber estimations, default Diffusion.bedpostX" "Diffusion.bedpostX"
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
 opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
-opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for group volume labeled whim mask"
+opts_AddOptional '--whimmask' 'WhimMask' 'path' "path for mask used in whim generation converted to add volume labels"
 opts_AddOptional '--groupname' 'GroupName' 'string' "Average Group Name"
 
 
