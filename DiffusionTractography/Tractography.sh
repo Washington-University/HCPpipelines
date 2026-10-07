@@ -19,7 +19,7 @@ opts_SetScriptDescription "Run probabilistic tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject"
-opts_AddMandatory '--results-folder' 'Folder' 'folder' "folder"
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'path@path' 'BEDPOSTX Folders delimited by @'
 opts_AddMandatory '--regname' 'RegName' 'MSMAll' 'RegName such as MSMAll or MSMSulc'
@@ -52,13 +52,13 @@ if [[ -n "${Whim:-}" ]]; then
 fi
 case "$SeedingStrategy" in
     Matrix3)
-        OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix3WholeBrainTractography"
-        SEED="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
+        OUTDIR="${StudyFolder}/${Subject}/${volspace}/Results/Matrix3WholeBrainTractography"
+        SEED="${StudyFolder}/${Subject}/${volspace}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
         mkdir -p "$OUTDIR"
         ;;
     Matrix1)
-        OUTDIR="${StudyFolder}/${Subject}/${Folder}/Results/Matrix1WholeBrainTractography"
-        SEED="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        OUTDIR="${StudyFolder}/${Subject}/${volspace}/Results/Matrix1WholeBrainTractography"
+        SEED="${StudyFolder}/${Subject}/${volspace}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         mkdir -p "$OUTDIR"
         ;;
     *)
@@ -71,10 +71,10 @@ COMMON_ARGS=(
     --samples="${BedpostXFolders}"
     --mask="${StudyFolder}/${Subject}/T1w/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
     --seed="${SEED}"
-    --waypoints="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
-    --stop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.StopROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR.txt"
-    --wtstop="${StudyFolder}/${Subject}/${Folder}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
-    --seedref="${StudyFolder}/${Subject}/${Folder}/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
+    --waypoints="${StudyFolder}/${Subject}/${volspace}/Whole_Brain_WhiteMatter_${DiffusionResolution}.nii.gz"
+    --stop="${StudyFolder}/${Subject}/${volspace}/ROIs/${Subject}.StopROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR.txt"
+    --wtstop="${StudyFolder}/${Subject}/${volspace}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+    --seedref="${StudyFolder}/${Subject}/${volspace}/Whole_Brain_Trajectory_${DiffusionResolution}.nii.gz"
     --dir="${OUTDIR}"
     --nsamples="${nsamples}"
     --cthr=0
