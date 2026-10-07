@@ -205,7 +205,7 @@ CommonFolder="${StudyFolder}/${GroupAverageName}"
 CommonAtlasFolders=("${CommonFolder}/MNINonLinear", "${CommonFolder}/MMORFNonLinear")
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
-	for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 		CommonDownSampleFolders="${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "
 	done
 done
