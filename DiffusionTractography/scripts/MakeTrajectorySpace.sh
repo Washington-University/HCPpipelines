@@ -95,7 +95,6 @@ if [[ -n "$WhimMask" ]]; then
   fi
   ${Caret7_Command} -volume-label-import "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution".nii.gz "$FreeSurferLabels" "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution".nii.gz -drop-unused-labels
 fi
-###That is already done in the pre script. I think for consistensy sake, we need them to provide this.
 
 LeftGreyRibbonValue="3"
 LeftWhiteMaskValue="2"
