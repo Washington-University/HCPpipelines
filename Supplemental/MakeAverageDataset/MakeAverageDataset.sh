@@ -202,7 +202,7 @@ ribbon="ribbon"
 # BuildPaths / Make Folders
 log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
-CommonAtlasFolders=("${CommonFolder}/MNINonLinear", "${CommonFolder}/MMORFNonLinear")
+CommonAtlasFolders=("${CommonFolder}/MNINonLinear" "${CommonFolder}/MMORFNonLinear")
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
 	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
