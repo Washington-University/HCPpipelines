@@ -37,11 +37,11 @@ opts_AddMandatory '--fmrifolder' 'fMRIFolder' 'path' "fMRI processing folder"
 
 opts_AddMandatory '--fmri2structin' 'fMRIToStructuralInput' 'path' "input fMRI to T1w warp"
 
-opts_AddMandatory '--struct2std' 'StructuralToStandard' 'path' "input T1w to MNI warp"
+opts_AddMandatory '--struct2std' 'StructuralToStandard' 'path' "input T1w to nonlinear atlas warp"
 
-opts_AddMandatory '--owarp' 'OutputTransform' 'path' "output fMRI to MNI warp"
+opts_AddMandatory '--owarp' 'OutputTransform' 'path' "output fMRI to nonlinear atlas warp"
 
-opts_AddMandatory '--oiwarp' 'OutputInvTransform' 'path' "output MNI to fMRI warp"
+opts_AddMandatory '--oiwarp' 'OutputInvTransform' 'path' "output nonlinear atlas to fMRI warp"
 
 opts_AddMandatory '--motionmatdir' 'MotionMatrixFolder' 'path' "input motion correcton matrix directory"
 
@@ -49,9 +49,9 @@ opts_AddMandatory '--motionmatprefix' 'MotionMatrixPrefix' 'string' "input motio
 
 opts_AddMandatory '--ofmri' 'OutputfMRI' 'image' "input fMRI 4D image"
 
-opts_AddMandatory '--freesurferbrainmask' 'FreeSurferBrainMask' 'mask' "input FreeSurfer brain mask or nifti format in atlas (MNI152) space"
+opts_AddMandatory '--freesurferbrainmask' 'FreeSurferBrainMask' 'mask' "input FreeSurfer brain mask or nifti format in atlas (default MNI152) space"
 
-opts_AddMandatory '--biasfield' 'BiasField' 'image' "input biasfield image or in atlas (MNI152) space"
+opts_AddMandatory '--biasfield' 'BiasField' 'image' "input biasfield image or in atlas (default MNI152) space"
 
 opts_AddMandatory '--gdfield' 'GradientDistortionField' 'gradient' "input warpfield for gradient non-linearity correction"
 
@@ -73,6 +73,8 @@ opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whethe
 
 opts_AddOptional '--species' 'SPECIES' 'species' "species name" "Human"
 
+opts_AddOptional '--atlas-space' 'AtlasFolderBase' 'string' "atlas space to use for outputs, supported options are MNINonLinear (default) and MMORFNonLinear" "MNINonLinear"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -93,7 +95,7 @@ log_Check_Env_Var FSLDIR
 #     ${T1wImageFile}.${FinalfMRIResolution}
 #     ${FreeSurferBrainMaskFile}.${FinalfMRIResolution}
 #     ${BiasFieldFile}.${FinalfMRIResolution}
-#     Scout_gdc_MNI_warp     : a warpfield from original (distorted) scout to low-res MNI
+#     Scout_gdc_${AtlasAlias}_warp     : a warpfield from original (distorted) scout to low-res nonlinear atlas
 #
 # Outputs (not in either of the above):
 #     ${OutputTransform}  : the warpfield from fMRI to standard (low-res)
@@ -141,6 +143,18 @@ BiasFieldFile=$(basename "$BiasField")
 T1wImageFile=$(basename $T1wImage)
 FreeSurferBrainMaskFile=$(basename "$FreeSurferBrainMask")
 
+case "$AtlasSpaceFolderBase" in
+    MNINonLinear)
+        AtlasAlias="MNI"
+        ;;
+    MMORFNonLinear)
+        AtlasAlias="MMORF"
+        ;;
+    *)
+        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpace})"
+        ;;
+esac
+
 echo " "
 echo " START: OneStepResampling"
 
@@ -162,7 +176,7 @@ NumFrames=$(${FSLDIR}/bin/fslval ${InputfMRI} dim4)
 # Create fMRI resolution standard space files for T1w image, wmparc, and brain mask
 #   NB: don't use FLIRT to do spline interpolation with -applyisoxfm for the
 #       2mm and 1mm cases because it doesn't know the peculiarities of the
-#       MNI template FOVs
+#       nonlinear atlas template FOVs
 # If not a human, just use -applyisoxfm
 if [[ $SPECIES != Human ]] ; then
     ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
@@ -170,9 +184,18 @@ if [[ $SPECIES != Human ]] ; then
 else
     #For legacy reasons, we use human fMRI templates that aren't exactly the same dimensions as -applyisoxfm produces
     if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
+      if [[ "$AtlAliassAlias" == "MNI" ]]; then
         ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
+      else #[[ "$AtlasAlias" = "MMORF" ]]; then
+        #ResampRefIm="Standard_MMORF_T1_2mm atlas"
+        log_err_Abort "MMORF 2mm template not supported"
+      fi
     elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
-        ResampRefIm=$FSLDIR/data/standard/MNI152_T1_1mm
+      if [[ "$AtlasAlias" = "MNI" ]]; then
+        ResampRefIm="$FSLDIR/data/standard/MNI152_T1_1mm"
+      elif [[ "$AtlasAlias" = "MMORF" ]]; then
+        ResampRefIm="$HCPPIPEDIR/global/templates/MMORF_T1_1mm"
+      fi
     else
         ${FSLDIR}/bin/flirt -interp spline -in ${T1wImage} -ref ${T1wImage} -applyisoxfm $FinalfMRIResolution -out ${WD}/${T1wImageFile}.${FinalfMRIResolution}
         ResampRefIm=${WD}/${T1wImageFile}.${FinalfMRIResolution}
@@ -242,7 +265,7 @@ then
         prevmatrix="${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}"
     done
     
-    #gdc warp space is input to input, affine is input to input, OutputTransform is input to MNI
+    #gdc warp space is input to input, affine is input to input, OutputTransform is input to nonlinear atlas
     xfmargs=(-warp "$GradientDistortionField".nii.gz -fnirt "$InputfMRI"
              -affine-series "$affseries" -flirt "$InputfMRI" "$InputfMRI"
              -warp "$OutputTransform".nii.gz -fnirt "$InputfMRI")
@@ -264,7 +287,7 @@ else
     mkdir -p ${WD}/postvols
 
     # Apply combined transformations to fMRI in a one-step resampling
-    # (combines gradient non-linearity distortion, motion correction, and registration to atlas (MNI152) space, but keeping fMRI resolution)
+    # (combines gradient non-linearity distortion, motion correction, and registration to atlas (MNI152 by default) space, but keeping fMRI resolution)
     ${FSLDIR}/bin/fslsplit ${InputfMRI} ${WD}/prevols/vol -t
     FrameMergeSTRING=""
     FrameMergeSTRINGII=""
@@ -282,7 +305,7 @@ else
 
       # Combine GCD with motion correction
       ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/prevols/vol${vnum}.nii.gz --warp1=${GradientDistortionField} --postmat=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz
-      # Add in the warp to MNI152
+      # Add in the warp to nonlinear atlas
       ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp.nii.gz --warp2=${OutputTransform} --out=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz
       # Apply one-step warp, using spline interpolation
       ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${WD}/prevols/vol${vnum}.nii.gz --warp=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_warp.nii.gz --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --out=${WD}/postvols/vol${vnum}.nii.gz
@@ -316,15 +339,15 @@ fslmaths ${OutputfMRI}_mask -Tmin ${OutputfMRI}_mask
 
 if [ ${fMRIReferencePath} = "NONE" ] ; then
   # Combine transformations: gradient non-linearity distortion + fMRI_dc to standard
-  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_MNI_warp.nii.gz
-  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_MNI_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
+  ${FSLDIR}/bin/convertwarp --relout --rel --ref=${WD}/${T1wImageFile}.${FinalfMRIResolution} --warp1=${GradientDistortionField} --warp2=${OutputTransform} --out=${WD}/Scout_gdc_${AtlasAlias}_warp.nii.gz
+  ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${ScoutInput} -w ${WD}/Scout_gdc_${AtlasAlias}_warp.nii.gz -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -o ${ScoutOutput}
 fi
 
 # Create trilinear interpolated version of Jacobian (T1w space, fMRI resolution)
 #${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${JacobianIn} -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
 #fMRI2Struct is from gdc space to T1w space (optionally through an external reference), ie, only fieldmap-based distortions (like topup)
-#output jacobian is both gdc and topup/fieldmap jacobian, but not the to MNI jacobian
-#JacobianIn was removed from inputs, now we just compute it from the combined warpfield of gdc and dc (NOT MNI)
+#output jacobian is both gdc and topup/fieldmap jacobian, but not the to nonlinear atlas jacobian
+#JacobianIn was removed from inputs, now we just compute it from the combined warpfield of gdc and dc (NOT nonlinear atlas)
 #compute combined warpfield, but don't use jacobian output because it has 8 frames for no apparent reason
 #NOTE: convertwarp always requires -o anyway
 if [ "$fMRIReferenceReg" == "nonlinear" ]; then
@@ -335,7 +358,7 @@ fi
 #but, convertwarp's jacobian is 8 frames - each combination of one-sided differences, so average them
 ${FSLDIR}/bin/fslmaths ${WD}/gdc_dc_jacobian -Tmean ${WD}/gdc_dc_jacobian
 
-#and resample it to MNI space
+#and resample it to nonlinear atlas space
 # Note that trilinear instead of spline interpolation is used with the purpose to minimize the ringing artefacts that occur 
 # with downsampling of the jacobian field and are then propagated to the BOLD image itself.
 ${FSLDIR}/bin/applywarp --rel --interp=trilinear -i ${WD}/gdc_dc_jacobian -r ${WD}/${T1wImageFile}.${FinalfMRIResolution} -w ${StructuralToStandard} -o ${JacobianOut}
