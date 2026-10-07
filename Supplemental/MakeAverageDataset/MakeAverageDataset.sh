@@ -213,7 +213,7 @@ done
 if [ ! -e ${CommonFolder} ] ; then
 	mkdir ${CommonFolder}
 fi
-for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	mkdir -p ${CommonAtlasFolder}
 done
 
@@ -229,7 +229,7 @@ log_Msg "Make Average Volumes"
 # Scalar Volumes
 log_Msg "Scalar Volumes"
 for Volume in ${T1wName} ${T2wName} ; do
-	for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 		MergeVolumeSTRING=""
 		foldername="${CommonAtlasFolder##*/}"
 		for Subject in ${Subjlist} ; do
@@ -253,7 +253,7 @@ for Volume in ${T1wName} ${T2wName} ; do
 	done
 
 done
-for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	volume_out=${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
 	${Caret7_Command} -volume-math "clamp((T1w / T2w), 0, 100)" ${volume_out} \
 		-var T1w ${CommonAtlasFolder}/${GroupAverageName}_Average${T1wName}.nii.gz \
@@ -270,7 +270,7 @@ done
 # Thus, it is either all or none for the label volumes.
 log_Msg "Label Volumes"
 for Volume in ${wmparc} ${ribbon} ; do
-	for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 		if ((LabelVols)); then
 			MergeVolumeSTRING=""
 			foldername="${CommonAtlasFolder##*/}"
@@ -291,7 +291,7 @@ done
 
 # Make Average Surfaces and Surface Data
 log_Msg "Make Average Surfaces and Surface Data"
-for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	for Hemisphere in L R ; do
 		if [ ${Hemisphere} = "L" ] ; then
 			Structure="CORTEX_LEFT"
@@ -433,7 +433,7 @@ done
 log_Debug_Msg "Debug Point 1"
 
 # Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
-for CommonAtlasFolder in ${CommonAtlasFolders} ; do
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
