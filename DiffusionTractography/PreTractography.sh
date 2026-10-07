@@ -88,7 +88,7 @@ ${PipelineScripts}/MakeTrajectorySpace.sh \
 
 log_Msg "MakeWorkbenchUODFs"
 
-${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresol="${DiffusionResolution}" --bpxfoldername="${BedpostXFolders}" --whimmask="${WhimMask}"
+${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --volume-space="${VolumeSpace}" --diffresol="${DiffusionResolution}" --bpxfoldername="${BedpostXFolders}" --whimmask="${WhimMask}"
 
 log_Msg "MakeSeeds"
 ${PipelineScripts}/MakeSeeds.sh --path="${StudyFolder}" --subject="${Subject}" --volume-space="${VolumeSpace}" --diffresmesh="${DiffResMesh}" --diffresol="${DiffusionResolution}" --regname="${RegName}" --whimmask="${WhimMask}" --groupname="$GroupName"
