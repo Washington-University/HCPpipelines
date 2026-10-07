@@ -19,9 +19,9 @@ opts_SetScriptDescription "Prepare the data to run Tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
-opts_AddMandatory '--results-folder' 'folder' 'The specific folder in which the seed of tractography is located. This should follow HCP standards' ""
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
-opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX Folder or whim folder'
+opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX volspace or whim folder'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
 opts_AddMandatory '--group' 'whim' 'bool' "Indicate if you tractography for averaging or just an individual. true if this is for averaging"
 opts_AddOptional '--cleanup' 'cleanup' 'bool' "indicate if you want to cleanup the intermediate files. Default is false" "false"
@@ -52,7 +52,7 @@ log_Check_Env_Var CARET7DIR
 log_Msg "Platform Information Follows: "
 uname -a
 
-TrajectorySpaceFolder="${StudyFolder}/${Subject}/${Folder}"
+TrajectorySpaceFolder="${StudyFolder}/${Subject}/${volspace}"
 T1wDiffusionFolder="${StudyFolder}/${Subject}/T1w/Diffusion"
 DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
 DiffusionResolution=`printf "%0.2f" ${DiffusionResolution}`
