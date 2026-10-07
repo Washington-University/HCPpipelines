@@ -51,9 +51,7 @@ log_Msg "Platform Information Follows: "
 uname -a
 
 # Setup PATHS
-#PipelineScripts=${HCPPIPEDIR_dMRITract}
-PipelineScripts=${HCPPIPEDIR}/DiffusionTractography/scripts #TODO: Delete when commited and in setup script
-
+PipelineScripts=${HCPPIPEDIR_dMRITract}
 
 WholeBrainTrajectoryLabels=${HCPPIPEDIR_Config}/WholeBrainFreeSurferTrajectoryLabelTableLut.txt
 LeftCerebralTrajectoryLabels=${HCPPIPEDIR_Config}/LeftCerebralFreeSurferTrajectoryLabelTableLut.txt 

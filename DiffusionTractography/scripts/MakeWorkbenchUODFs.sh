@@ -31,7 +31,7 @@ Caret7_Command=${CARET7DIR}/wb_command
 
 #NamingConventions and Paths
 trajectory="Whole_Brain_Trajectory"
-T1wFolder="${StudyFolder}/${Subject}/${volspace}"
+TrajectorySpaceFolder="${StudyFolder}/${Subject}/${volspace}"
 MNINonLinearFolder="${StudyFolder}/${Subject}/MNINonLinear"
 NativeFolder="${StudyFolder}/${Subject}/T1w/Native"
 
@@ -45,7 +45,7 @@ echo -e "\n START: MakeWorkbenchUODFs"
 
 for BedpostXFolderName in ${BedpostXFolders} ; do
   if [[ -n "$WhimMask" ]]; then
-    BedpostXFolder="${T1wFolder}/${BedpostXFolderName}"
+    BedpostXFolder="${TrajectorySpaceFolder}/${BedpostXFolderName}"
     tempfiles_create diffusion_UODFs_zero_XXXXXX.nii.gz zeroFile
     tempfiles_create diffusion_UODFs_smallval_XXXXXX.nii.gz smallValFile
     wb_command -volume-math '0' "$zeroFile" -var x "$BedpostXFolder"/f_1_std.nii.gz
