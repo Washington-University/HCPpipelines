@@ -16,7 +16,7 @@ source "${HCPPIPEDIR}/global/scripts/tempfiles.shlib" "$@"
 opts_SetScriptDescription "Make workbench UODFs for Tractography"
 opts_AddMandatory '--path' 'StudyFolder' 'folder' 'path to Generic Study folder'
 opts_AddMandatory '--subject' 'Subject' 'subject' 'subject ID'
-opts_AddMandatory '--folder' 'Folder' 'folder' 'folder so it is not just T1w'
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
 opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
 
 opts_AddOptional '--bpxfoldername' 'BedpostXFolders' 'folder@folder' 'names of folders containing fiber estimations, delimited by @'
@@ -31,7 +31,7 @@ Caret7_Command=${CARET7DIR}/wb_command
 
 #NamingConventions and Paths
 trajectory="Whole_Brain_Trajectory"
-T1wFolder="${StudyFolder}/${Subject}/${Folder}"
+T1wFolder="${StudyFolder}/${Subject}/${volspace}"
 MNINonLinearFolder="${StudyFolder}/${Subject}/MNINonLinear"
 NativeFolder="${StudyFolder}/${Subject}/T1w/Native"
 
