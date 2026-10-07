@@ -17,7 +17,7 @@ opts_SetScriptDescription "Make a standard set of seeds for Tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
-opts_AddMandatory '--results-folder' 'Folder' 'Folder' ""
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'Diffusion res mesh number'
 opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution'
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll or MSMSulc'
@@ -37,7 +37,7 @@ RegString=""
 
 SurfaceAtlasDIR="$HCPPIPEDIR/global/templates/standard_mesh_atlases"
 
-TrajectorySpaceFolder="${StudyFolder}/${Subject}/${Folder}"
+TrajectorySpaceFolder="${StudyFolder}/${Subject}/${volspace}"
 AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
 NativeAtlasFolder="${AtlasFolder}/Native"
 NativeTrajectorySpaceFolder="${TrajectorySpaceFolder}/Native"

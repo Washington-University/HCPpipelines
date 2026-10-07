@@ -15,7 +15,7 @@ opts_SetScriptDescription "Make a trajectory space for Tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'folder' 'path to Generic Study folder'
 opts_AddMandatory '--subject' 'Subject' 'subject' 'subject ID'
-opts_AddMandatory '--folder' 'TrajectorySpaceFolder' 'folder' 'trajectory space folder'
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
 opts_AddMandatory '--diffresol' 'DiffusionResolution' 'number' 'diffusion resolution in mm'
 
 opts_AddOptional '--wholebrainlabels' 'WholeBrainTrajectoryLabels' 'file' 'whole brain trajectory labels'
@@ -39,12 +39,12 @@ echo -e "\n START: MakeTrajectorySpace"
 
 Caret7_Command=${CARET7DIR}/wb_command
 
-TrajectorySpaceFolderName=$TrajectorySpaceFolder
+TrajectorySpaceFolderName=$volspace
 #NamingConventions
 NativeFolder="Native"
 #If not T1w, adjust to T1w
 
-if [ "$TrajectorySpaceFolder" = "T1w" ]; then
+if [ "$TrajectorySpaceFolderName" = "T1w" ]; then
     T1wImage="T1w_acpc_dc_restore"
 else
     T1wImage="T1w_restore"
@@ -58,7 +58,7 @@ subcortical="SubCortical_GreyMatter"
 white="WhiteMatter"
 
 #Make Paths
-TrajectorySpaceFolder="${StudyFolder}/${Subject}/${TrajectorySpaceFolder}"
+TrajectorySpaceFolder="${StudyFolder}/${Subject}/${volspace}"
 ROIsFolder="${TrajectorySpaceFolder}/${ROIsFolder}"
 ResultsFolder="${TrajectorySpaceFolder}/${ResultsFolder}"
 

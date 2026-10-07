@@ -71,18 +71,11 @@ DiffusionResolution=`printf "%0.2f" ${DiffusionResolution}`
 
 log_Msg "MakeTrajectorySpace"
 
-if [[ "$folder"=="MNINonLinear" ]]; then
-  warp="${StudyFolder}/${Subject}/MNINonLinear/xfms/acpc_dc2standard.nii.gz"
-elif [[ "$folder"=="HCPMultiModalNonLinear" ]]; then
-  warp="${StudyFolder}/${Subject}/HCPMultiModalNonLinear/xfms/acpc_dc2mmorf.nii.gz"
-fi
-
 
 ${PipelineScripts}/MakeTrajectorySpace.sh \
     --path="$StudyFolder" --subject="$Subject" \
     --wholebrainlabels="$WholeBrainTrajectoryLabels" \
-    --folder="${folder}" \
-    --warp="${warp}" \
+    --volume-space="${VolumeSpace}" \
     --leftcerebrallabels="$LeftCerebralTrajectoryLabels" \
     --rightcerebrallabels="$RightCerebralTrajectoryLabels" \
     --wholebrainsubcorticallabels="$WholeBrainSubcorticalLabels" \
@@ -98,7 +91,7 @@ log_Msg "MakeWorkbenchUODFs"
 ${PipelineScripts}/MakeWorkbenchUODFs.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresol="${DiffusionResolution}" --bpxfoldername="${BedpostXFolders}" --whimmask="${WhimMask}"
 
 log_Msg "MakeSeeds"
-${PipelineScripts}/MakeSeeds.sh --path="${StudyFolder}" --subject="${Subject}" --folder="${folder}" --diffresmesh="${DiffResMesh}" --diffresol="${DiffusionResolution}" --regname="${RegName}" --whimmask="${WhimMask}" --groupname="$GroupName"
+${PipelineScripts}/MakeSeeds.sh --path="${StudyFolder}" --subject="${Subject}" --volume-space="${VolumeSpace}" --diffresmesh="${DiffResMesh}" --diffresol="${DiffusionResolution}" --regname="${RegName}" --whimmask="${WhimMask}" --groupname="$GroupName"
 
 log_Msg "Completed"
 
