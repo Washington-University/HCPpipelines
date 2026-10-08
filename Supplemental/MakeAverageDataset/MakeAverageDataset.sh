@@ -202,18 +202,22 @@ ribbon="ribbon"
 # BuildPaths / Make Folders
 log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
-CommonAtlasFolder="${CommonFolder}/MNINonLinear"
+#WARNING: do not include a trailing slash on elements, we do string manipulation below
+CommonAtlasFolders=("${CommonFolder}/MNINonLinear" "${CommonFolder}/MMORFNonLinear")
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
-	CommonDownSampleFolders=`echo "${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "`
+	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+		CommonDownSampleFolders="${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "
+	done
 done
 
 if [ ! -e ${CommonFolder} ] ; then
 	mkdir ${CommonFolder}
 fi
-if [ ! -e ${CommonAtlasFolder} ] ; then
-	mkdir ${CommonAtlasFolder}
-fi
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+	mkdir -p ${CommonAtlasFolder}
+done
+
 for CommonDownSampleFolder in ${CommonDownSampleFolders} ; do
 	if [ ! -e ${CommonDownSampleFolder} ] ; then
 		mkdir ${CommonDownSampleFolder}
@@ -226,36 +230,39 @@ log_Msg "Make Average Volumes"
 # Scalar Volumes
 log_Msg "Scalar Volumes"
 for Volume in ${T1wName} ${T2wName} ; do
-
-	MergeVolumeSTRING=""
-	for Subject in ${Subjlist} ; do
-	MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
+	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+		MergeVolumeSTRING=""
+		foldername="${CommonAtlasFolder##*/}"
+		for Subject in ${Subjlist} ; do
+			MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "
+		done
+		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
+		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
+		if ((MergedT1T2vols)); then
+			fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
+			# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
+			#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
+			${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
+		else
+			# Creating a merged T1/T2 volume can be very time and memory intensive for large number of subjects.
+			# Therefore, the --no-merged-t1t2-vols flag exists to forego creation of merged T1/T2 volumes.
+			# In this case, create the average across subjects in single command using 'fsladd' (which
+			# implements its averaging in a highly memory efficient manner).
+			log_Msg "Skipping creation of merged ${Volume}. Only creating the average."
+			fsladd ${avgvolume} -m ${MergeVolumeSTRING}
+		fi
 	done
-	allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
-	avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
-	if ((MergedT1T2vols)); then
-		fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
-		# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
-		#fslmaths ${allvolumes} -Tmean ${avgvolume} -odt float
-		${Caret7_Command} -volume-reduce ${allvolumes} MEAN ${avgvolume}
-	else
-		# Creating a merged T1/T2 volume can be very time and memory intensive for large number of subjects.
-		# Therefore, the --no-merged-t1t2-vols flag exists to forego creation of merged T1/T2 volumes.
-		# In this case, create the average across subjects in single command using 'fsladd' (which
-		# implements its averaging in a highly memory efficient manner).
-		log_Msg "Skipping creation of merged ${Volume}. Only creating the average."
-		fsladd ${avgvolume} -m ${MergeVolumeSTRING}
-	fi
 
 done
-
-volume_out=${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
-${Caret7_Command} -volume-math "clamp((T1w / T2w), 0, 100)" ${volume_out} \
-	-var T1w ${CommonAtlasFolder}/${GroupAverageName}_Average${T1wName}.nii.gz \
-	-var T2w ${CommonAtlasFolder}/${GroupAverageName}_Average${T2wName}.nii.gz \
-	-fixnan 0
-${Caret7_Command} -volume-palette ${volume_out} \
-	MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+	volume_out=${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
+	${Caret7_Command} -volume-math "clamp((T1w / T2w), 0, 100)" ${volume_out} \
+		-var T1w ${CommonAtlasFolder}/${GroupAverageName}_Average${T1wName}.nii.gz \
+		-var T2w ${CommonAtlasFolder}/${GroupAverageName}_Average${T2wName}.nii.gz \
+		-fixnan 0
+	${Caret7_Command} -volume-palette ${volume_out} \
+		MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
+done
 
 # Label Volumes
 # N.B. While the wmparc and ribbon files compress massively, internally they still require memory
@@ -264,196 +271,204 @@ ${Caret7_Command} -volume-palette ${volume_out} \
 # Thus, it is either all or none for the label volumes.
 log_Msg "Label Volumes"
 for Volume in ${wmparc} ${ribbon} ; do
-
-	if ((LabelVols)); then
-		MergeVolumeSTRING=""
-		for Subject in ${Subjlist} ; do
-			MergeVolumeSTRING=`echo "${MergeVolumeSTRING}${StudyFolder}/${Subject}/MNINonLinear/${Volume}.nii.gz "`
-		done
-		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
-		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
-		fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
-		${Caret7_Command} -volume-label-import ${allvolumes} ${FreeSurferLabels} ${allvolumes} -drop-unused-labels
-		${Caret7_Command} -volume-reduce ${allvolumes} MODE ${avgvolume}
-		${Caret7_Command} -volume-label-import ${avgvolume} ${FreeSurferLabels} ${avgvolume} -drop-unused-labels
-	else  # --no-label-vols flag was used
-		log_Msg "Skipping creation of merged and average ${Volume}."
-	fi
-
+	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+		if ((LabelVols)); then
+			MergeVolumeSTRING=""
+			foldername="${CommonAtlasFolder##*/}"
+			for Subject in ${Subjlist} ; do
+				MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "
+			done
+			allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
+			avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
+			fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
+			${Caret7_Command} -volume-label-import ${allvolumes} ${FreeSurferLabels} ${allvolumes} -drop-unused-labels
+			${Caret7_Command} -volume-reduce ${allvolumes} MODE ${avgvolume}
+			${Caret7_Command} -volume-label-import ${avgvolume} ${FreeSurferLabels} ${avgvolume} -drop-unused-labels
+		else  # --no-label-vols flag was used
+			log_Msg "Skipping creation of merged and average ${Volume}."
+		fi
+	done
 done
 
 # Make Average Surfaces and Surface Data
 log_Msg "Make Average Surfaces and Surface Data"
-for Hemisphere in L R ; do
-	if [ ${Hemisphere} = "L" ] ; then
-		Structure="CORTEX_LEFT"
-	elif [ ${Hemisphere} = "R" ] ; then
-		Structure="CORTEX_RIGHT"
-	fi
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+	for Hemisphere in L R ; do
+		if [ ${Hemisphere} = "L" ] ; then
+			Structure="CORTEX_LEFT"
+		elif [ ${Hemisphere} = "R" ] ; then
+			Structure="CORTEX_RIGHT"
+		fi
 
-	# Copying of some atlas files
-	file1=${SurfaceAtlasDIR}/fsaverage.${Hemisphere}_LR.spherical_std.${HighResMesh}k_fs_LR.surf.gii
-	file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii
-	cp ${file1} ${file2}
-
-	file1=${SurfaceAtlasDIR}/${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
-	file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
-	cp ${file1} ${file2}
-
-	file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
-	file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
-	if [ -e ${file1} ] ; then
+		# Copying of some atlas files
+		file1=${SurfaceAtlasDIR}/fsaverage.${Hemisphere}_LR.spherical_std.${HighResMesh}k_fs_LR.surf.gii
+		file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii
 		cp ${file1} ${file2}
 
-		spec_file=${CommonAtlasFolder}/${GroupAverageName}${SpecRegSTRING}.${HighResMesh}k_fs_LR.wb.spec
-		surf_file=${file2}
-		log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
-		${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
-	fi
-
-	i=1
-	for LowResMesh in ${LowResMeshes} ; do
-		log_Msg "LowResMesh: ${LowResMesh}"
-		CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
-
-		file1=${SurfaceAtlasDIR}/${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
-		file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
+		file1=${SurfaceAtlasDIR}/${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
+		file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
 		cp ${file1} ${file2}
 
-		file1=${GrayordinatesSpaceDIR}/${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-		file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-		cp ${file1} ${file2}
-
-		file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
-		file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
+		file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
+		file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
 		if [ -e ${file1} ] ; then
 			cp ${file1} ${file2}
 
-			spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${LowResMesh}k_fs_LR.wb.spec
+			spec_file=${CommonAtlasFolder}/${GroupAverageName}${SpecRegSTRING}.${HighResMesh}k_fs_LR.wb.spec
 			surf_file=${file2}
 			log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 		fi
-		i=$(($i+1))
+
+		i=1
+		for LowResMesh in ${LowResMeshes} ; do
+			log_Msg "LowResMesh: ${LowResMesh}"
+			CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
+
+			file1=${SurfaceAtlasDIR}/${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
+			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
+			cp ${file1} ${file2}
+
+			file1=${GrayordinatesSpaceDIR}/${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+			cp ${file1} ${file2}
+
+			file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
+			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
+			if [ -e ${file1} ] ; then
+				cp ${file1} ${file2}
+
+				spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${LowResMesh}k_fs_LR.wb.spec
+				surf_file=${file2}
+				log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
+				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
+			fi
+			i=$(($i+1))
+
+		done
+
+		# Average the actual surfaces across subjects
+		for Mesh in ${HighResMesh} ${LowResMeshes} ; do
+			if [ $Mesh = ${HighResMesh} ] ; then
+				CommonFolder=${CommonAtlasFolder}
+				Scale="4"
+			else
+				i=1
+				for LowResMesh in ${LowResMeshes} ; do
+					if [ ${LowResMesh} = ${Mesh} ] ; then
+						CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
+					fi
+					Scale="1"
+					i=$(($i+1))
+				done
+			fi
+
+			spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
+			surf_file=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
+
+			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
+			foldername="${CommonAtlasFolder##*/}"
+			for Surface in white midthickness pial ; do
+				log_Msg "Surface: ${Surface}; Mesh: ${Mesh}"
+				SurfaceSTRING=""
+				for Subject in $Subjlist ; do
+					#log_Msg "Subject: ${Subject}"
+					AtlasFolder="${StudyFolder}/${Subject}/${foldername}"
+					if [ $Mesh = ${HighResMesh} ] ; then
+						Folder=${AtlasFolder}
+					else
+						i=1
+						for LowResMesh in ${LowResMeshes} ; do
+							if [ ${LowResMesh} = ${Mesh} ] ; then
+								DownSampleFolderName=`echo ${DownSampleFolderNames} | cut -d " " -f ${i}`
+							fi
+							i=$(($i+1))
+						done
+						DownSampleFolder="${StudyFolder}/${Subject}/${foldername}/${DownSampleFolderName}"
+						Folder=${DownSampleFolder}
+					fi
+					SurfaceSTRING=`echo "${SurfaceSTRING} -surf ${Folder}/${Subject}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii "`
+				done
+
+				surface_out=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+				uncert_metric_out=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}_uncertainty.${Mesh}k_fs_LR.shape.gii
+				stddev_metric_out=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}_std.${Mesh}k_fs_LR.shape.gii
+
+				log_Msg "About to average surface files"
+				log_Msg "surface_out: ${surface_out}"
+				log_Msg "uncert_metric_out: ${uncert_metric_out}"
+				log_Msg "stddev_metric_out: ${stddev_metric_out}"
+				#log_Msg "SurfaceSTRING: ${SurfaceSTRING}"
+				${Caret7_Command} -surface-average ${surface_out} -uncertainty ${uncert_metric_out} -stddev ${stddev_metric_out} ${SurfaceSTRING}
+
+
+				spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
+				surf_file=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+				log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
+				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
+
+				#log_Msg "${Caret7_Command} -metric-palette 1"
+				${Caret7_Command} -metric-palette ${uncert_metric_out} MODE_AUTO_SCALE_PERCENTAGE \
+					-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+
+				#log_Msg "${Caret7_Command} -metric-palette 2"
+				${Caret7_Command} -metric-palette ${stddev_metric_out} MODE_AUTO_SCALE_PERCENTAGE \
+					-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
+
+				#log_Msg "Back for another surface"
+			done
+
+			# Generate inflated versions of midthickness surface
+			log_Msg "Generating inflated version of group average midthickness surface"
+			surface_in=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+			inflated_surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+			veryinflated_surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.very_inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii
+			${Caret7_Command} -surface-generate-inflated ${surface_in} ${inflated_surface} ${veryinflated_surface} -iterations-scale ${Scale}
+			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${inflated_surface}
+			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${veryinflated_surface}
+		done
 
 	done
+done
 
-	# Average the actual surfaces across subjects
+log_Debug_Msg "Debug Point 1"
+
+# Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
+for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
-			Scale="4"
 		else
 			i=1
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
 					CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
 				fi
-				Scale="1"
 				i=$(($i+1))
 			done
 		fi
 
-		spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
-		surf_file=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${Mesh}k_fs_LR.surf.gii
+		for Map in white${RegSTRING}_std white${RegSTRING}_uncertainty midthickness${RegSTRING}_std midthickness${RegSTRING}_uncertainty pial${RegSTRING}_std pial${RegSTRING}_uncertainty ; do
+			PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
+			PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
+			cifti_out=${CommonFolder}/${GroupAverageName}.${Map}.${Mesh}k_fs_LR.dscalar.nii
+			${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
+				-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
+				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
+				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 
-		${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
-
-		for Surface in white midthickness pial ; do
-			log_Msg "Surface: ${Surface}; Mesh: ${Mesh}"
-			SurfaceSTRING=""
-			for Subject in $Subjlist ; do
-				#log_Msg "Subject: ${Subject}"
-				AtlasFolder="${StudyFolder}/${Subject}/MNINonLinear"
-				if [ $Mesh = ${HighResMesh} ] ; then
-					Folder=${AtlasFolder}
-				else
-					i=1
-					for LowResMesh in ${LowResMeshes} ; do
-						if [ ${LowResMesh} = ${Mesh} ] ; then
-							DownSampleFolderName=`echo ${DownSampleFolderNames} | cut -d " " -f ${i}`
-						fi
-						i=$(($i+1))
-					done
-					DownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/${DownSampleFolderName}"
-					Folder=${DownSampleFolder}
-				fi
-				SurfaceSTRING=`echo "${SurfaceSTRING} -surf ${Folder}/${Subject}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii "`
+			${Caret7_Command} -set-map-name ${cifti_out} 1 ${GroupAverageName}_${Map}
+			${Caret7_Command} -cifti-palette ${cifti_out} ${PaletteStringOne} ${cifti_out} ${PaletteStringTwo}
+			for Hemisphere in L R ; do
+				rm ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Map}.${Mesh}k_fs_LR.shape.gii
 			done
-
-			surface_out=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii
-			uncert_metric_out=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}_uncertainty.${Mesh}k_fs_LR.shape.gii
-			stddev_metric_out=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}_std.${Mesh}k_fs_LR.shape.gii
-
-			log_Msg "About to average surface files"
-			log_Msg "surface_out: ${surface_out}"
-			log_Msg "uncert_metric_out: ${uncert_metric_out}"
-			log_Msg "stddev_metric_out: ${stddev_metric_out}"
-			#log_Msg "SurfaceSTRING: ${SurfaceSTRING}"
-			${Caret7_Command} -surface-average ${surface_out} -uncertainty ${uncert_metric_out} -stddev ${stddev_metric_out} ${SurfaceSTRING}
-
-
-			spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
-			surf_file=${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii
-			log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
-			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
-
-			#log_Msg "${Caret7_Command} -metric-palette 1"
-			${Caret7_Command} -metric-palette ${uncert_metric_out} MODE_AUTO_SCALE_PERCENTAGE \
-				-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
-
-			#log_Msg "${Caret7_Command} -metric-palette 2"
-			${Caret7_Command} -metric-palette ${stddev_metric_out} MODE_AUTO_SCALE_PERCENTAGE \
-				-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false
-
-			#log_Msg "Back for another surface"
-		done
-
-		# Generate inflated versions of midthickness surface
-		log_Msg "Generating inflated version of group average midthickness surface"
-		surface_in=${CommonFolder}/${GroupAverageName}.${Hemisphere}.midthickness${RegSTRING}.${Mesh}k_fs_LR.surf.gii
-		inflated_surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii
-		veryinflated_surface=${CommonFolder}/${GroupAverageName}.${Hemisphere}.very_inflated${RegSTRING}.${Mesh}k_fs_LR.surf.gii
-		${Caret7_Command} -surface-generate-inflated ${surface_in} ${inflated_surface} ${veryinflated_surface} -iterations-scale ${Scale}
-		${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${inflated_surface}
-		${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${veryinflated_surface}
-	done
-
-done
-
-log_Debug_Msg "Debug Point 1"
-
-# Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
-for Mesh in ${HighResMesh} ${LowResMeshes} ; do
-	if [ $Mesh = ${HighResMesh} ] ; then
-		CommonFolder=${CommonAtlasFolder}
-	else
-		i=1
-		for LowResMesh in ${LowResMeshes} ; do
-			if [ ${LowResMesh} = ${Mesh} ] ; then
-				CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
-			fi
-			i=$(($i+1))
-		done
-	fi
-
-	for Map in white${RegSTRING}_std white${RegSTRING}_uncertainty midthickness${RegSTRING}_std midthickness${RegSTRING}_uncertainty pial${RegSTRING}_std pial${RegSTRING}_uncertainty ; do
-		PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
-		PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
-		cifti_out=${CommonFolder}/${GroupAverageName}.${Map}.${Mesh}k_fs_LR.dscalar.nii
-		${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
-			-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
-			-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-			-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
-			-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
-
-		${Caret7_Command} -set-map-name ${cifti_out} 1 ${GroupAverageName}_${Map}
-		${Caret7_Command} -cifti-palette ${cifti_out} ${PaletteStringOne} ${cifti_out} ${PaletteStringTwo}
-		for Hemisphere in L R ; do
-			rm ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Map}.${Mesh}k_fs_LR.shape.gii
 		done
 	done
 done
+
+#Surface-only data is stored in the MNINonLinear folder. Currently no plans to create VA files in MMORF space.
+CommonAtlasFolder="${CommonFolder}/MNINonLinear"
 
 log_Msg "Completed generation of average surfaces"
 log_Debug_Msg "Debug Point 2"
