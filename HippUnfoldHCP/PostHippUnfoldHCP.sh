@@ -3,9 +3,9 @@ set -eu
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
-   pipedirguessed=1
-   #fix this if the script is more than one level below HCPPIPEDIR
-   export HCPPIPEDIR="$(dirname -- "$0")/.."
+    pipedirguessed=1
+    #fix this if the script is more than one level below HCPPIPEDIR
+    export HCPPIPEDIR="$(dirname -- "$0")/.."
 fi
 
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
@@ -49,11 +49,11 @@ else
 fi
 
 if [ -z ${PhysicalHippUnfoldDIR-} ] ; then
-  PhysicalHippUnfoldDIR="${T1wFolder}/HippUnfold"
+    PhysicalHippUnfoldDIR="${T1wFolder}/HippUnfold"
 fi 
 
 if [ -z ${AtlasHippUnfoldDIR-} ] ; then
-  AtlasHippUnfoldDIR="${AtlasFolder}/HippUnfold"
+    AtlasHippUnfoldDIR="${AtlasFolder}/HippUnfold"
 fi 
 
 RawHippUnfoldFolder="${PhysicalHippUnfoldDIR}/sub-${Subject}"
@@ -71,16 +71,6 @@ for Mesh in "${Meshes[@]}"; do
             ;;
         *)
             log_Err_Abort "Unrecognized HippUnfold mesh '$Mesh'"
-            ;;
-    esac
-done
-
-for Mesh in "${BrainMeshes[@]}"; do
-    case "$Mesh" in
-        native|32k|59k|164k)
-            ;;
-        *)
-            log_Err_Abort "Unrecognized Brain mesh '$Mesh'"
             ;;
     esac
 done
@@ -134,21 +124,21 @@ for MeshIndex in "${!Meshes[@]}"; do
     Labels="atlas-multihist7_subfields@HippocampalSubfields"
     for Structure in $Structures ; do
         for Hemisphere in L R ; do
-        #surfacea no longer computed by HippUnfold
-        wb_command -surface-vertex-areas $RawHippUnfoldFolder/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_midthickness.surf.gii $RawHippUnfoldFolder/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_surfarea.shape.gii
+            #surfacea no longer computed by HippUnfold
+            wb_command -surface-vertex-areas $RawHippUnfoldFolder/surf/sub-${Subject}_hemi-${Hemisphere}_space-${Space}_den-${Mesh}_label-${Structure}_midthickness.surf.gii $RawHippUnfoldFolder/metric/sub-${Subject}_hemi-${Hemisphere}_den-${Mesh}_label-${Structure}_surfarea.shape.gii
         done
         for Hemisphere in L R ; do
         if [ ${Hemisphere} = "L" ] ; then
             if [ ${Structure} = "dentate" ] ; then
-            HemiStructure="HIPPOCAMPUS_DENTATE_LEFT"
+                HemiStructure="HIPPOCAMPUS_DENTATE_LEFT"
             elif [ ${Structure} = "hipp" ] ; then
-            HemiStructure="HIPPOCAMPUS_LEFT"
+                HemiStructure="HIPPOCAMPUS_LEFT"
             fi
         elif [ ${Hemisphere} = "R" ] ; then
             if [ ${Structure} = "dentate" ] ; then
-            HemiStructure="HIPPOCAMPUS_DENTATE_RIGHT"
+                HemiStructure="HIPPOCAMPUS_DENTATE_RIGHT"
             elif [ ${Structure} = "hipp" ] ; then
-            HemiStructure="HIPPOCAMPUS_RIGHT"
+                HemiStructure="HIPPOCAMPUS_RIGHT"
             fi
         fi
         
@@ -160,7 +150,7 @@ for MeshIndex in "${!Meshes[@]}"; do
             wb_command -set-structure ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${HemiStructure} -surface-type ANATOMICAL -surface-secondary-type ${SurfaceType}
             wb_command -spec-file-modify ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec -add ${HemiStructure} ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
             # $FNIRT registration
-            wb_command -surface-apply-warpfield ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${AtlasFolder}/xfms/standard2acpc_dc.nii.gz ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii -fnirt "${AtlasFolder}/xfms/acpc_dc2standard.nii.gz"
+            wb_command -surface-apply-warpfield ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii ${AtlasFolder}/xfms/standard2acpc_dc.nii.gz ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii -fnirt "${AtlasFolder}/T1w_restore.nii.gz"
             wb_command -spec-file-modify ${AtlasHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec -add ${HemiStructure} ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Surface}.${Mesh}.surf.gii
             # MMORF registration
             if $runMMORF; then
@@ -195,10 +185,15 @@ for MeshIndex in "${!Meshes[@]}"; do
             else
                 cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
             fi
-            if $runMMORF && [[ $Scalar = "surfarea" ]] ; then
-                wb_command -surface-vertex-areas ${MMORFHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${MMORFHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+            if [ $Scalar = "surfarea" ] ; then
+                wb_command -surface-vertex-areas ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
             else
-                cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${MMORFHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+                cp ${PhysicalHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii ${AtlasHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
+            fi
+
+            # Added: only surface area needs an MMORF-specific metric
+            if $runMMORF && [[ "$Scalar" == "surfarea" ]]; then
+                wb_command -surface-vertex-areas ${MMORFHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${MMORFHippUnfoldFolder}/${Subject}.${Hemisphere}.${Structure}_${Scalar}.${Mesh}.shape.gii
             fi
         done
         
@@ -247,10 +242,12 @@ for MeshIndex in "${!Meshes[@]}"; do
         wb_command -set-map-names ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -map 1 "${Subject}_${Name}"
         wb_command -spec-file-modify ${PhysicalHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec -add INVALID ${PhysicalHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii
 
-        wb_command -cifti-create-dense-scalar ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -metric HIPPOCAMPUS_LEFT ${MMORFHippUnfoldFolder}/${Subject}.L.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_RIGHT ${MMORFHippUnfoldFolder}/${Subject}.R.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${MMORFHippUnfoldFolder}/${Subject}.L.dentate_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${MMORFHippUnfoldFolder}/${Subject}.R.dentate_${Scalar}.${Mesh}.shape.gii
-        PALETTE ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii $Color cifti wb_command
-        wb_command -set-map-names ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -map 1 ${Subject}_${Name}
-        wb_command -spec-file-modify ${MMORFHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec -add INVALID ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii
+        if $runMMORF && [[ "$Scalar" == "surfarea" ]]; then
+            wb_command -cifti-create-dense-scalar ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -metric HIPPOCAMPUS_LEFT ${MMORFHippUnfoldFolder}/${Subject}.L.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_RIGHT ${MMORFHippUnfoldFolder}/${Subject}.R.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${MMORFHippUnfoldFolder}/${Subject}.L.dentate_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${MMORFHippUnfoldFolder}/${Subject}.R.dentate_${Scalar}.${Mesh}.shape.gii
+            PALETTE ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii $Color cifti wb_command
+            wb_command -set-map-names ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -map 1 ${Subject}_${Name}
+            wb_command -spec-file-modify ${MMORFHippUnfoldFolder}/${Subject}.${Mesh}.wb_spec -add INVALID ${MMORFHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii
+        fi
 
         wb_command -cifti-create-dense-scalar ${AtlasHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii -metric HIPPOCAMPUS_LEFT ${AtlasHippUnfoldFolder}/${Subject}.L.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_RIGHT ${AtlasHippUnfoldFolder}/${Subject}.R.hipp_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_LEFT ${AtlasHippUnfoldFolder}/${Subject}.L.dentate_${Scalar}.${Mesh}.shape.gii -metric HIPPOCAMPUS_DENTATE_RIGHT ${AtlasHippUnfoldFolder}/${Subject}.R.dentate_${Scalar}.${Mesh}.shape.gii
         PALETTE ${AtlasHippUnfoldFolder}/${Subject}.hippocampus_${Scalar}.${Mesh}.dscalar.nii $Color cifti wb_command
