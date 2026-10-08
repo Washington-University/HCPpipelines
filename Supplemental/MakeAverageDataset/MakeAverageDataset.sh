@@ -202,6 +202,7 @@ ribbon="ribbon"
 # BuildPaths / Make Folders
 log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
+#WARNING: do not include a trailing slash on elements, we do string manipulation below
 CommonAtlasFolders=("${CommonFolder}/MNINonLinear" "${CommonFolder}/MMORFNonLinear")
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
