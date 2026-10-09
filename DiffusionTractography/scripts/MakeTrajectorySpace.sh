@@ -62,20 +62,11 @@ TrajectorySpaceFolder="${StudyFolder}/${Subject}/${volspace}"
 ROIsFolder="${TrajectorySpaceFolder}/${ROIsFolder}"
 ResultsFolder="${TrajectorySpaceFolder}/${ResultsFolder}"
 
-if [ ! -e ${ResultsFolder} ] ; then
-  mkdir ${ResultsFolder}
-fi
+mkdir -p "$ResultsFolder"
+mkdir -p "$ROIsFolder"
 
-if [ ! -e ${ROIsFolder} ] ; then
-  mkdir ${ROIsFolder}
-fi
-
-if [ -e "$ROIsFolder"/temp ] ; then
-  rm -r "$ROIsFolder"/temp
-  mkdir "$ROIsFolder"/temp
-else
-  mkdir "$ROIsFolder"/temp
-fi
+rm -rf "$ROIsFolder"/temp
+mkdir -p "$ROIsFolder"/temp
 
 
 ###We are creating the diffusion resolution reference
