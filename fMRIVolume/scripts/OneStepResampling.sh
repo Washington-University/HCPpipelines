@@ -73,7 +73,7 @@ opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'registration method' "whethe
 
 opts_AddOptional '--species' 'SPECIES' 'species' "species name" "Human"
 
-opts_AddOptional '--atlas-space' 'AtlasFolderBase' 'string' "atlas space to use for outputs, supported options are MNINonLinear (default) and MMORFNonLinear" "MNINonLinear"
+opts_AddOptional '--atlas-space' 'AtlasSpaceFolderBase' 'string' "atlas space to use for outputs, supported options are MNINonLinear (default) and MMORFNonLinear" "MNINonLinear"
 
 opts_ParseArguments "$@"
 
@@ -151,7 +151,7 @@ case "$AtlasSpaceFolderBase" in
         AtlasAlias="MMORF"
         ;;
     *)
-        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpace})"
+        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpaceFolderBase})"
         ;;
 esac
 
@@ -184,11 +184,11 @@ if [[ $SPECIES != Human ]] ; then
 else
     #For legacy reasons, we use human fMRI templates that aren't exactly the same dimensions as -applyisoxfm produces
     if [[ $(echo "${FinalfMRIResolution} == 2" | bc) == "1" ]] ; then
-      if [[ "$AtlAliassAlias" == "MNI" ]]; then
+      if [[ "$AtlasAlias" == "MNI" ]]; then
         ResampRefIm=$FSLDIR/data/standard/MNI152_T1_2mm
       else #[[ "$AtlasAlias" = "MMORF" ]]; then
         #ResampRefIm="Standard_MMORF_T1_2mm atlas"
-        log_err_Abort "MMORF 2mm template not supported"
+        log_Err_Abort "MMORF 2mm template not supported"
       fi
     elif [[ $(echo "${FinalfMRIResolution} == 1" | bc) == "1" ]] ; then
       if [[ "$AtlasAlias" = "MNI" ]]; then

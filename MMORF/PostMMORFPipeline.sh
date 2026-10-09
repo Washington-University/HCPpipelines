@@ -37,8 +37,8 @@ T1wImage="T1w"
 T1wFolderName="T1w"
 T2wImage="T2w"
 AtlasSpaceFolderName="MMORFNonLinear"
-
-
+T1wImageBrainMask="brainmask_fs"
+T1wImageBiasField="BiasField_acpc_dc"
 
 T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
 AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
@@ -49,6 +49,8 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
     --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
+    --t1brainmask="${T1wFolder}/${T1wImageBrainMask}" \
+    --t1biasfield="${T1wFolder}/${T1wImageBiasField}" \
     --t2="${T1wFolder}/${T2wImage}_acpc_dc" \
     --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
     --t2restbrain="${T1wFolder}/${T2wImage}_acpc_dc_restore_brain" \
@@ -59,10 +61,12 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
     --ot1="${AtlasSpaceFolder}/${T1wImage}" \
     --ot1rest="${AtlasSpaceFolder}/${T1wImage}_restore" \
     --ot1restbrain="${AtlasSpaceFolder}/${T1wImage}_restore_brain" \
+    --ot1brainmask="${AtlasSpaceFolder}/${T1wImageBrainMask}" \
+    --ot1biasfield="${AtlasSpaceFolder}/BiasField" \
     --ot2="${AtlasSpaceFolder}/${T2wImage}" \
     --ot2rest="${AtlasSpaceFolder}/${T2wImage}_restore" \
     --ot2restbrain="${AtlasSpaceFolder}/${T2wImage}_restore_brain" \
-    --outputfolder="${AtlasSpaceFolder}"
+    --outputfolder="${AtlasSpaceFolder}" \
 
 
 
@@ -75,7 +79,6 @@ AtlasSpaceT1wImage="T1w_restore"
 AtlasSpaceT2wImage="T2w_restore"
 T1wRestoreImage="T1w_acpc_dc_restore"
 T2wRestoreImage="T2w_acpc_dc_restore"
-T1wImageBrainMask="brainmask_fs"
 
 AtlasTransform="$AtlasSpaceFolder"/xfms/"$AtlasTransform"
 InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"

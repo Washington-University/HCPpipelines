@@ -596,40 +596,43 @@ case "$AtlasSpaceFolderBase" in
         AtlasAlias="MMORF"
         ;;
     *)
-        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpace})"
+        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpaceFolderBase})"
         ;;
 esac
 
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
 #this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
-sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
-# Set UseBiasFieldAtlasSpace variable, and error check BiasCorrection variable
-# (needs to go after "Naming Conventions" rather than the the initial argument parsing)
-case "$BiasCorrection" in
-    NONE)
-        UseBiasFieldAtlasSpace=""
-        ;;
-    LEGACY)
-        UseBiasFieldAtlasSpace="${fMRIFolder}/${BiasFieldAtlasSpace}.${FinalfMRIResolution}"
-        ;;
-    SEBASED)
-        if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
-        then
-            log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
-        fi
-        UseBiasFieldAtlasSpace="$sebasedBiasFieldAtlasSpace"
-        ;;
-    "")
-        log_Err_Abort "--biascorrection option not specified"
-        ;;
-    *)
-        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
-        ;;
-esac
-
+# This code is a function because it may be reused later to set UseBiasFieldAtlasSpace in longitudinal mode, 
+# after OneStepResampling completed and the bias field has been computed
+function SetUseBiasFieldAtlasSpace() {
+    # Set UseBiasFieldAtlasSpace variable, and error check BiasCorrection variable
+    # (needs to go after "Naming Conventions" rather than the the initial argument parsing)
+    sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+    case "$BiasCorrection" in
+        NONE)
+            UseBiasFieldAtlasSpace=""
+            ;;
+        LEGACY)
+            UseBiasFieldAtlasSpace="${fMRIFolder}/${BiasFieldAtlasSpace}.${FinalfMRIResolution}"
+            ;;
+        SEBASED)
+            if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
+            then
+                log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
+            fi
+            UseBiasFieldAtlasSpace="$sebasedBiasFieldAtlasSpace"
+            ;;
+        "")
+            log_Err_Abort "--biascorrection option not specified"
+            ;;
+        *)
+            log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
+            ;;
+    esac
+}
+SetUseBiasFieldAtlasSpace
 # ------------------------------------------------------------------------------
 #  Compliance check of Legacy Style Data options
 # ------------------------------------------------------------------------------
@@ -1050,6 +1053,7 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
+    SetUseBiasFieldAtlasSpace
 fi
 
 # Ensure multi-echo directory is set up for all RunModes
@@ -1172,7 +1176,8 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
         --wb-resample=${useWbResample} \
-        --species=${SPECIES}
+        --species=${SPECIES} \
+        --atlas-space="${AtlasSpaceFolderBase}"
 
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
