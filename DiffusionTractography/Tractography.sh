@@ -97,7 +97,7 @@ EXTRA_ARGS=()
 
 if [[ "$SeedingStrategy" == "Matrix3" ]]; then
     EXTRA_ARGS+=(
-        --target3="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+        --target3="${StudyFolder}/${Subject}/${volspace}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         --distthresh3=0
         --omatrix3
     )
@@ -107,6 +107,14 @@ else
         --omatrix1
     )
 fi
+
+if [[ "volspace" != "T1w" ]]; then
+    EXTRA_ARGS+=(
+        --xfm=${StudyFolder}/${Subject}/${volspace}/xfms/standard2acpc_dc.nii.gz
+        --invxfm=${StudyFolder}/${Subject}/${volspace}/xfms/acpc_dc2standard.nii.gz
+    )
+fi
+
 ###Target4 is reserved for T1w, whim overwrites it so it is fine to keep both.
 if [[ "$Matrix4" == "true" ]]; then
     EXTRA_ARGS+=(
@@ -116,7 +124,7 @@ if [[ "$Matrix4" == "true" ]]; then
 
     if [[ "$SeedingStrategy" == "Matrix3" ]]; then
         EXTRA_ARGS+=(
-            --colmask4="${StudyFolder}/${Subject}/T1w/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
+            --colmask4="${StudyFolder}/${Subject}/${volspace}/ROIs/${Subject}.GreyROI${Whim_Tagged_RegString}.${DiffResMesh}k_fs_LR_${DiffusionResolution}.txt"
         )
     fi
 fi
