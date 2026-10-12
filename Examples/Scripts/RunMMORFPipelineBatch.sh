@@ -7,6 +7,8 @@ EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeli
 
 source "${EnvironmentScript}"
 
+#TemplateDir=${HCPPIPEDIR_Templates}
+
 T1wTemplate="${TemplateDir}/MMORF_T1_0.7mm.nii.gz"
 T2wTemplate="${TemplateDir}/MMORF_T2_0.7mm.nii.gz"
 refmask="${TemplateDir}/MMORF_T1_0.7mm_brain_mask.nii.gz"
