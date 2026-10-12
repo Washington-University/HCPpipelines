@@ -350,7 +350,6 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 		# Average the actual surfaces across subjects
 		for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 			if [ $Mesh = ${HighResMesh} ] ; then
-				CommonFolder=${CommonAtlasFolder}
 				Scale="4"
 			else
 				i=1
@@ -375,7 +374,11 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 					#log_Msg "Subject: ${Subject}"
 					AtlasFolder="${StudyFolder}/${Subject}/${foldername}"
 					if [ $Mesh = ${HighResMesh} ] ; then
-						Folder=${AtlasFolder}
+						if [ "$CommonAtlasFolder" = "${CommonFolder}/MNINonLinear" ] ; then
+							Folder="${AtlasFolder}"
+						else
+							Folder="${AtlasFolder}/fsaverage_LR${Mesh}k"
+						fi
 					else
 						i=1
 						for LowResMesh in ${LowResMeshes} ; do
