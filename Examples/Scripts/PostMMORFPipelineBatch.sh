@@ -11,6 +11,7 @@ EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeli
 
 source "${EnvironmentScript}"
 
+#TemplateDir=${HCPPIPEDIR_Templates}
 T1wTemplate="${TemplateDir}/MMORF_T1_0.7mm.nii.gz"
 
 QUEUE=""
