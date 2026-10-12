@@ -451,28 +451,28 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 				i=$(($i+1))
 			done
 		fi
-
+#
 		for Map in white${RegSTRING}_std white${RegSTRING}_uncertainty midthickness${RegSTRING}_std midthickness${RegSTRING}_uncertainty pial${RegSTRING}_std pial${RegSTRING}_uncertainty ; do
 			PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
 			PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
 			cifti_out=${CommonFolder}/${GroupAverageName}.${Map}.${Mesh}k_fs_LR.dscalar.nii
-			${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
-				-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
-				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
-				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+#			${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
+#				-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
+#				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+#				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
+#				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 
 			${Caret7_Command} -set-map-name ${cifti_out} 1 ${GroupAverageName}_${Map}
 			${Caret7_Command} -cifti-palette ${cifti_out} ${PaletteStringOne} ${cifti_out} ${PaletteStringTwo}
-			for Hemisphere in L R ; do
-				rm ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Map}.${Mesh}k_fs_LR.shape.gii
-			done
+#			for Hemisphere in L R ; do
+#				rm ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Map}.${Mesh}k_fs_LR.shape.gii
+#			done
 		done
 	done
 done
 
 #Surface-only data is stored in the MNINonLinear folder. Currently no plans to create VA files in MMORF space.
-CommonAtlasFolder="${CommonFolder}/MNINonLinear"
+CommonAtlasFolder="${StudyFolder}/${GroupAverageName}/MNINonLinear"
 
 log_Msg "Completed generation of average surfaces"
 log_Debug_Msg "Debug Point 2"
