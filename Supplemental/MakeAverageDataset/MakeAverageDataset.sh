@@ -292,6 +292,7 @@ done
 
 # Make Average Surfaces and Surface Data
 log_Msg "Make Average Surfaces and Surface Data"
+offset=0
 for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	for Hemisphere in L R ; do
 		if [ ${Hemisphere} = "L" ] ; then
@@ -320,11 +321,10 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 		fi
 
-		i=1
+		i=$((1 + offset))
 		for LowResMesh in ${LowResMeshes} ; do
 			log_Msg "LowResMesh: ${LowResMesh}"
-			CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
-
+			CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
 			file1=${SurfaceAtlasDIR}/${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
 			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
 			cp ${file1} ${file2}
@@ -353,10 +353,10 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 				CommonFolder=${CommonAtlasFolder}
 				Scale="4"
 			else
-				i=1
+				i=$((1 + offset))
 				for LowResMesh in ${LowResMeshes} ; do
 					if [ ${LowResMesh} = ${Mesh} ] ; then
-						CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
+						CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
 					fi
 					Scale="1"
 					i=$(($i+1))
@@ -381,10 +381,10 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 							Folder="${AtlasFolder}/fsaverage_LR${Mesh}k"
 						fi
 					else
-						i=1
+						i=$((1 + offset))
 						for LowResMesh in ${LowResMeshes} ; do
 							if [ ${LowResMesh} = ${Mesh} ] ; then
-								DownSampleFolderName=`echo ${DownSampleFolderNames} | cut -d " " -f ${i}`
+								DownSampleFolderName="fsaverage_LR${Mesh}k"
 							fi
 							i=$(($i+1))
 						done
@@ -433,42 +433,43 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 		done
 
 	done
+	offset=$((offset + $(echo "${LowResMeshes}" | wc -w)))
 done
 
 log_Debug_Msg "Debug Point 1"
-
+offset=0
 # Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
 for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
 		else
-			i=1
+			i=$((1 + offset))
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
-					CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
+					CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
 				fi
 				i=$(($i+1))
 			done
 		fi
-#
 		for Map in white${RegSTRING}_std white${RegSTRING}_uncertainty midthickness${RegSTRING}_std midthickness${RegSTRING}_uncertainty pial${RegSTRING}_std pial${RegSTRING}_uncertainty ; do
 			PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
 			PaletteStringTwo="-pos-percent 4 96 -interpolate true -palette-name videen_style -disp-pos true -disp-neg false -disp-zero false"
 			cifti_out=${CommonFolder}/${GroupAverageName}.${Map}.${Mesh}k_fs_LR.dscalar.nii
-#			${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
-#				-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
-#				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
-#				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
-#				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
+			${Caret7_Command} -cifti-create-dense-scalar ${cifti_out} \
+				-left-metric ${CommonFolder}/${GroupAverageName}.L.${Map}.${Mesh}k_fs_LR.shape.gii \
+				-roi-left ${CommonFolder}/${GroupAverageName}.L.atlasroi.${Mesh}k_fs_LR.shape.gii \
+				-right-metric ${CommonFolder}/${GroupAverageName}.R.${Map}.${Mesh}k_fs_LR.shape.gii \
+				-roi-right ${CommonFolder}/${GroupAverageName}.R.atlasroi.${Mesh}k_fs_LR.shape.gii
 
 			${Caret7_Command} -set-map-name ${cifti_out} 1 ${GroupAverageName}_${Map}
 			${Caret7_Command} -cifti-palette ${cifti_out} ${PaletteStringOne} ${cifti_out} ${PaletteStringTwo}
-#			for Hemisphere in L R ; do
-#				rm ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Map}.${Mesh}k_fs_LR.shape.gii
-#			done
+			for Hemisphere in L R ; do
+				rm ${CommonFolder}/${GroupAverageName}.${Hemisphere}.${Map}.${Mesh}k_fs_LR.shape.gii
+			done
 		done
 	done
+	offset=$((offset + $(echo "${LowResMeshes}" | wc -w)))
 done
 
 #Surface-only data is stored in the MNINonLinear folder. Currently no plans to create VA files in MMORF space.
@@ -488,7 +489,7 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		i=1
 		for LowResMesh in ${LowResMeshes} ; do
 			if [ ${LowResMesh} = ${Mesh} ] ; then
-				CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
+				CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
 			fi
 			i=$(($i+1))
 		done
