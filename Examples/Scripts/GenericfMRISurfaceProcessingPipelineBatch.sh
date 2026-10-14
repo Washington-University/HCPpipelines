@@ -64,7 +64,7 @@ echo "$@"
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE="dyn.q"
+QUEUE=""
 #QUEUE="hcp_priority.q"
 
 ########################################## INPUTS ########################################## 
@@ -109,11 +109,7 @@ for Subject in $Subjlist ; do
         doGoodVoxels="YES" #Exclude noisy voxels during hippocampal volume-to-surface mapping; YES or NO
         factor="1.5" #Good-voxel upper threshold is MEAN + factor * STD of the normalized, locally adjusted coefficient of variation; larger values exclude fewer voxels
         MeshString="2k" #Resampled HippUnfold mesh: 512, 2k, 8k, or 18k; native mesh is also processed by the pipeline
-        if [[ "${fMRIName}" == rfMRI_* ]] ; then
-            ProcString="_hp2000_clean_rclean_tclean"
-        else
-            ProcString="_hp0_clean_rclean_tclean"
-        fi
+
         if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
             echo "About to locally run ${HCPPIPEDIR}/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh"
             queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
