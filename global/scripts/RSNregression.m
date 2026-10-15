@@ -1,6 +1,5 @@
 function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, varargin)
-    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputZMM' 'OutputVolBeta' 'OutputVolZ' 'OutputVolZMM' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma' 'WF'});
-    
+    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'HippInputFile' 'HippInputVNFile' 'OutputHippBeta' 'OutputHippZ' 'OutputHippZMM' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputZMM' 'OutputVolBeta' 'OutputVolZ' 'OutputVolZMM' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma' 'WF'});
     %InputFile - text file containing filenames of timeseries to concatenate
     %InputVNFile - text file containing filenames of the variance maps of each input
     %GroupMaps - file name of maps to use as a template
@@ -27,7 +26,9 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     %ScaleFactor - string representation of a number, multiply the input data by this factor before processing (to convert grand mean 10,000 data to % bold, use 0.01)
     %WRSmoothingSigma - string representation of a number, when using 'weighted' method, smooth the alignment quality map with this sigma (default 14, tuned for human data)
     %WF - number of Wishart Distributions for Wishart Filtering, set to zero to turn off (default)
-    
+    %HippInputFile/HippInputVNFile - hippocampal CIFTI timeseries and variance-normalization file lists
+    %OutputHippBeta/OutputHippZ/OutputHippZMM - hippocampal output CIFTIs
+ 
     %if isdeployed()
         %all arguments are strings
     %end
@@ -86,6 +87,22 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         end
     end
     
+    doHipp = false;
+    if ~strcmp(optional.HippInputFile, '')
+        doHipp = true;
+        if strcmp(optional.HippInputVNFile, '')
+            error('HippInputVNFile is required with HippInputFile');
+        end
+        hippinputArray = myreadtext(optional.HippInputFile);
+        hippinputVNArray = myreadtext(optional.HippInputVNFile);
+        if size(hippinputArray, 1) ~= size(inputArray, 1)
+            error('HippInputFile is not empty, but has different number of lines than InputFile');
+        end
+        if size(hippinputArray, 1) ~= size(hippinputVNArray, 1)
+            error('HippInputVNFile has different number of lines than HippInputFile');
+        end
+    end
+    
     %input parsing done, sanity checks go here
     if doVol && doFixBC ~= doVolFixBC
         if (doFixBC)
@@ -114,9 +131,11 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             inputConcat = tempnorm;
             vnsum = tempvncii.cdata;
         else
-            inputConcat = [inputConcat tempnorm]; %#ok<AGROW>
+            inputConcat = [inputConcat tempnorm];
             vnsum = vnsum + tempvncii.cdata; % should this use weighted and/or geometric mean?  are there zeros?
         end
+
+        runTimepoints = size(tempnorm, 2);
         clear tempcii tempnorm tempvncii tempBCcifti;
         if doVol
             tempvolcii = open_vol_as_cifti(volinputArray{i}, optional.VolCiftiTemplate, wbcommand);
@@ -133,10 +152,35 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 volInputConcat = tempvolnorm;
                 vnvolsum = tempvolvncii.cdata;
             else
-                volInputConcat = [volInputConcat tempvolnorm]; %#ok<AGROW>
+                volInputConcat = [volInputConcat tempvolnorm];
                 vnvolsum = vnvolsum + tempvolvncii.cdata;
             end
             clear tempvolnorm tempvolvncii tempvolBCcifti;
+        end
+
+        if doHipp
+            temphippcii = ciftiopen(hippinputArray{i}, wbcommand);
+            temphippvncii = ciftiopen(hippinputVNArray{i}, wbcommand);
+            if size(temphippcii.cdata, 2) ~= runTimepoints
+                error('Hippocampal and whole-brain runs have different numbers of time points');
+            end
+            if size(temphippvncii.cdata, 1) ~= size(temphippcii.cdata, 1) || ...
+                    size(temphippvncii.cdata, 2) ~= 1
+                error('Hippocampal VN must contain one value per brainordinate');
+            end
+            temphippvncii.cdata = max(temphippvncii.cdata / mean(temphippvncii.cdata), 0.001);
+            temphippnorm = ScaleFactor * demean(temphippcii.cdata, 2) ./ repmat(temphippvncii.cdata, 1, size(temphippcii.cdata, 2));
+            clear temphippcii;
+            if i == 1
+                outHippTemplate = temphippvncii;
+                outHippTemplate.cdata = [];
+                hippInputConcat = temphippnorm;
+                vnhippsum = temphippvncii.cdata;
+            else
+                hippInputConcat = [hippInputConcat temphippnorm];
+                vnhippsum = vnhippsum + temphippvncii.cdata;
+            end
+            clear temphippnorm temphippvncii;
         end
     end
     
@@ -145,6 +189,11 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     if doVol
         vnvolmean = vnvolsum / size(inputArray, 1);
         clear vnvolsum;
+    end
+    
+    if doHipp
+        vnhippmean = vnhippsum / size(inputArray, 1);
+        clear vnhippsum;
     end
     
     if strcmp(Method,'weighted') || strcmp(Method,'dual') || strcmp(Method,'tICA_weighted') 
@@ -172,9 +221,9 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 betaICAone = weightedDualRegression(LowDim.cdata, inputConcat, AreaWeights, 0); %Always use WF=0
                 betaICA = weightedDualRegression(betaICAone, inputConcat, AreaWeights, 0); %Always use WF=0
                 for j = 1:length(betaICA)
-                    var(j) = atanh(corr(betaICA(j, :)', LowDim.cdata(j, :)')); %#ok<AGROW>
+                    var(j) = atanh(corr(betaICA(j, :)', LowDim.cdata(j, :)'));
                 end
-                corrs(:, i) = var'; %#ok<AGROW>
+                corrs(:, i) = var';
             end
             outTemplate.cdata = mean(corrs, 2);
             mytempfile = [tempname() '_tosmooth.dscalar.nii'];
@@ -296,7 +345,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             dof = size(NODEtsnorm, 1) - size(NODEtsnorm, 2) - 1; %Approximate, does not include DOF lost from data cleanup
         end
         residuals = demean(inputConcat, 2) - betaICA * NODEtsnorm';
-        pN = pinv(NODEtsnorm); dpN = diag(pN * pN')';
+        pN = pinv(NODEtsnorm); 
+        dpN = diag(pN * pN')';
         t = double(betaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
         Z = zeros(size(t));
         %Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)
@@ -311,13 +361,48 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         end
     end
     
+    %hippocampal outputs
+    if doHipp
+        if WF == 0
+            hippWF=0;
+        elseif WF == 1
+            hippWF=1;
+        elseif WF>1
+            hippWF=1; %Reduce hippWF to 1
+        end
+        [HippbetaICA, hippInputConcat, hippDOF] = temporalRegression(hippInputConcat,NODEtsnorm,hippWF);
+        if ~strcmp(optional.OutputHippBeta, '')
+            %multiply by vn to get back to BC
+            outHippTemplate.cdata = HippbetaICA .* repmat(vnhippmean, 1, size(HippbetaICA, 2));
+            ciftisavereset(outHippTemplate, optional.OutputHippBeta, wbcommand);
+        end
+        if ~strcmp(optional.OutputHippZ, '')
+            if hippWF>0
+                dof = hippDOF - size(NODEtsnorm, 2) - 1; %Approximate compensation for Wishart Filtering
+            else
+                dof = size(NODEtsnorm, 1) - size(NODEtsnorm, 2) - 1; %Approximate, does not include DOF lost from data cleanup
+            end
+            pN = pinv(NODEtsnorm);
+            dpN = diag(pN * pN')';
+            residuals = demean(hippInputConcat, 2) - HippbetaICA * NODEtsnorm';
+            t = double(HippbetaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
+            Z=((dof+0.125)./(dof+1.125)) .* sqrt((dof+19/12).*log(1+(t./(dof+1./12).*t))) .* sign(t);
+            Z(isnan(Z)) = 0;
+            outHippTemplate.cdata = Z;
+            ciftisavereset(outHippTemplate, optional.OutputHippZ, wbcommand);
+            if ~strcmp(optional.OutputHippZMM, '')
+                my_system(['''' getenv('HCPPIPEDIR') '''/global/scripts/mixtureModel.sh --input=''' optional.OutputHippZ ''' --output=''' optional.OutputHippZMM '''']);
+            end
+        end
+    end
+
     %volume outputs
     if doVol
         %VolbetaICA = ((pinv(NODEtsnorm) * demean(volInputConcat')))';
         if WF == 0
           volWF=0;
         elseif WF == 1
-          volWF=1
+          volWF=1;
         elseif WF>1
           volWF=1; %Reduce volWF to 1
         end
@@ -333,6 +418,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             else
                 dof = size(NODEtsnorm, 1) - size(NODEtsnorm, 2) - 1; %Approximate, does not include DOF lost from data cleanup
             end
+            pN = pinv(NODEtsnorm);
+            dpN = diag(pN * pN')';
             residuals = demean(volInputConcat, 2) - VolbetaICA * NODEtsnorm';
             t = double(VolbetaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
             Z = zeros(size(t));
