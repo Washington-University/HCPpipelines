@@ -32,6 +32,9 @@ opts_AddMandatory '--t2restbrain' 'T2wRestoreBrain' 'image' 'bias corrected, bra
 
 opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
 
+opts_AddMandatory '--t1brainmask' 'T1wBrainMask' 'image' 'T1w space FreeSurfer brain mask'
+
+opts_AddMandatory '--t1biasfield' 'T1wBiasField' 'image' 'T1w space FreeSurfer bias field'
 
 opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
@@ -44,6 +47,10 @@ opts_AddMandatory '--ot1' 'OutputT1wImage' 'image' 'output t1w to MMORF'
 opts_AddMandatory '--ot1rest' 'OutputT1wImageRestore' 'image' 'output bias corrected t1w to MMORF'
 
 opts_AddMandatory '--ot1restbrain' 'OutputT1wImageRestoreBrain' 'image' 'output bias corrected, brain extracted t1w to MMORF'
+
+opts_AddMandatory '--ot1brainmask' 'OutputT1wImageBrainMask' 'image' 'output brain mask t1w to MMORF'
+
+opts_AddMandatory '--ot1biasfield' 'OutputT1wImageBiasField' 'image' 'output bias field t1w to MMORF'
 
 opts_AddMandatory '--ot2' 'OutputT2wImage' 'image' 'output t2w to MMORF'
 
@@ -81,6 +88,10 @@ ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wImage} -r ${Reference} -w 
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${T1wRestore} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestore}
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i ${T1wRestoreBrain} -r ${Reference} -w ${OutputTransform} -o ${OutputT1wImageRestoreBrain}
 ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrain} ${OutputT1wImageRestoreBrain}
+
+${FSLDIR}/bin/applywarp --rel --interp=nn -i "${T1wBrainMask}" -r "${Reference}" -w "${OutputTransform}" -o "${OutputT1wImageBrainMask}"
+${FSLDIR}/bin/applywarp --rel --interp=spline -i "${T1wBiasField}" -r "${Reference}" -w "${OutputTransform}" -o "${OutputT1wImageBiasField}"
+${FSLDIR}/bin/fslmaths "${OutputT1wImageBiasField}" -thr 0.1 "${OutputT1wImageBiasField}"
 
 verbose_echo " --> Generating DTI set of warped outputs"
 ${FSLDIR}/bin/vecreg --interp=spline -i "${Diffusion}/data_tensor.nii.gz" --premat="${Output}/xfms/acpc2MMORFLinear.mat" -w "${Output}/xfms/mov_to_ref_mm_warp" -r "${Reference}" -o "${Output}/Diffusion/data_tensor.nii.gz" 

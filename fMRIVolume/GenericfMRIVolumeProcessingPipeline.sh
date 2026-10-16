@@ -208,6 +208,7 @@ opts_AddOptional '--fmrirefreg' 'fMRIReferenceReg' 'linear or nonlinear' "Specif
 opts_AddOptional '--is-longitudinal' 'IsLongitudinal' 'TRUE/FALSE' "Specifies whether this is run on a longitudinal timepoint" "0"
 opts_AddOptional '--longitudinal-session' 'SessionLong' 'folder' "Specifies longitudinal session name. If specified,  --session must point to the cross-sectional session." "NONE"
 
+opts_AddOptional '--atlas-space' 'AtlasSpaceFolderBase' 'AtlasSpaceLabel' "Specifies the nonlinear atlas space to use for the output. Should match the atlas output folder name. Valid options are: 'MNINonLinear' (default), MMORFNonLinear" "MNINonLinear"
 #TODO add binary option processing from optlib
 # opts_AddOptional '--printcom' 'RUN' 'print-command' "DO NOT USE THIS! IT IS NOT IMPLEMENTED!"
 # Disable RUN
@@ -563,10 +564,9 @@ T1wImage="T1w_acpc_dc"
 T1wRestoreImage="T1w_acpc_dc_restore"
 T1wRestoreImageBrain="T1w_acpc_dc_restore_brain"
 T1wFolder="T1w" #Location of T1w images
-AtlasSpaceFolderBase="MNINonLinear"
 ResultsFolder="Results"
 BiasField="BiasField_acpc_dc"
-BiasFieldMNI="BiasField"
+BiasFieldAtlasSpace="BiasField"
 T1wAtlasName="T1w_restore"
 MovementRegressor="Movement_Regressors" #No extension, .txt appended
 MotionMatrixFolder="MotionMatrices"
@@ -588,27 +588,41 @@ JacobianOut="Jacobian"
 SessionFolder="$Path"/"$Session"
 SessionFolderLong="$Path"/"$SessionLong"
 
+case "$AtlasSpaceFolderBase" in
+    MNINonLinear)
+        AtlasAlias="MNI"
+        ;;
+    MMORFNonLinear)
+        AtlasAlias="MMORF"
+        ;;
+    *)
+        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpaceFolderBase})"
+        ;;
+esac
+
 #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
 #this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
-sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
-# Set UseBiasFieldMNI variable, and error check BiasCorrection variable
+# This code is a function because it will be reused later to set UseBiasFieldAtlasSpace in longitudinal mode, 
+# after OneStepResampling completed and the bias field has been computed
+function SetUseBiasFieldAtlasSpace() {
+    # Set UseBiasFieldAtlasSpace variable, and error check BiasCorrection variable
 # (needs to go after "Naming Conventions" rather than the the initial argument parsing)
+    sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
 case "$BiasCorrection" in
     NONE)
-        UseBiasFieldMNI=""
+            UseBiasFieldAtlasSpace=""
         ;;
     LEGACY)
-        UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
+            UseBiasFieldAtlasSpace="${fMRIFolder}/${BiasFieldAtlasSpace}.${FinalfMRIResolution}"
         ;;
     SEBASED)
         if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
         then
             log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
         fi
-        UseBiasFieldMNI="$sebasedBiasFieldMNI"
+            UseBiasFieldAtlasSpace="$sebasedBiasFieldAtlasSpace"
         ;;
     "")
         log_Err_Abort "--biascorrection option not specified"
@@ -617,7 +631,8 @@ case "$BiasCorrection" in
         log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
         ;;
 esac
-
+}
+SetUseBiasFieldAtlasSpace
 # ------------------------------------------------------------------------------
 #  Compliance check of Legacy Style Data options
 # ------------------------------------------------------------------------------
@@ -862,7 +877,7 @@ if [ "$RunMode" -lt 2 ] ; then
 
         if [ $DistortionCorrection = "NONE" ] ; then
             # Processing is more robust to registration problems if the fMRI is in the same orientation as the
-            # standard template (MNI152) images, which can be accomplished using FSL's `fslreorient2std`.
+            # standard template (MNI152 by default) images, which can be accomplished using FSL's `fslreorient2std`.
             # HOWEVER, if you reorient, other parameters (such as UnwarpDir) need to be adjusted accordingly.
             # Rather than deal with those complications here, we limit reorienting to DistortionCorrection=NONE condition.
 
@@ -1038,6 +1053,7 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
+    SetUseBiasFieldAtlasSpace
 fi
 
 # Ensure multi-echo directory is set up for all RunModes
@@ -1151,16 +1167,17 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --motionmatprefix=${MotionMatrixPrefix} \
         --ofmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin" \
         --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
-        --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
+        --biasfield=${AtlasSpaceFolder}/${BiasFieldAtlasSpace} \
         --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
         --scoutin="${fMRIFolder}/${sctEchoesOrig[iEcho]}" \
         --scoutgdcin="${fMRIFolder}/${sctEchoesGdc[iEcho]}" \
         --oscout="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin" \
-        --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+        --ojacobian=${fMRIFolder}/${JacobianOut}_${AtlasAlias}.${FinalfMRIResolution} \
         --fmrirefpath=${fMRIReferencePath} \
         --fmrirefreg=${fMRIReferenceReg} \
         --wb-resample=${useWbResample} \
-        --species=${SPECIES}
+        --species=${SPECIES} \
+        --atlas-space="${AtlasSpaceFolderBase}"
 
     tscArgs="$tscArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin.nii.gz"
     sctArgs="$sctArgs -volume ${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin.nii.gz"
@@ -1172,13 +1189,13 @@ ${FSLDIR}/bin/immv "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask.nii.gz" "$
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
 
-#now that we have the final MNI fMRI space, resample the T1w-space sebased bias field related outputs
+#now that we have the final nonlinear atlas fMRI space, resample the T1w-space sebased bias field related outputs
 #the alternative is to add a bunch of optional arguments to OneStepResampling that just do the same thing
 #we need to do this before intensity normalization, as it uses the bias field output
 if [[ ${DistortionCorrection} == "${SPIN_ECHO_METHOD_OPT}" ]]
 then
     if [ "$fMRIReference" = "NONE" ]; then
-        #create MNI space corrected fieldmap images
+        #create nonlinear atlas space corrected fieldmap images
         ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DCFolder}/PhaseOne_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
         ${FSLDIR}/bin/fslmaths ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc -mas ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_PhaseOne_gdc_dc
         ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DCFolder}/PhaseTwo_gdc_dc_unbias -w ${AtlasSpaceFolder}/xfms/${AtlasTransform} -r ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin -o ${ResultsFolder}/${NameOffMRI}_PhaseTwo_gdc_dc
@@ -1225,8 +1242,8 @@ fi
 log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-    --biasfield=${UseBiasFieldMNI} \
-    --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
+    --biasfield=${UseBiasFieldAtlasSpace} \
+    --jacobian=${fMRIFolder}/${JacobianOut}_${AtlasAlias}.${FinalfMRIResolution} \
     --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
     --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
     --inscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
@@ -1296,7 +1313,7 @@ else
 fi
 
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_SBRef_nonlin_norm_nomask.nii.gz ${ResultsFolder}/${NameOffMRI}_SBRef_nomask.nii.gz
-${RUN} cp ${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
+${RUN} cp ${fMRIFolder}/${JacobianOut}_${AtlasAlias}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}/${NameOffMRI}_${JacobianOut}.nii.gz
 ${RUN} cp ${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution}.nii.gz ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_mask.nii.gz ${ResultsFolder}/${NameOffMRI}_fovmask.nii.gz
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.nii.gz ${ResultsFolder}/${NameOffMRI}_finalmask.nii.gz
