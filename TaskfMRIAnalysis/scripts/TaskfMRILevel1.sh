@@ -97,6 +97,7 @@ TemporalSmoothing="${18}"
 HippocampalOutput="${19}"
 HippMesh="${20}"
 HippDownSampleFolder="${21}"
+LevelOneFsfPath="${22:-NONE}"
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -106,6 +107,7 @@ log_Msg "READ_ARGS: ResultsFolder: ${ResultsFolder}"
 log_Msg "READ_ARGS: ROIsFolder: ${ROIsFolder}"
 log_Msg "READ_ARGS: DownSampleFolder: ${DownSampleFolder}"
 log_Msg "READ_ARGS: LevelOnefMRIName: ${LevelOnefMRIName}"
+log_Msg "READ_ARGS: LevelOneFsfPath: ${LevelOneFsfPath}"
 log_Msg "READ_ARGS: LevelOnefsfName: ${LevelOnefsfName}"
 log_Msg "READ_ARGS: LowResMesh: ${LowResMesh}"
 log_Msg "READ_ARGS: GrayordinatesResolution: ${GrayordinatesResolution}"
@@ -119,11 +121,9 @@ log_Msg "READ_ARGS: Parcellation: ${Parcellation}"
 log_Msg "READ_ARGS: ParcellationFile: ${ParcellationFile}" 
 log_Msg "READ_ARGS: ProcSTRING: ${ProcSTRING}" 
 log_Msg "READ_ARGS: TemporalSmoothing: ${TemporalSmoothing}"
-log_Msg "READ_ARGS: ProcSTRING: ${HippMesh}" 
-log_Msg "READ_ARGS: TemporalSmoothing: ${HippDownSampleFolder}"
+log_Msg "READ_ARGS: HippDownSampleFolder: ${HippDownSampleFolder}"
 log_Msg "READ_ARGS: HippocampalOutput: ${HippocampalOutput}"
 log_Msg "READ_ARGS: HippMesh: ${HippMesh}"
-log_Msg "READ_ARGS: HippDownSampleFolder: ${HippDownSampleFolder}"
 ########################################## MAIN ##################################
 
 case "$HippocampalOutput" in
@@ -235,16 +235,18 @@ log_Msg "MAIN: SET_NAME_STRINGS: Extension: ${Extension}"
 # Assemble list of input filenames that need to be checked
 Filenames="";
 
-# Need fsf files in scan-level directories
-Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
-
-if [[ -e "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf" ]]; then
-	# Need EVs referenced in fsf file
-	while read line; do
-		Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${line}"
-	done <<< "$(grep -e 'set fmri(custom' ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf | \
-	sed -e 's|../||' | cut -d'"' -f2)"
+# Use the supplied FSF path, or the existing default location.
+if [ "$LevelOneFsfPath" = "NONE" ] ; then
+    LevelOneFsfPath="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
 fi
+
+if [[ "$LevelOneFsfPath" != /* ||
+      ! -f "$LevelOneFsfPath" ||
+      ! -r "$LevelOneFsfPath" ]] ; then
+    log_Err_Abort "Invalid Level1 FSF path: ${LevelOneFsfPath}"
+fi
+
+Filenames="$Filenames $LevelOneFsfPath"
 
 if $runParcellated; then
 	if [ ! ${ParcellationFile} = "NONE" ] ; then
@@ -327,11 +329,11 @@ fi
 ### Edit fsf file to record the parameters used in this analysis
 # Copy template fsf file into $FEATDir
 log_Msg "MAIN: MAKE_DESIGNS: Copying fsf file to .feat directory"
-cp ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf ${FEATDir}/design.fsf
+cp ${LevelOneFsfPath} ${FEATDir}/design.fsf
 
 # Change the highpass filter string to the desired highpass filter
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Set highpass filter string to the desired highpass filter to ${TemporalFilter}"
-sed -i -e "s|set fmri(paradigm_hp) 200|set fmri(paradigm_hp) ${TemporalFilter}|g" ${FEATDir}/design.fsf
+sed -i -e "s|^set fmri(paradigm_hp) .*|set fmri(paradigm_hp) ${TemporalFilter}|" ${FEATDir}/design.fsf
 if [ ${TemporalFilter} -eq -1 ] ; then
   sed -i -e "s|set fmri(temphp_yn) 1|set fmri(temphp_yn) 0|g" ${FEATDir}/design.fsf
   sed -i -e "s|^\(set fmri(tempfilt_yn[0-9])\) 1|\1 0|g" ${FEATDir}/design.fsf  
@@ -339,11 +341,10 @@ fi
 
 # Change smoothing to be equal to additional smoothing in FSF file
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Set smoothing to be equal to final smoothing to ${FinalSmoothingFWHM}"
-sed -i -e "s|set fmri(smooth) 4|set fmri(smooth) ${FinalSmoothingFWHM}|g" ${FEATDir}/design.fsf
-
+sed -i -e "s|^set fmri(smooth) .*|set fmri(smooth) ${FinalSmoothingFWHM}|" ${FEATDir}/design.fsf
 # Change output directory name to match total smoothing and highpass
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Change string in output directory name to ${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}"
-sed -i -e "s|_hp200_s4|${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}|g" ${FEATDir}/design.fsf
+sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${FEATDir}\"|" ${FEATDir}/design.fsf
 
 # find current value for npts in template.fsf
 fsfnpts=`grep "set fmri(npts)" ${FEATDir}/design.fsf | cut -d " " -f 3 | sed 's|"||g'`;
@@ -366,7 +367,17 @@ grep -e 'fmri(custom' < ${FEATDir}/design.fsf | while read line; do
 	# get path to EV from text between double-quotes
 	ev=`echo $line | cut -d\" -f2`;
 	# Find length (number of lines) for EV, assuming path to EVs is relative to $FEATDir
-	count=`awk '{ if ($3 != 0) print $0 }' ${FEATDir}/$ev |wc -l`;
+	if [[ "$ev" = /* ]] ; then
+		EVPath="$ev"
+	else
+		EVPath="${FEATDir}/$ev"
+	fi
+
+	if [[ ! -f "$EVPath" || ! -r "$EVPath" ]] ; then
+		log_Err_Abort "Missing or unreadable EV file: ${EVPath}"
+	fi
+
+	count=`awk '{ if ($3 != 0) print $0 }' ${EVPath} | wc -l`;
 
 	if [ $count -eq 0 ]; # if EV is empty
 	then
@@ -671,7 +682,7 @@ if $runDense ; then
 
 	film_gls --rn=${FEATDir}/SubcorticalVolumeStats --sa --ms=5 --in=${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical${TemporalFilterString}${SmoothingString}.nii.gz --pd=${DesignMatrix} --con=${DesignContrasts} ${ExtraArgs} --thr=1 --mode=volumetric
 
-	rm ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical${TemporalFilterString}${SmoothingString}.nii.gz
+	rm -f ${FEATDir}/${LevelOnefMRIName}_AtlasSubcortical${TemporalFilterString}${SmoothingString}.nii.gz
 
 	# Run film_gls on cortical surface data
 	log_Msg "MAIN: RUN_GLM: Run film_gls on cortical surface data"

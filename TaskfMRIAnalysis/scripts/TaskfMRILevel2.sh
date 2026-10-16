@@ -87,6 +87,7 @@ ProcSTRING="${14}"
 TemporalSmoothing="${15}"
 HippocampalOutput="${16}"
 HippMesh="${17}"
+LevelTwoFsfPath="${18:-NONE}"
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -97,6 +98,7 @@ log_Msg "READ_ARGS: DownSampleFolder: ${DownSampleFolder}"
 log_Msg "READ_ARGS: LevelOnefMRINames: ${LevelOnefMRINames}"
 log_Msg "READ_ARGS: LevelOnefsfNames: ${LevelOnefsfNames}"
 log_Msg "READ_ARGS: LevelTwofMRIName: ${LevelTwofMRIName}"
+log_Msg "READ_ARGS: LevelTwoFsfPath: ${LevelTwoFsfPath}"
 log_Msg "READ_ARGS: LevelTwofsfName: ${LevelTwofsfName}"
 log_Msg "READ_ARGS: LowResMesh: ${LowResMesh}"
 log_Msg "READ_ARGS: FinalSmoothingFWHM: ${FinalSmoothingFWHM}"
@@ -165,7 +167,7 @@ else
     if [ "${HippocampalOutput}" = "YES" ] ; then
         runHippocampus=true
         ExtensionList="${ExtensionList}dtseries.nii "
-		ScalarExtensionList="${ScalarExtensionList}hippocampus.${HippMesh}.dscalar.nii "
+		ScalarExtensionList="${ScalarExtensionList}hippocampus.dscalar.nii "
 		Analyses="${Analyses}HippocampusStats "
         log_Msg "MAIN: DETERMINE_ANALYSES: Hippocampal Analysis requested"
     fi
@@ -230,10 +232,12 @@ done
 
 
 ##### CHECK_FILES: Check that necessary inputs exist before trying to use them #####
-# Assemble list of input filenames that need to be checked
-Filenames="";
-# Need template fsf file
-Filenames="${Filenames} ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf"
+
+if [[ "$LevelTwoFsfPath" = "NONE" ||  ! -f "$LevelTwoFsfPath" ]] ; then
+    log_Err_Abort "A valid absolute Level2 FSF path is required; received '${LevelTwoFsfPath}'"
+fi
+
+Filenames="${LevelTwoFsfPath}"
 
 errMsg="";
 # Check files in Level1 Analysis folders
@@ -304,13 +308,29 @@ else
 fi
 
 # Edit template.fsf and place it in LevelTwoFEATDir
-cat ${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}_hp200_s4_level2.fsf | sed -e "s/_hp200_s4\.feat/${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat/g" -e "s/^set fmri(outputdir) .*/set fmri(outputdir) \"${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}\"/" > ${LevelTwoFEATDir}/design.fsf
+cp ${LevelTwoFsfPath} ${LevelTwoFEATDir}/design.fsf
+
+# Set the actual Level2 output directory.
+sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelTwoFEATDir}\"|" ${LevelTwoFEATDir}/design.fsf
+
+# Record the actual Level1 input folders in run order.
+i=1
+for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
+    sed -i -e "s|^set feat_files(${i}) .*|set feat_files(${i}) \"${LevelOneFEATDir}\"|" ${LevelTwoFEATDir}/design.fsf
+    i=$(($i+1))
+done
+
 # Make additional design files required by flameo
 log_Msg "Make design files"
 cd ${LevelTwoFEATDir}; # Run feat_model inside LevelTwoFEATDir so relative paths work
 feat_model design
 cd $OLDPWD; # Go back to previous directory using bash built-in $OLDPWD
 
+DesignRuns=$(awk '$1 == "/NumPoints" {print $2}' ${LevelTwoFEATDir}/design.mat)
+
+if [ "$DesignRuns" != "$NumFirstLevelFolders" ] ; then
+    log_Err_Abort "Level2 design has ${DesignRuns} rows, but ${NumFirstLevelFolders} Level1 runs were supplied"
+fi
 
 ##### RUN flameo (FIXED-EFFECTS GLM ANALYSIS ON LEVEL2) #####
 
@@ -463,7 +483,7 @@ for Analysis in ${Analyses} ; do
 
 				### Restore CORTEX_LEFT/RIGHT back to the correct dentate structures
 				### in the FLAMEO outputs.
-				for Stat in zstat1 cope1 varcope1 ; do
+				for Stat in zstat1 cope1 varcope1 tdof_t1 mask; do
 					wb_command -cifti-separate \
 						${Analysis}/cope${copeCounter}.feat/${Stat}.nii COLUMN \
 						-metric HIPPOCAMPUS_LEFT ${Analysis}/${Stat}.L.hipp.func.gii \

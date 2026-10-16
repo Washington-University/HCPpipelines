@@ -1,4 +1,5 @@
 #!/bin/bash 
+set -e #to prevent level 3 from running if levels1/2 failed
 
 get_batch_options() {
     local arguments=("$@")
@@ -37,17 +38,45 @@ get_batch_options() {
     done
 }
 
+resolve_fsf_path() {
+    local path="$1"
+    local subject="$2"
+    local task="$3"
+    local run="$4"
+
+    path=${path//\{StudyFolder\}/$StudyFolder}
+    path=${path//\{Subject\}/$subject}
+    path=${path//\{Task\}/$task}
+    path=${path//\{Run\}/$run}
+    path=${path//\{NumSubjects\}/$NumSubjects}
+
+    if [[ "$path" != /* || ! -f "$path" || ! -r "$path" ]]; then
+        echo "ERROR: FSF must be an absolute, readable file: $path" >&2
+        return 1
+    fi
+
+    printf '%s\n' "$path"
+}
+
 get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
 EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
+#Set up pipeline environment variables and software
+source "$EnvironmentScript"
+
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
 #DO NOT include "-q " at the beginning
 #default to no queue, implying run local
-QUEUE="dyn.q"
+QUEUE=""
 #QUEUE="hcp_priority.q"
+
+#In case runlocal is used, set level 3 to run after level 2 (set: RunLevelOneTwo="YES" RunLevelThree="YES").
+#In case QUEUE is used, run levels 1+2 first (RunLevelOneTwo="YES" RunLevelThree="NO") and only after completion of all subjects run level 3 separately (RunLevelOneTwo="NO" RunLevelThree="YES")
+RunLevelOneTwo="YES"
+RunLevelThree="YES"
 
 # Assign variables
 LowResMesh="32" # Whole-brain CIFTI mesh;
@@ -58,11 +87,13 @@ Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} o
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 RegNames="MSMAll" # Use NONE to use the default surface registration
-ProcSTRING="hp0_clean_rclean_tclean" #A string indicating alreadt perfomed MRI , e.g. rclean_tclean or NONE
+ProcSTRING="hp0_clean_rclean_tclean" #A string indicating already perfomed MRI , e.g. rclean_tclean or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
 HippocampalOutput="YES" # Set to YES to also run hippocampal analysis
 HippMesh="2k" # In case HippocampalOutput=YES, then HippUnfold mesh sets hippocampal mesh resolution: 512, 2k, 8k, or 18k
+LevelThreePrefix="GroupAnalysis" # Prefix for Level 3 output names and the group output folder; Use NONE to omit the analysis-name prefix.
+LevelThreeContrastList="ALL" # Level 2 contrasts to analyze at Level 3: ALL, or contrast numbers separated by @, e.g. "1@6@8".
 
 TaskNameList=""
 TaskNameList="${TaskNameList} EMOTION"
@@ -81,35 +112,70 @@ if [ -n "${command_line_specified_subj}" ]; then
     Subjlist="${command_line_specified_subj}"
 fi
 
+# User-defined FSF paths, including folder and filename.
+# FSF files define the analysis design, including EVs, contrasts, and optional F-tests.
+# Create Level 1/2 FSFs using FSL FEAT or edit suitable templates; create Level 3 FSFs using FSL's GLM GUI.
+# Level 3 design rows must match the subject order in Subjlist.
+# Tokens: {StudyFolder}, {Subject}, {Task}, {Run}, {NumSubjects}
+# Use an absolute path or a pattern beginning with {StudyFolder}.
+
+LevelOneFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/{Run}/{Run}_hp200_s4_level1.fsf"
+LevelTwoFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}/tfMRI_{Task}_hp200_s4_level2.fsf"
+LevelThreeFsfPattern="{StudyFolder}/GroupResults/tfMRI_{Task}_level3_{NumSubjects}subjects.fsf"
+LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3" 
+
+# Requirements for this script
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR 
+
+# Log the originating call
+echo "$@"
+
+# Normalize the subject list and prepare the group-analysis arguments.
+Subjlist=${Subjlist//@/ }
+read -r -a Subjects <<< "$Subjlist"
+NumSubjects=${#Subjects[@]}
+SubjectList=$(IFS=@; echo "${Subjects[*]}")
+
+######################################### INPUTS ##########################################
+
 case "${HippocampalOutput}" in
-    YES|NO) ;;
+    YES) 
+        case "${HippMesh}" in
+        512|2k|8k|18k) ;;
+        *)
+            echo "ERROR: --hippocampal-mesh must be 512, 2k, 8k, or 18k"
+            exit 1
+            ;;
+        esac
+        ;;
+    NO) ;;
     *)
         echo "ERROR: --hippocampal-output must be YES or NO"
         exit 1
         ;;
 esac
 
-case "${HippMesh}" in
-    512|2k|8k|18k) ;;
+case "$RunLevelOneTwo" in
+    YES|NO) ;;
     *)
-        echo "ERROR: --hippocampal-mesh must be 512, 2k, 8k, or 18k"
+        echo "ERROR: RunLevelOneTwo must be YES or NO" >&2
         exit 1
         ;;
 esac
 
-# Requirements for this script
-#  installed versions of: FSL, Connectome Workbench (wb_command)
-#  environment: HCPPIPEDIR, FSLDIR, CARET7DIR 
+case "$RunLevelThree" in
+    YES|NO) ;;
+    *)
+        echo "ERROR: RunLevelThree must be YES or NO" >&2
+        exit 1
+        ;;
+esac
 
-#Set up pipeline environment variables and software
-source "$EnvironmentScript"
-
-# Log the originating call
-echo "$@"
-
-########################################## INPUTS ########################################## 
-
-#Scripts called by this script do assume they run on the results of the HCP minimal preprocesing pipelines from Q2
+if [[ "$RunLevelOneTwo" == "YES" && "$RunLevelThree" == "YES" && "$command_line_specified_run_local" != "TRUE" && -n "$QUEUE" ]]; then
+    echo "ERROR: Queue Level 1/2 first with RunLevelThree=NO; after all jobs finish, run Level 3 with RunLevelOneTwo=NO." >&2
+    exit 1
+fi
 
 ######################################### DO WORK ##########################################
 
@@ -136,38 +202,102 @@ do
                     LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
                     LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
 
-                    for Subject in $Subjlist ; do
-                        echo "    ${Subject}"
+                    if [[ "$RunLevelOneTwo" == "YES" ]]; then
+                        for Subject in $Subjlist ; do
+                            echo "${Subject}"
 
-                        if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-                            echo "About to locally run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-                            queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-                        else
-                            echo "About to use fsl_sub to queue ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-                            queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
+                            LevelOneFsfPaths=""
+                            IFS=@ read -r -a Runs <<< "$LevelOneTasks"
+
+                            for Run in "${Runs[@]}"; do
+                                FsfPath=$(resolve_fsf_path "$LevelOneFsfPattern" "$Subject" "$TaskName" "$Run")
+
+                                # @ separates paths when passing them to TaskfMRIAnalysis.sh.
+                                if [[ "$FsfPath" == *@* ]]; then
+                                    echo "ERROR: FSF paths cannot contain @: $FsfPath" >&2
+                                    exit 1
+                                fi
+
+                                LevelOneFsfPaths+="${LevelOneFsfPaths:+@}${FsfPath}"
+                            done
+
+                            LevelTwoFsfPath=$(resolve_fsf_path "$LevelTwoFsfPattern" "$Subject" "$TaskName" "$LevelTwoTask")
+
+                            if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+                                echo "About to locally run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+                                queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+                            else
+                                echo "About to use fsl_sub to queue ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+                                queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
+                            fi
+
+                            "${queuing_command[@]}" "$HCPPIPEDIR"/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
+                                --study-folder="$StudyFolder" \
+                                --subject="$Subject" \
+                                --lvl1tasks="$LevelOneTasks" \
+                                --lvl1fsfs="$LevelOneFSFs" \
+                                --lvl1fsf-paths="$LevelOneFsfPaths" \
+                                --lvl2task="$LevelTwoTask" \
+                                --lvl2fsf="$LevelTwoFSF" \
+                                --lvl2fsf-path="$LevelTwoFsfPath" \
+                                --lowresmesh="$LowResMesh" \
+                                --grayordinatesres="$GrayOrdinatesResolution" \
+                                --origsmoothingFWHM="$OriginalSmoothingFWHM" \
+                                --confound="$Confound" \
+                                --finalsmoothingFWHM="$FinalSmoothingFWHM" \
+                                --highpassfilter="$HighpassFilter" \
+                                --vba="$VolumeBasedProcessing" \
+                                --regname="$RegName" \
+                                --procstring="$ProcSTRING" \
+                                --parcellation="$Parcellation" \
+                                --parcellationfile="$ParcellationFile" \
+                                --hippocampal-output="$HippocampalOutput" \
+                                --hippocampal-mesh="$HippMesh"
+                        done
+                    fi
+                    # All subjects finished Level 1/2 for these settings.
+                    if [[ "$RunLevelThree" == "YES" ]]; then
+                        if (( NumSubjects < 2 )); then
+                            echo "ERROR: Level 3 requires at least two subjects" >&2
+                            exit 1
                         fi
 
-                        "${queuing_command[@]}" "$HCPPIPEDIR"/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
-                            --study-folder="$StudyFolder" \
-                            --subject="$Subject" \
-                            --lvl1tasks="$LevelOneTasks" \
-                            --lvl1fsfs="$LevelOneFSFs" \
+                        # Check every task's design before running any analyses.
+                        LevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
+
+                        if [[ ! -f "$LevelThreeFsf" ]]; then
+                            echo "ERROR: Missing or unreadable Level 3 design: $LevelThreeFsf" >&2
+                            exit 1
+                        fi
+
+                        DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$LevelThreeFsf")
+
+                        if [[ "$DesignSubjects" != "$NumSubjects" ]]; then
+                            echo "ERROR: Design subject count does not match Subjlist: $LevelThreeFsf" >&2
+                            exit 1
+                        fi
+
+                        echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects} subjects"
+
+                        "${HCPPIPEDIR}/global/scripts/captureoutput.sh" \
+                            "${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRILevel3.sh" \
+                            --path="$StudyFolder" \
+                            --subjectlist="$SubjectList" \
+                            --groupfolder="$LevelThreeOutputFolder" \
+                            --lvl3fsf="$LevelThreeFsf" \
                             --lvl2task="$LevelTwoTask" \
                             --lvl2fsf="$LevelTwoFSF" \
-                            --lowresmesh="$LowResMesh" \
-                            --grayordinatesres="$GrayOrdinatesResolution" \
-                            --origsmoothingFWHM="$OriginalSmoothingFWHM" \
-                            --confound="$Confound" \
+                            --prefixanalysisname="$LevelThreePrefix" \
                             --finalsmoothingFWHM="$FinalSmoothingFWHM" \
-                            --highpassfilter="$HighpassFilter" \
-                            --vba="$VolumeBasedProcessing" \
+                            --temporalfilter="$HighpassFilter" \
                             --regname="$RegName" \
-                            --procstring="$ProcSTRING" \
                             --parcellation="$Parcellation" \
-                            --parcellationfile="$ParcellationFile" \
-                            --hippocampal-output="$HippocampalOutput" \
-                            --hippocampal-mesh="$HippMesh"
-                    done
+                            --vba="$VolumeBasedProcessing" \
+                            --contrastlist="$LevelThreeContrastList" \
+                            --procstring="$ProcSTRING" \
+                            --hippocampal-output="$HippocampalOutput"
+                    fi
+
                     i=$((i + 1))
                 done
             done
@@ -175,4 +305,6 @@ do
         done
     done
 done
-echo 'TaskfMRIAnalysisBAtch complete'
+
+
+echo "TaskfMRIAnalysisBatch complete"
