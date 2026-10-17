@@ -1,0 +1,5 @@
+MLPOneLayer
+ExtraTree
+MLPTwoLayer
+Xgboost
+logistic regression
