@@ -120,30 +120,32 @@ for Subject in $Subjlist ; do
         echo 'GenericfMRISurfaceProcessingPipeline'
         "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericfMRISurfaceProcessingPipeline.sh \
             --path="$StudyFolder" \
-            --subject="$Subject" \
+            --session="$Subject" \
             --fmriname="$fMRIName" \
             --lowresmesh="$LowResMesh" \
             --fmrires="$FinalfMRIResolution" \
             --smoothingFWHM="$SmoothingFWHM" \
             --grayordinatesres="$GrayordinatesResolution" \
-            --regname="$RegName"
+            --regname="$RegName" \
+            --procstring="$ProcString"
 
         # The following lines are used for interactive debugging to set the positional parameters: $1 $2 $3 ...
 
         echo "set -- --path=$StudyFolder \
-            --subject=$Subject \
+            --session=$Subject \
             --fmriname=$fMRIName \
             --lowresmesh=$LowResMesh \
             --fmrires=$FinalfMRIResolution \
             --smoothingFWHM=$SmoothingFWHM \
             --grayordinatesres=$GrayordinatesResolution \
-            --regname=$RegName"
+            --regname=$RegName" \
+            --procstring="$ProcString"
 
         echo 'GenericHippocampusfMRISurfaceProcessingPipeline'
         # Hippocampal surface/CIFTI processing
         "${queuing_command[@]}" "$HCPPIPEDIR"/fMRISurface/GenericHippocampusfMRISurfaceProcessingPipeline.sh \
             --studyfolder="$StudyFolder" \
-            --subject="$Subject" \
+            --session="$Subject" \
             --fmriname="$fMRIName" \
             --procstring="$ProcString" \
             --smoothingFWHM="$HippSmoothingFWHM" \
@@ -152,7 +154,7 @@ for Subject in $Subjlist ; do
             --resample_mesh="$MeshString"
 
         echo "set -- --studyfolder=$StudyFolder \
-            --subject=$Subject \
+            --session=$Subject \
             --fmriname=$fMRIName \
             --procstring=$ProcString \
             --smoothingFWHM=$HippSmoothingFWHM \

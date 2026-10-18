@@ -6,14 +6,38 @@
 
 ########################################## PIPELINE OVERVIEW ##########################################
 
-# TODO
+# Map preprocessed fMRI volume data onto the left and right cortical surfaces.
+# Create cortical ribbons, identify noisy voxels, and perform ribbon-constrained
+# volume-to-surface mapping with optional good-voxel exclusion.
+# Resample native surface data to the selected fs_LR mesh using the specified
+# surface registration, then apply surface smoothing.
+# Create a cortical dense timeseries CIFTI, temporal mean, and coverage statistics.
+# Subcortical processing is presently disabled.
+# Optionally generate an fMRI QC scene and snapshots. QC mode ONLY skips processing.
 
 ########################################## OUTPUT DIRECTORIES ##########################################
 
-# TODO
-
-################################################ SUPPORT FUNCTIONS ##################################################
-
+# All run outputs are stored under:
+# ${Path}/${Subject}/MNINonLinear/Results/${NameOffMRI}
+#
+# RibbonVolumeToSurfaceMapping/
+#   Intermediate cortical ribbons, voxel statistics, good-voxel masks,
+#   and native and resampled surface metrics.
+#
+# ${NameOffMRI}_Atlas.dtseries.nii
+#   Cortical dense timeseries containing left and right cortical surface data.
+#
+# ${NameOffMRI}_Atlas_mean.dscalar.nii
+#   Temporal mean of the cortical dense timeseries.
+#
+# ${NameOffMRI}_Atlas_nonzero.stats.txt
+#   Percentage and counts of cortical vertices with nonzero temporal variability.
+#
+# ${NameOffMRI}_Atlas_nonzero.dscalar.nii
+#   Coverage mask, generated only when some vertices have zero temporal variability.
+#
+# fMRIQC/
+#   QC scene and snapshots, generated when --fmri-qc is YES or ONLY.
 # --------------------------------------------------------------------------------
 #  Usage Description Function
 # --------------------------------------------------------------------------------

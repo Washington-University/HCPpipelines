@@ -63,9 +63,10 @@ WorkingDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping"
 #  Generating mean, std, and coefficient of variation metric maps
 # ------------------------------------------------------------------------------
 
-fslmaths "${VolumefMRI}" -Tmean "${WorkingDirectory}/${Subject}.mean" -odt float
-fslmaths "${VolumefMRI}" -Tstd "${WorkingDirectory}/${Subject}.std" -odt float
-fslmaths "${WorkingDirectory}/${Subject}.std" -div "${WorkingDirectory}/${Subject}.mean" "${WorkingDirectory}/${Subject}.cov"
+# Generate baseline reference, temporal standard deviation, and CV.
+fslmaths "${SBRef}" -nan -Tmean "${WorkingDirectory}/${Subject}.mean" -odt float #Use SBRef instead of VolumefMRI to avoid cases of demeaned data
+fslmaths "${VolumefMRI}" -nan -Tstd "${WorkingDirectory}/${Subject}.std" -odt float
+fslmaths "${WorkingDirectory}/${Subject}.std" -div "${WorkingDirectory}/${Subject}.mean" -nan "${WorkingDirectory}/${Subject}.cov" -odt float
 
 for Structure in hipp dentate; do
     for Hemisphere in L R; do

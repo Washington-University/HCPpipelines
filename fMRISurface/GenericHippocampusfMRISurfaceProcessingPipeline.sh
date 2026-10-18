@@ -27,11 +27,11 @@
     #
     # WorkingDirectory:
     #   Contains the hippocampal volume-to-surface mapping outputs and QC CIFTI files:
-    #       ${Subject}.allStructures_mean.${Mesh}.dscalar.nii
-    #       ${Subject}.allStructures_mean_all.${Mesh}.dscalar.nii
-    #       ${Subject}.allStructures_cov.${Mesh}.dscalar.nii
-    #       ${Subject}.allStructures_cov_all.${Mesh}.dscalar.nii
-    #       ${Subject}.allStructures_goodvoxels.${Mesh}.dscalar.nii
+    #       ${Session}.allStructures_mean.${Mesh}.dscalar.nii
+    #       ${Session}.allStructures_mean_all.${Mesh}.dscalar.nii
+    #       ${Session}.allStructures_cov.${Mesh}.dscalar.nii
+    #       ${Session}.allStructures_cov_all.${Mesh}.dscalar.nii
+    #       ${Session}.allStructures_goodvoxels.${Mesh}.dscalar.nii
     #
 
     ################################################ SUPPORT FUNCTIONS ##################################################
@@ -50,9 +50,9 @@
 
     opts_SetScriptDescription "Run hippocampal fMRISurface processing"
 
-    opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all subjects" "--path"
+    opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all sessions (eg subjects)" "--path"
 
-    opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
+    opts_AddMandatory '--session' 'Session' 'session (eg subject) ID' ""
 
     opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'fMRI run name, for example rfMRI_REST1_LR'
 
@@ -97,8 +97,8 @@
     # Set up paths
     # ------------------------------------------------------------------------------
 
-    MainSubjectFolder="${Path}/${Subject}"
-    AtlasSpaceFolder="${MainSubjectFolder}/MNINonLinear"
+    MainSessionFolder="${Path}/${Session}"
+    AtlasSpaceFolder="${MainSessionFolder}/MNINonLinear"
     InputResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
     ResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
 
@@ -139,13 +139,13 @@
 
 
     # Generate fMRI time series for each of the hippocampal structures: L hipp, R hipp, L dentate, R dentate
-    "${HCPPIPEDIR_fMRISurf}/HippocampalVolumeToSurfaceMapping.sh" "${ResultsFolder}" "${WorkingDirectory}" "${Subject}" "${HippUnfoldFolder}" "${VolumefMRI}" "${SBRef}" "${doGoodVoxels}" "${factor}" "${Meshes}"
+    "${HCPPIPEDIR_fMRISurf}/HippocampalVolumeToSurfaceMapping.sh" "${ResultsFolder}" "${WorkingDirectory}" "${Session}" "${HippUnfoldFolder}" "${VolumefMRI}" "${SBRef}" "${doGoodVoxels}" "${factor}" "${Meshes}"
 
     #Surface Smoothing of each hippocampal structure
-    "${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${WorkingDirectory}" "${Subject}" "${SmoothingFWHM}" "${Meshes}"
+    "${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${WorkingDirectory}" "${Session}" "${SmoothingFWHM}" "${Meshes}"
 
     #Integration of the 4 hippocampal structures into single CIFTI files and cleanup of intermediate files
-    "${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" --results-folder="${ResultsFolder}" --working-directory="${WorkingDirectory}" --subject="${Subject}" --fmri-name="${NameOffMRI}" --proc-string="${ProcString}" --meshes="${Meshes}" --good-voxels="${doGoodVoxels}" --smoothing-fwhm="${SmoothingFWHM}" --volume-fmri="${VolumefMRI}"
+    "${HCPPIPEDIR_fMRISurf}/CreateHippocampalCIFTIs.sh" --results-folder="${ResultsFolder}" --working-directory="${WorkingDirectory}" --session="${Session}" --fmri-name="${NameOffMRI}" --proc-string="${ProcString}" --mesh="${MeshString}" --good-voxels="${doGoodVoxels}" --smoothing-fwhm="${SmoothingFWHM}" --volume-fmri="${VolumefMRI}"
     
     log_Msg "GenericHippocampusfMRISurfaceProcessingPipeline Completed!"
 
