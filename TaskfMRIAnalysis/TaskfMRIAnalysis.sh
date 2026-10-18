@@ -43,8 +43,7 @@ set -eu
 
 # ------------------------------------------------------------------------------
 #  Check that HCPPIPEDIR is defined and Load Function Libraries
-# ------------------------------------------------------------------------------
-
+# ----------------------------------------------------
 pipedirguessed=0
 if [[ "${HCPPIPEDIR:-}" == "" ]]
 then
@@ -102,6 +101,8 @@ opts_AddOptional '--regname' 'RegName' 'RegName' "Name of surface registration t
 opts_AddOptional '--vba' 'VolumeBasedProcessing' 'YES/NO' "Default=NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced)" 'NO'
 opts_AddOptional '--parcellation' 'Parcellation' 'ParcellationName' "Name of parcellation scheme to conduct parcellated analysis. Default=NONE, which will perform dense analysis instead. Non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation supersedes smoothing (i.e. no smoothing is done)" 'NONE'
 opts_AddOptional '--parcellationfile' 'ParcellationFile' '/path/to/dlabel' "Absolute path to the parcellation dlabel file. Default=NONE" 'NONE'
+opts_AddOptional '--lvl1fsf-paths' 'LevelOneFsfPaths' '/path/run1.fsf@/path/run2.fsf' "Absolute FSF paths in the same order as --lvl1tasks. NONE uses the existing FSF lookup." 'NONE'
+opts_AddOptional '--lvl2fsf-path' 'LevelTwoFsfPath' '/path/level2.fsf' "Absolute Level2 FSF path. NONE uses the existing FSF lookup." 'NONE'
 opts_AddOptional '--hippocampal-output' 'HippocampalOutput' 'YES or NO' "Also generate hippocampal task-analysis outputs. Default=NO" 'NO'
 opts_AddOptional '--hippocampal-mesh' 'HippMesh' 'string' 'In case HippocampalOutput=YES, choose one of the following hippocampal mesh densities: 512, 2k, 8k, or 18k. Default=2k' '2k'
 
@@ -240,6 +241,29 @@ else
 	log_Msg "Beginning analyses with FSL version ${fsl_ver}"
 fi
 
+if [ "$LevelOneFsfPaths" != "NONE" ] ; then
+    IFS=@ read -r -a FsfPaths <<< "$LevelOneFsfPaths"
+    IFS=@ read -r -a TaskNames <<< "$LevelOnefMRINames"
+
+    if [ "${#FsfPaths[@]}" -ne "${#TaskNames[@]}" ] ; then
+        log_Err_Abort "--lvl1fsf-paths must contain one path per Level1 task"
+    fi
+
+    for FsfPath in "${FsfPaths[@]}" ; do
+        if [[ "$FsfPath" != /* || ! -f "$FsfPath" || ! -r "$FsfPath" ]] ; then
+            log_Err_Abort "Invalid Level1 FSF path: $FsfPath"
+        fi
+    done
+fi
+
+if [[ "$LevelTwofMRIName" != "NONE" && "$LevelTwoFsfPath" != "NONE" ]] ; then
+    if [[ "$LevelTwoFsfPath" != /* ||
+          ! -f "$LevelTwoFsfPath" ||
+          ! -r "$LevelTwoFsfPath" ]] ; then
+        log_Err_Abort "Invalid Level2 FSF path: $LevelTwoFsfPath"
+    fi
+fi
+
 ########################################## MAIN #########################################
 
 # Determine locations of necessary directories (using expected naming convention)
@@ -258,6 +282,10 @@ for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
 	log_Msg "RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"
 	# Get corresponding fsf name from $LevelOnefsfNames list
 	LevelOnefsfName=`echo $LevelOnefsfNames | cut -d "@" -f $i`
+	LevelOneFsfPath="NONE"
+	if [ "$LevelOneFsfPaths" != "NONE" ] ; then
+		LevelOneFsfPath="${FsfPaths[$((i-1))]}"
+	fi
 	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
 	  $Subject \
 	  $ResultsFolder \
@@ -279,7 +307,8 @@ for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
 	  $TemporalSmoothing \
       $HippocampalOutput \
       $HippMesh \
-      $HippDownSampleFolder
+      $HippDownSampleFolder \
+	  $LevelOneFsfPath  
 
 	i=$(($i+1))
 done
@@ -306,7 +335,8 @@ then
 	  $ProcSTRING \
 	  $TemporalSmoothing \
       $HippocampalOutput \
-      $HippMesh
+      $HippMesh \
+	  $LevelTwoFsfPath
 fi
 
 
