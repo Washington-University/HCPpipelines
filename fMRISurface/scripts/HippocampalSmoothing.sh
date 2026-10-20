@@ -49,7 +49,7 @@ log_Msg "START"
 
 HippUnfoldFolder="$1"
 WorkingDirectory="$2"
-Subject="$3"
+Session="$3"
 SmoothingFWHM="$4"
 Meshes="$5"
 
@@ -66,9 +66,9 @@ for Mesh in ${Meshes}; do
                 MeshFolder="${Mesh}"
             fi
             if [[ "${SmoothingFWHM}" == "0" ]] ; then
-                cp "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii"
+                cp "${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii"
             else
-                wb_command -metric-smoothing ${HippUnfoldFolder}/${MeshFolder}/${Subject}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma} ${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii -roi ${WorkingDirectory}/${Subject}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii
+                wb_command -metric-smoothing ${HippUnfoldFolder}/${MeshFolder}/${Session}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma} ${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii -roi ${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii
             fi
         done
     done

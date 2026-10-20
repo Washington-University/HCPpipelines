@@ -46,7 +46,7 @@ fi
 
 ResultsFolder="$1"
 WorkingDirectory="$2"
-Subject="$3"
+Session="$3"
 HippUnfoldFolder="$4"
 VolumefMRI="$5"
 SBRef="$6"
@@ -64,9 +64,14 @@ WorkingDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping"
 # ------------------------------------------------------------------------------
 
 # Generate baseline reference, temporal standard deviation, and CV.
-fslmaths "${SBRef}" -nan -Tmean "${WorkingDirectory}/${Subject}.mean" -odt float #Use SBRef instead of VolumefMRI to avoid cases of demeaned data
-fslmaths "${VolumefMRI}" -nan -Tstd "${WorkingDirectory}/${Subject}.std" -odt float
-fslmaths "${WorkingDirectory}/${Subject}.std" -div "${WorkingDirectory}/${Subject}.mean" -nan "${WorkingDirectory}/${Subject}.cov" -odt float
+MeanVolume="${VolumefMRI%.nii.gz}_mean.nii.gz"
+if [[ -f "${MeanVolume}" ]]; then
+    fslmaths "${MeanVolume}" -nan "${WorkingDirectory}/${Session}.mean" -odt float
+else
+    fslmaths "${VolumefMRI}" -nan -Tmean "${WorkingDirectory}/${Session}.mean" -odt float
+fi
+fslmaths "${VolumefMRI}" -nan -Tstd "${WorkingDirectory}/${Session}.std" -odt float
+fslmaths "${WorkingDirectory}/${Session}.std" -div "${WorkingDirectory}/${Session}.mean" -nan "${WorkingDirectory}/${Session}.cov" -odt float
 
 for Structure in hipp dentate; do
     for Hemisphere in L R; do
@@ -74,7 +79,7 @@ for Structure in hipp dentate; do
         #  Establishing input and output files
         # ------------------------------------------------------------------------------
 
-        Prefix="${Subject}.${Hemisphere}.${Structure}"
+        Prefix="${Session}.${Hemisphere}.${Structure}"
 
         ThicknessMetric="${HippUnfoldFolder}/Native/${Prefix}_thickness.native.shape.gii"
         InnerSurface="${HippUnfoldFolder}/Native/${Prefix}_inner.native.surf.gii"
@@ -111,12 +116,12 @@ for Structure in hipp dentate; do
 
         if [[ "${doGoodVoxels}" == "YES" ]]; then
 
-            fslmaths "${WorkingDirectory}/${Subject}.cov" -mas "${BinaryRibbon}" "${WorkingDirectory}/${Prefix}_cov_ribbon"
+            fslmaths "${WorkingDirectory}/${Session}.cov" -mas "${BinaryRibbon}" "${WorkingDirectory}/${Prefix}_cov_ribbon"
             meanIntensity=$(fslstats "${WorkingDirectory}/${Prefix}_cov_ribbon" -M)
             fslmaths "${WorkingDirectory}/${Prefix}_cov_ribbon" -div ${meanIntensity} "${WorkingDirectory}/${Prefix}_cov_ribbon_norm"
             fslmaths "${WorkingDirectory}/${Prefix}_cov_ribbon_norm" -bin -s "${NeighborhoodSmoothing}" "${WorkingDirectory}/${Prefix}_SmoothNorm"
             fslmaths "${WorkingDirectory}/${Prefix}_cov_ribbon_norm" -s "${NeighborhoodSmoothing}" -div "${WorkingDirectory}/${Prefix}_SmoothNorm" -dilD "${WorkingDirectory}/${Prefix}_cov_ribbon_norm_s${NeighborhoodSmoothing}"
-            fslmaths "${WorkingDirectory}/${Subject}.cov" -div ${meanIntensity} -div "${WorkingDirectory}/${Prefix}_cov_ribbon_norm_s${NeighborhoodSmoothing}" "${WorkingDirectory}/${Prefix}_cov_norm_modulate"
+            fslmaths "${WorkingDirectory}/${Session}.cov" -div ${meanIntensity} -div "${WorkingDirectory}/${Prefix}_cov_ribbon_norm_s${NeighborhoodSmoothing}" "${WorkingDirectory}/${Prefix}_cov_norm_modulate"
             fslmaths "${WorkingDirectory}/${Prefix}_cov_norm_modulate" -mas "${BinaryRibbon}" "${WorkingDirectory}/${Prefix}_cov_norm_modulate_ribbon"
 
             STD=$(fslstats "${WorkingDirectory}/${Prefix}_cov_norm_modulate_ribbon" -S)
@@ -126,7 +131,7 @@ for Structure in hipp dentate; do
             Upper=$(echo "${MEAN} + (${STD} * ${Factor})" | bc -l)
             echo "UPPER: ${Upper}"
 
-            fslmaths "${WorkingDirectory}/${Subject}.mean" -bin "${WorkingDirectory}/${Prefix}_mask"
+            fslmaths "${WorkingDirectory}/${Session}.mean" -bin "${WorkingDirectory}/${Prefix}_mask"
             fslmaths "${WorkingDirectory}/${Prefix}_cov_norm_modulate" -thr "${Upper}" -bin -sub "${WorkingDirectory}/${Prefix}_mask" -mul -1 -mas "${BinaryRibbon}" "${WorkingDirectory}/${Prefix}_goodvoxels"
         fi
 
@@ -153,11 +158,11 @@ for Structure in hipp dentate; do
             # -----------------------------------------------------------------
 
             if [[ "${doGoodVoxels}" == "YES" ]]; then
-                wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Subject}.${Map}.nii.gz" "${MidSurface}" "${NativeMetric}" \
+                wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Session}.${Map}.nii.gz" "${MidSurface}" "${NativeMetric}" \
                     -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -volume-roi "${WorkingDirectory}/${Prefix}_goodvoxels.nii.gz" -dilate-missing ${dilation_dist} -nearest
             else
 
-                wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Subject}.${Map}.nii.gz" "${MidSurface}" "${NativeMetric}" \
+                wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Session}.${Map}.nii.gz" "${MidSurface}" "${NativeMetric}" \
                     -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -dilate-missing ${dilation_dist} -nearest
             fi
 
@@ -169,7 +174,7 @@ for Structure in hipp dentate; do
             # Map using all ribbon voxels
             # -----------------------------------------------------------------
 
-            wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Subject}.${Map}.nii.gz" "${MidSurface}" "${NativeAllMetric}" \
+            wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Session}.${Map}.nii.gz" "${MidSurface}" "${NativeAllMetric}" \
                 -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -dilate-missing ${dilation_dist} -nearest
             wb_command -metric-mask "${NativeAllMetric}" "${NativeROI}" "${NativeAllMetric}"
 
@@ -299,7 +304,7 @@ for Structure in hipp dentate; do
             log_Err_Abort "Cannot find VN volume: ${VolumefMRIVN}"
         fi
 
-        FiniteVolumefMRIVN="${WorkingDirectory}/${Subject}_vn_finite.nii.gz"
+        FiniteVolumefMRIVN="${WorkingDirectory}/${Session}_vn_finite.nii.gz"
 
         fslmaths "${VolumefMRIVN}" -thr -1e30 -uthr 1e30 -nan "${FiniteVolumefMRIVN}" #Thresholding inf and -inf and replacing nan with 0
 
