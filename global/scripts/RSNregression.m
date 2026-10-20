@@ -162,7 +162,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             temphippcii = ciftiopen(hippinputArray{i}, wbcommand);
             temphippvncii = ciftiopen(hippinputVNArray{i}, wbcommand);
             if size(temphippcii.cdata, 2) ~= runTimepoints
-                error('Hippocampal and whole-brain runs have different numbers of time points');
+                error('Hippocampal and cerebral-cortex runs have different numbers of time points');
             end
             if size(temphippvncii.cdata, 1) ~= size(temphippcii.cdata, 1) || ...
                     size(temphippvncii.cdata, 2) ~= 1
@@ -365,10 +365,9 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     if doHipp
         if WF == 0
             hippWF=0;
-        elseif WF == 1
-            hippWF=1;
-        elseif WF>1
-            hippWF=1; %Reduce hippWF to 1
+        else
+            hippWF=WF;
+            warning('Wishart filtering with hippocampal outputs is experimental.');
         end
         [HippbetaICA, hippInputConcat, hippDOF] = temporalRegression(hippInputConcat,NODEtsnorm,hippWF);
         if ~strcmp(optional.OutputHippBeta, '')
