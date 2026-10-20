@@ -53,7 +53,7 @@ log_Check_Env_Var CARET7DIR
 log_Msg "START"
 
 DownSampleFolder="$1"
-Subject="$2"
+Session="$2"
 LowResMesh="$3"
 NameOffMRI="$4"
 SmoothingFWHM="$5"
@@ -67,8 +67,9 @@ TR_vol=`fslval "$NameOffMRI" pixdim4 | cut -d " " -f 1`
 
 ${CARET7DIR}/wb_command -cifti-create-dense-timeseries \
 			"$OutputAtlasDenseTimeseries".dtseries.nii \
-			-left-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.L."$LowResMesh"k_fs_LR.func.gii -roi-left "$DownSampleFolder"/"$Subject".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
-			-right-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.R."$LowResMesh"k_fs_LR.func.gii -roi-right "$DownSampleFolder"/"$Subject".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
+			-volume "$NameOffMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz "$ROIFolder"/Atlas_ROIs."$GrayordinatesResolution".nii.gz \
+			-left-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.L."$LowResMesh"k_fs_LR.func.gii -roi-left "$DownSampleFolder"/"$Session".L.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
+			-right-metric "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.R."$LowResMesh"k_fs_LR.func.gii -roi-right "$DownSampleFolder"/"$Session".R.atlasroi."$LowResMesh"k_fs_LR.shape.gii \
 			-timestep "$TR_vol"
 
 # Generate temporal mean of timeseries, for display in fMRIQC
@@ -90,6 +91,7 @@ fi
 rm -f "$OutputAtlasDenseTimeseries".stdev.dscalar.nii
 	
 #Basic Cleanup
+rm "$NameOffMRI"_AtlasSubcortical_s"$SmoothingFWHM".nii.gz
 rm "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.L."$LowResMesh"k_fs_LR.func.gii
 rm "$NameOffMRI"_s"$SmoothingFWHM".atlasroi.R."$LowResMesh"k_fs_LR.func.gii
 
