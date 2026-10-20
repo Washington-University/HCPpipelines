@@ -36,7 +36,7 @@ opts_AddOptional  '--group-maps' 'GroupMaps' 'file' "the group template spatial 
 opts_AddOptional  '--timeseries' 'Timeseries' 'file' "the timeseries for single regression"
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
-opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "whole-brain mesh resolution, like '32' for 32k_fs_LR"
+opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "Cerebral-cortex mesh resolution, like '32' for 32k_fs_LR"
 opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
 opts_AddMandatory '--method' 'Method' 'regression method' "'weighted', 'dual', or 'single' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information.  single temporal regression requires a prior run of weighted or dual regression and is intended for adding an additional output space"
 opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
