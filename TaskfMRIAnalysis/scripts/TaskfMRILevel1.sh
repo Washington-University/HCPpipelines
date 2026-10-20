@@ -81,7 +81,7 @@ ResultsFolder="$2"
 ROIsFolder="$3"
 DownSampleFolder="$4"
 LevelOnefMRIName="$5"
-LevelOnefsfName="$6"
+LevelOneFsfFiles="${6:-}"
 LowResMesh="$7"
 GrayordinatesResolution="$8"
 OriginalSmoothingFWHM="$9"
@@ -97,7 +97,6 @@ TemporalSmoothing="${18}"
 HippocampalOutput="${19}"
 HippMesh="${20}"
 HippDownSampleFolder="${21}"
-LevelOneFsfPath="${22:-NONE}"
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -107,8 +106,7 @@ log_Msg "READ_ARGS: ResultsFolder: ${ResultsFolder}"
 log_Msg "READ_ARGS: ROIsFolder: ${ROIsFolder}"
 log_Msg "READ_ARGS: DownSampleFolder: ${DownSampleFolder}"
 log_Msg "READ_ARGS: LevelOnefMRIName: ${LevelOnefMRIName}"
-log_Msg "READ_ARGS: LevelOneFsfPath: ${LevelOneFsfPath}"
-log_Msg "READ_ARGS: LevelOnefsfName: ${LevelOnefsfName}"
+log_Msg "READ_ARGS: LevelOneFsfFiles: ${LevelOneFsfFiles}"
 log_Msg "READ_ARGS: LowResMesh: ${LowResMesh}"
 log_Msg "READ_ARGS: GrayordinatesResolution: ${GrayordinatesResolution}"
 log_Msg "READ_ARGS: OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
@@ -233,20 +231,7 @@ log_Msg "MAIN: SET_NAME_STRINGS: Extension: ${Extension}"
 
 ##### CHECK_FILES: Check that necessary inputs exist before trying to use them #####
 # Assemble list of input filenames that need to be checked
-Filenames="";
-
-# Use the supplied FSF path, or the existing default location.
-if [ "$LevelOneFsfPath" = "NONE" ] ; then
-    LevelOneFsfPath="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}_hp200_s4_level1.fsf"
-fi
-
-if [[ "$LevelOneFsfPath" != /* ||
-      ! -f "$LevelOneFsfPath" ||
-      ! -r "$LevelOneFsfPath" ]] ; then
-    log_Err_Abort "Invalid Level1 FSF path: ${LevelOneFsfPath}"
-fi
-
-Filenames="$Filenames $LevelOneFsfPath"
+Filenames="$LevelOneFsfFiles"
 
 if $runParcellated; then
 	if [ ! ${ParcellationFile} = "NONE" ] ; then
@@ -329,7 +314,7 @@ fi
 ### Edit fsf file to record the parameters used in this analysis
 # Copy template fsf file into $FEATDir
 log_Msg "MAIN: MAKE_DESIGNS: Copying fsf file to .feat directory"
-cp ${LevelOneFsfPath} ${FEATDir}/design.fsf
+cp ${LevelOneFsfFiles} ${FEATDir}/design.fsf
 
 # Change the highpass filter string to the desired highpass filter
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Set highpass filter string to the desired highpass filter to ${TemporalFilter}"

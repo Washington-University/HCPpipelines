@@ -85,9 +85,9 @@ Usage: $log_ToolName arguments...
 opts_AddMandatory '--study-folder' 'Path' '/path/to/study/folder' "directory containing imaging data for all subjects"
 opts_AddMandatory '--subject' 'Subject' 'SubjectID' ""
 opts_AddMandatory '--lvl1tasks' 'LevelOnefMRINames' 'ScanName1@ScanName2' "List of task fMRI scan names, which are the prefixes of the time series filename for the TaskName task. Multiple task fMRI scan names should be provided as a single string separated by '@' character." #Assumes these subdirectories are located in the SubjectID/MNINonLinear/Results directory. Also assumes that timeseries image filename begins with this string.
-opts_AddOptional '--lvl1fsfs' 'LevelOnefsfNames' 'DesignName1@DesignName2' "List of design names, which are the prefixes of the fsf filenames for each scan run. Should contain same number of design files as time series images in --lvl1tasks option. (N-th design will be used for N-th time series image.) Separate multiple design names by '@' character. If no value is passed to --lvl1fsfs, the value will be set to the same list passed to --lvl1tasks."
+opts_AddMandatory '--lvl1fsfs' 'LevelOneFsfFiles' '/path/run1.fsf@/path/run2.fsf' "Full FSF filenames, separated by @, in the same order as --lvl1tasks."
 opts_AddOptional '--lvl2task' 'LevelTwofMRIName' 'tfMRI_TaskName' "Name of Level2 subdirectory in which all Level2 feat directories are written for TaskName. Default is 'NONE', which means that no Level2 analysis will run." 'NONE'
-opts_AddOptional '--lvl2fsf' 'LevelTwofsfName' 'DesignName_TaskName' "Prefix of design.fsf filename for the Level2 analysis for TaskName. If no value is passed to --lvl2fsf, the value will be set to the same list passed to --lvl2task."
+opts_AddOptional '--lvl2fsf' 'LevelTwoFsfFile' '/path/design.fsf' "Full Level2 FSF filename. Required when Level2 is requested." 'NONE'
 opts_AddOptional '--summaryname' 'SummaryName' 'tfMRI_TaskName/DesignName_TaskName' "Naming convention for single-subject summary directory. Will not create summary directory for Level1 analysis if this flag is missing or set to NONE. Naming for Level1 summary directories should match naming of Level2 summary directories. Default when running Level2 analysis is derived from --lvl2task and --lvl2fsf options \"tfMRI_TaskName/DesignName_TaskName\"" 'NONE'
 opts_AddOptional '--confound' 'Confound' 'filename' "Confound matrix text filename (e.g., output of fsl_motion_outliers). Assumes file is located in <SubjectID>/MNINonLinear/Results/<ScanName>. Default='NONE'" 'NONE'
 opts_AddOptional '--origsmoothingFWHM' 'OriginalSmoothingFWHM' 'number' "Value (in mm FWHM) of smoothing applied during surface registration in fMRISurface pipeline. Default=2, which is appropriate for HCP minimal preprocessing pipeline outputs" '2'
@@ -101,17 +101,10 @@ opts_AddOptional '--regname' 'RegName' 'RegName' "Name of surface registration t
 opts_AddOptional '--vba' 'VolumeBasedProcessing' 'YES/NO' "Default=NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced)" 'NO'
 opts_AddOptional '--parcellation' 'Parcellation' 'ParcellationName' "Name of parcellation scheme to conduct parcellated analysis. Default=NONE, which will perform dense analysis instead. Non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation supersedes smoothing (i.e. no smoothing is done)" 'NONE'
 opts_AddOptional '--parcellationfile' 'ParcellationFile' '/path/to/dlabel' "Absolute path to the parcellation dlabel file. Default=NONE" 'NONE'
-opts_AddOptional '--lvl1fsf-paths' 'LevelOneFsfPaths' '/path/run1.fsf@/path/run2.fsf' "Absolute FSF paths in the same order as --lvl1tasks. NONE uses the existing FSF lookup." 'NONE'
-opts_AddOptional '--lvl2fsf-path' 'LevelTwoFsfPath' '/path/level2.fsf' "Absolute Level2 FSF path. NONE uses the existing FSF lookup." 'NONE'
 opts_AddOptional '--hippocampal-output' 'HippocampalOutput' 'YES or NO' "Also generate hippocampal task-analysis outputs. Default=NO" 'NO'
 opts_AddOptional '--hippocampal-mesh' 'HippMesh' 'string' 'In case HippocampalOutput=YES, choose one of the following hippocampal mesh densities: 512, 2k, 8k, or 18k. Default=2k' '2k'
 
-opts_ParseArguments "$@" 
-
-# if LevelOnefsfNames is blank, set equal to LevelOnefMRINames
-[ -z "$LevelOnefsfNames" ] && LevelOnefsfNames=${LevelOnefMRINames}
-# if LevelTwofsfName is blank, set equal to LevelTwofMRIName
-[ -z "$LevelTwofsfName" ] && LevelTwofsfName=${LevelTwofMRIName}
+opts_ParseArguments "$@"
 
 case "$HippocampalOutput" in
     YES|NO)
@@ -241,29 +234,6 @@ else
 	log_Msg "Beginning analyses with FSL version ${fsl_ver}"
 fi
 
-if [ "$LevelOneFsfPaths" != "NONE" ] ; then
-    IFS=@ read -r -a FsfPaths <<< "$LevelOneFsfPaths"
-    IFS=@ read -r -a TaskNames <<< "$LevelOnefMRINames"
-
-    if [ "${#FsfPaths[@]}" -ne "${#TaskNames[@]}" ] ; then
-        log_Err_Abort "--lvl1fsf-paths must contain one path per Level1 task"
-    fi
-
-    for FsfPath in "${FsfPaths[@]}" ; do
-        if [[ "$FsfPath" != /* || ! -f "$FsfPath" || ! -r "$FsfPath" ]] ; then
-            log_Err_Abort "Invalid Level1 FSF path: $FsfPath"
-        fi
-    done
-fi
-
-if [[ "$LevelTwofMRIName" != "NONE" && "$LevelTwoFsfPath" != "NONE" ]] ; then
-    if [[ "$LevelTwoFsfPath" != /* ||
-          ! -f "$LevelTwoFsfPath" ||
-          ! -r "$LevelTwoFsfPath" ]] ; then
-        log_Err_Abort "Invalid Level2 FSF path: $LevelTwoFsfPath"
-    fi
-fi
-
 ########################################## MAIN #########################################
 
 # Determine locations of necessary directories (using expected naming convention)
@@ -275,68 +245,65 @@ DownSampleFolder="${AtlasFolder}/fsaverage_LR${LowResMesh}k"
 HippDownSampleFolder="${AtlasFolder}/HippUnfold/${HippMesh}"
 
 # Run Level 1 analyses for each phase encoding direction (from command line arguments)
-log_Msg "RUN_LEVEL1: Running Level 1 Analysis for Both Phase Encoding Directions"
-i=1
-# Level 1 analysis names were delimited by '@' in command-line; change to space in for loop
-for LevelOnefMRIName in $( echo $LevelOnefMRINames | sed 's/@/ /g' ) ; do
-	log_Msg "RUN_LEVEL1: LevelOnefMRIName: ${LevelOnefMRIName}"
-	# Get corresponding fsf name from $LevelOnefsfNames list
-	LevelOnefsfName=`echo $LevelOnefsfNames | cut -d "@" -f $i`
-	LevelOneFsfPath="NONE"
-	if [ "$LevelOneFsfPaths" != "NONE" ] ; then
-		LevelOneFsfPath="${FsfPaths[$((i-1))]}"
-	fi
-	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh \
-	  $Subject \
-	  $ResultsFolder \
-	  $ROIsFolder \
-	  $DownSampleFolder \
-	  $LevelOnefMRIName \
-	  $LevelOnefsfName \
-	  $LowResMesh \
-	  $GrayordinatesResolution \
-	  $OriginalSmoothingFWHM \
-	  $Confound \
-	  $FinalSmoothingFWHM \
-	  $TemporalFilter \
-	  $VolumeBasedProcessing \
-	  $RegName \
-	  $Parcellation \
-	  $ParcellationFile \
-	  $ProcSTRING \
-	  $TemporalSmoothing \
-      $HippocampalOutput \
-      $HippMesh \
-      $HippDownSampleFolder \
-	  $LevelOneFsfPath  
+log_Msg "RUN_LEVEL1: Running Level 1 analyses"
 
-	i=$(($i+1))
+IFS=@ read -r -a TaskNames <<< "$LevelOnefMRINames"
+IFS=@ read -r -a FsfFiles <<< "$LevelOneFsfFiles"
+
+if [[ -z "$LevelOnefMRINames" || -z "$LevelOneFsfFiles" ||
+      "${#TaskNames[@]}" -ne "${#FsfFiles[@]}" ]]; then
+    log_Err_Abort "--lvl1fsfs must contain one FSF filename per Level1 task"
+fi
+
+for i in "${!TaskNames[@]}"; do
+    LevelOnefMRIName="${TaskNames[$i]}"
+    LevelOneFsfFile="${FsfFiles[$i]}"
+
+    "${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel1.sh" \
+        "$Subject" \
+        "$ResultsFolder" \
+        "$ROIsFolder" \
+        "$DownSampleFolder" \
+        "$LevelOnefMRIName" \
+        "$LevelOneFsfFile" \
+        "$LowResMesh" \
+        "$GrayordinatesResolution" \
+        "$OriginalSmoothingFWHM" \
+        "$Confound" \
+        "$FinalSmoothingFWHM" \
+        "$TemporalFilter" \
+        "$VolumeBasedProcessing" \
+        "$RegName" \
+        "$Parcellation" \
+        "$ParcellationFile" \
+        "$ProcSTRING" \
+        "$TemporalSmoothing" \
+        "$HippocampalOutput" \
+        "$HippMesh" \
+        "$HippDownSampleFolder"
 done
 
 if [ "$LevelTwofMRIName" != "NONE" ]
 then
-	# Combine Data Across Phase Encoding Directions in the Level 2 Analysis
-	log_Msg "RUN_LEVEL2: Combine Data Across Phase Encoding Directions in the Level 2 Analysis"
-	log_Msg "RUN_LEVEL2: Issuing command: ${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfName $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ProcSTRING $TemporalSmoothing $HippocampalOutput $HippMesh"
-	${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh \
-	  $Subject \
-	  $ResultsFolder \
-	  $DownSampleFolder \
-	  $LevelOnefMRINames \
-	  $LevelOnefsfNames \
-	  $LevelTwofMRIName \
-	  $LevelTwofsfName \
-	  $LowResMesh \
-	  $FinalSmoothingFWHM \
-	  $TemporalFilter \
-	  $VolumeBasedProcessing \
-	  $RegName \
-	  $Parcellation \
-	  $ProcSTRING \
-	  $TemporalSmoothing \
-      $HippocampalOutput \
-      $HippMesh \
-	  $LevelTwoFsfPath
+log_Msg "RUN_LEVEL2: Task=${LevelTwofMRIName}; FSF=${LevelTwoFsfFile}"
+	"${HCPPIPEDIR_tfMRIAnalysis}/TaskfMRILevel2.sh" \
+		"$Subject" \
+		"$ResultsFolder" \
+		"$DownSampleFolder" \
+		"$LevelOnefMRINames" \
+		"$LevelOnefMRINames" \
+		"$LevelTwofMRIName" \
+		"$LevelTwoFsfFile" \
+		"$LowResMesh" \
+		"$FinalSmoothingFWHM" \
+		"$TemporalFilter" \
+		"$VolumeBasedProcessing" \
+		"$RegName" \
+		"$Parcellation" \
+		"$ProcSTRING" \
+		"$TemporalSmoothing" \
+		"$HippocampalOutput" \
+		"$HippMesh"
 fi
 
 
@@ -347,9 +314,9 @@ then
 		--study-folder=$Path \
 		--subject=$Subject \
 		--lvl1tasks=$LevelOnefMRINames \
-		--lvl1fsfs=$LevelOnefsfNames \
-		--lvl2task=$LevelTwofMRIName \
-		--lvl2fsf=$LevelTwofsfName \
+		--lvl2task="$LevelTwofMRIName" \
+		--lvl1fsfs="$LevelOnefMRINames" \
+		--lvl2fsf="$LevelTwofMRIName" \
 		--summaryname=$SummaryName \
 		--confound=$Confound \
 		--origsmoothingFWHM=$OriginalSmoothingFWHM \
