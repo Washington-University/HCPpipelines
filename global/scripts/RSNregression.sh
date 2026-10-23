@@ -37,7 +37,10 @@ opts_AddOptional  '--timeseries' 'Timeseries' 'file' "the timeseries for single 
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "Cerebral-Cortex mesh resolution, like '32' for 32k_fs_LR"
-opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
+opts_AddMandatory '--cortex-proc-string' 'CortexProcString' 'string' "processing suffix for cerebral-cortex timeseries"
+opts_AddMandatory '--hipp-proc-string' 'HippProcString' 'string' "processing suffix for hippocampal timeseries"
+opts_AddMandatory '--hipp-vn-proc-string' 'HippVNProcString' 'string' "part of vn (normalized variance) filename describing preprocessing stages (eg: '_hp2000_clean')"
+opts_AddMandatory '--cortex-vn-proc-string' 'CortexVNProcString' 'string' "part of vn (normalized variance) filename describing preprocessing stages (eg: '_hp2000_clean')"
 opts_AddMandatory '--method' 'Method' 'regression method' "'weighted', 'dual', or 'single' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information.  single temporal regression requires a prior run of weighted or dual regression and is intended for adding an additional output space"
 opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
 opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
@@ -145,14 +148,14 @@ IFS='@' read -a InputArray <<< "$InputList"
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
 for fmri in "${InputArray[@]}"
 do
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}.dtseries.nii" >> "$tempname.input.txt"
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${CortexProcString}.dtseries.nii" >> "$tempname.input.txt"
+    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${CortexVNProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
     if ((HippocampalOutput))
     then
         HippResultsFolder="$MNIFolder/Results/$fmri"
 
-        HippInput="$HippResultsFolder/${fmri}_AtlasHipp${ProcString}.dtseries.nii"
-        HippInputVN="$HippResultsFolder/${fmri}_AtlasHipp${ProcString}_vn.dscalar.nii"
+        HippInput="$HippResultsFolder/${fmri}_AtlasHipp${HippProcString}.dtseries.nii"
+        HippInputVN="$HippResultsFolder/${fmri}_AtlasHipp${HippVNProcString}_vn.dscalar.nii"
         log_Msg "HippInput: $HippInput"
         log_Msg "HippInputVN: $HippInputVN"
 
@@ -166,8 +169,8 @@ do
             log_Err_Abort "hippocampal VN file does not exist: $HippInputVN"
         fi
 
-        echo "$HippResultsFolder/${fmri}_AtlasHipp${ProcString}.dtseries.nii" >> "$tempname.hippinput.txt"
-        echo "$HippResultsFolder/${fmri}_AtlasHipp${ProcString}_vn.dscalar.nii" >> "$tempname.hippinputvn.txt"
+        echo "$HippResultsFolder/${fmri}_AtlasHipp${HippProcString}.dtseries.nii" >> "$tempname.hippinput.txt"
+        echo "$HippResultsFolder/${fmri}_AtlasHipp${HippVNProcString}_vn.dscalar.nii" >> "$tempname.hippinputvn.txt"
     fi
     if ((DoFixBias))
     then
@@ -175,8 +178,8 @@ do
     fi
     if ((DoVol))
     then
-        echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" >> "$tempname.volinput.txt"
-        echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${CortexProcString}.nii.gz" >> "$tempname.volinput.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${CortexVNProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
         if ((DoFixBias))
         then
             echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
@@ -187,7 +190,7 @@ done
 OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
 OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
 #spectra output files want the correct TR, so save the first input filename
-SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${ProcString}.dtseries.nii"
+SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${CortexProcString}.dtseries.nii"
 
 #matlab can't take strings containing newlines, so it is left@right
 SurfString="$DownSampleT1wFolder/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii@$DownSampleT1wFolder/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
@@ -428,4 +431,29 @@ then
     wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
     rm -f -- "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
 fi
+log_Msg "Cerebral-cortex output: ${OutBeta}"
 
+if ((HippocampalOutput)); then
+    log_Msg "Hippocampal output: ${OutputHippBeta}"
+fi
+
+if ((DoVol)); then
+    log_Msg "Cerebral-cortex volume output: ${OutputVolBeta}"
+fi
+
+if ((DoZ)); then
+    log_Msg "Cerebral-cortex Z output: ${OutputZ}"
+    log_Msg "Cerebral-cortex ZMM output: ${OutputZMM}"
+
+    if ((HippocampalOutput)); then
+        log_Msg "Hippocampal Z output: ${OutputHippZ}"
+        log_Msg "Hippocampal ZMM output: ${OutputHippZMM}"
+    fi
+
+    if ((DoVol)); then
+        log_Msg "Cerebral-cortex volume Z output: ${OutputVolZ}"
+        log_Msg "Cerebral-cortex volume ZMM output: ${OutputVolZMM}"
+    fi
+fi
+
+log_Msg "RSNregression completed"
