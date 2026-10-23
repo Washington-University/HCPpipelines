@@ -259,7 +259,7 @@ fi
 
 if $runHippocampus
 then
-    Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii"
+	Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp_s${OriginalSmoothingFWHM}${ProcSTRING}.dtseries.nii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.L.hipp_midthickness.${HippMesh}.surf.gii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.R.hipp_midthickness.${HippMesh}.surf.gii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.L.dentate_midthickness.${HippMesh}.surf.gii"
@@ -302,7 +302,7 @@ log_Msg "MAIN: IMAGE_INFO: npts: ${npts}"
 ##### MAKE_DESIGNS: MAKE DESIGN FILES #####
 
 # Create output .feat directory ($FEATDir) for this analysis
-FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
+FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
 log_Msg "MAIN: MAKE_DESIGNS: FEATDir: ${FEATDir}"
 if [[ -e "${FEATDir}" ]] ; then
 	rm -r ${FEATDir}
@@ -472,8 +472,8 @@ then
         log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: AdditionalSigma: ${AdditionalSigma}"
         log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: Applying additional surface smoothing to hippocampal CIFTI dense data"
 
-        wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
-            "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii" \
+     	wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp_s${OriginalSmoothingFWHM}${ProcSTRING}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
+	        "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii" \
             -surface HIPPOCAMPUS_LEFT "${HippDownSampleFolder}/${Subject}.L.hipp_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_RIGHT "${HippDownSampleFolder}/${Subject}.R.hipp_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_DENTATE_LEFT "${HippDownSampleFolder}/${Subject}.L.dentate_midthickness.${HippMesh}.surf.gii" \
@@ -486,7 +486,9 @@ then
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: WARNING: Requested smoothing (${FinalSmoothingFWHM}) is less than smoothing already applied (${OriginalSmoothingFWHM})"
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: Continuing with ${OriginalSmoothingFWHM} mm of total surface smoothing"
         fi
-        cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii"
+		if [[ "${FinalSmoothingFWHM}" != "${OriginalSmoothingFWHM}" ]]; then
+			cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp_s${OriginalSmoothingFWHM}${ProcSTRING}.dtseries.nii" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii"
+		fi
     fi
 fi
 
