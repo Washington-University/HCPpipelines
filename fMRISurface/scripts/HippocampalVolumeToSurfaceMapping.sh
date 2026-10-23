@@ -52,7 +52,7 @@ VolumefMRI="$5"
 SBRef="$6"
 doGoodVoxels="$7"
 Factor="$8" # Factor is a scaling factor for how many std units away from mean to set threshold
-Meshes="$9" # options: Meshes=(native 512 2k 8k 18k)
+TargetMesh="$9" #Converting native mesh to hippunfold 2k. Future releases might support other mesh resolutions.
 
 NeighborhoodSmoothing="5"   # Distinguishes large vs small dropout
 dilation_dist="10"
@@ -143,7 +143,6 @@ for Structure in hipp dentate; do
         OuterSurface="${NativeFolder}/${Prefix}_outer.native.surf.gii"
 
         NativeFlat="${NativeFolder}/${Prefix}_flat.native.surf.gii"
-        NativeROI="${WorkingDirectory}/${Prefix}_ones.native.func.gii"
 
         # =====================================================================
         # Map mean and covariance volumes
@@ -167,8 +166,6 @@ for Structure in hipp dentate; do
             fi
 
             wb_command -metric-dilate "${NativeMetric}" "${MidSurface}" "${dilation_dist}" "${NativeMetric}" -nearest
-            wb_command -metric-mask "${NativeMetric}" "${NativeROI}" "${NativeMetric}"
-
 
             # -----------------------------------------------------------------
             # Map using all ribbon voxels
@@ -176,37 +173,23 @@ for Structure in hipp dentate; do
 
             wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Session}.${Map}.nii.gz" "${MidSurface}" "${NativeAllMetric}" \
                 -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -dilate-missing ${dilation_dist} -nearest
-            wb_command -metric-mask "${NativeAllMetric}" "${NativeROI}" "${NativeAllMetric}"
 
             # -----------------------------------------------------------------
             # Resample native metrics using unfolded flat surfaces
             # -----------------------------------------------------------------
 
-            for Mesh in ${Meshes}; do
 
-                if [[ "${Mesh}" == "native" ]]; then
-                    continue
-                fi
+            MeshFolder="${HippUnfoldFolder}/${TargetMesh}"
 
-                MeshFolder="${HippUnfoldFolder}/${Mesh}"
+            TargetFlat="${MeshFolder}/${Prefix}_flat.${TargetMesh}.surf.gii"
+            TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${TargetMesh}.surf.gii"
+            TargetMetric="${WorkingDirectory}/${Prefix}_${Map}.${TargetMesh}.func.gii"
+            TargetAllMetric="${WorkingDirectory}/${Prefix}_${Map}_all.${TargetMesh}.func.gii"
 
-                TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
-                TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
-                TargetSurfArea="${MeshFolder}/${Prefix}_surfarea.${Mesh}.shape.gii"
-
-                TargetROI="${WorkingDirectory}/${Prefix}_ones.${Mesh}.func.gii"
-
-                TargetMetric="${WorkingDirectory}/${Prefix}_${Map}.${Mesh}.func.gii"
-                TargetAllMetric="${WorkingDirectory}/${Prefix}_${Map}_all.${Mesh}.func.gii"
-
-                wb_command -metric-math "x * 0 + 1" "${TargetROI}" -var x "${TargetSurfArea}"
-                wb_command -metric-resample "${NativeMetric}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetMetric}" \
-                    -area-surfs "${MidSurface}" "${TargetMidSurface}" -current-roi "${NativeROI}" -bypass-sphere-check
-                wb_command -metric-mask "${TargetMetric}" "${TargetROI}" "${TargetMetric}"
-                wb_command -metric-resample "${NativeAllMetric}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetAllMetric}" \
-                    -area-surfs "${MidSurface}" "${TargetMidSurface}" -current-roi "${NativeROI}" -bypass-sphere-check
-                wb_command -metric-mask "${TargetAllMetric}" "${TargetROI}" "${TargetAllMetric}"
-            done
+            wb_command -metric-resample "${NativeMetric}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetMetric}" \
+                -area-surfs "${MidSurface}" "${TargetMidSurface}" -bypass-sphere-check
+            wb_command -metric-resample "${NativeAllMetric}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetAllMetric}" \
+                -area-surfs "${MidSurface}" "${TargetMidSurface}" -bypass-sphere-check
         done
 
         # =====================================================================
@@ -219,82 +202,52 @@ for Structure in hipp dentate; do
 
             wb_command -volume-to-surface-mapping "${WorkingDirectory}/${Prefix}_goodvoxels.nii.gz" "${MidSurface}" "${NativeGoodVoxels}" \
                 -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -dilate-missing ${dilation_dist} -nearest
-            wb_command -metric-mask "${NativeGoodVoxels}" "${NativeROI}" "${NativeGoodVoxels}"
+
+            MeshFolder="${HippUnfoldFolder}/${TargetMesh}"
+
+            TargetFlat="${MeshFolder}/${Prefix}_flat.${TargetMesh}.surf.gii"
+            TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${TargetMesh}.surf.gii"
+            TargetGoodVoxels="${WorkingDirectory}/${Prefix}_goodvoxels.${TargetMesh}.func.gii"
 
 
-            for Mesh in ${Meshes}; do
-                if [[ "${Mesh}" == "native" ]]; then
-                    continue
-                fi
-                MeshFolder="${HippUnfoldFolder}/${Mesh}"
-
-                TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
-                TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
-                TargetROI="${WorkingDirectory}/${Prefix}_ones.${Mesh}.func.gii"
-
-                TargetGoodVoxels="${WorkingDirectory}/${Prefix}_goodvoxels.${Mesh}.func.gii"
-
-
-                wb_command -metric-resample "${NativeGoodVoxels}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetGoodVoxels}" \
-                    -area-surfs "${MidSurface}" "${TargetMidSurface}" -current-roi "${NativeROI}" -bypass-sphere-check
-                wb_command -metric-mask "${TargetGoodVoxels}" "${TargetROI}" "${TargetGoodVoxels}"
-            done
+            wb_command -metric-resample "${NativeGoodVoxels}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetGoodVoxels}" \
+                -area-surfs "${MidSurface}" "${TargetMidSurface}" -bypass-sphere-check
         fi
 
         # =====================================================================
         # Map complete fMRI timeseries to native hippocampal surface
         # =====================================================================
-        for Mesh in ${Meshes}; do
 
-            if [[ "${Mesh}" == "native" ]]; then
-                MeshFolder="${HippUnfoldFolder}/Native"
+            MeshFolder="${HippUnfoldFolder}/Native"
+            TargetfMRI="${WorkingDirectory}/${Prefix}_fMRI.native.func.gii"
+            TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.native.surf.gii"
+
+            # Map fMRI volume to native surface
+            if [[ "${doGoodVoxels}" == "YES" ]]; then
+                wb_command -volume-to-surface-mapping "${VolumefMRI}" "${TargetMidSurface}" "${TargetfMRI}" -ribbon-constrained "${InnerSurface}" "${OuterSurface}" \
+                    -volume-roi "${WorkingDirectory}/${Prefix}_goodvoxels.nii.gz" -dilate-missing "${dilation_dist}" -nearest
             else
-                MeshFolder="${HippUnfoldFolder}/${Mesh}"
+                wb_command -volume-to-surface-mapping "${VolumefMRI}" "${TargetMidSurface}" "${TargetfMRI}" \
+                    -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -dilate-missing "${dilation_dist}" -nearest
             fi
+            NativefMRI="${TargetfMRI}"
+            log_Msg "Generated fMRI file in native mesh at: ${TargetfMRI}"
 
-            TargetfMRI="${WorkingDirectory}/${Prefix}_fMRI.${Mesh}.func.gii"
-            TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
-            TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
-            TargetROI="${WorkingDirectory}/${Prefix}_ones.${Mesh}.func.gii"
+            # Dilate = native mesh fMRI
+            wb_command -metric-dilate "${TargetfMRI}" "${TargetMidSurface}" "${dilation_dist}" "${TargetfMRI}" -nearest
 
-            if [[ "${Mesh}" == "native" ]]; then
+            MeshFolder="${HippUnfoldFolder}/${TargetMesh}"
+            TargetfMRI="${WorkingDirectory}/${Prefix}_fMRI.${TargetMesh}.func.gii"
+            TargetFlat="${MeshFolder}/${Prefix}_flat.${TargetMesh}.surf.gii"
+            TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${TargetMesh}.surf.gii"
+            # Resample native fMRI surface to target mesh
+            wb_command -metric-resample "${NativefMRI}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetfMRI}" \
+                -area-surfs "${MidSurface}" "${TargetMidSurface}" -bypass-sphere-check
+            log_Msg "Generated fMRI file in mesh resolution ${TargetMesh} at: ${TargetfMRI}"
+            # Dilate target-mesh fMRI
+            wb_command -metric-dilate "${TargetfMRI}" "${TargetMidSurface}" "${dilation_dist}" "${TargetfMRI}" -nearest
 
-                # Map fMRI volume to native surface
-                if [[ "${doGoodVoxels}" == "YES" ]]; then
 
-                    wb_command -volume-to-surface-mapping "${VolumefMRI}" "${TargetMidSurface}" "${TargetfMRI}" -ribbon-constrained "${InnerSurface}" "${OuterSurface}" \
-                        -volume-roi "${WorkingDirectory}/${Prefix}_goodvoxels.nii.gz" -dilate-missing "${dilation_dist}" -nearest
-                else
-
-                    wb_command -volume-to-surface-mapping "${VolumefMRI}" "${TargetMidSurface}" "${TargetfMRI}" \
-                        -ribbon-constrained "${InnerSurface}" "${OuterSurface}" -dilate-missing "${dilation_dist}" -nearest
-                fi
-                NativefMRI="${TargetfMRI}"
-                log_Msg "Generated fMRI file in native mesh at: ${TargetfMRI}"
-            else
-
-                # Resample native fMRI surface to target mesh
-                wb_command -metric-resample "${NativefMRI}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetfMRI}" \
-                    -area-surfs "${MidSurface}" "${TargetMidSurface}" -current-roi "${NativeROI}" -bypass-sphere-check
-
-                log_Msg "Generated fMRI file in ${Mesh} mesh at: ${TargetfMRI}"
-
-            fi
-
-            # Dilate and mask both native and target-mesh fMRI
-            wb_command -metric-dilate \
-                "${TargetfMRI}" \
-                "${TargetMidSurface}" \
-                "${dilation_dist}" \
-                "${TargetfMRI}" \
-                -nearest
-
-            wb_command -metric-mask \
-                "${TargetfMRI}" \
-                "${TargetROI}" \
-                "${TargetfMRI}"
-
-        done
         # =====================================================================
         # Map VN volume to native hippocampal surface
         # =====================================================================
@@ -308,31 +261,67 @@ for Structure in hipp dentate; do
 
         fslmaths "${VolumefMRIVN}" -thr -1e30 -uthr 1e30 -nan "${FiniteVolumefMRIVN}" #Thresholding inf and -inf and replacing nan with 0
 
-        for Mesh in ${Meshes}; do
+        NativefMRIVN="${WorkingDirectory}/${Prefix}_fMRI_vn.native.func.gii"
+        MeshFolder="${HippUnfoldFolder}/Native"
+        TargetFlat="${MeshFolder}/${Prefix}_flat.native.surf.gii"
+        TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.native.surf.gii"
 
-            TargetfMRIVN="${WorkingDirectory}/${Prefix}_fMRI_vn.${Mesh}.func.gii"
+        # Map VN volume to native surface
+        wb_command -volume-to-surface-mapping "${FiniteVolumefMRIVN}" "${TargetMidSurface}" "${NativefMRIVN}" -cubic
 
-           if [[ "${Mesh}" == "native" ]]; then
-                MeshFolder="${HippUnfoldFolder}/Native"
-                TargetFlat="${MeshFolder}/${Prefix}_flat.native.surf.gii"
-                TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.native.surf.gii"
+        log_Msg "Generated VN file in native mesh at: ${NativefMRIVN}"
 
-                # Map VN volume to native surface
-                wb_command -volume-to-surface-mapping "${FiniteVolumefMRIVN}" "${TargetMidSurface}" "${TargetfMRIVN}" -cubic
-                NativefMRIVN="${TargetfMRIVN}"
+        MeshFolder="${HippUnfoldFolder}/${TargetMesh}"
+        TargetFlat="${MeshFolder}/${Prefix}_flat.${TargetMesh}.surf.gii"
+        TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${TargetMesh}.surf.gii"
+        TargetfMRIVN="${WorkingDirectory}/${Prefix}_fMRI_vn.${TargetMesh}.func.gii"
 
-                log_Msg "Generated VN file in native mesh at: ${TargetfMRIVN}"
-            else
-                MeshFolder="${HippUnfoldFolder}/${Mesh}"
-                TargetFlat="${MeshFolder}/${Prefix}_flat.${Mesh}.surf.gii"
-                TargetMidSurface="${MeshFolder}/${Prefix}_midthickness.${Mesh}.surf.gii"
-                # Resample native VN surface to other mesh surface
-                wb_command -metric-resample "${NativefMRIVN}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetfMRIVN}" \
-                    -area-surfs "${MidSurface}" "${TargetMidSurface}" -current-roi "${NativeROI}" -bypass-sphere-check
+        # Resample native VN surface to other mesh surface
+        wb_command -metric-resample "${NativefMRIVN}" "${NativeFlat}" "${TargetFlat}" ADAP_BARY_AREA "${TargetfMRIVN}" -area-surfs "${MidSurface}" "${TargetMidSurface}" -bypass-sphere-check
 
-                log_Msg "Generated VN file in ${Mesh} mesh at: ${TargetfMRIVN}"
-            fi
-        done
+        log_Msg "Generated VN file in ${TargetMesh} mesh at: ${TargetfMRIVN}"
     done
 done
 
+# =====================================================================
+# Combine the four surface metrics into CIFTIs, then remove the GIFTIs
+# =====================================================================
+
+for Mesh in native ${TargetMesh}; do
+    Maps="mean cov mean_all cov_all fMRI fMRI_vn"
+
+    if [[ "${doGoodVoxels}" == "YES" ]]; then
+        Maps="${Maps} goodvoxels"
+    fi
+
+    for Map in ${Maps}; do
+        LeftHipp="${WorkingDirectory}/${Session}.L.hipp_${Map}.${Mesh}.func.gii"
+        RightHipp="${WorkingDirectory}/${Session}.R.hipp_${Map}.${Mesh}.func.gii"
+        LeftDentate="${WorkingDirectory}/${Session}.L.dentate_${Map}.${Mesh}.func.gii"
+        RightDentate="${WorkingDirectory}/${Session}.R.dentate_${Map}.${Mesh}.func.gii"
+
+        if [[ "${Map}" == "fMRI" ]]; then
+            OutputCifti="${WorkingDirectory}/${Session}.${Mesh}.dtseries.nii"
+            TR=$(fslval "${VolumefMRI}" pixdim4)
+            wb_command -cifti-create-dense-timeseries "${OutputCifti}" -timestep "${TR}" -metric HIPPOCAMPUS_LEFT "${LeftHipp}" -metric HIPPOCAMPUS_RIGHT "${RightHipp}" -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
+        else
+
+            OutputCifti="${WorkingDirectory}/${Session}_${Map}.${Mesh}.dscalar.nii"
+            wb_command -cifti-create-dense-scalar "${OutputCifti}" -metric HIPPOCAMPUS_LEFT "${LeftHipp}" -metric HIPPOCAMPUS_RIGHT "${RightHipp}" -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
+        fi
+
+        if [[ -f "${OutputCifti}" ]]; then
+            rm "${LeftHipp}" "${RightHipp}" "${LeftDentate}" "${RightDentate}"
+            log_Msg "Created ${OutputCifti}"
+        fi
+    done
+done
+
+# Remove the all-ones metrics after ribbon mapping is complete.
+for Structure in hipp dentate; do
+    for Hemisphere in L R; do
+        rm "${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_ones.native.func.gii"
+    done
+done
+
+log_Msg "HippocampalVolumeToSurfaceMapping.sh completed"

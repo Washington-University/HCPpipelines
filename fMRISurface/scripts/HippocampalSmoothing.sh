@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 script_name=$(basename "${0}")
 
@@ -58,20 +59,27 @@ Sigma=$(echo "${SmoothingFWHM} / (2 * sqrt(2 * l(2)))" | bc -l)
 Structures=(hipp dentate)
 
 for Mesh in ${Meshes}; do
-    for Structure in "${Structures[@]}"; do
-        for Hemisphere in L R; do
-            if [[ "${Mesh}" == "native" ]] ; then
-                MeshFolder='Native'
-            else
-                MeshFolder="${Mesh}"
-            fi
-            if [[ "${SmoothingFWHM}" == "0" ]] ; then
-                cp "${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii"
-            else
-                wb_command -metric-smoothing ${HippUnfoldFolder}/${MeshFolder}/${Session}.${Hemisphere}.${Structure}_midthickness.${Mesh}.surf.gii ${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI.${Mesh}.func.gii" "${Sigma} ${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_fMRI_s${SmoothingFWHM}.${Mesh}.func.gii -roi ${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_ones.${Mesh}.func.gii
-            fi
-        done
-    done
+    if [[ "${Mesh}" == "native" ]]; then
+        MeshFolder="Native"
+    else
+        MeshFolder="${Mesh}"
+    fi
+
+    InputfMRI="${WorkingDirectory}/${Session}.${Mesh}.dtseries.nii"
+    OutputfMRI="${WorkingDirectory}/${Session}_s${SmoothingFWHM}.${Mesh}.dtseries.nii"
+
+    if [[ "${SmoothingFWHM}" == "0" ]]; then
+        cp "${InputfMRI}" "${OutputfMRI}" 
+    else
+        wb_command -cifti-smoothing "${InputfMRI}" "${Sigma}" 0 COLUMN "${OutputfMRI}" \
+            -surface HIPPOCAMPUS_LEFT "${HippUnfoldFolder}/${MeshFolder}/${Session}.L.hipp_midthickness.${Mesh}.surf.gii" \
+            -surface HIPPOCAMPUS_RIGHT "${HippUnfoldFolder}/${MeshFolder}/${Session}.R.hipp_midthickness.${Mesh}.surf.gii" \
+            -surface HIPPOCAMPUS_DENTATE_LEFT "${HippUnfoldFolder}/${MeshFolder}/${Session}.L.dentate_midthickness.${Mesh}.surf.gii" \
+            -surface HIPPOCAMPUS_DENTATE_RIGHT "${HippUnfoldFolder}/${MeshFolder}/${Session}.R.dentate_midthickness.${Mesh}.surf.gii"
+    fi
+
+    log_Msg "Created ${OutputfMRI}"
 done
+
 
 log_Msg "HippocampalSmoothing complete"
