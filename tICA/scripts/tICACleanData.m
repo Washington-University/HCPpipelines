@@ -19,7 +19,6 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         %all arguments are strings
     %end
     
-    wbcommand = 'wb_command';
     inputArray = myreadtext(InputFile);
     inputVNArray = myreadtext(InputVNFile);
     if size(inputArray, 1) ~= size(inputVNArray, 1)
@@ -40,7 +39,7 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         if size(goodBCArray, 1) ~= size(inputArray, 1)
             error('GoodBCFile has different number of lines than InputFile');
         end
-        oldBC = ciftiopen(optional.OldBias, wbcommand);
+        oldBC = cifti_read(optional.OldBias);
     end
 
     %tighten doVol detection to check if volume outputs are asked for?
@@ -58,7 +57,7 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         if size(inputArray, 1) ~= size(OutputVolVNNamesArray, 1)
             error('OutputVolVNNamesFile has different number of lines than InputFile');
         end
-        outVolTemplate = ciftiopen(optional.VolCiftiTemplate, wbcommand);
+        outVolTemplate = cifti_read(optional.VolCiftiTemplate);
         outVolTemplate.cdata = [];
         if ~strcmp(optional.VolInputFile, '')
             volinputArray = myreadtext(optional.VolInputFile);
@@ -76,7 +75,7 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
                     error('VolGoodBCFile is not empty, different number of lines than InputFile');
                 end
                 %use /tmp to convert volume files to voxel cifti
-                oldVolBC = open_vol_as_cifti(optional.OldVolBias, optional.VolCiftiTemplate, wbcommand);
+                oldVolBC = open_vol_as_cifti(optional.OldVolBias, optional.VolCiftiTemplate);
             end
         end
     end
@@ -96,9 +95,9 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
     SaveRunVolVN = [];
     %provide complete filenames in input lists
     for i = 1:size(inputArray, 1)
-        tempcii = ciftiopen([inputArray{i}], wbcommand);
+        tempcii = cifti_read([inputArray{i}]);
         runStarts(i + 1) = runStarts(i) + size(tempcii.cdata, 2);
-        tempvncii = ciftiopen([inputVNArray{i}], wbcommand);
+        tempvncii = cifti_read([inputVNArray{i}]);
         % can't use good BC to do the mean of VN properly, because it may not exist
         tempvncii.cdata = max(tempvncii.cdata, 0.001); 
         %VN file is really just stdev of BC data - to restore to close to original stdev, turn the stdev back into non-bc space and take the mean
@@ -106,11 +105,12 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         tempcii.cdata = [];
         % for output, make the vn data reference new BC space
         if doFixBC
-            tempBCcifti = ciftiopen(goodBCArray{i}, wbcommand);
+            tempBCcifti = cifti_read(goodBCArray{i});
             tempvncii.cdata = tempvncii.cdata .* oldBC.cdata ./ tempBCcifti.cdata;
         end
         if i == 1
             outTemplate = tempcii;
+            outTemplate.cdata = [];
             inputConcat = tempnorm;
             SaveRunVN = tempvncii.cdata;
         else
@@ -119,16 +119,16 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         end
         clear tempcii tempnorm tempvncii tempBCcifti;
         if doVol
-            tempvolcii = open_vol_as_cifti(volinputArray{i}, optional.VolCiftiTemplate, wbcommand);
+            tempvolcii = open_vol_as_cifti(volinputArray{i}, optional.VolCiftiTemplate);
             if size(tempvolcii.cdata, 2) ~= runStarts(i + 1) - runStarts(i)
                 error(['volume timeseries "' volinputArray{i} '" has different length than the cifti version']);
             end
-            tempvolvncii = open_vol_as_cifti(volinputVNArray{i}, optional.VolCiftiTemplate, wbcommand);
+            tempvolvncii = open_vol_as_cifti(volinputVNArray{i}, optional.VolCiftiTemplate);
             tempvolvncii.cdata = max(tempvolvncii.cdata, 0.001); 
             tempvolnorm = demean(tempvolcii.cdata, 2) ./ repmat(tempvolvncii.cdata, 1, size(tempvolcii.cdata, 2));
             clear tempvolcii;
             if doVolFixBC
-                tempvolBCcifti = open_vol_as_cifti(volGoodBCArray{i}, optional.VolCiftiTemplate, wbcommand);
+                tempvolBCcifti = open_vol_as_cifti(volGoodBCArray{i}, optional.VolCiftiTemplate);
                 tempvolvncii.cdata = tempvolvncii.cdata .* oldVolBC.cdata ./ tempvolBCcifti.cdata;
             end
             if i == 1
@@ -148,18 +148,17 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
     end
         
     inputConcat = inputConcat .* repmat(vnmean, 1, size(inputConcat, 2)); %Do correction in BC space because this is temporal regression
-    tICAtcs = ciftiopen(Timeseries, wbcommand);
+    tICAtcs = cifti_read(Timeseries);
     tICAtcs.cdata = normalise(tICAtcs.cdata')';
     Noise = load(NoiseList,'-ascii');
     betaICA = ((pinv(tICAtcs.cdata') * demean(inputConcat')));
     cleanedData = inputConcat - (tICAtcs.cdata(Noise, :)' * betaICA(Noise, :))';
     %%split out by input runs
     for i = 1:size(inputArray, 1)
-        outTemplate.cdata = cleanedData(:, runStarts(i):(runStarts(i + 1) - 1)); %see above, extra element on end of runStarts
-        ciftisavereset(outTemplate, outputNamesArray{i}, wbcommand); %reset because concatenated runs may be different lengths
+        %NOTE: assumes output filenames are .dtseries.nii
+        cifti_write_from_template(outTemplate, cleanedData(:, runStarts(i):(runStarts(i + 1) - 1)), outputNamesArray{i}, 'step', outTemplate.diminfo{2}.seriesStep); %see above, extra element on end of runStarts
         %save out good-BC vn for each input
-        outTemplate.cdata = SaveRunVN(:, i);
-        ciftisavereset(outTemplate, outputVNNamesArray{i}, wbcommand);
+        cifti_write_from_template(outTemplate, SaveRunVN(:, i), outputVNNamesArray{i});
     end
     
     %volume outputs
@@ -171,11 +170,11 @@ function tICACleanData(InputFile, InputVNFile, OutputNamesFile, OutputVNNamesFil
         for i = 1:size(inputArray, 1)
             %%convert back to NIFTI
             outVolTemplate.cdata = cleanedVolData(:, runStarts(i):(runStarts(i + 1) - 1));
-            save_volcifti_as_nifti(outVolTemplate, OutputVolNamesArray{i}, wbcommand);
+            save_volcifti_as_nifti(outVolTemplate, OutputVolNamesArray{i});
             my_system(['fslcpgeom "' inputArray{i} '" "' OutputVolNamesArray{i} '" -d']); %set timestep
             %save out good-BC vn for each input
             outVolTemplate.cdata = SaveRunVolVN(:, i);
-            save_volcifti_as_nifti(outVolTemplate, OutputVolVNNamesArray{i}, wbcommand);
+            save_volcifti_as_nifti(outVolTemplate, OutputVolVNNamesArray{i});
         end
     end
 end
@@ -203,26 +202,26 @@ function lines = myreadtext(filename)
     lines = array{1};
 end
 
-function outstruct = open_vol_as_cifti(volName, ciftiTemplate, wbcommand)
+function outstruct = open_vol_as_cifti(volName, ciftiTemplate)
     %don't leave a temporary file around on error/interrupt
     function cleanupFunc(filename)
         system(['rm -f -- "' filename '"']);
     end
     myfile = [tempname() '.dscalar.nii'];
     guardObj = onCleanup(@() cleanupFunc(myfile));
-    my_system([wbcommand ' -cifti-create-dense-from-template "' ciftiTemplate '" "' myfile '" -volume-all ' volName]);
-    outstruct = ciftiopen(myfile, wbcommand);
+    my_system(['wb_command -cifti-create-dense-from-template "' ciftiTemplate '" "' myfile '" -volume-all ' volName]);
+    outstruct = cifti_read(myfile);
 end
 
-function save_volcifti_as_nifti(cifti, outVolName, wbcommand)
+function save_volcifti_as_nifti(cifti, outVolName)
     %don't leave a temporary file around on error/interrupt
     function cleanupFunc(filename)
         system(['rm -f -- "' filename '"']); %matlab's remove function has troublesome quirks, easier to avoid it than to fix them
     end
     myfile = [tempname() '.dscalar.nii'];
     guardObj = onCleanup(@() cleanupFunc(myfile));
-    ciftisavereset(cifti, myfile, wbcommand); %reset because concatenated runs may be different lengths
-    my_system([wbcommand ' -cifti-separate "' myfile '" COLUMN -volume-all "' outVolName '"']);
+    cifti_write_from_template(cifti, cifti.cdata, myfile); %reset because concatenated runs may be different lengths
+    my_system(['wb_command -cifti-separate "' myfile '" COLUMN -volume-all "' outVolName '"']);
 end
 
 %like call_fsl, but without sourcing fslconf
