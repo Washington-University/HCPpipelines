@@ -12,6 +12,7 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/tempfiles.shlib"
 g_matlab_default_mode=1
+display_matlab=0 #if running matlab code, 0-keeps matlab display inactive, 1-enables matlab display (useful for debugging)
 
 #this function gets called by opts_ParseArguments when --help is specified
 function usage()
@@ -35,8 +36,11 @@ opts_AddOptional  '--group-maps' 'GroupMaps' 'file' "the group template spatial 
 opts_AddOptional  '--timeseries' 'Timeseries' 'file' "the timeseries for single regression"
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
-opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "mesh resolution, like '32' for 32k_fs_LR"
-opts_AddMandatory '--proc-string' 'ProcString' 'string' "part of filename describing processing, like '_hp2000_clean'"
+opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "Cerebral-Cortex mesh resolution, like '32' for 32k_fs_LR"
+opts_AddMandatory '--cortex-proc-string' 'CortexProcString' 'string' "processing suffix for cerebral-cortex timeseries"
+opts_AddMandatory '--hipp-proc-string' 'HippProcString' 'string' "processing suffix for hippocampal timeseries"
+opts_AddMandatory '--hipp-vn-proc-string' 'HippVNProcString' 'string' "part of vn (normalized variance) filename describing preprocessing stages (eg: '_hp2000_clean')"
+opts_AddMandatory '--cortex-vn-proc-string' 'CortexVNProcString' 'string' "part of vn (normalized variance) filename describing preprocessing stages (eg: '_hp2000_clean')"
 opts_AddMandatory '--method' 'Method' 'regression method' "'weighted', 'dual', or 'single' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information.  single temporal regression requires a prior run of weighted or dual regression and is intended for adding an additional output space"
 opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
 opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
@@ -45,6 +49,8 @@ opts_AddOptional '--tICA-mixing-matrix' 'tICAMM' 'filename' "path to a previousl
 
 #outputs
 opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like group_ICA_d127"
+opts_AddOptional '--hippocampal-output' 'HippocampalOutputString' 'YES or NO' "YES generates additional hippocampal RSN maps" 'NO'
+opts_AddOptional '--hippocampal-mesh' 'HippMesh' '512, 2k, 8k, or 18k' "hippocampal mesh density; allowed values: 512, 2k, 8k, or 18k" '2k'
 opts_AddOptional '--output-spectra' 'nTPsForSpectra' 'number' "number of samples to use when computing frequency spectrum" '0'
 opts_AddOptional '--volume-template-cifti' 'VolCiftiTemplate' 'file' "to generate voxel-based outputs, provide a cifti file setting the voxels to use"
 opts_AddOptional '--output-z' 'DoZString' 'YES or NO' "also create Z maps from the regression" 'NO'
@@ -63,6 +69,18 @@ opts_ParseArguments "$@"
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
+fi
+
+HippocampalOutput=$(opts_StringToBool "$HippocampalOutputString")
+if ((HippocampalOutput))
+then
+    case "$HippMesh" in
+        (512 | 2k | 8k | 18k)
+            ;;
+        (*)
+            log_Err_Abort "unrecognized hippocampal mesh '$HippMesh', use 512, 2k, 8k, or 18k"
+            ;;
+    esac
 fi
 
 #display the parsed/default values
@@ -87,8 +105,11 @@ case "$MatlabMode" in
         ;;
     (1)
         #NOTE: figure() is required by the spectra option, and -nojvm prevents using figure()
-        matlab_interpreter=(matlab -nodisplay -nosplash)
-        ;;
+        if [[ "$display_matlab" == "0" ]]; then
+            matlab_interpreter=(matlab -nodisplay -nosplash)
+        else
+            matlab_interpreter=(matlab -desktop -nosplash)
+        fi        ;;
     (2)
         matlab_interpreter=(octave-cli -q --no-window-system)
         ;;
@@ -116,21 +137,49 @@ DownSampleT1wFolder="$T1wFolder/fsaverage_LR${LowResMesh}k"
 
 tempfiles_create rsn_regr_matlab_XXXXXX tempname
 tempfiles_add "$tempname.input.txt" "$tempname.inputvn.txt" "$tempname.volinput.txt" "$tempname.volinputvn.txt" "$tempname.params.txt" "$tempname.goodbias.txt" "$tempname.volgoodbias.txt" "$tempname.mapnames.txt"
+
+if ((HippocampalOutput))
+then
+    HippDownSampleMNIFolder="$MNIFolder/HippUnfold/${HippMesh}"
+    tempfiles_add "$tempname.hippinput.txt" "$tempname.hippinputvn.txt"
+fi
 IFS='@' read -a InputArray <<< "$InputList"
 #use newline-delimited text files for matlab
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
 for fmri in "${InputArray[@]}"
 do
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}.dtseries.nii" >> "$tempname.input.txt"
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${CortexProcString}.dtseries.nii" >> "$tempname.input.txt"
+    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${CortexVNProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+    if ((HippocampalOutput))
+    then
+        HippResultsFolder="$MNIFolder/Results/$fmri"
+
+        HippInput="$HippResultsFolder/${fmri}_AtlasHipp${HippProcString}.dtseries.nii"
+        HippInputVN="$HippResultsFolder/${fmri}_AtlasHipp${HippVNProcString}_vn.dscalar.nii"
+        log_Msg "HippInput: $HippInput"
+        log_Msg "HippInputVN: $HippInputVN"
+
+        if [[ ! -f "$HippInput" ]]
+        then
+            log_Err_Abort "hippocampal timeseries does not exist: $HippInput"
+        fi
+
+        if [[ ! -f "$HippInputVN" ]]
+        then
+            log_Err_Abort "hippocampal VN file does not exist: $HippInputVN"
+        fi
+
+        echo "$HippResultsFolder/${fmri}_AtlasHipp${HippProcString}.dtseries.nii" >> "$tempname.hippinput.txt"
+        echo "$HippResultsFolder/${fmri}_AtlasHipp${HippVNProcString}_vn.dscalar.nii" >> "$tempname.hippinputvn.txt"
+    fi
     if ((DoFixBias))
     then
         echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_real_bias.dscalar.nii" >> "$tempname.goodbias.txt"
     fi
     if ((DoVol))
     then
-        echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" >> "$tempname.volinput.txt"
-        echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${CortexProcString}.nii.gz" >> "$tempname.volinput.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${CortexVNProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
         if ((DoFixBias))
         then
             echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
@@ -141,7 +190,7 @@ done
 OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
 OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
 #spectra output files want the correct TR, so save the first input filename
-SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${ProcString}.dtseries.nii"
+SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${CortexProcString}.dtseries.nii"
 
 #matlab can't take strings containing newlines, so it is left@right
 SurfString="$DownSampleT1wFolder/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii@$DownSampleT1wFolder/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
@@ -218,6 +267,21 @@ then
         OutputVolZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
     fi
 fi
+
+OutputHippBeta=""
+OutputHippZ=""
+OutputHippZMM=""
+if ((HippocampalOutput))
+then
+    OutputHippBeta="${HippDownSampleMNIFolder}/${Subject}.${OutString}_${MethodStr}${WFstr}.Hipp.dscalar.nii"
+
+    if ((DoZ))
+    then
+        OutputHippZ="${HippDownSampleMNIFolder}/${Subject}.${OutString}_${MethodStr}${WFstr}Z.Hipp.dscalar.nii"
+        OutputHippZMM="${HippDownSampleMNIFolder}/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM.Hipp.dscalar.nii"
+    fi
+fi
+
 SpectraParams=""
 if [[ nTPsForSpectra -gt 0 ]] && [[ ! ${Method} == "single" ]]
 then
@@ -298,6 +362,15 @@ then
     fi
 fi
 
+if ((HippocampalOutput))
+then
+    matlab_argarray+=("HippInputFile" "$tempname.hippinput.txt" "HippInputVNFile" "$tempname.hippinputvn.txt" "OutputHippBeta" "$OutputHippBeta")
+    if ((DoZ))
+    then
+        matlab_argarray+=("OutputHippZ" "$OutputHippZ" "OutputHippZMM" "$OutputHippZMM")
+    fi
+fi
+
 case "$MatlabMode" in
     (0)
         #sadly, matlab 2017b compiler doesn't know how to write sh scripts that are whitespace safe...could write our own...
@@ -316,16 +389,34 @@ case "$MatlabMode" in
             fi
             matlab_args+="'$thisarg'"
         done
-        matlab_code="
-            addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-            addpath('$HCPCIFTIRWDIR');
-            addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
-            addpath('$HCPPIPEDIR/global/matlab');
-            addpath('$this_script_dir');
-            RSNregression($matlab_args);"
+        if [[ "$display_matlab" == "0" ]]; then
+            matlab_code="
+                        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+                        addpath('$HCPCIFTIRWDIR');
+                        addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
+                        addpath('$HCPPIPEDIR/global/matlab');
+                        addpath('$this_script_dir');
+                        RSNregression($matlab_args);"
         
-        log_Msg "running matlab code: $matlab_code"
-        "${matlab_interpreter[@]}" <<<"$matlab_code"
+            log_Msg "running matlab code: $matlab_code"
+            "${matlab_interpreter[@]}" <<<"$matlab_code"
+        else
+            #debug matlab window
+            matlab_code="
+                addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+                addpath('$HCPCIFTIRWDIR');
+                addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
+                addpath('$HCPPIPEDIR/global/matlab');
+                addpath('$this_script_dir');
+                dbstop if error;
+                edit('$this_script_dir/RSNregression.m');
+                dbstop in RSNregression;
+                dbstatus;
+                RSNregression($matlab_args);"
+            log_Msg "running matlab code: $matlab_code"
+            "${matlab_interpreter[@]}" -r "${matlab_code//$'\n'/ }"
+        fi
+
         #matlab leaves a prompt and no newline when it finishes, so do an echo
         echo
         ;;
@@ -340,4 +431,29 @@ then
     wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
     rm -f -- "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
 fi
+log_Msg "Cerebral-cortex output: ${OutBeta}"
 
+if ((HippocampalOutput)); then
+    log_Msg "Hippocampal output: ${OutputHippBeta}"
+fi
+
+if ((DoVol)); then
+    log_Msg "Cerebral-cortex volume output: ${OutputVolBeta}"
+fi
+
+if ((DoZ)); then
+    log_Msg "Cerebral-cortex Z output: ${OutputZ}"
+    log_Msg "Cerebral-cortex ZMM output: ${OutputZMM}"
+
+    if ((HippocampalOutput)); then
+        log_Msg "Hippocampal Z output: ${OutputHippZ}"
+        log_Msg "Hippocampal ZMM output: ${OutputHippZMM}"
+    fi
+
+    if ((DoVol)); then
+        log_Msg "Cerebral-cortex volume Z output: ${OutputVolZ}"
+        log_Msg "Cerebral-cortex volume ZMM output: ${OutputVolZMM}"
+    fi
+fi
+
+log_Msg "RSNregression completed"
