@@ -15,21 +15,35 @@ fi
 #call 'tempfiles_add <file1> <file2> ...' to mark files to be deleted when the script exits (for any reason, including crash or interrupt)
 function tempfiles_add()
 {
+    local file
     for file in "$@"
     do
-        #absolute paths go in as-is
-        if [[ "$file" == /* ]]
+        if [[ "$file" != /* ]]
         then
-            tempfiles_list+=("$file")
-        else
             #relative paths need to be converted in case the script does a cd
             #use an extra character to stop the "strip multiple trailing newlines" behavior
-            filedirdot=$(cd "$(dirname "$file")"; pwd; echo -n .)
+            local filedirdot=$(cd "$(dirname -- "$file")"; pwd; echo -n .)
             #manually strip the 1 newline added by pwd and the extra char
-            filedir=${filedirdot%$'\n'.}
-            tempfiles_list+=("$filedir/$(basename "$file")")
+            local filedir=${filedirdot%$'\n'.}
+            file="$filedir/$(basename -- "$file")"
         fi
+        tempfiles_list+=("$file")
     done
+}
+
+#HACK: piggyback on noncollision of existing file method rather than possibly needing a separate compatibility layer with mac for mktemp -d
+function tempfiles_createfolder()
+{
+    if (($# < 2))
+    then
+        log_Err_Abort "tempfiles_createfolder requires 2 arguments"
+    fi
+    #NOTE: this variable can't be a local, because $() breaks the deletion behavior
+    tempfiles_create "$1" tempfiles_createfolder_temp_name
+    local outname="$tempfiles_createfolder_temp_name".dir
+    mkdir -p "$outname"
+    tempfiles_folderlist+=("$outname")
+    printf -v "$2" '%s' "$outname"
 }
 
 #call 'tempfiles_keep 1' to disable deletion
@@ -43,6 +57,10 @@ function tempfiles_keep()
 #for convenience, it automatically calls tempfiles_add on the file, though this has no effect inside $(), so warn for the old syntax
 function tempfiles_create()
 {
+    if [[ "$1" == */* ]]
+    then
+        log_Err_Abort "tempfiles_create template argument must not contain a path"
+    fi
     if [[ "$OSTYPE" == darwin* ]]
     then
         #mac mktemp can't generate a file with a specified extension on it, placeholders must be the very last characters
@@ -80,7 +98,7 @@ function tempfiles_create()
 #arguments: filename varname
 function tempfiles_copy()
 {
-    filebase=$(basename "$1")
+    filebase=$(basename -- "$1")
     template=$(echo "$filebase" | cut -f1 -d.).tmpcopy_XXXXX.$(echo "$filebase" | cut -f2- -d.)
     tempfiles_create "$template" "$2"
     cp "$1" "${!2}"
@@ -92,6 +110,7 @@ function tempfiles_copy()
 function tempfiles_subshell_reset()
 {
     tempfiles_list=()
+    tempfiles_folderlist=()
     #ignore previous setting for keeping temp files?
     tempfiles_keep 0
     trap tempfiles_cleanup EXIT
@@ -109,8 +128,18 @@ function tempfiles_cleanup()
             log_Warn "due to tempfiles_keep, the following temporary files were not deleted: ${tempfiles_list[*]}" 1>&2
         fi
     fi
-    #clear the current list regardless, for less surprising semantics
+    if ((${#tempfiles_folderlist[@]} > 0))
+    then
+        if [[ "$tempfiles_keepvar" == "0" ]]
+        then
+            rm -rf -- "${tempfiles_folderlist[@]}" || true
+        else
+            log_Warn "due to tempfiles_keep, the following temporary folders were not deleted: ${tempfiles_folderlist[*]}" 1>&2
+        fi
+    fi
+    #clear the current lists regardless, for less surprising semantics
     tempfiles_list=()
+    tempfiles_folderlist=()
 }
 
 tempfiles_keep 0
