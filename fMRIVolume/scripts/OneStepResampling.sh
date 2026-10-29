@@ -224,8 +224,12 @@ else
 fi
 
 # Add stuff for estimating RMS motion
+ScoutMask="${ScoutInputgdc}_mask.nii.gz"
+if [[ "$AtlasSpaceFolderBase" != "MNINonLinear" ]]; then
+    ScoutMask="${fMRIFolder}/$(basename "$ScoutInputgdc")_mask.nii.gz"
+fi
 invwarp -w ${OutputTransform} -o ${OutputInvTransform} -r ${ScoutInputgdc}
-applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${ScoutInputgdc} -w ${OutputInvTransform} -o ${ScoutInputgdc}_mask.nii.gz
+applywarp --rel --interp=nn -i ${FreeSurferBrainMask}.nii.gz -r ${ScoutInputgdc} -w ${OutputInvTransform} -o ${ScoutMask}
 if [ -e ${fMRIFolder}/Movement_RelativeRMS.txt ] ; then
   /bin/rm ${fMRIFolder}/Movement_RelativeRMS.txt
 fi
@@ -256,11 +260,11 @@ then
         echo $(cat "$MotionMatrixFolder/${MotionMatrixPrefix}$vnum") >> "$affseries"
 
         # Add stuff for estimating RMS motion
-        rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
+        rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutMask} | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
         if [ $k -eq 0 ] ; then
             echo "0" >> ${fMRIFolder}/Movement_RelativeRMS.txt
         else
-            rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} $prevmatrix ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_RelativeRMS.txt
+            rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} $prevmatrix ${ScoutInputgdc} ${ScoutMask} | tail -n 1 >> ${fMRIFolder}/Movement_RelativeRMS.txt
         fi
         prevmatrix="${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}"
     done
@@ -295,11 +299,11 @@ else
       vnum=$(${FSLDIR}/bin/zeropad $k 4)
 
       # Add stuff for estimating RMS motion
-      rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
+      rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} ${MotionMatrixFolder}/${MotionMatrixPrefix}0000 ${ScoutInputgdc} ${ScoutMask} | tail -n 1 >> ${fMRIFolder}/Movement_AbsoluteRMS.txt
       if [ $k -eq 0 ] ; then
         echo "0" >> ${fMRIFolder}/Movement_RelativeRMS.txt
       else
-        rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} $prevmatrix ${ScoutInputgdc} ${ScoutInputgdc}_mask.nii.gz | tail -n 1 >> ${fMRIFolder}/Movement_RelativeRMS.txt
+        rmsdiff ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} $prevmatrix ${ScoutInputgdc} ${ScoutMask} | tail -n 1 >> ${fMRIFolder}/Movement_RelativeRMS.txt
       fi
       prevmatrix="${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}"
 

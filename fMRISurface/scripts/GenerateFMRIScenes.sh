@@ -38,6 +38,8 @@ opts_AddMandatory '--output-folder' 'OutputSceneFolder' 'path' "output location 
 
 opts_AddOptional '--verbose' 'verboseArg' 'true|false' "whether to output more messages, default 'false'" 'false'
 
+opts_AddOptional '--atlas-space' 'AtlasSpaceFolderBase' 'AtlasSpaceLabel' "Nonlinear atlas space: MNINonLinear (default) or MMORFNonLinear" "MNINonLinear"
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -55,6 +57,18 @@ opts_ShowValues
 ### --------------------------------------------- ###
 
 TemplatesFolder="$HCPPIPEDIR/global/templates/fMRIQC"
+
+case "$AtlasSpaceFolderBase" in
+    MNINonLinear)
+        template_file="TEMPLATE_fMRIQC.scene"
+        ;;
+    MMORFNonLinear)
+        template_file="TEMPLATE_fMRIQC_MMORF.scene"
+        ;;
+    *)
+        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpaceFolderBase})"
+        ;;
+esac
 
 verbose=$(opts_StringToBool "$verboseArg")
 
@@ -98,7 +112,7 @@ sceneFile="${Session}_${fMRIName}.fMRIQC.wb_scene"  # No path (file name only)
 sed -e "s|${StudyFolderDummyStr}|${relPathToStudy}|g" \
     -e "s|${SessionIDDummyStr}|${Session}|g" \
     -e "s|${fMRINameDummyStr}|${fMRIName}|g" \
-    "$TemplatesFolder"/TEMPLATE_fMRIQC.scene > "$OutputSceneFolder/$sceneFile"
+    "$TemplatesFolder/$template_file" > "$OutputSceneFolder/$sceneFile"
 
 # Generate snapshots
 pngDir="$OutputSceneFolder/snapshots"

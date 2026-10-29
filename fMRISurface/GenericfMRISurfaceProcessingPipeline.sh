@@ -56,6 +56,9 @@ opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to d
 
 opts_AddOptional '--species' 'Species' 'e.g. Human, etc.' "Species [Human]" "Human"
 
+opts_AddOptional '--atlas-space' 'AtlasSpaceFolderBase' 'AtlasSpaceLabel' "Specifies the nonlinear atlas space to use for the output. Should match the atlas output folder name. Valid options are: 'MNINonLinear' (default), MMORFNonLinear" "MNINonLinear"
+
+
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -120,7 +123,6 @@ fi
 PipelineScripts=${HCPPIPEDIR_fMRISurf}
 
 #Naming Conventions
-AtlasSpaceFolder="MNINonLinear"
 T1wFolder="T1w"
 NativeFolder="Native"
 ResultsFolder="Results"
@@ -128,7 +130,15 @@ DownSampleFolder="fsaverage_LR${LowResMesh}k"
 ROIFolder="ROIs"
 OutputAtlasDenseTimeseries="${NameOffMRI}_Atlas"
 
-AtlasSpaceFolder="$Path"/"$Session"/"$AtlasSpaceFolder"
+case "$AtlasSpaceFolderBase" in
+    MNINonLinear|MMORFNonLinear)
+        ;;
+    *)
+        log_Err_Abort "unrecognized value for --atlas-space (${AtlasSpaceFolderBase})"
+        ;;
+esac
+
+AtlasSpaceFolder="$Path"/"$Session"/"$AtlasSpaceFolderBase"
 T1wFolder="$Path"/"$Session"/"$T1wFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 ROIFolder="$AtlasSpaceFolder"/"$ROIFolder"
@@ -165,7 +175,8 @@ if ((doQC)); then
         --study-folder="$Path" \
         --session="$Session" \
         --fmriname="$NameOffMRI" \
-        --output-folder="$ResultsFolder/fMRIQC"
+        --output-folder="$ResultsFolder/fMRIQC" \
+        --atlas-space="$AtlasSpaceFolderBase"
 fi
 
 log_Msg "Completed!"

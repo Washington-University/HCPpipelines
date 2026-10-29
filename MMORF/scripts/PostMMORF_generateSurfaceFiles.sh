@@ -190,6 +190,11 @@ for Hemisphere in L R ; do
         Structure="CORTEX_RIGHT"
     fi
 
+    #Link native ROI and registration spheres, which are shared between atlas spaces.
+    for NativeFile in roi.native.shape.gii sphere.${RegNameOrig}.native.surf.gii sphere.${RegName}.native.surf.gii ; do
+        ln -sf "../../MNINonLinear/${NativeFolder}/${Session}.${Hemisphere}.${NativeFile}" "${AtlasSpaceFolder}/${NativeFolder}/${Session}.${Hemisphere}.${NativeFile}"
+    done
+
     #native Mesh Processing
     #Convert and volumetrically register white and pial surfaces makign linear and nonlinear copies, add each to the appropriate spec file
     Types="ANATOMICAL@GRAY_WHITE ANATOMICAL@PIAL"

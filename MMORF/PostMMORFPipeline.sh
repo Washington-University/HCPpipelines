@@ -21,6 +21,8 @@ opts_AddOptional '--diffusionmesh' 'DiffusionMesh' 'number' 'Diffusion mesh, def
 opts_AddOptional '--regname' 'RegName' 'MSMAll' 'Registration name, default MSMAll' "MSMAll"
 opts_AddOptional '--regnameorig' 'RegNameOrig' 'MSMSulc' 'Registration name for original, default MSMSulc' "MSMSulc"
 opts_AddOptional '--inflatescale' 'InflateExtraScale' 'number' 'Additional scaling beyond linear to deal with a lowres mesh greater than 32k, default 1 (linear)' "1"
+opts_AddOptional '--grayordinatesres' 'GrayordinatesResolutions' 'num@num' 'Grayordinate resolutions in mm delimited by @, default 2' '2'
+opts_AddOptional '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' 'Subcortical label table' "${HCPPIPEDIR}/global/config/FreeSurferSubcorticalLabelTableLut.txt"
 opts_ParseArguments "$@"
 
 if ((pipedirguessed))
@@ -51,6 +53,9 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
     --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
     --t1brainmask="${T1wFolder}/${T1wImageBrainMask}" \
     --t1biasfield="${T1wFolder}/${T1wImageBiasField}" \
+    --t1wmparc="${T1wFolder}/wmparc_1mm.nii.gz" \
+    --grayordinatesres="${GrayordinatesResolutions}" \
+    --subcortgraylabels="${SubcorticalGrayLabels}" \
     --t2="${T1wFolder}/${T2wImage}_acpc_dc" \
     --t2rest="${T1wFolder}/${T2wImage}_acpc_dc_restore" \
     --t2restbrain="${T1wFolder}/${T2wImage}_acpc_dc_restore_brain" \

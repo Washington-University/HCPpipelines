@@ -36,6 +36,8 @@ opts_AddMandatory '--t1brainmask' 'T1wBrainMask' 'image' 'T1w space FreeSurfer b
 
 opts_AddMandatory '--t1biasfield' 'T1wBiasField' 'image' 'T1w space FreeSurfer bias field'
 
+opts_AddMandatory '--t1wmparc' 'T1wWmparc' 'image' 'FreeSurfer labeled brain volume containing white-matter parcels and subcortical structures, aligned to the subject T1w image (T1w/wmparc_1mm.nii.gz). Used to generate subcortical ROIs in MMORF space.'
+
 opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
 opts_AddMandatory '--owarp' 'OutputTransform' 'warp' 'output warp'
@@ -62,6 +64,8 @@ opts_AddMandatory '--outputfolder' 'Output' 'path' 'target folder for output'
 
 ##optional args
 opts_AddOptional '--ref1mm' 'Reference1mm' 'image' 'reference 1mm image' "${HCPPIPEDIR_Templates}/MMORF_T1_1mm.nii.gz"
+opts_AddOptional '--grayordinatesres' 'GrayordinatesResolutions' 'num@num' 'Grayordinate resolutions in mm delimited by @, default 2' '2'
+opts_AddOptional '--subcortgraylabels' 'SubcorticalGrayLabels' 'file' 'Subcortical label table' "${HCPPIPEDIR}/global/config/FreeSurferSubcorticalLabelTableLut.txt"
 
 opts_ParseArguments "$@"
 
@@ -74,6 +78,12 @@ fi
 opts_ShowValues
 
 log_Check_Env_Var FSLDIR
+
+for GrayordinatesResolution in ${GrayordinatesResolutions//@/ } ; do
+    if [[ ! -f "${HCPPIPEDIR}/global/templates/MMORF_T1_${GrayordinatesResolution}mm.nii.gz" ]]; then
+        log_Err_Abort "MMORF T1w template not found: ${HCPPIPEDIR}/global/templates/MMORF_T1_${GrayordinatesResolution}mm.nii.gz"
+    fi
+done
 
 verbose_echo "--> Computing combined warp"
 ${FSLDIR}/bin/convertwarp -m "${Output}/xfms/acpc2MMORFLinear.mat" -w "${Output}/xfms/mov_to_ref_mm_warp" -r "${Reference1mm}" -o "${OutputTransform}" --rel --relout 
@@ -92,6 +102,13 @@ ${FSLDIR}/bin/fslmaths ${OutputT1wImageRestore} -mas ${OutputT1wImageRestoreBrai
 ${FSLDIR}/bin/applywarp --rel --interp=nn -i "${T1wBrainMask}" -r "${Reference}" -w "${OutputTransform}" -o "${OutputT1wImageBrainMask}"
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i "${T1wBiasField}" -r "${Reference}" -w "${OutputTransform}" -o "${OutputT1wImageBiasField}"
 ${FSLDIR}/bin/fslmaths "${OutputT1wImageBiasField}" -thr 0.1 "${OutputT1wImageBiasField}"
+
+verbose_echo " --> Generating subject subcortical ROIs"
+mkdir -p "${Output}/ROIs"
+for GrayordinatesResolution in ${GrayordinatesResolutions//@/ } ; do
+    ${FSLDIR}/bin/applywarp --rel --interp=nn -i "${T1wWmparc}" -r "${Output}/ROIs/Atlas_ROIs.${GrayordinatesResolution}.nii.gz" -w "${OutputTransform}" -o "${Output}/ROIs/wmparc.${GrayordinatesResolution}.nii.gz"
+    ${CARET7DIR}/wb_command -volume-label-import "${Output}/ROIs/wmparc.${GrayordinatesResolution}.nii.gz" "${SubcorticalGrayLabels}" "${Output}/ROIs/ROIs.${GrayordinatesResolution}.nii.gz" -discard-others
+done
 
 verbose_echo " --> Generating DTI set of warped outputs"
 ${FSLDIR}/bin/vecreg --interp=spline -i "${Diffusion}/data_tensor.nii.gz" --premat="${Output}/xfms/acpc2MMORFLinear.mat" -w "${Output}/xfms/mov_to_ref_mm_warp" -r "${Reference}" -o "${Output}/Diffusion/data_tensor.nii.gz" 

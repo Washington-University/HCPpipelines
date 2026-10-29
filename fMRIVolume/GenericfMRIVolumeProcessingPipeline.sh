@@ -1146,6 +1146,19 @@ if [ "$RunMode" -lt 3 ] ; then
 fi  # RunMode < 3 (end of DistortionCorrection stage)
 
 # ---- Stage 3: OneStepResampling, IntensityNormalization, Copy Results, Cleanup
+# Set intermediate folder for OneStepResampling outputs for non-MNI templates. Although the final outputs will be in the nonlinear atlas folder, the intermediate outputs of nonlinear atlas transforms are stored under fMRI folder and would otherwise collide with each other.
+SharedfMRIFolder="$fMRIFolder"
+if [[ "$AtlasSpaceFolderBase" != "MNINonLinear" ]]; then
+    fMRIFolder="${SharedfMRIFolder}/${AtlasSpaceFolderBase}"
+    mkdir -p "$fMRIFolder"
+fi
+
+SetUseBiasFieldAtlasSpace
+
+if [[ $nEcho -gt 1 ]]; then
+    EchoDir="${fMRIFolder}/MultiEcho"
+    mkdir -p "$EchoDir"
+fi
 
 #One Step Resampling
 log_Msg "One Step Resampling"
@@ -1155,7 +1168,7 @@ tscArgs="";sctArgs="";
 for iEcho in $(seq 0 $((nEcho-1))) ; do
     ${RUN} ${PipelineScripts}/OneStepResampling.sh \
         --workingdir=${fMRIFolder}/OneStepResampling \
-        --infmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" \
+        --infmri="${SharedfMRIFolder}/${tcsEchoesOrig[iEcho]}.nii.gz" \
         --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
         --fmriresout=${FinalfMRIResolution} \
         --fmrifolder=${fMRIFolder} \
@@ -1163,14 +1176,14 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
         --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
         --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
-        --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
+        --motionmatdir=${SharedfMRIFolder}/${MotionMatrixFolder} \
         --motionmatprefix=${MotionMatrixPrefix} \
         --ofmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin" \
         --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
         --biasfield=${AtlasSpaceFolder}/${BiasFieldAtlasSpace} \
-        --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
-        --scoutin="${fMRIFolder}/${sctEchoesOrig[iEcho]}" \
-        --scoutgdcin="${fMRIFolder}/${sctEchoesGdc[iEcho]}" \
+        --gdfield=${SharedfMRIFolder}/${NameOffMRI}_gdc_warp \
+        --scoutin="${SharedfMRIFolder}/${sctEchoesOrig[iEcho]}" \
+        --scoutgdcin="${SharedfMRIFolder}/${sctEchoesGdc[iEcho]}" \
         --oscout="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin" \
         --ojacobian=${fMRIFolder}/${JacobianOut}_${AtlasAlias}.${FinalfMRIResolution} \
         --fmrirefpath=${fMRIReferencePath} \
@@ -1319,8 +1332,8 @@ ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_mask.nii.gz ${ResultsFolder}/${Name
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.nii.gz ${ResultsFolder}/${NameOffMRI}_finalmask.nii.gz
 
 ${RUN} cp ${fMRIFolder}/${NameOffMRI}_nonlin_finalmask.stats.txt ${ResultsFolder}/${NameOffMRI}_finalmask.stats.txt
-${RUN} cp ${fMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}
-${RUN} cp ${fMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}
+${RUN} cp ${SharedfMRIFolder}/${MovementRegressor}.txt ${ResultsFolder}
+${RUN} cp ${SharedfMRIFolder}/${MovementRegressor}_dt.txt ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/Movement_RelativeRMS.txt ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/Movement_AbsoluteRMS.txt ${ResultsFolder}
 ${RUN} cp ${fMRIFolder}/Movement_RelativeRMS_mean.txt ${ResultsFolder}
@@ -1333,26 +1346,26 @@ ${FSLDIR}/bin/imrm ${fMRIFolder}/${NameOffMRI}_nonlin_norm
 # to avoid potential storage issue as
 # symlinks tend to become hard copies over time.
 if (( IsLongitudinal )); then
-    rm -f ${fMRIFolder}/"$OrigTCSName".nii.gz
+    rm -f ${SharedfMRIFolder}/"$OrigTCSName".nii.gz
 fi
 
 #Econ
-#${FSLDIR}/bin/imrm "$fMRIFolder"/"$OrigTCSName"
-${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
-${FSLDIR}/bin/imrm "$fMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
+#${FSLDIR}/bin/imrm "$SharedfMRIFolder"/"$OrigTCSName"
+${FSLDIR}/bin/imrm "$SharedfMRIFolder"/"$NameOffMRI"_gdc #This can be checked with the SBRef
+${FSLDIR}/bin/imrm "$SharedfMRIFolder"/"$NameOffMRI"_mc #This can be checked with the unmasked spatially corrected data
 
 #clean up split echo(s)
 if [[ $nEcho -gt 1 ]]; then
 	for iEcho in $(seq 0 $((nEcho-1))) ; do
-		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}"
-		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesOrig[iEcho]}"
-		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}"
+		${FSLDIR}/bin/imrm "${SharedfMRIFolder}/${tcsEchoesOrig[iEcho]}"
+		${FSLDIR}/bin/imrm "${SharedfMRIFolder}/${sctEchoesOrig[iEcho]}"
+		${FSLDIR}/bin/imrm "${SharedfMRIFolder}/${sctEchoesGdc[iEcho]}"
 
 		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin"
 		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin_mask"
 		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesOrig[iEcho]}_SBRef_nonlin"
 
-		${FSLDIR}/bin/imrm "${fMRIFolder}/${tcsEchoesGdc[iEcho]}"
+		${FSLDIR}/bin/imrm "${SharedfMRIFolder}/${tcsEchoesGdc[iEcho]}"
 		${FSLDIR}/bin/imrm "${fMRIFolder}/${sctEchoesGdc[iEcho]}_mask"
 	done
 	${FSLDIR}/bin/imrm "${tcsEchoes[@]}"
