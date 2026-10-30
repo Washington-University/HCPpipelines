@@ -26,7 +26,7 @@ par_runjobs
 USAGE_END
 
 #we need to interact with tempfiles in case what is parallelized is a function
-if [[ "$(type -t tempfiles_par_shell_reset)" != "function" ]]
+if [[ "$(type -t tempfiles_subshell_reset)" != "function" ]]
 then
     source "$HCPPIPEDIR/global/scripts/tempfiles.shlib" "$@"
 fi
