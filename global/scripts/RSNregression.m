@@ -131,7 +131,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             inputConcat = tempnorm;
             vnsum = tempvncii.cdata;
         else
-            inputConcat = [inputConcat tempnorm];
+            inputConcat = [inputConcat tempnorm]; %#ok<AGROW>
             vnsum = vnsum + tempvncii.cdata; % should this use weighted and/or geometric mean?  are there zeros?
         end
 
@@ -152,7 +152,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 volInputConcat = tempvolnorm;
                 vnvolsum = tempvolvncii.cdata;
             else
-                volInputConcat = [volInputConcat tempvolnorm];
+                volInputConcat = [volInputConcat tempvolnorm]; %#ok<AGROW>
                 vnvolsum = vnvolsum + tempvolvncii.cdata;
             end
             clear tempvolnorm tempvolvncii tempvolBCcifti;
@@ -221,7 +221,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 betaICAone = weightedDualRegression(LowDim.cdata, inputConcat, AreaWeights, 0); %Always use WF=0
                 betaICA = weightedDualRegression(betaICAone, inputConcat, AreaWeights, 0); %Always use WF=0
                 for j = 1:length(betaICA)
-                    var(j) = atanh(corr(betaICA(j, :)', LowDim.cdata(j, :)'));
+                    var(j) = atanh(corr(betaICA(j, :)', LowDim.cdata(j, :)')); %#ok<AGROW>
                 end
                 corrs(:, i) = var';
             end
@@ -345,8 +345,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             dof = size(NODEtsnorm, 1) - size(NODEtsnorm, 2) - 1; %Approximate, does not include DOF lost from data cleanup
         end
         residuals = demean(inputConcat, 2) - betaICA * NODEtsnorm';
-        pN = pinv(NODEtsnorm); 
-        dpN = diag(pN * pN')';
+        pN = pinv(NODEtsnorm); dpN = diag(pN * pN')';
         t = double(betaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
         Z = zeros(size(t));
         %Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)

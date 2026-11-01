@@ -37,10 +37,7 @@ opts_AddOptional  '--timeseries' 'Timeseries' 'file' "the timeseries for single 
 opts_AddMandatory '--subject-timeseries' 'InputList' 'fmri@fmri@fmri...' "the timeseries fmri names to concatenate"
 opts_AddOptional '--surf-reg-name' 'RegName' 'name' "the registration string corresponding to the input files"
 opts_AddMandatory '--low-res' 'LowResMesh' 'meshnum' "Cerebral-Cortex mesh resolution, like '32' for 32k_fs_LR"
-opts_AddMandatory '--cortex-proc-string' 'CortexProcString' 'string' "processing suffix for cerebral-cortex timeseries"
-opts_AddMandatory '--hipp-proc-string' 'HippProcString' 'string' "processing suffix for hippocampal timeseries"
-opts_AddMandatory '--hipp-vn-proc-string' 'HippVNProcString' 'string' "part of vn (normalized variance) filename describing preprocessing stages (eg: '_hp2000_clean')"
-opts_AddMandatory '--cortex-vn-proc-string' 'CortexVNProcString' 'string' "part of vn (normalized variance) filename describing preprocessing stages (eg: '_hp2000_clean')"
+opts_AddMandatory '--proc-string' 'ProcString' 'string' "substring of filename describing preprocessing stages (eg '_hp2000_clean_rclean_tclean')"
 opts_AddMandatory '--method' 'Method' 'regression method' "'weighted', 'dual', or 'single' - weighted regression finds locations in the subject that don't match the template well and downweights them; dual is simpler, both methods use vertex area information.  single temporal regression requires a prior run of weighted or dual regression and is intended for adding an additional output space"
 opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "default 14 for human data - when using --method=weighted, the smoothing sigma, in mm, to apply to the 'alignment quality' weighting map" '14'
 opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
@@ -71,6 +68,9 @@ then
     log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
 
+#display the parsed/default values
+opts_ShowValues
+
 HippocampalOutput=$(opts_StringToBool "$HippocampalOutputString")
 if ((HippocampalOutput))
 then
@@ -82,9 +82,6 @@ then
             ;;
     esac
 fi
-
-#display the parsed/default values
-opts_ShowValues
 
 #sanity check boolean strings and convert to 1 and 0
 DoZ=$(opts_StringToBool "$DoZString")
@@ -109,7 +106,8 @@ case "$MatlabMode" in
             matlab_interpreter=(matlab -nodisplay -nosplash)
         else
             matlab_interpreter=(matlab -desktop -nosplash)
-        fi        ;;
+        fi        
+        ;;
     (2)
         matlab_interpreter=(octave-cli -q --no-window-system)
         ;;
@@ -148,14 +146,13 @@ IFS='@' read -a InputArray <<< "$InputList"
 #matlab chokes on more than 4096 characters in an input line, so use text files for safety
 for fmri in "${InputArray[@]}"
 do
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${CortexProcString}.dtseries.nii" >> "$tempname.input.txt"
-    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${CortexVNProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}.dtseries.nii" >> "$tempname.input.txt"
+    echo "$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}${ProcString}_vn.dscalar.nii" >> "$tempname.inputvn.txt"
+    
     if ((HippocampalOutput))
     then
-        HippResultsFolder="$MNIFolder/Results/$fmri"
-
-        HippInput="$HippResultsFolder/${fmri}_AtlasHipp${HippProcString}.dtseries.nii"
-        HippInputVN="$HippResultsFolder/${fmri}_AtlasHipp${HippVNProcString}_vn.dscalar.nii"
+        HippInput="$MNIFolder/Results/$fmri/${fmri}_AtlasHipp${ProcString}.dtseries.nii"
+        HippInputVN="$MNIFolder/Results/$fmri/${fmri}_AtlasHipp${ProcString}_vn.dscalar.nii"
         log_Msg "HippInput: $HippInput"
         log_Msg "HippInputVN: $HippInputVN"
 
@@ -168,9 +165,8 @@ do
         then
             log_Err_Abort "hippocampal VN file does not exist: $HippInputVN"
         fi
-
-        echo "$HippResultsFolder/${fmri}_AtlasHipp${HippProcString}.dtseries.nii" >> "$tempname.hippinput.txt"
-        echo "$HippResultsFolder/${fmri}_AtlasHipp${HippVNProcString}_vn.dscalar.nii" >> "$tempname.hippinputvn.txt"
+        echo "$HippInput" >> "$tempname.hippinput.txt"
+        echo "$HippInputVN" >> "$tempname.hippinputvn.txt"
     fi
     if ((DoFixBias))
     then
@@ -178,8 +174,8 @@ do
     fi
     if ((DoVol))
     then
-        echo "$MNIFolder/Results/$fmri/${fmri}${CortexProcString}.nii.gz" >> "$tempname.volinput.txt"
-        echo "$MNIFolder/Results/$fmri/${fmri}${CortexVNProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}.nii.gz" >> "$tempname.volinput.txt"
+        echo "$MNIFolder/Results/$fmri/${fmri}${ProcString}_vn.nii.gz" >> "$tempname.volinputvn.txt"
         if ((DoFixBias))
         then
             echo "$MNIFolder/Results/$fmri/${fmri}_real_bias.nii.gz" >> "$tempname.volgoodbias.txt"
@@ -190,7 +186,7 @@ done
 OldBias="$MNIFolder/Results/$fmri/${fmri}_Atlas${RegString}_bias.dscalar.nii"
 OldVolBias="$MNIFolder/Results/$fmri/${fmri}_bias.nii.gz"
 #spectra output files want the correct TR, so save the first input filename
-SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${CortexProcString}.dtseries.nii"
+SpectraTRFile="$MNIFolder/Results/${InputArray[0]}/${InputArray[0]}_Atlas${RegString}${ProcString}.dtseries.nii"
 
 #matlab can't take strings containing newlines, so it is left@right
 SurfString="$DownSampleT1wFolder/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii@$DownSampleT1wFolder/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
@@ -247,24 +243,24 @@ if [[ "$WF" != "" ]] ; then
 else
   WFstr=""
 fi
-
-OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+CortexOutputPrefix="${Subject}.${OutString}_Atlas${RegString}${ProcString}"
+OutBeta="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}.${LowResMesh}k_fs_LR.dscalar.nii"
 OutputVolBeta=""
 if ((DoVol))
 then
     #no reason for it to have the mesh on the name, but that is what the old script said...
-    OutputVolBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputVolBeta="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
 fi
 OutputZ=""
 OutputVolZ=""
 if ((DoZ))
 then
-    OutputZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
-    OutputZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputZ="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}Z.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputZMM="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}ZMM.${LowResMesh}k_fs_LR.dscalar.nii"
     if ((DoVol))
     then
-        OutputVolZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
-        OutputVolZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+        OutputVolZ="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}Z_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+        OutputVolZMM="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}ZMM_vol.${LowResMesh}k_fs_LR.dscalar.nii"
     fi
 fi
 
@@ -273,12 +269,12 @@ OutputHippZ=""
 OutputHippZMM=""
 if ((HippocampalOutput))
 then
-    OutputHippBeta="${HippDownSampleMNIFolder}/${Subject}.${OutString}_${MethodStr}${WFstr}.Hipp.dscalar.nii"
-
+    HippOutputPrefix="${Subject}.${OutString}_AtlasHipp${RegString}${ProcString}"
+    OutputHippBeta="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}.dscalar.nii"
     if ((DoZ))
     then
-        OutputHippZ="${HippDownSampleMNIFolder}/${Subject}.${OutString}_${MethodStr}${WFstr}Z.Hipp.dscalar.nii"
-        OutputHippZMM="${HippDownSampleMNIFolder}/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM.Hipp.dscalar.nii"
+        OutputHippZ="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}Z.dscalar.nii"
+        OutputHippZMM="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}ZMM.dscalar.nii"
     fi
 fi
 
@@ -286,7 +282,7 @@ SpectraParams=""
 if [[ nTPsForSpectra -gt 0 ]] && [[ ! ${Method} == "single" ]]
 then
     #these files are temporary anyway
-    SpectraParams="$nTPsForSpectra@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
+    SpectraParams="$nTPsForSpectra@$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.txt@$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.txt"
 elif [[ ${Method} == "single" ]]
 then
     SpectraParams="${Timeseries}"
@@ -295,7 +291,7 @@ fi
 #OutputNorm=""
 #if ((DoNorm))
 #then
-#    OutputNorm="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}N${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+#    OutputNorm="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}N${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
     #probably can't trust the volume outputs to be the same scaling as the surface outputs, and we don't need this except for MSMAll anyway
 #fi
 
@@ -391,12 +387,12 @@ case "$MatlabMode" in
         done
         if [[ "$display_matlab" == "0" ]]; then
             matlab_code="
-                        addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
-                        addpath('$HCPCIFTIRWDIR');
-                        addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
-                        addpath('$HCPPIPEDIR/global/matlab');
-                        addpath('$this_script_dir');
-                        RSNregression($matlab_args);"
+                addpath('$HCPPIPEDIR/global/fsl/etc/matlab');
+                addpath('$HCPCIFTIRWDIR');
+                addpath('$HCPPIPEDIR/global/matlab/nets_spectra');
+                addpath('$HCPPIPEDIR/global/matlab');
+                addpath('$this_script_dir');
+                RSNregression($matlab_args);"
         
             log_Msg "running matlab code: $matlab_code"
             "${matlab_interpreter[@]}" <<<"$matlab_code"
@@ -427,9 +423,9 @@ then
     wb_command -file-information "$GroupMaps" -only-map-names > "$tempname.mapnames.txt"
     TR=$(wb_command -file-information "$SpectraTRFile" -only-step-interval)
     FTmixStep=$(echo "scale = 7; 1 / ($nTPsForSpectra * $TR)" | bc -l)
-    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series SECOND 0 "$TR"
-    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
-    rm -f -- "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
+    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series SECOND 0 "$TR"
+    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
+    rm -f -- "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.txt"
 fi
 log_Msg "Cerebral-cortex output: ${OutBeta}"
 
