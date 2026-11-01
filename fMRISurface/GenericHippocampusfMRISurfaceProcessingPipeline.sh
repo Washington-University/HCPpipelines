@@ -20,7 +20,7 @@
 
 # ResultsFolder:
 #   Final target-mesh outputs:
-#       ${NameOffMRI}_AtlasHipp_s${SmoothingFWHM}${ProcString}.dtseries.nii
+#       ${NameOffMRI}_AtlasHipp${ProcString}.dtseries.nii
 #       ${NameOffMRI}_AtlasHipp${ProcString}_vn.dscalar.nii
 #
 # WorkingDirectory (HippocampalVolumeToSurfaceMapping):
@@ -52,19 +52,12 @@ source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib" # Check processi
 opts_SetScriptDescription "Run hippocampal fMRISurface processing"
 
 opts_AddMandatory '--studyfolder' 'Path' 'path' "folder containing all sessions (eg subjects)" "--path"
-
 opts_AddMandatory '--session' 'Session' 'session (eg subject) ID' ""
-
 opts_AddMandatory '--fmriname' 'NameOffMRI' 'string' 'fMRI run name, for example rfMRI_REST1_LR'
-
 opts_AddOptional '--procstring' 'ProcString' 'string' 'processing suffix appended to the 4D fMRI filename; include the leading underscore' ""
-
 opts_AddMandatory '--smoothingFWHM' 'SmoothingFWHM' 'number' 'smoothing FWHM (mm)'
-
 opts_AddOptional '--goodvoxel' 'doGoodVoxels' 'YES OR NO' "Controls whether to do goodVoxel procedure (default = YES)" "YES"
-
 opts_AddOptional '--factor' 'factor' 'number' "Scaling factor for eliminating high COV voxels (default = 1.5)" "1.5"
-
 opts_AddOptional '--target_mesh' 'TargetMesh' 'string' "target mesh resolution. Values include: 512, 2k, 8k, 18k " "2k"
 
 opts_ParseArguments "$@"
@@ -140,7 +133,7 @@ log_Msg "Hippocampal Volume To Surface Mapping"
 "${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${WorkingDirectory}" "${Session}" "${SmoothingFWHM}" "${TargetMesh}"
 
 # Copy final timeseries and VN into the run's Results folder.
-OutputBase="${ResultsFolder}/${NameOffMRI}_AtlasHipp_s${SmoothingFWHM}${ProcString}"
+OutputBase="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}"
 cp "${WorkingDirectory}/${Session}_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${OutputBase}.dtseries.nii"
 cp "${WorkingDirectory}/${Session}_fMRI_vn.${TargetMesh}.dscalar.nii" "${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}_vn.dscalar.nii"
 
