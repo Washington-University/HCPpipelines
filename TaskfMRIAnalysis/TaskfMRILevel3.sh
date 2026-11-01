@@ -14,12 +14,18 @@ usage() {
 	echo
 	echo "--groupfolder=<GroupFolder>"
 	echo "     Group ID folder name"
-	echo
-  echo "--lvl3fsf=<LevelThreeFsf>"
-  echo "     Required absolute path to a readable Level3 FSF file."
+  echo
+	echo "--lvl3fsf=<LevelThreeFsf>"
+	echo "     Specification of EVs, Contrasts, and F-tests, in FSL's fsf format"
+	echo "     Does not need to specify any inputs files."
+	echo "     The order of rows in the design matrix are assumed to "
+	echo "     match the order of subjects in SubjectList."
+	echo "     Can be created using FSL's Glm GUI"
 	echo
 	echo "--lvl2task=<LevelTwofMRIName>"
 	echo "--lvl2fsf=<LevelTwofsfName>"
+	echo "--fsf-design=<FsfDesign>"
+	echo "     Design identifier without a leading underscore; omit for the default design"
 	echo "--prefixanalysisname=<PrefixAnalysisName>"
 	echo "     Prefix for output folder name, turn off with NONE"
 	echo "--finalsmoothingFWHM=<FinalSmoothingFWHM>"
@@ -137,6 +143,13 @@ ContrastListIn=`getopt1 "--contrastlist" $@`
 Parcellation=`getopt1 "--parcellation" $@`
 ProcSTRING=`getopt1 "--procstring" $@`
 HippocampalOutput=$(getopt1 "--hippocampal-output" "$@")
+FsfDesign=$(getopt1 "--fsf-design" "$@")
+
+if [ "$FsfDesign" != "NONE" ] ; then
+    DesignString="_${FsfDesign}"
+else
+    DesignString=""
+fi
 
 # Require a user-supplied absolute, readable Level3 FSF.
 if [[ "$LevelThreeFsf" = "NONE" || ! -f "$LevelThreeFsf" ]] ; then
@@ -182,6 +195,7 @@ esac
 # 3) Add creation of a Lev3Contrasts.txt file (describing the Lev3 contrasts).
 
 ##Naming Conventions
+LevelTwofsfName="${LevelTwofsfName}${DesignString}"
 CommonAtlasFolder="${GroupFolder}/MNINonLinear"
 CommonResultsFolder="${CommonAtlasFolder}/Results"
 
@@ -265,7 +279,6 @@ fi
 
 LevelThreeFEATDir="${CommonResultsFolder}/${LevelTwofMRIName}/${PrefixAnalysisString}${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level3${RegString}${ProcSTRING}${ParcellationString}.gfeat"
 
-#I think this should be kept
 if [ -e ${LevelThreeFEATDir} ] ; then
   if [[ $VolumeBasedProcessing = "YES" && $FinalSmoothingFWHM = "0" ]] ; then
     echo "Skipping FEAT Directory Clean up"
@@ -494,6 +507,10 @@ done  # for Analysis in ${Analyses} ; do
 ### --- Generate Files for Workbench viewing --- ###
 echo -e "\n----- Generating files for viewing -----"
 for Analysis in ${Analyses} ; do
+  StructureString=""
+  if [ "$Analysis" = "HippocampusStats" ] ; then
+      StructureString="_Hipp"
+  fi
   case "$Analysis" in
       ParcellatedStats)
           StatInputExtension="nii"
@@ -501,7 +518,7 @@ for Analysis in ${Analyses} ; do
           ;;
       HippocampusStats)
           StatInputExtension="dscalar.nii"
-          ScalarExtension="hippocampus.dscalar.nii"
+          ScalarExtension="dscalar.nii"
           ;;
       *)
           StatInputExtension="nii"
@@ -512,7 +529,7 @@ for Analysis in ${Analyses} ; do
   for MeasureType in ${DscalarMeasureList} ; do
   # Create a list of all possible unique files for each measure (i.e., zstat1, zstat2, ..., zstatN if MeasureType="zstat")
     cd ${LevelThreeFEATDir}/${Analysis}
-    StatPrefixes=$(ls -1 cope*.feat/${MeasureType}* 2>/dev/null || true)
+    StatPrefixes=`ls -1 cope*.feat/${MeasureType}* 2> /dev/null || true`
     if [ ${#StatPrefixes} -gt 0 ] ; then
       StatPrefixes=`echo $StatPrefixes | xargs -n 1 basename | cut -d "." -f 1 | sort -u`
     fi
@@ -530,16 +547,16 @@ for Analysis in ${Analyses} ; do
       for i in ${ContrastList} ; do
 	      Contrast=`echo $ContrastNames | cut -d " " -f $i`
 	      echo "COPE $i, $Contrast, $statistic, $Analysis"
-	      prefix="${PrefixAnalysisString}${LevelTwofsfName}_level3_${statistic}_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}"
-	      echo ${prefix} >> ${LevelThreeFEATDir}/Contrasttemp.txt
+        prefix="${PrefixAnalysisString}${LevelTwofsfName}_level3${StructureString}_${statistic}_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}"
+        echo ${prefix} >> ${LevelThreeFEATDir}/Contrasttemp.txt
       	echo ${Contrast} >> ${LevelThreeFEATDir}/Contrasts.txt
 
         ## Subsection specific to Grayordinates analysis
         if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" || "$Analysis" = "HippocampusStats" ]] ; then
-	        input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.${StatInputExtension}	        
-          if [ ! -e ${input} ] ; then
-	          echo "ERROR: ${input} does not exist" 1>&2
-	          exit -1
+	          input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.${StatInputExtension}
+	        if [ ! -e ${input} ] ; then
+            echo "ERROR: ${input} does not exist" 1>&2
+            exit -1
 	        fi
 	        output=${LevelThreeFEATDir}/${prefix}.${ScalarExtension}
 	        wb_command -cifti-convert-to-scalar ${input} ROW ${output} -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
@@ -554,8 +571,8 @@ for Analysis in ${Analyses} ; do
 	        labeled_volume=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/masktmp.nii.gz
 	        wb_command -volume-label-import ${volume_to_label} ${label_list} ${labeled_volume} -discard-others -unlabeled-value 0
 	        rm ${label_list}
-	        prefix=${PrefixAnalysisString}${LevelTwofsfName}_level3vol_${statistic}_${Contrast}${TemporalFilterString}${SmoothingString}${ProcSTRING}
-	        input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.nii.gz
+	        prefix=${PrefixAnalysisString}${LevelTwofsfName}_level3vol_${statistic}_${Contrast}${TemporalFilterString}${SmoothingString}${ProcSTRING}	        
+          input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.nii.gz
 	        if [ ! -e ${input} ] ; then
 	          echo "ERROR: ${input} does not exist" 1>&2
 	          exit -1
@@ -577,7 +594,7 @@ for Analysis in ${Analyses} ; do
 
       # Merge across contrasts for a given statistic
       if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" || "$Analysis" = "HippocampusStats" ]] ; then
-	      cifti_merge_out=${LevelThreeFEATDir}/${PrefixAnalysisString}${LevelTwofsfName}_level3_${statistic}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${ScalarExtension}
+        cifti_merge_out=${LevelThreeFEATDir}/${PrefixAnalysisString}${LevelTwofsfName}_level3${StructureString}_${statistic}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${ScalarExtension}
       elif [ "$Analysis" = "StandardVolumeStats" ] ; then
 	      cifti_merge_out=${LevelThreeFEATDir}/${PrefixAnalysisString}${LevelTwofsfName}_level3vol_${statistic}${TemporalFilterString}${SmoothingString}${ProcSTRING}.${ScalarExtension}
       fi
@@ -596,4 +613,3 @@ FinishTime=`date`
 echo "Start time: ${StartTime}"
 echo "Finish time: ${FinishTime}"
 exit
-

@@ -81,7 +81,7 @@ ResultsFolder="$2"
 ROIsFolder="$3"
 DownSampleFolder="$4"
 LevelOnefMRIName="$5"
-LevelOneFsfFiles="${6:-}"
+LevelOneFsfFile="$6"
 LowResMesh="$7"
 GrayordinatesResolution="$8"
 OriginalSmoothingFWHM="$9"
@@ -97,6 +97,7 @@ TemporalSmoothing="${18}"
 HippocampalOutput="${19}"
 HippMesh="${20}"
 HippDownSampleFolder="${21}"
+FsfDesign="${22}"
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -106,7 +107,8 @@ log_Msg "READ_ARGS: ResultsFolder: ${ResultsFolder}"
 log_Msg "READ_ARGS: ROIsFolder: ${ROIsFolder}"
 log_Msg "READ_ARGS: DownSampleFolder: ${DownSampleFolder}"
 log_Msg "READ_ARGS: LevelOnefMRIName: ${LevelOnefMRIName}"
-log_Msg "READ_ARGS: LevelOneFsfFiles: ${LevelOneFsfFiles}"
+log_Msg "READ_ARGS: LevelOneFsfFile: ${LevelOneFsfFile}"
+log_Msg "READ_ARGS: FsfDesign: ${FsfDesign}"
 log_Msg "READ_ARGS: LowResMesh: ${LowResMesh}"
 log_Msg "READ_ARGS: GrayordinatesResolution: ${GrayordinatesResolution}"
 log_Msg "READ_ARGS: OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
@@ -133,23 +135,10 @@ case "$HippocampalOutput" in
         ;;
 esac
 
-if [[ "$HippocampalOutput" == "YES" ]]
-then
-    case "$HippMesh" in
-        512|2k|8k|18k)
-            ;;
-        *)
-            log_Err_Abort \
-                "HippMesh must be 512, 2k, 8k, or 18k; received '$HippMesh'"
-            ;;
-    esac
-fi
 ##### DETERMINE ANALYSES TO RUN (DENSE, PARCELLATED, VOLUME) #####
 
 # initialize run variables
 runParcellated=false; runVolume=false; runDense=false; runHippocampus=false;
-ParcellationString=""
-Extension="dtseries.nii"
 
 # Determine whether to run Parcellated, and set strings used for filenaming
 if [ "${Parcellation}" != "NONE" ] ; then
@@ -158,31 +147,32 @@ if [ "${Parcellation}" != "NONE" ] ; then
 	ParcellationString="_${Parcellation}"
 	Extension="ptseries.nii"
 	log_Msg "MAIN: DETERMINE_ANALYSES: Parcellated Analysis requested"
+fi
 
-	if [[ "$VolumeBasedProcessing" == "YES" ]]
-    then
-        log_Err_Abort "Parcellated analysis must be run separately from volume analysis"
-    fi
+# Determine whether to run Dense, and set strings used for filenaming
+if [ "${Parcellation}" = "NONE" ]; then
+	# Run Dense Analyses
+	runDense=true;
+	ParcellationString=""
+	Extension="dtseries.nii"
+	log_Msg "MAIN: DETERMINE_ANALYSES: Dense Analysis requested"
+fi
 
-    if [[ "$HippocampalOutput" == "YES" ]]
-    then
-        log_Err_Abort "Parcellated analysis must be run separately from hippocampal analysis"
-    fi
-else
-    runDense=true
-    log_Msg "MAIN: DETERMINE_ANALYSES: Whole-brain CIFTI analysis requested"
+# Determine whether to run Volume, and set strings used for filenaming
+if [ "$VolumeBasedProcessing" = "YES" ] ; then
+	runVolume=true;
+	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
+	      runDense=false;
+	      log_Msg "MAIN: DETERMINE_ANALYSES: Requested Zero Final Smoothing, Running Unsmoothed Volume Analysis Only"
+	fi
+fi
 
-    if [[ "$VolumeBasedProcessing" == "YES" ]]
-    then
-        runVolume=true
-        log_Msg "MAIN: DETERMINE_ANALYSES: Volume analysis requested"
-    fi
-
-    if [[ "$HippocampalOutput" == "YES" ]]
-    then
-        runHippocampus=true
-        log_Msg "MAIN: DETERMINE_ANALYSES: Hippocampal analysis requested"
-    fi
+# Determine whether to run Hippocampus specific analysis, and set strings used for filenaming
+if [[ "$HippocampalOutput" == "YES" ]]
+then
+	runHippocampus=true
+	log_Msg "MAIN: DETERMINE_ANALYSES: Hippocampal analysis requested"
 fi
 
 ##### SET_NAME_STRINGS: smoothing and filtering string variables used for file naming #####
@@ -213,15 +203,12 @@ else
 fi
 
 # Set variables used for different registration procedures
-# Registration name is not used for HippUnfold surfaces
 
-if [[ "$RegName" != "NONE" ]]
-then
+if [ "${RegName}" != "NONE" ] ; then
     RegString="_${RegName}"
 else
     RegString=""
 fi
-
 
 log_Msg "MAIN: SET_NAME_STRINGS: SmoothingString: ${SmoothingString}"
 log_Msg "MAIN: SET_NAME_STRINGS: TemporalFilterString: ${TemporalFilterString}"
@@ -231,35 +218,44 @@ log_Msg "MAIN: SET_NAME_STRINGS: Extension: ${Extension}"
 
 ##### CHECK_FILES: Check that necessary inputs exist before trying to use them #####
 # Assemble list of input filenames that need to be checked
-Filenames="$LevelOneFsfFiles"
+Filenames="$LevelOneFsfFile"
 
+# Need appropriate timeseries files
 if $runParcellated; then
-	if [ ! ${ParcellationFile} = "NONE" ] ; then
-		Filenames="$Filenames ${ParcellationFile}"
-		Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
-	else
-		Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.ptseries.nii"
+  if [ ! ${ParcellationFile} = "NONE" ] ; then
+	  Filenames="$Filenames ${ParcellationFile}"
+	  Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+  else
+    if [ ! -e ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.ptseries.nii ] ; then
+      log_Err "Searching for ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.ptseries.nii"
+      log_Err_Abort "MAIN: Pipeline was told to expect that matching parcellated timeseries was already generated (--parcellation!=NONE and --parcellationfile=NONE) but it was not found"
+    fi
+    Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.ptseries.nii"
+  fi
+fi
+
+if $runDense ; then
+	Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+
+	# Need midthickness GIFTI surfaces
+	Filenames="$Filenames ${DownSampleFolder}/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii ${DownSampleFolder}/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
+
+	# Need Atlas_ROIs volume file
+	Filenames="$Filenames $ROIsFolder/Atlas_ROIs.${GrayordinatesResolution}.nii.gz"
+
+	# Need atlasroi GIFTI shape files
+	Filenames="$Filenames ${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii ${DownSampleFolder}/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii"
+fi
+
+if $runVolume ; then
+	Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}.nii.gz"
+	if [ ${FinalSmoothingFWHM} -ne 0 ] ; then
+		Filenames="$Filenames ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz"
 	fi
 fi
-if $runDense
-then
-    Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
-    Filenames+=" ${DownSampleFolder}/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
-    Filenames+=" ${DownSampleFolder}/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
-    Filenames+=" ${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii"
-    Filenames+=" ${DownSampleFolder}/${Subject}.R.atlasroi.${LowResMesh}k_fs_LR.shape.gii"
-    Filenames+=" ${ROIsFolder}/Atlas_ROIs.${GrayordinatesResolution}.nii.gz"
-fi
 
-if $runVolume
-then
-    Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}.nii.gz"
-    Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_SBRef.nii.gz"
-fi
-
-if $runHippocampus
-then
-	Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp_s${OriginalSmoothingFWHM}${ProcSTRING}.dtseries.nii"
+if $runHippocampus; then
+	Filenames+=" ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.L.hipp_midthickness.${HippMesh}.surf.gii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.R.hipp_midthickness.${HippMesh}.surf.gii"
     Filenames+=" ${HippDownSampleFolder}/${Subject}.L.dentate_midthickness.${HippMesh}.surf.gii"
@@ -278,31 +274,47 @@ done
 # if missing files, then throw an error and abort
 if [[ -n "${missingFiles}" ]]; then
     errMsg="Missing necessary input files: ${missingFiles}"
-	log_Err_Abort "$errMsg"
+	log_Err_Abort $errMsg
 fi
 
 # if no missing files, then carry on
 log_Msg "CHECK INPUTS: Necessary input files exist"
 
-
 ##### IMAGE_INFO: DETERMINE TR AND SCAN LENGTH #####
-# Extract TR and number of time points from input time series files
-if $runParcellated && [[ "$ParcellationFile" == "NONE" ]]
-then
+# Extract TR information from input time series files
+
+if $runParcellated; then
+  if [ ! ${ParcellationFile} = "NONE" ] ; then
+	  File="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+  else
     File="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.ptseries.nii"
-else
-    File="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+  fi
 fi
-TR_vol=$(wb_command -file-information "$File" -no-map-info -only-step-interval)
-npts=$(wb_command -file-information "$File" -no-map-info -only-number-of-maps)
+if $runDense ; then
+	File="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii"
+fi
+if $runVolume ; then
+	File="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${ProcSTRING}.nii.gz"
+fi
+
+TR_vol=`wb_command -file-information ${File} -no-map-info -only-step-interval`
 log_Msg "MAIN: IMAGE_INFO: TR_vol: ${TR_vol}"
+
+# Extract number of time points in CIFTI time series file
+npts=`wb_command -file-information ${File} -no-map-info -only-number-of-maps`
 log_Msg "MAIN: IMAGE_INFO: npts: ${npts}"
 
 
-##### MAKE_DESIGNS: MAKE DESIGN FILES #####
+##### MAKE DESIGN FILES #####
+# In cases FsfDesign is used then add a leading underscore
+if [ "$FsfDesign" != "NONE" ] ; then
+	DesignString="_${FsfDesign}"
+else
+	DesignString=""
+fi
 
 # Create output .feat directory ($FEATDir) for this analysis
-FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
+FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${DesignString}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
 log_Msg "MAIN: MAKE_DESIGNS: FEATDir: ${FEATDir}"
 if [[ -e "${FEATDir}" ]] ; then
 	rm -r ${FEATDir}
@@ -314,7 +326,7 @@ fi
 ### Edit fsf file to record the parameters used in this analysis
 # Copy template fsf file into $FEATDir
 log_Msg "MAIN: MAKE_DESIGNS: Copying fsf file to .feat directory"
-cp ${LevelOneFsfFiles} ${FEATDir}/design.fsf
+cp ${LevelOneFsfFile} ${FEATDir}/design.fsf
 
 # Change the highpass filter string to the desired highpass filter
 log_Msg "MAIN: MAKE_DESIGNS: Change design.fsf: Set highpass filter string to the desired highpass filter to ${TemporalFilter}"
@@ -356,10 +368,6 @@ grep -e 'fmri(custom' < ${FEATDir}/design.fsf | while read line; do
 		EVPath="$ev"
 	else
 		EVPath="${FEATDir}/$ev"
-	fi
-
-	if [[ ! -f "$EVPath" || ! -r "$EVPath" ]] ; then
-		log_Err_Abort "Missing or unreadable EV file: ${EVPath}"
 	fi
 
 	count=`awk '{ if ($3 != 0) print $0 }' ${EVPath} | wc -l`;
@@ -408,49 +416,38 @@ fi
 # Parcellation increases sensitivity and statistical power, but avoids blurring signal 
 # across region boundaries into adjacent, non-activated regions.
 log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Parcellate data if a Parcellation was provided"
-if $runParcellated
-then
-    log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Parcellated analysis requested"
-
-    if [[ "$ParcellationFile" != "NONE" ]]
-    then
-        log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Parcellating data"
-        log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Notice: the parcellated time series has $SmoothingString in its filename, but no additional smoothing was applied"
-
-        # SmoothingString in the parcellated filename allows subsequent commands
-        # to work for either dtseries or ptseries.
-        wb_command -cifti-parcellate "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii" "$ParcellationFile" COLUMN "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${Extension}"
-    else
-        log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Using existing matching parcellated time series"
-        log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Notice: the parcellated time series has $SmoothingString in its filename, but no additional smoothing was applied"
-
-        cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.${Extension}" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${Extension}"
-    fi
+if $runParcellated; then
+	if [ ! ${ParcellationFile} = "NONE" ] ; then
+	  log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Parcellating data"
+	  log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Notice: currently parcellated time series has $SmoothingString in file name, but no additional smoothing was applied!"
+	  # SmoothingString in parcellated filename allows subsequent commands to work for either dtseries or ptseries
+	  wb_command -cifti-parcellate ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii ${ParcellationFile} COLUMN ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${Extension}
+  else
+    log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Matching parcellated timeseries file already exists and will be used"
+    log_Msg "MAIN: SMOOTH_OR_PARCELLATE: PARCELLATE: Notice: currently parcellated time series has $SmoothingString in file name, but no additional smoothing was applied!"
+    cp ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}${ParcellationString}.${Extension} ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${Extension}
+  fi
 fi
 
-### Apply spatial smoothing to whole-brain CIFTI dense analysis
-if $runDense
-then
-    if [[ "$FinalSmoothingFWHM" -gt "$OriginalSmoothingFWHM" ]]
-    then
+### Apply spatial smoothing to cerebral-cortex CIFTI dense analysis
+if $runDense; then
+	if [ "$FinalSmoothingFWHM" -gt "$OriginalSmoothingFWHM" ] ; then
 		# Some smoothing was already conducted in fMRISurface Pipeline. To reach the desired
 		# total level of smoothing, the additional spatial smoothing added here must be reduced
 		# by the original smoothing applied earlier
-        AdditionalSmoothingFWHM=$(echo "sqrt(($FinalSmoothingFWHM ^ 2) - ($OriginalSmoothingFWHM ^ 2))" | bc -l)
-        AdditionalSigma=$(echo "$AdditionalSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l)
-
+		AdditionalSmoothingFWHM=`echo "sqrt(( $FinalSmoothingFWHM ^ 2 ) - ( $OriginalSmoothingFWHM ^ 2 ))" | bc -l`
+		AdditionalSigma=`echo "$AdditionalSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l`
         log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: AdditionalSmoothingFWHM: ${AdditionalSmoothingFWHM}"
         log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: AdditionalSigma: ${AdditionalSigma}"
-        log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: Applying additional surface smoothing to whole-brain CIFTI dense data"
+        log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: Applying additional surface smoothing to cerebral-cortex CIFTI dense data"
 
         wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${RegString}${ProcSTRING}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
             "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}.dtseries.nii" \
             -left-surface "${DownSampleFolder}/${Subject}.L.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii" \
             -right-surface "${DownSampleFolder}/${Subject}.R.midthickness${RegString}.${LowResMesh}k_fs_LR.surf.gii"
     else
-        if [[ "$FinalSmoothingFWHM" -eq "$OriginalSmoothingFWHM" ]]
-        then
-            log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: No additional whole-brain CIFTI smoothing requested"
+        if [ "$FinalSmoothingFWHM" -eq "$OriginalSmoothingFWHM" ]; then
+            log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: No additional cerebral-cortex CIFTI smoothing requested"
         else
             log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: WARNING: Requested smoothing (${FinalSmoothingFWHM}) is less than smoothing already applied (${OriginalSmoothingFWHM})"
             log_Msg "MAIN: SMOOTH_OR_PARCELLATE: SMOOTH_CIFTI: Continuing with ${OriginalSmoothingFWHM} mm of total surface smoothing"
@@ -462,8 +459,7 @@ fi
 ### Apply spatial smoothing to hippocampal CIFTI dense analysis
 if $runHippocampus
 then
-    if [[ "$FinalSmoothingFWHM" -gt "$OriginalSmoothingFWHM" ]]
-    then
+    if [[ "$FinalSmoothingFWHM" -gt "$OriginalSmoothingFWHM" ]] ; then
         AdditionalSmoothingFWHM=$(echo "sqrt(($FinalSmoothingFWHM ^ 2) - ($OriginalSmoothingFWHM ^ 2))" | bc -l)
 
         AdditionalSigma=$(echo "$AdditionalSmoothingFWHM / (2 * sqrt(2 * l(2)))" | bc -l)
@@ -472,23 +468,20 @@ then
         log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: AdditionalSigma: ${AdditionalSigma}"
         log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: Applying additional surface smoothing to hippocampal CIFTI dense data"
 
-     	wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp_s${OriginalSmoothingFWHM}${ProcSTRING}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
+     	wb_command -cifti-smoothing "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii" "$AdditionalSigma" "$AdditionalSigma" COLUMN \
 	        "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii" \
             -surface HIPPOCAMPUS_LEFT "${HippDownSampleFolder}/${Subject}.L.hipp_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_RIGHT "${HippDownSampleFolder}/${Subject}.R.hipp_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_DENTATE_LEFT "${HippDownSampleFolder}/${Subject}.L.dentate_midthickness.${HippMesh}.surf.gii" \
             -surface HIPPOCAMPUS_DENTATE_RIGHT "${HippDownSampleFolder}/${Subject}.R.dentate_midthickness.${HippMesh}.surf.gii"
     else
-        if [[ "$FinalSmoothingFWHM" -eq "$OriginalSmoothingFWHM" ]]
-        then
+        if [[ "$FinalSmoothingFWHM" -eq "$OriginalSmoothingFWHM" ]]; then
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: No additional hippocampal smoothing requested"
         else
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: WARNING: Requested smoothing (${FinalSmoothingFWHM}) is less than smoothing already applied (${OriginalSmoothingFWHM})"
             log_Msg "MAIN: SMOOTH_HIPPOCAMPUS: Continuing with ${OriginalSmoothingFWHM} mm of total surface smoothing"
         fi
-		if [[ "${FinalSmoothingFWHM}" != "${OriginalSmoothingFWHM}" ]]; then
-			cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp_s${OriginalSmoothingFWHM}${ProcSTRING}.dtseries.nii" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii"
-		fi
+		cp "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${ProcSTRING}.dtseries.nii" "${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_AtlasHipp${SmoothingString}${ProcSTRING}.dtseries.nii"
     fi
 fi
 
@@ -596,7 +589,7 @@ else
 	fi
 
 	if [[ $runParcellated == true || $runDense == true ]]; then
-		log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to whole-brain CIFTI file"
+		log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to cerebral-cortex CIFTI file"
 
 		# Convert CIFTI to "fake" NIFTI
 		wb_command -cifti-convert -to-nifti ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${Extension} ${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}_FAKENIFTI.nii.gz
@@ -634,14 +627,13 @@ else
 	fi
 
 	if $runVolume; then
-		# Add temporal filtering to the output from above
+		#Add temporal filtering to the output from above
 		log_Msg "MAIN: TEMPORAL_FILTER: Add temporal filtering to NIFTI file"
-
-		# Temporal filtering is conducted by fslmaths.
-		# fslmaths -bptf removes the time-series mean, which is expected by film_gls.
-		# Save the mean to a file and add it back after -bptf.
-		# We drop the "dilMrim" string from the output filename to avoid breaking
-		# downstream scripts.
+		# Temporal filtering is conducted by fslmaths. 
+		# fslmaths -bptf removes timeseries mean (for FSL 5.0.7 onward), which is expected by film_gls. 
+		# So, save the mean to file, then add it back after -bptf.
+		# We drop the "dilMrim" string from the output file name, so as to avoid breaking
+		# any downstream scripts.
 		fslmaths ${SmoothedDilatedResultFile} -Tmean ${SmoothedDilatedResultFile}_mean
 		fslmaths ${SmoothedDilatedResultFile} -bptf ${hp_sigma} ${lp_sigma} -add ${SmoothedDilatedResultFile}_mean ${FEATDir}/${LevelOnefMRIName}${TemporalFilterString}${SmoothingString}.nii.gz
 	fi
@@ -653,7 +645,6 @@ fi
 
 
 if $runDense ; then
-
 	# Dense Grayordinates Processing
 	log_Msg "MAIN: RUN_GLM: Dense Grayordinates Analysis"
 
@@ -698,7 +689,7 @@ if $runDense ; then
 	cat ${FEATDir}/R_SurfaceStats/logfile >> ${FEATDir}/GrayordinatesStats/logfile
 
 	for Subcortical in ${FEATDir}/SubcorticalVolumeStats/*nii.gz ; do
-		File=$(basename ${Subcortical} .nii.gz)
+		File=$( basename $Subcortical .nii.gz)
 
 		wb_command -cifti-create-dense-timeseries ${FEATDir}/GrayordinatesStats/${File}.dtseries.nii -volume ${Subcortical} ${ROIsFolder}/Atlas_ROIs.${GrayordinatesResolution}.nii.gz \
 			-left-metric ${FEATDir}/L_SurfaceStats/${File}.func.gii -roi-left ${DownSampleFolder}/${Subject}.L.atlasroi.${LowResMesh}k_fs_LR.shape.gii \
@@ -720,24 +711,21 @@ if $runParcellated ; then
 
 	ls ${FEATDir}/ParcellatedStats
 
-	# Remove fake NIFTI time series
+	# Remove fake NIFTI time series file
 	rm ${FEATDir}/${LevelOnefMRIName}_Atlas${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_FAKENIFTI.nii.gz
 
-	# Convert fake NIFTI statistical outputs back to CIFTI
+	# Convert "fake" NIFTI output files (copes, varcopes, zstats) back to CIFTI
 	templateCIFTI=${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}_Atlas${SmoothingString}${RegString}${ProcSTRING}${ParcellationString}.${Extension}
 
-	for fakeNIFTI in ${FEATDir}/ParcellatedStats/*.nii.gz ; do
-		CIFTI=$(echo ${fakeNIFTI} | sed -e "s|.nii.gz|.${Extension}|")
-
-		wb_command -cifti-convert -from-nifti ${fakeNIFTI} ${templateCIFTI} ${CIFTI} -reset-timepoints 1 1
-		rm ${fakeNIFTI}
+	for fakeNIFTI in `ls ${FEATDir}/ParcellatedStats/*.nii.gz` ; do
+		CIFTI=$( echo $fakeNIFTI | sed -e "s|.nii.gz|.${Extension}|" );
+		wb_command -cifti-convert -from-nifti $fakeNIFTI $templateCIFTI $CIFTI -reset-timepoints 1 1
+		rm $fakeNIFTI;
 	done
 fi
 
-##### STANDARD NIFTI VOLUME ANALYSIS #####
-
+# Standard NIFTI Volume-based Processsing###
 if $runVolume ; then
-
 	log_Msg "MAIN: RUN_GLM: Standard NIFTI Volume Analysis"
 	log_Msg "MAIN: RUN_GLM: Run film_gls on volume data"
 
@@ -799,8 +787,7 @@ fi
 #make an unmatched * expression become "no arguments" instead of something nonexistent
 shopt -s nullglob
 
-# Clean up contrasts where cope has no non-zero values
-# (created from 'versus rest' contrasts from conditions with empty EVs)
+# Clean up contrasts where cope has no non-zero voxels (created from 'versus rest' contrasts from conditions with empty EVs)
 # NOTE WELL: This will not remove 'condition A versus condition B' contrasts where one condition has no events.
 for Analysis in GrayordinatesStats HippocampusStats ParcellatedStats StandardVolumeStats; do
 	for file in "$FEATDir"/"$Analysis"/cope*.nii*; do

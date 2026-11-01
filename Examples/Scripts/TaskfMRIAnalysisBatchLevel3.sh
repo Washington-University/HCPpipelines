@@ -42,6 +42,11 @@ resolve_fsf_path() {
     path=${path//\{StudyFolder\}/$StudyFolder}
     path=${path//\{Subject\}/$subject}
     path=${path//\{Task\}/$task}
+    local DesignString=""
+    if [ "$FsfDesign" != "NONE" ]; then
+        DesignString="_${FsfDesign}"
+    fi
+    path=${path//\{FsfDesign\}/$DesignString}
     path=${path//\{Run\}/$run}
     path=${path//\{NumSubjects\}/$NumSubjects}
 
@@ -75,9 +80,18 @@ ProcSTRING="hp0_clean_rclean_tclean" #A string indicating already perfomed MRI ,
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
 HippocampalOutput="YES" # Set to YES to also run hippocampal analysis
-HippMesh="2k" # In case HippocampalOutput=YES, then HippUnfold mesh sets hippocampal mesh resolution: 512, 2k, 8k, or 18k
 LevelThreePrefix="GroupAnalysis" # Prefix for Level 3 output names and the group output folder; Use NONE to omit the analysis-name prefix.
 LevelThreeContrastList="ALL" # Level 2 contrasts to analyze at Level 3: ALL, or contrast numbers separated by @, e.g. "1@6@8".
+
+# Match the design identifiers used for Levels 1 and 2.
+# Use NONE for the default design.
+# For multiple designs, use: FsfDesignList="StudyDesignA StudyDesignB"
+FsfDesignList="NONE"
+
+FsfDesigns=("NONE")
+if [[ -n "$FsfDesignList" ]]; then
+    read -r -a FsfDesigns <<< "$FsfDesignList"
+fi
 
 TaskNameList=""
 TaskNameList="${TaskNameList} EMOTION"
@@ -103,7 +117,7 @@ fi
 # Tokens: {StudyFolder}, {Subject}, {Task}, {Run}, {NumSubjects}
 # Use an absolute path or a pattern beginning with {StudyFolder}.
 
-LevelThreeFsfPattern="{StudyFolder}/GroupResults/tfMRI_{Task}_level3_{NumSubjects}subjects.fsf"
+LevelThreeFsfPattern="{StudyFolder}/GroupResults/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
 LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3" 
 
 # Requirements for this script
@@ -122,15 +136,7 @@ SubjectList=$(IFS=@; echo "${Subjects[*]}")
 ######################################### INPUTS ##########################################
 
 case "${HippocampalOutput}" in
-    YES) 
-        case "${HippMesh}" in
-        512|2k|8k|18k) ;;
-        *)
-            echo "ERROR: --hippocampal-mesh must be 512, 2k, 8k, or 18k"
-            exit 1
-            ;;
-        esac
-        ;;
+    YES) ;;
     NO) ;;
     *)
         echo "ERROR: --hippocampal-output must be YES or NO"
@@ -148,68 +154,72 @@ fi
 
 for TaskName in ${TaskNameList}
 do
-    LevelTwoTaskList="tfMRI_${TaskName}" #Space delimited list
-    LevelTwoFSFList="tfMRI_${TaskName}" #Space delimited list
+    for FsfDesign in "${FsfDesigns[@]}"
+    do
+        LevelTwoTaskList="tfMRI_${TaskName}" #Space delimited list
+        LevelTwoFSFList="tfMRI_${TaskName}" #Space delimited list
 
-    for RegName in ${RegNames} ; do
-        j=1
-        for Parcellation in ${ParcellationList} ; do
-            ParcellationFile=`echo "${ParcellationFileList}" | cut -d " " -f ${j}`
+        for RegName in ${RegNames} ; do
+            j=1
+            for Parcellation in ${ParcellationList} ; do
+                ParcellationFile=`echo "${ParcellationFileList}" | cut -d " " -f ${j}`
 
-            for FinalSmoothingFWHM in $SmoothingList ; do
-                echo $FinalSmoothingFWHM
-                i=1
-                for LevelTwoTask in $LevelTwoTaskList ; do
-                    echo "  ${LevelTwoTask}"
+                for FinalSmoothingFWHM in $SmoothingList ; do
+                    echo $FinalSmoothingFWHM
+                    i=1
+                    for LevelTwoTask in $LevelTwoTaskList ; do
+                        echo "  ${LevelTwoTask}"
 
-                    LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
-                    LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
+                        LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
+                        LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
 
 
-                    if (( NumSubjects < 2 )); then
-                        echo "ERROR: Level 3 requires at least two subjects" >&2
-                        exit 1
-                    fi
+                        if (( NumSubjects < 2 )); then
+                            echo "ERROR: Level 3 requires at least two subjects" >&2
+                            exit 1
+                        fi
 
-                    # Check every task's design before running any analyses.
-                    LevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
+                        # Check every task's design before running any analyses.
+                        LevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
 
-                    if [[ ! -f "$LevelThreeFsf" ]]; then
-                        echo "ERROR: Missing or unreadable Level 3 design: $LevelThreeFsf" >&2
-                        exit 1
-                    fi
+                        if [[ ! -f "$LevelThreeFsf" ]]; then
+                            echo "ERROR: Missing or unreadable Level 3 design: $LevelThreeFsf" >&2
+                            exit 1
+                        fi
 
-                    DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$LevelThreeFsf")
+                        DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$LevelThreeFsf")
 
-                    if [[ "$DesignSubjects" != "$NumSubjects" ]]; then
-                        echo "ERROR: Design subject count does not match Subjlist: $LevelThreeFsf" >&2
-                        exit 1
-                    fi
+                        if [[ "$DesignSubjects" != "$NumSubjects" ]]; then
+                            echo "ERROR: Design subject count does not match Subjlist: $LevelThreeFsf" >&2
+                            exit 1
+                        fi
 
-                    echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects} subjects"
+                        echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects} subjects"
 
-                    "${HCPPIPEDIR}/global/scripts/captureoutput.sh" \
-                        "${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRILevel3.sh" \
-                        --path="$StudyFolder" \
-                        --subjectlist="$SubjectList" \
-                        --groupfolder="$LevelThreeOutputFolder" \
-                        --lvl3fsf="$LevelThreeFsf" \
-                        --lvl2task="$LevelTwoTask" \
-                        --lvl2fsf="$LevelTwoFSF" \
-                        --prefixanalysisname="$LevelThreePrefix" \
-                        --finalsmoothingFWHM="$FinalSmoothingFWHM" \
-                        --temporalfilter="$HighpassFilter" \
-                        --regname="$RegName" \
-                        --parcellation="$Parcellation" \
-                        --vba="$VolumeBasedProcessing" \
-                        --contrastlist="$LevelThreeContrastList" \
-                        --procstring="$ProcSTRING" \
-                        --hippocampal-output="$HippocampalOutput"
+                        "${HCPPIPEDIR}/global/scripts/captureoutput.sh" \
+                            "${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRILevel3.sh" \
+                            --path="$StudyFolder" \
+                            --subjectlist="$SubjectList" \
+                            --groupfolder="$LevelThreeOutputFolder" \
+                            --lvl3fsf="$LevelThreeFsf" \
+                            --lvl2task="$LevelTwoTask" \
+                            --lvl2fsf="$LevelTwoFSF" \
+                            --fsf-design="$FsfDesign" \
+                            --prefixanalysisname="$LevelThreePrefix" \
+                            --finalsmoothingFWHM="$FinalSmoothingFWHM" \
+                            --temporalfilter="$HighpassFilter" \
+                            --regname="$RegName" \
+                            --parcellation="$Parcellation" \
+                            --vba="$VolumeBasedProcessing" \
+                            --contrastlist="$LevelThreeContrastList" \
+                            --procstring="$ProcSTRING" \
+                            --hippocampal-output="$HippocampalOutput"
 
-                    i=$((i + 1))
+                        i=$((i + 1))
+                    done
                 done
+                j=$((j + 1))
             done
-            j=$((j + 1))
         done
     done
 done

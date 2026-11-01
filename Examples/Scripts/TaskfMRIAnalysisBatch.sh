@@ -65,6 +65,11 @@ prepare_fsf_file() {
             Path=${Path//\{StudyFolder\}/$StudyFolder}
             Path=${Path//\{Subject\}/$Subject}
             Path=${Path//\{Task\}/$TaskName}
+            local DesignString=""
+            if [ "$FsfDesign" != "NONE" ]; then
+                DesignString="_${FsfDesign}"
+            fi
+            Path=${Path//\{FsfDesign\}/$DesignString}
             Path=${Path//\{Session\}/$Suffix}
             Path=${Path//\{NumSubjects\}/$NumSubjects}
             Path=${Path//\{FSFprocstring\}/$FSFprocstring}
@@ -104,7 +109,7 @@ QUEUE=""
 #QUEUE="hcp_priority.q"
 
 # Assign variables
-LowResMesh="32" # Whole-brain CIFTI mesh;
+LowResMesh="32" # Cerebral-cortex CIFTI mesh;
 SmoothingList="2" #Space delimited list for setting different final smoothings.  2mm is no more smoothing (above minimal preprocessing pipelines grayordinates smoothing).  Smoothing is added onto minimal preprocessing smoothing to reach desired amount
 GrayOrdinatesResolution="2" #2mm if using HCP minimal preprocessing pipeline outputs
 OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
@@ -112,11 +117,11 @@ Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} o
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 RegNames="MSMAll" # Use NONE to use the default surface registration
-ProcSTRING="hp0_clean_rclean_tclean" #A string indicating already perfomed preprocessing stages, e.g. rclean_tclean or NONE
+ProcSTRING="hp0_clean_rclean_tclean" #A string indicating already perfomed MRI operations, e.g. rclean_tclean or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
-HippocampalOutput="YES" # Set to YES to also run hippocampal analysis
-HippMesh="2k" # In case HippocampalOutput=YES, then HippUnfold mesh sets hippocampal mesh resolution: 512, 2k, 8k, or 18k
+HippocampalOutput="YES" # Set to YES to also run hippocampal analysis. Currently, only HippUnfold 2k surface is supported (see RunHippUnfoldHCP.sh pipeline).
+SessionSuffix="RL@LR" # @ delimited fMRI runs of the same subject. Examples: RL, 1@2@3@4, AC@PC@AP2
 
 TaskNameList=""
 TaskNameList="${TaskNameList} EMOTION"
@@ -126,6 +131,37 @@ TaskNameList="${TaskNameList} MOTOR"
 TaskNameList="${TaskNameList} RELATIONAL"
 TaskNameList="${TaskNameList} SOCIAL"
 TaskNameList="${TaskNameList} WM"
+
+######################################### FSF Files ##########################################
+# FSF files define EVs, contrasts, and optional F-tests.
+# Create Level 1 and 2 FSFs using FSL FEAT or edit suitable templates.
+# Level 2 must combine the sessions below in the same order.
+# Tokens: {StudyFolder}, {Subject}, {Task}, {Session}, {NumSubjects}
+# Edit the patterns below with the tokens to match your folders and filenames.
+# {Session} means one suffix, such as RL or LR, AP or PA, or numeric identifiers.
+# To run multiple FSF designs for the same session, list in FsfDesignList their filename identifiers.
+# For example, use the line below for these fsf filenames: tfMRI_EMOTION_RL_StudyDesignA_hp200_s4_level1.fsf tfMRI_EMOTION_RL_StudyDesignB_hp200_s4_level1.fsf
+# FsfDesignList="StudyDesignA StudyDesignB".
+# Use NONE for the default FSF filename without a design identifier.
+
+FSFprocstring="hp200_s4"
+FsfDesignList="NONE"
+
+LevelOneFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}_{Session}/tfMRI_{Task}_{Session}{FsfDesign}_{FSFprocstring}_level1.fsf"
+LevelTwoFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}/tfMRI_{Task}{FsfDesign}_{FSFprocstring}_level2.fsf"
+
+LevelOneTaskPattern="tfMRI_{Task}_{Session}"
+LevelTwoTaskPattern="tfMRI_{Task}"
+######################################### INPUTS ##########################################
+
+# Requirements for this script
+#  installed versions of: FSL, Connectome Workbench (wb_command)
+#  environment: HCPPIPEDIR, FSLDIR 
+
+FsfDesigns=("NONE")
+if [[ -n "$FsfDesignList" ]]; then
+    read -r -a FsfDesigns <<< "$FsfDesignList"
+fi
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -140,38 +176,8 @@ read -r -a Subjects <<< "$Subjlist"
 NumSubjects=${#Subjects[@]}
 
 read -r -a Tasks <<< "$TaskNameList"
-######################################### FSF Files ##########################################
-# FSF files define EVs, contrasts, and optional F-tests.
-# Create Level 1 and 2 FSFs using FSL FEAT or edit suitable templates.
-# Level 2 must combine the sessions below in the same order.
-# Tokens: {StudyFolder}, {Subject}, {Task}, {Session}, {NumSubjects}
-# Edit the patterns below with the tokens to match your folders and filenames.
-# {Session} means one suffix, such as RL or LR.
-
-SessionSuffix="RL@LR" # Alternatives: RL, 1@2@3@4, AC@PC@AP2
-FSFprocstring="hp200_s4"
-
-LevelOneFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}_{Session}/tfMRI_{Task}_{Session}_{FSFprocstring}_level1.fsf"
-LevelTwoFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}/tfMRI_{Task}_{FSFprocstring}_level2.fsf"
-
-LevelOneTaskPattern="tfMRI_{Task}_{Session}"
-LevelTwoTaskPattern="tfMRI_{Task}"
-######################################### INPUTS ##########################################
-
-# Requirements for this script
-#  installed versions of: FSL, Connectome Workbench (wb_command)
-#  environment: HCPPIPEDIR, FSLDIR 
-
 case "${HippocampalOutput}" in
-    YES) 
-        case "${HippMesh}" in
-        512|2k|8k|18k) ;;
-        *)
-            echo "ERROR: --hippocampal-mesh must be 512, 2k, 8k, or 18k"
-            exit 1
-            ;;
-        esac
-        ;;
+    YES) ;;
     NO) ;;
     *)
         echo "ERROR: --hippocampal-output must be YES or NO"
@@ -187,47 +193,50 @@ echo "$@"
 
 for TaskName in "${Tasks[@]}"
 do
-    for RegName in ${RegNames} ; do
-        j=1
-        for Parcellation in ${ParcellationList} ; do
-            ParcellationFile=`echo "${ParcellationFileList}" | cut -d " " -f ${j}`
+    for FsfDesign in "${FsfDesigns[@]}"
+    do
+        for RegName in ${RegNames} ; do
+            j=1
+            for Parcellation in ${ParcellationList} ; do
+                ParcellationFile=`echo "${ParcellationFileList}" | cut -d " " -f ${j}`
 
-            for FinalSmoothingFWHM in $SmoothingList ; do
-                for Subject in "${Subjects[@]}"; do
-                    echo "${Subject}"
-                    prepare_fsf_file
+                for FinalSmoothingFWHM in $SmoothingList ; do
+                    for Subject in "${Subjects[@]}"; do
+                        echo "${Subject}"
+                        prepare_fsf_file
 
-                    if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
-                        echo "About to locally run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-                        queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
-                    else
-                        echo "About to use fsl_sub to queue ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
-                        queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
-                    fi
+                        if [[ "${command_line_specified_run_local}" == "TRUE" || "$QUEUE" == "" ]] ; then
+                            echo "About to locally run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+                            queuing_command=("$HCPPIPEDIR"/global/scripts/captureoutput.sh)
+                        else
+                            echo "About to use fsl_sub to queue ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
+                            queuing_command=("${FSLDIR}/bin/fsl_sub" -q "$QUEUE")
+                        fi
 
-                    "${queuing_command[@]}" "$HCPPIPEDIR"/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
-                        --study-folder="$StudyFolder" \
-                        --subject="$Subject" \
-                        --lvl1tasks="$LevelOneTasks" \
-                        --lvl1fsfs="$LevelOneFSFs" \
-                        --lvl2task="$LevelTwoTask" \
-                        --lvl2fsf="$LevelTwoFSFs" \
-                        --lowresmesh="$LowResMesh" \
-                        --grayordinatesres="$GrayOrdinatesResolution" \
-                        --origsmoothingFWHM="$OriginalSmoothingFWHM" \
-                        --confound="$Confound" \
-                        --finalsmoothingFWHM="$FinalSmoothingFWHM" \
-                        --highpassfilter="$HighpassFilter" \
-                        --vba="$VolumeBasedProcessing" \
-                        --regname="$RegName" \
-                        --procstring="$ProcSTRING" \
-                        --parcellation="$Parcellation" \
-                        --parcellationfile="$ParcellationFile" \
-                        --hippocampal-output="$HippocampalOutput" \
-                        --hippocampal-mesh="$HippMesh"
-                 done
+                        "${queuing_command[@]}" "$HCPPIPEDIR"/TaskfMRIAnalysis/TaskfMRIAnalysis.sh \
+                            --study-folder="$StudyFolder" \
+                            --subject="$Subject" \
+                            --lvl1tasks="$LevelOneTasks" \
+                            --lvl1fsfs="$LevelOneFSFs" \
+                            --fsf-design="$FsfDesign" \
+                            --lvl2task="$LevelTwoTask" \
+                            --lvl2fsf="$LevelTwoFSFs" \
+                            --lowresmesh="$LowResMesh" \
+                            --grayordinatesres="$GrayOrdinatesResolution" \
+                            --origsmoothingFWHM="$OriginalSmoothingFWHM" \
+                            --confound="$Confound" \
+                            --finalsmoothingFWHM="$FinalSmoothingFWHM" \
+                            --highpassfilter="$HighpassFilter" \
+                            --vba="$VolumeBasedProcessing" \
+                            --regname="$RegName" \
+                            --procstring="$ProcSTRING" \
+                            --parcellation="$Parcellation" \
+                            --parcellationfile="$ParcellationFile" \
+                            --hippocampal-output="$HippocampalOutput"
+                    done
+                done
+                j=$((j + 1))
             done
-            j=$((j + 1))
         done
     done
 done
