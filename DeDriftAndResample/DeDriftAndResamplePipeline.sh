@@ -50,7 +50,7 @@ opts_AddMandatory '--subject' 'Subject' '100206' "one subject ID"
 opts_AddMandatory '--high-res-mesh' 'HighResMesh' 'meshnum' "high resolution mesh node count (in thousands), like '164' for 164k_fs_LR"
 opts_AddMandatory '--low-res-meshes' 'LowResMeshes' 'meshnum@meshnum@...' "low resolution mesh node counts (in thousands) delimited by @, like '32@59' for 32k_fs_LR and 59_k_fs_LR"
 opts_AddMandatory '--registration-name' 'RegName' 'MSMAll' "the registration string corresponding to the input files, e.g. 'MSMAll_InitialReg'"
-opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name strings corresponding to maps that are not myelin maps, e.g. 'sulc@curvature@corrThickness@thickness'"
+opts_AddMandatory '--maps' 'Maps' 'non@myelin@maps' "@-delimited map name strings corresponding to maps that are not myelin maps, e.g. 'sulc@curvature@corrThickness@thickness@MRcorrThickness'"
 opts_AddMandatory '--smoothing-fwhm' 'SmoothingFWHM' 'number' "Smoothing FWHM that matches what was used in the fMRISurface pipeline"
 opts_AddMandatory '--high-pass' 'HighPass' 'integer' 'the high pass value that was used when running FIX' '--melodic-high-pass' '--highpass'
 opts_AddMandatory '--motion-regression' 'MotionRegression' 'TRUE or FALSE' 'whether FIX should do motion regression'

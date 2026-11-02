@@ -91,7 +91,7 @@ RegName="MSMAll_InitialReg_2_d40_WRN"
 DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 ConcatRegName="MSMAll"
 #standard maps to resample
-Maps=(sulc curvature corrThickness thickness)
+Maps=(sulc curvature corrThickness thickness MRcorrThickness)
 MyelinMaps=(MyelinMap SmoothedMyelinMap) #No _BC, this will be reapplied
 #MRFixConcatNames and MRFixNames must exactly match the way MR FIX was run on the subjects
 MRFixConcatNames="fMRI_CONCAT_ALL"
@@ -117,7 +117,7 @@ MatlabMode="1" #Mode=0 compiled Matlab, Mode=1 interpreted Matlab, Mode=2 octave
 #RegName="MSMAll_InitialReg_2_d40_WRN"
 #DeDriftRegFiles="${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.L.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii@${HCPPIPEDIR}/global/templates/MSMAll/DeDriftingGroup.R.sphere.DeDriftMSMAll.164k_fs_LR.surf.gii"
 #ConcatRegName="MSMAll"
-#Maps=(sulc curvature corrThickness thickness)
+#Maps=(sulc curvature corrThickness thickness MRcorrThickness)
 #MyelinMaps=(MyelinMap SmoothedMyelinMap) #No _BC, this will be reapplied
 #MRFixConcatNames=()
 #MRFixNames=()
