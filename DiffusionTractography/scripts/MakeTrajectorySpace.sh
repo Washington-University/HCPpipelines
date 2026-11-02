@@ -76,7 +76,7 @@ fi
 if [[ -n "$WhimMask" ]]; then
   if [ ! -e "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz ] ; then
     FreeSurferFolder="${StudyFolder}"/"${Subject}"/T1w/"$Subject"
-    mri_convert -rt nearest -rl "${StudyFolder}"/"${Subject}"/T1w/"$T1wImage".nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz
+    mri_convert -rt nearest -rl "${StudyFolder}"/"${Subject}"/T1w/T1w_acpc_dc_restore.nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz
   fi
 
   if [ "$TrajectorySpaceFolderName" = "T1w" ]; then
