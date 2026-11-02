@@ -70,15 +70,9 @@ mkdir -p "$ROIsFolder"/temp
 
 
 ###We are creating the diffusion resolution reference
-if [ ! -e "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" ] ; then
-  ${FSLDIR}/bin/flirt -interp spline -in "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -ref "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -applyisoxfm "$DiffusionResolution" -out "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution"
-fi
+###We are assuming wmparc_1mm always exist and it is at 1mm resolution and we are resampling it everytime.
+${FSLDIR}/bin/flirt -interp spline -in "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -ref "$TrajectorySpaceFolder"/"$T1wImage".nii.gz -applyisoxfm "$DiffusionResolution" -out "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution"
 if [[ -n "$WhimMask" ]]; then
-  if [ ! -e "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz ] ; then
-    FreeSurferFolder="${StudyFolder}"/"${Subject}"/T1w/"$Subject"
-    mri_convert -rt nearest -rl "${StudyFolder}"/"${Subject}"/T1w/T1w_acpc_dc_restore.nii.gz "$FreeSurferFolder"/mri/wmparc.mgz "${StudyFolder}"/"${Subject}"/T1w/wmparc_1mm.nii.gz
-  fi
-
   if [ "$TrajectorySpaceFolderName" = "T1w" ]; then
     ${FSLDIR}/bin/applywarp --rel --interp=nn -i "$TrajectorySpaceFolder"/wmparc_1mm.nii.gz -r "$TrajectorySpaceFolder"/"$T1wImage"_"$DiffusionResolution" --premat=$FSLDIR/etc/flirtsch/ident.mat -o "$TrajectorySpaceFolder"/"$wmparc"_"$DiffusionResolution"
   else
