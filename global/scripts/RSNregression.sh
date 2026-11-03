@@ -243,24 +243,23 @@ if [[ "$WF" != "" ]] ; then
 else
   WFstr=""
 fi
-CortexOutputPrefix="${Subject}.${OutString}_Atlas${RegString}${ProcString}"
-OutBeta="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}.${LowResMesh}k_fs_LR.dscalar.nii"
+OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
 OutputVolBeta=""
 if ((DoVol))
 then
     #no reason for it to have the mesh on the name, but that is what the old script said...
-    OutputVolBeta="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputVolBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
 fi
 OutputZ=""
 OutputVolZ=""
 if ((DoZ))
 then
-    OutputZ="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}Z.${LowResMesh}k_fs_LR.dscalar.nii"
-    OutputZMM="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}ZMM.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+    OutputZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
     if ((DoVol))
     then
-        OutputVolZ="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}Z_vol.${LowResMesh}k_fs_LR.dscalar.nii"
-        OutputVolZMM="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}${WFstr}ZMM_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+        OutputVolZ="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}Z${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
+        OutputVolZMM="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}ZMM${RegString}_vol.${LowResMesh}k_fs_LR.dscalar.nii"
     fi
 fi
 
@@ -282,7 +281,7 @@ SpectraParams=""
 if [[ nTPsForSpectra -gt 0 ]] && [[ ! ${Method} == "single" ]]
 then
     #these files are temporary anyway
-    SpectraParams="$nTPsForSpectra@$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.txt@$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.txt"
+    SpectraParams="$nTPsForSpectra@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt@$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
 elif [[ ${Method} == "single" ]]
 then
     SpectraParams="${Timeseries}"
@@ -291,7 +290,7 @@ fi
 #OutputNorm=""
 #if ((DoNorm))
 #then
-#    OutputNorm="$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}N${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+#    OutputNorm="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}N${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
     #probably can't trust the volume outputs to be the same scaling as the surface outputs, and we don't need this except for MSMAll anyway
 #fi
 
@@ -423,9 +422,9 @@ then
     wb_command -file-information "$GroupMaps" -only-map-names > "$tempname.mapnames.txt"
     TR=$(wb_command -file-information "$SpectraTRFile" -only-step-interval)
     FTmixStep=$(echo "scale = 7; 1 / ($nTPsForSpectra * $TR)" | bc -l)
-    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series SECOND 0 "$TR"
-    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
-    rm -f -- "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${CortexOutputPrefix}_${MethodStr}_spectra.${LowResMesh}k_fs_LR.txt"
+    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series SECOND 0 "$TR"
+    wb_command -cifti-create-scalar-series "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.sdseries.nii" -transpose -name-file "$tempname.mapnames.txt" -series HERTZ 0 "$FTmixStep"
+    rm -f -- "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_ts.${LowResMesh}k_fs_LR.txt" "$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${RegString}_spectra.${LowResMesh}k_fs_LR.txt"
 fi
 log_Msg "Cerebral-cortex output: ${OutBeta}"
 

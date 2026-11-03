@@ -95,11 +95,6 @@ else
     RunLocal="FALSE"
 fi
 
-case "${HippMesh}" in
-    512|2k|8k|18k) ;;
-    *) echo "ERROR: HippMesh must be 512, 2k, 8k, or 18k"; exit 1 ;;
-esac 
-
 # Log the originating call.
 echo "$@"
 
