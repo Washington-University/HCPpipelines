@@ -81,7 +81,7 @@ ResultsFolder="$2"
 ROIsFolder="$3"
 DownSampleFolder="$4"
 LevelOnefMRIName="$5"
-LevelOneFsfFile="$6"
+LevelOnefsfName="$6"
 LowResMesh="$7"
 GrayordinatesResolution="$8"
 OriginalSmoothingFWHM="$9"
@@ -97,7 +97,7 @@ TemporalSmoothing="${18}"
 HippocampalOutput="${19}"
 HippMesh="${20}"
 HippDownSampleFolder="${21}"
-FsfDesign="${22}"
+LevelOneFsfFile="${22}"
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -107,8 +107,8 @@ log_Msg "READ_ARGS: ResultsFolder: ${ResultsFolder}"
 log_Msg "READ_ARGS: ROIsFolder: ${ROIsFolder}"
 log_Msg "READ_ARGS: DownSampleFolder: ${DownSampleFolder}"
 log_Msg "READ_ARGS: LevelOnefMRIName: ${LevelOnefMRIName}"
+log_Msg "READ_ARGS: LevelOnefsfName: ${LevelOnefsfName}"
 log_Msg "READ_ARGS: LevelOneFsfFile: ${LevelOneFsfFile}"
-log_Msg "READ_ARGS: FsfDesign: ${FsfDesign}"
 log_Msg "READ_ARGS: LowResMesh: ${LowResMesh}"
 log_Msg "READ_ARGS: GrayordinatesResolution: ${GrayordinatesResolution}"
 log_Msg "READ_ARGS: OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
@@ -306,15 +306,9 @@ log_Msg "MAIN: IMAGE_INFO: npts: ${npts}"
 
 
 ##### MAKE DESIGN FILES #####
-# In cases FsfDesign is used then add a leading underscore
-if [ "$FsfDesign" != "NONE" ] ; then
-	DesignString="_${FsfDesign}"
-else
-	DesignString=""
-fi
 
 # Create output .feat directory ($FEATDir) for this analysis
-FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefMRIName}${DesignString}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
+FEATDir="${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"
 log_Msg "MAIN: MAKE_DESIGNS: FEATDir: ${FEATDir}"
 if [[ -e "${FEATDir}" ]] ; then
 	rm -r ${FEATDir}
@@ -711,7 +705,7 @@ if $runParcellated ; then
 
 	ls ${FEATDir}/ParcellatedStats
 
-	# Remove fake NIFTI time series file
+	# Remove "fake" NIFTI time series file
 	rm ${FEATDir}/${LevelOnefMRIName}_Atlas${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_FAKENIFTI.nii.gz
 
 	# Convert "fake" NIFTI output files (copes, varcopes, zstats) back to CIFTI

@@ -47,6 +47,8 @@ prepare_fsf_file() {
     LevelTwoFSFs=""
     LevelOneTasks=""
     LevelTwoTask=""
+    LevelOneDesignNames=""
+    LevelTwoDesignName=""
 
     for Level in 1 2; do
         if [[ "$Level" == 1 ]]; then
@@ -74,20 +76,17 @@ prepare_fsf_file() {
             Path=${Path//\{NumSubjects\}/$NumSubjects}
             Path=${Path//\{FSFprocstring\}/$FSFprocstring}
 
-            if [[ ! -f "$Path" ]]; then
-                echo "ERROR: Level $Level FSF file missing: $Path" >&2
-                return 1
-            fi
-
             if [[ "$Level" == 1 ]]; then
                 Task=${LevelOneTaskPattern//\{Task\}/$TaskName}
                 Task=${Task//\{Session\}/$Suffix}
 
                 LevelOneTasks+="${LevelOneTasks:+@}${Task}"
                 LevelOneFSFs+="${LevelOneFSFs:+@}${Path}"
+                LevelOneDesignNames+="${LevelOneDesignNames:+@}${Task}${DesignString}"
             else
                 LevelTwoTask=${LevelTwoTaskPattern//\{Task\}/$TaskName}
                 LevelTwoFSFs="$Path"
+                LevelTwoDesignName="${LevelTwoTask}${DesignString}"
             fi
         done
     done
@@ -117,10 +116,10 @@ Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} o
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 RegNames="MSMAll" # Use NONE to use the default surface registration
-ProcSTRING="hp0_clean_rclean_tclean" #A string indicating already perfomed MRI operations, e.g. rclean_tclean or NONE
+ProcSTRING="hp0_clean_rclean_tclean" #Any preprocessing beyond CIFTI mapping and surface registration, e.g. spatial and temporal ICA cleanup or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
-HippocampalOutput="YES" # Set to YES to also run hippocampal analysis. Currently, only HippUnfold 2k surface is supported (see RunHippUnfoldHCP.sh pipeline).
+HippocampalOutput="YES" # Set to YES to also run hippocampal analysis
 SessionSuffix="RL@LR" # @ delimited fMRI runs of the same subject. Examples: RL, 1@2@3@4, AC@PC@AP2
 
 TaskNameList=""
@@ -132,6 +131,19 @@ TaskNameList="${TaskNameList} RELATIONAL"
 TaskNameList="${TaskNameList} SOCIAL"
 TaskNameList="${TaskNameList} WM"
 
+if [ -n "${command_line_specified_study_folder}" ]; then
+    StudyFolder="${command_line_specified_study_folder}"
+fi
+
+if [ -n "${command_line_specified_subj}" ]; then
+    Subjlist="${command_line_specified_subj}"
+fi
+
+Subjlist=${Subjlist//@/ }
+read -r -a Subjects <<< "$Subjlist"
+NumSubjects=${#Subjects[@]}
+
+read -r -a Tasks <<< "$TaskNameList"
 ######################################### FSF Files ##########################################
 # FSF files define EVs, contrasts, and optional F-tests.
 # Create Level 1 and 2 FSFs using FSL FEAT or edit suitable templates.
@@ -144,6 +156,7 @@ TaskNameList="${TaskNameList} WM"
 # FsfDesignList="StudyDesignA StudyDesignB".
 # Use NONE for the default FSF filename without a design identifier.
 
+# Example: tfMRI_EMOTION_RL_StudyDesignA_hp200_s4_level1.fsf or tfMRI_EMOTION_RL_hp200_s4_level1.fsf
 FSFprocstring="hp200_s4"
 FsfDesignList="NONE"
 
@@ -163,19 +176,6 @@ if [[ -n "$FsfDesignList" ]]; then
     read -r -a FsfDesigns <<< "$FsfDesignList"
 fi
 
-if [ -n "${command_line_specified_study_folder}" ]; then
-    StudyFolder="${command_line_specified_study_folder}"
-fi
-
-if [ -n "${command_line_specified_subj}" ]; then
-    Subjlist="${command_line_specified_subj}"
-fi
-
-Subjlist=${Subjlist//@/ }
-read -r -a Subjects <<< "$Subjlist"
-NumSubjects=${#Subjects[@]}
-
-read -r -a Tasks <<< "$TaskNameList"
 case "${HippocampalOutput}" in
     YES) ;;
     NO) ;;
@@ -217,10 +217,11 @@ do
                             --study-folder="$StudyFolder" \
                             --subject="$Subject" \
                             --lvl1tasks="$LevelOneTasks" \
-                            --lvl1fsfs="$LevelOneFSFs" \
-                            --fsf-design="$FsfDesign" \
+                            --lvl1fsfs="$LevelOneDesignNames" \
+                            --lvl1fsf-files="$LevelOneFSFs" \
                             --lvl2task="$LevelTwoTask" \
-                            --lvl2fsf="$LevelTwoFSFs" \
+                            --lvl2fsf="$LevelTwoDesignName" \
+                            --lvl2fsf-file="$LevelTwoFSFs" \
                             --lowresmesh="$LowResMesh" \
                             --grayordinatesres="$GrayOrdinatesResolution" \
                             --origsmoothingFWHM="$OriginalSmoothingFWHM" \
