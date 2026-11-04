@@ -223,7 +223,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 for j = 1:length(betaICA)
                     var(j) = atanh(corr(betaICA(j, :)', LowDim.cdata(j, :)')); %#ok<AGROW>
                 end
-                corrs(:, i) = var';
+                corrs(:, i) = var'; %#ok<AGROW>
             end
             outTemplate.cdata = mean(corrs, 2);
             mytempfile = [tempname() '_tosmooth.dscalar.nii'];
