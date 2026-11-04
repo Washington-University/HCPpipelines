@@ -204,7 +204,7 @@ for Hemisphere in L R ; do
             Secondary=""
         fi
 
-        
+
         ${CARET7DIR}/wb_command -surface-apply-warpfield "$T1wFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii "$InverseAtlasTransform".nii.gz "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii -fnirt "$AtlasTransform".nii.gz
         ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$AtlasSpaceFolder"/"$NativeFolder"/"$Session"."$Hemisphere"."$Surface".native.surf.gii
         i=$(( i+1 ))
@@ -227,8 +227,8 @@ for Hemisphere in L R ; do
         ${CARET7DIR}/wb_command -add-to-spec-file "$Folder"/"$NativeFolder"/"$Session".native.wb.spec $Structure "$Folder"/"$NativeFolder"/"$Session"."$Hemisphere".very_inflated.native.surf.gii
     done
 
-    
-            
+
+
     CurrentSphere="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.${RegNameOrig}.native.surf.gii"
 
     NewSphere="${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii"
@@ -279,7 +279,7 @@ for Hemisphere in L R ; do
             cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.atlasroi."$LowResMesh"k_fs_LR.shape.gii"
             cp "${HCPPIPEDIR}/global/templates/standard_mesh_atlases/colin.cerebral.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii" "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
         fi
-        
+
         ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.sphere."$LowResMesh"k_fs_LR.surf.gii"
         ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder/fsaverage_LR"$LowResMesh"k/"$Session"."$LowResMesh"k_fs_LR.wb.spec" $Structure "${MNINonLinearFolder}/fsaverage_LR"$LowResMesh"k/${Session}.${Hemisphere}.flat."$LowResMesh"k_fs_LR.surf.gii"
 
@@ -321,7 +321,6 @@ done
 LabelStems=(
     aparc.a2009s
     aparc
-    BA
 )
 
 ScalarStems=(
@@ -345,7 +344,7 @@ resample_cifti_to_mesh() {
     local Base
     Base=$(basename "$InCifti")
     local OutCifti
-    
+
     if [[ ! -d "${MNINonLinearFolder}/${MeshFolder}" && "$MeshFolder" != "fsaverage_LR${HighResMesh}k" ]]; then
         mkdir -p "${MNINonLinearFolder}/${MeshFolder}"
     fi
@@ -436,7 +435,7 @@ process_mesh_folder() {
             # LowResMesh: resample from native if missing
             local InCifti="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Stem}.native.dlabel.nii"
             File="${Session}.${Stem}.${Mesh}_fs_LR.dlabel.nii"
-            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"  
+            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
                 Path="${MNINonLinearFolder}/${File}"
             fi
@@ -460,7 +459,7 @@ process_mesh_folder() {
                 continue
             fi
             File="${Session}.${Stem}.${Mesh}_fs_LR.dscalar.nii"
-            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"  
+            Path="${MNINonLinearFolder}/${MeshFolder}/${File}"
             if [[ "$MeshFolder" == "fsaverage_LR${HighResMesh}k" ]]; then
                 Path="${MNINonLinearFolder}/${File}"
             fi
@@ -470,7 +469,7 @@ process_mesh_folder() {
         fi
         add_to_spec "$Spec" "$Path"
     done
-        
+
     Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}.${RegName}${Prefix}.wb.spec"
 
     for Stem in "${ScalarStems[@]}"; do
@@ -494,7 +493,7 @@ process_mesh_folder() {
         fi
         add_to_spec "$Spec" "$Path"
     done
-        
+
     Spec="${AtlasSpaceFolder}/${MeshFolder}/${Session}${Prefix}.wb.spec"
 
     # --- Myelin maps for native only ---
