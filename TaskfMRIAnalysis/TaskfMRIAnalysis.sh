@@ -57,29 +57,16 @@ source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/fsl_version.shlib"	# Function for getting FSL version
 
 
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
+# -------------------------------------------------------
+#  Usage Description
+# -------------------------------------------------------
 
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) analyses, and Level2 (single subject-level) analysis as specified.
+#description of this script to use in usage
+opts_SetScriptDescription "Run TaskfMRIAnalysis pipeline for a subject. Pipeline will run Level1 (scan-level) analyses, and Level2 (single subject-level) analysis as specified."
 
-Usage: $log_ToolName arguments...
-[ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
-
-# ------------------------------------------------------------------------------
+# -------------------------------------------
 #  Parse Command Line Options
-# ------------------------------------------------------------------------------
+# -------------------------------------------
 
 #arguments to opts_Add*: switch, variable to set, name for inside of <> in help text, description, [default value if AddOptional], [compatibility flag, ...]
 #help info for option gets printed like "--foo=<$3> - $4"
