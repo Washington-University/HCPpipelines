@@ -263,6 +263,13 @@ for Analysis in ${Analyses} ; do
 	# Check if Level2 analysis was requested
 	if [ "$LevelTwofMRIName" != "NONE" ]; then
 		echo "Using Level2"
+        if [[ "$Analysis" == "HippocampusStats" ]]; then
+            StatInputExtension="dtseries.nii"
+        elif [[ "$Analysis" == "StandardVolumeStats" ]]; then
+            StatInputExtension="nii.gz"
+        else
+            StatInputExtension="nii"
+        fi
 		# Check if Level2 outputs are present, else throw error
         LevelTwoFEATDir="${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"		
 		## Check for Contrasts.txt file in feat directory
@@ -278,11 +285,11 @@ for Analysis in ${Analyses} ; do
 		copeCounter=1;
 		cat ${LevelTwoFEATDir}/Contrasts.txt | while read Contrast ; do
 			# Check if necessary files exist in cope${i}.feat directory (cope1 should be mean of two runs)
-			if [ -e "${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/cope1.${Extension}" ]; then
+			if [ -e "${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/cope1.${StatInputExtension}" ]; then
 				echo "${Analysis}: cope${copeCounter} ($Contrast) exists" >> ${SummaryDirectory}/TaskfMRIAnalysisSummary.txt
 			fi
 			for File in mask cope1 varcope1 tdof_t1 ; do
-				cifti_in=${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/${File}.${Extension}
+				cifti_in=${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/${File}.${StatInputExtension}
 				if [ -e "$cifti_in" ]; then
 					outdir=${SummaryDirectory}/${Analysis}/cope${copeCounter}.feat
 					if [ ! -d "$outdir" ]; then

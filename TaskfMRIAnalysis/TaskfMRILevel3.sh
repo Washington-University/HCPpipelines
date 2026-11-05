@@ -24,8 +24,6 @@ usage() {
 	echo
 	echo "--lvl2task=<LevelTwofMRIName>"
 	echo "--lvl2fsf=<LevelTwofsfName>"
-	echo "--fsf-design=<FsfDesign>"
-	echo "     Design identifier without a leading underscore; omit for the default design"
 	echo "--prefixanalysisname=<PrefixAnalysisName>"
 	echo "     Prefix for output folder name, turn off with NONE"
 	echo "--finalsmoothingFWHM=<FinalSmoothingFWHM>"
@@ -129,9 +127,9 @@ if [ $# -eq 0 ] ; then usage; exit 0; fi
 StudyFolder=`getopt1 "--path" $@`  
 SubjectList=`getopt1 "--subjectlist" $@`  
 GroupFolder=`getopt1 "--groupfolder" $@`  
-LevelThreeFsf=`getopt1 "--lvl3fsf" $@`   # Needs to specify the EVs, Contrasts, and F-tests.  Does NOT need to specify any inputs.
-                                         # However, order of inputs (rows) MUST correspond to order used in $SubjectList. 
-                                         # Can be created using "Glm" GUI.
+LevelThreeFsfFile=`getopt1 "--lvl3fsf" $@`  # Needs to specify the EVs, Contrasts, and F-tests.  Does NOT need to specify any inputs.
+                                            # However, order of inputs (rows) MUST correspond to order used in $SubjectList. 
+                                            # Can be created using "Glm" GUI.
 LevelTwofMRIName=`getopt1 "--lvl2task" $@`
 LevelTwofsfName=`getopt1 "--lvl2fsf" $@`  
 PrefixAnalysisName=`getopt1 "--prefixanalysisname" $@`  
@@ -143,19 +141,8 @@ ContrastListIn=`getopt1 "--contrastlist" $@`
 Parcellation=`getopt1 "--parcellation" $@`
 ProcSTRING=`getopt1 "--procstring" $@`
 HippocampalOutput=$(getopt1 "--hippocampal-output" "$@")
-FsfDesign=$(getopt1 "--fsf-design" "$@")
 
-if [ "$FsfDesign" != "NONE" ] ; then
-    DesignString="_${FsfDesign}"
-else
-    DesignString=""
-fi
 
-# Require a user-supplied absolute, readable Level3 FSF.
-if [[ "$LevelThreeFsf" = "NONE" || ! -f "$LevelThreeFsf" ]] ; then
-    echo "ERROR: A valid absolute, readable Level3 FSF path is required; received '${LevelThreeFsf}'" >&2
-    exit 1
-fi
 HippocampalOutput=${HippocampalOutput:-NO}
 case "$HippocampalOutput" in
     YES|NO) ;;
@@ -195,7 +182,6 @@ esac
 # 3) Add creation of a Lev3Contrasts.txt file (describing the Lev3 contrasts).
 
 ##Naming Conventions
-LevelTwofsfName="${LevelTwofsfName}${DesignString}"
 CommonAtlasFolder="${GroupFolder}/MNINonLinear"
 CommonResultsFolder="${CommonAtlasFolder}/Results"
 
@@ -291,7 +277,7 @@ else
 fi
 
 #Make design files
-cat ${LevelThreeFsf} > ${LevelThreeFEATDir}/design.fsf
+cat ${LevelThreeFsfFile} > ${LevelThreeFEATDir}/design.fsf
 
 sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelThreeFEATDir}\"|" ${LevelThreeFEATDir}/design.fsf
 

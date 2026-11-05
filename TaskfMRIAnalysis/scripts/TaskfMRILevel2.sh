@@ -29,7 +29,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
   exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
 
@@ -569,6 +569,7 @@ for Analysis in ${Analyses} ; do
 	while [ "$copeCounter" -le "${NumContrasts}" ] ; do
 		Contrast=$(awk -F '\t' -v key="/ContrastName${copeCounter}" '$1 == key {print $2}' "$FirstFolder/design.con")
     	Contrast=${Contrast//[[:space:]]/_}
+		Contrast=${Contrast%_} #remove suffix underscore if it exists
 		# Contrasts.txt is used to store the contrast names for this analysis
 		echo ${Contrast} >> ${LevelTwoFEATDir}/Contrasts.txt
 		# Contrasttemp.txt is a temporary file used to name the maps in the CIFTI scalar file
