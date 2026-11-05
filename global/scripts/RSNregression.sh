@@ -268,7 +268,7 @@ OutputHippZ=""
 OutputHippZMM=""
 if ((HippocampalOutput))
 then
-    HippOutputPrefix="${Subject}.${OutString}_AtlasHipp${RegString}${ProcString}"
+    HippOutputPrefix="${Subject}.${OutString}_AtlasHipp"
     OutputHippBeta="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}.dscalar.nii"
     if ((DoZ))
     then
