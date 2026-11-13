@@ -12,6 +12,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     %VolInputFile - like InputFile, but volume data (.nii.gz)
     %VolInputVNFile - like InputVNFile, but volume data
     %VolCiftiTemplate - cifti dscalar file with a spatial mapping that includes all voxels to consider in the volume data
+    %HippInputFile/HippInputVNFile - hippocampal CIFTI timeseries and variance-normalization file lists
+    %OutputHippBeta/OutputHippZ/OutputHippZMM - hippocampal output CIFTIs
     %OldBias - for correcting old bias field method, give the old bias field name
     %OldVolBias - same as OldBias, but volume data
     %GoodBCFile - for correcting old bias field method, text file containing the new bias field for each input
@@ -26,8 +28,6 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     %ScaleFactor - string representation of a number, multiply the input data by this factor before processing (to convert grand mean 10,000 data to % bold, use 0.01)
     %WRSmoothingSigma - string representation of a number, when using 'weighted' method, smooth the alignment quality map with this sigma (default 14, tuned for human data)
     %WF - number of Wishart Distributions for Wishart Filtering, set to zero to turn off (default)
-    %HippInputFile/HippInputVNFile - hippocampal CIFTI timeseries and variance-normalization file lists
-    %OutputHippBeta/OutputHippZ/OutputHippZMM - hippocampal output CIFTIs
  
     %if isdeployed()
         %all arguments are strings
