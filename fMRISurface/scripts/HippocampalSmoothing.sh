@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+# Based on legacy fMRISurface/scripts/SurfaceSmoothing.sh; do not refactor.
 
 script_name=$(basename "${0}")
 
@@ -65,17 +66,16 @@ for Mesh in ${Meshes}; do
         MeshFolder="${Mesh}"
     fi
 
-    InputfMRI="${WorkingDirectory}/${Session}.${Mesh}.dtseries.nii"
-    OutputfMRI="${WorkingDirectory}/${Session}_s${SmoothingFWHM}.${Mesh}.dtseries.nii"
+    InputfMRI="${WorkingDirectory}/${Session}_fMRI_s0.${Mesh}.dtseries.nii"
+    OutputfMRI="${WorkingDirectory}/${Session}_fMRI_s${SmoothingFWHM}.${Mesh}.dtseries.nii"
 
-    if [[ "${SmoothingFWHM}" == "0" ]]; then
-        cp "${InputfMRI}" "${OutputfMRI}" 
-    else
+    if [[ "${SmoothingFWHM}" != "0" ]]; then
         wb_command -cifti-smoothing "${InputfMRI}" "${Sigma}" 0 COLUMN "${OutputfMRI}" \
             -surface HIPPOCAMPUS_LEFT "${HippUnfoldFolder}/${MeshFolder}/${Session}.L.hipp_midthickness.${Mesh}.surf.gii" \
             -surface HIPPOCAMPUS_RIGHT "${HippUnfoldFolder}/${MeshFolder}/${Session}.R.hipp_midthickness.${Mesh}.surf.gii" \
             -surface HIPPOCAMPUS_DENTATE_LEFT "${HippUnfoldFolder}/${MeshFolder}/${Session}.L.dentate_midthickness.${Mesh}.surf.gii" \
             -surface HIPPOCAMPUS_DENTATE_RIGHT "${HippUnfoldFolder}/${MeshFolder}/${Session}.R.dentate_midthickness.${Mesh}.surf.gii"
+    rm -f "${InputfMRI}"
     fi
 
     log_Msg "Created ${OutputfMRI}"

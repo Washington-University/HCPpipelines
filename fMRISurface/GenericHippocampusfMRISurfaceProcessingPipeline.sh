@@ -30,11 +30,10 @@
 #       ${Session}_cov.${Mesh}.dscalar.nii
 #       ${Session}_cov_all.${Mesh}.dscalar.nii
 #       ${Session}_goodvoxels.${Mesh}.dscalar.nii  # Only when enabled
-#       ${Session}.${Mesh}.dtseries.nii
-#       ${Session}_fMRI_vn.${Mesh}.dscalar.nii
 #
-#   Target-mesh timeseries after the smoothing step:
-#       ${Session}_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii
+#   Timeseries and VN CIFTIs are created in WorkingDirectory.
+#   Target-mesh outputs are copied to ResultsFolder, then their working copies are removed.
+#   Native-mesh timeseries and VN CIFTIs remain in WorkingDirectory.
 ################################################ SUPPORT FUNCTIONS ##################################################
 set -eu
 pipedirguessed=0
@@ -134,8 +133,10 @@ log_Msg "Hippocampal Volume To Surface Mapping"
 
 # Copy final timeseries and VN into the run's Results folder.
 OutputBase="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}"
-cp "${WorkingDirectory}/${Session}_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${OutputBase}.dtseries.nii"
+cp "${WorkingDirectory}/${Session}_fMRI_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${OutputBase}.dtseries.nii"
 cp "${WorkingDirectory}/${Session}_fMRI_vn.${TargetMesh}.dscalar.nii" "${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}_vn.dscalar.nii"
+
+rm -f "${WorkingDirectory}/${Session}_fMRI_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${WorkingDirectory}/${Session}_fMRI_vn.${TargetMesh}.dscalar.nii"
 
 log_Msg "GenericHippocampusfMRISurfaceProcessingPipeline Completed!"
 

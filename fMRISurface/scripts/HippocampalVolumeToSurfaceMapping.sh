@@ -32,6 +32,7 @@ fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/opts.shlib"                # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/tempfiles.shlib"
 
 opts_ShowVersionIfRequested "$@"
 
@@ -86,7 +87,7 @@ for Structure in hipp dentate; do
         MidSurface="${HippUnfoldFolder}/Native/${Prefix}_midthickness.native.surf.gii"
         OuterSurface="${HippUnfoldFolder}/Native/${Prefix}_outer.native.surf.gii"
 
-        OnesMetric="${WorkingDirectory}/${Prefix}_ones.native.func.gii"
+        tempfiles_create volToCifti_toSurf_XXXXXX.func.gii OnesMetric
         ProbabilisticRibbon="${WorkingDirectory}/${Prefix}.ribbon_probabilistic.nii.gz"
         BinaryRibbon="${WorkingDirectory}/${Prefix}.ribbon.nii.gz"
 
@@ -301,7 +302,7 @@ for Mesh in native ${TargetMesh}; do
         RightDentate="${WorkingDirectory}/${Session}.R.dentate_${Map}.${Mesh}.func.gii"
 
         if [[ "${Map}" == "fMRI" ]]; then
-            OutputCifti="${WorkingDirectory}/${Session}.${Mesh}.dtseries.nii"
+            OutputCifti="${WorkingDirectory}/${Session}_fMRI_s0.${Mesh}.dtseries.nii"
             TR=$(fslval "${VolumefMRI}" pixdim4)
             wb_command -cifti-create-dense-timeseries "${OutputCifti}" -timestep "${TR}" -metric HIPPOCAMPUS_LEFT "${LeftHipp}" -metric HIPPOCAMPUS_RIGHT "${RightHipp}" -metric HIPPOCAMPUS_DENTATE_LEFT "${LeftDentate}" -metric HIPPOCAMPUS_DENTATE_RIGHT "${RightDentate}"
         else
@@ -314,13 +315,6 @@ for Mesh in native ${TargetMesh}; do
             rm "${LeftHipp}" "${RightHipp}" "${LeftDentate}" "${RightDentate}"
             log_Msg "Created ${OutputCifti}"
         fi
-    done
-done
-
-# Remove the all-ones metrics after ribbon mapping is complete.
-for Structure in hipp dentate; do
-    for Hemisphere in L R; do
-        rm "${WorkingDirectory}/${Session}.${Hemisphere}.${Structure}_ones.native.func.gii"
     done
 done
 
