@@ -94,11 +94,10 @@ prepare_fsf_file() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script#Set up pipeline environment variables and software
 
-#Set up pipeline environment variables and software
 source "$EnvironmentScript"
 
 #NOTE: syntax for QUEUE has changed compared to earlier pipeline releases,
@@ -115,8 +114,8 @@ OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outpu
 Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
-RegNames="MSMAll" # Use NONE to use the default surface registration
-ProcSTRING="hp0_clean_rclean_tclean" #Any preprocessing beyond CIFTI mapping and surface registration, e.g. spatial and temporal ICA cleanup or NONE
+RegNames="NONE" # Use NONE to use the default surface registration
+ProcSTRING="NONE" #Any preprocessing beyond CIFTI mapping and surface registration, e.g. spatial and temporal ICA cleanup or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
 HippocampalOutput="YES" # Set to YES to also run hippocampal analysis

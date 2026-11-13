@@ -29,7 +29,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
   exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
 
@@ -46,6 +46,7 @@ fi
 
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
+log_Check_Env_Var CARET7DIR
 
 # ------------------------------------------------------------------------------
 #  Support Functions
@@ -59,7 +60,7 @@ show_tool_versions()
 
 	# Show wb_command version
 	log_Msg "TOOL_VERSIONS: Showing Connectome Workbench (wb_command) version"
-	wb_command -version
+	${CARET7DIR}/wb_command -version
 
 	# Show fsl version
 	fsl_version_get fsl_ver
@@ -88,6 +89,7 @@ TemporalSmoothing="${15}"
 HippocampalOutput="${16}"
 HippMesh="${17}"
 LevelTwoFsfFile="${18}"
+
 
 log_Msg "READ_ARGS: ${script_name} arguments: $@"
 
@@ -120,14 +122,6 @@ log_Msg "READ_ARGS: HippMesh: ${HippMesh}"
 runParcellated=false; runVolume=false; runDense=false;
 Analyses=""; ExtensionList=""; ScalarExtensionList="";
 
-case "${HippocampalOutput}" in
-    YES|NO)
-        ;;
-    *)
-        log_Err_Abort "HippocampalOutput must be YES or NO. HippocampalOutput=${HippocampalOutput}"
-        ;;
-esac
-
 # Determine whether to run Parcellated, and set strings used for filenaming
 if [ "${Parcellation}" != "NONE" ] ; then
     if [ "${VolumeBasedProcessing}" = "YES" ] || [ "${HippocampalOutput}" = "YES" ]; then
@@ -138,39 +132,39 @@ if [ "${Parcellation}" != "NONE" ] ; then
 	ParcellationString="_${Parcellation}"
 	ExtensionList="${ExtensionList}ptseries.nii "
 	ScalarExtensionList="${ScalarExtensionList}pscalar.nii "
-	Analyses="${Analyses}ParcellatedStats " # space character at end to separate multiple analyses
+	Analyses="${Analyses}ParcellatedStats "; # space character at end to separate multiple analyses
 	log_Msg "MAIN: DETERMINE_ANALYSES: Parcellated Analysis requested"
 fi
 
 # Determine whether to run Dense, and set strings used for filenaming
-if [ "${Parcellation}" = "NONE" ] ; then
-    runDense=true
-    ParcellationString=""
-    ExtensionList="${ExtensionList}dtseries.nii "
-    ScalarExtensionList="${ScalarExtensionList}dscalar.nii "
-    Analyses="${Analyses}GrayordinatesStats " # space character at end to separate multiple analyses
-    if [ ! ${FinalSmoothingFWHM} -eq 0 ] ; then
-        log_Msg "MAIN: DETERMINE_ANALYSES: Dense Analysis requested"
-    fi
+if [ "${Parcellation}" = "NONE" ]; then
+	# Run Dense Analyses
+	runDense=true;
+	ParcellationString=""
+	ExtensionList="${ExtensionList}dtseries.nii "
+	ScalarExtensionList="${ScalarExtensionList}dscalar.nii "
+	Analyses="${Analyses}GrayordinatesStats "; # space character at end to separate multiple analyses
+	if [ ! ${FinalSmoothingFWHM} -eq 0 ] ; then
+		log_Msg "MAIN: DETERMINE_ANALYSES: Dense Analysis requested"
+	fi
 fi
 
 # Determine whether to run Volume, and set strings used for filenaming
 if [ "$VolumeBasedProcessing" = "YES" ] ; then
-	if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
-		# Assume fMRISurface used nonzero smoothing, so don't write grayordinates outputs when 0 smoothing and volume output are requested
-		runVolume=true;
-		runDense=false;
-		ExtensionList="nii.gz "
-		ScalarExtensionList="volume.dscalar.nii "
-		Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses
-		log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
-	else
-		runVolume=true;
-		ExtensionList="${ExtensionList}nii.gz "
-		ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
-		Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
-		log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
-	fi
+        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then #fix indentations below
+	runVolume=true;
+	runDense=false;
+	ExtensionList="nii.gz "
+	ScalarExtensionList="volume.dscalar.nii "
+	Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses
+	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+        else
+	runVolume=true;
+	ExtensionList="${ExtensionList}nii.gz "
+	ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
+	Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
+	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+        fi
 fi
 
 if [ "${HippocampalOutput}" = "YES" ] ; then
@@ -217,7 +211,6 @@ else
 	RegString=""
 fi
 
-
 log_Msg "MAIN: SET_NAME_STRINGS: SmoothingString: ${SmoothingString}"
 log_Msg "MAIN: SET_NAME_STRINGS: TemporalFilterString: ${TemporalFilterString}"
 log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"
@@ -226,14 +219,14 @@ log_Msg "MAIN: SET_NAME_STRINGS: RegString: ${RegString}"
 # Change '@' delimited arguments to space-delimited lists for use in for loops
 LevelOnefMRINames=`echo $LevelOnefMRINames | sed 's/@/ /g'`
 LevelOnefsfNames=`echo $LevelOnefsfNames | sed 's/@/ /g'`
-
+# Loop over list to make string with paths to the Level1 .feat directories
 LevelOneFEATDirSTRING=""
 NumFirstLevelFolders=0; # counter
-for LevelOnefMRIName in $LevelOnefMRINames ; do
-    NumFirstLevelFolders=$(($NumFirstLevelFolders+1));
-    # get fsf name that corresponds to fMRI name
-    LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $NumFirstLevelFolders`;
-    LevelOneFEATDirSTRING="${LevelOneFEATDirSTRING}${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat ";  # space character at end is needed to separate multiple FEATDir strings
+for LevelOnefMRIName in $LevelOnefMRINames ; do 
+  NumFirstLevelFolders=$(($NumFirstLevelFolders+1));
+  # get fsf name that corresponds to fMRI name
+  LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $NumFirstLevelFolders`;
+  LevelOneFEATDirSTRING="${LevelOneFEATDirSTRING}${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat "; # space character at end is needed to separate multiple FEATDir strings
 done
 
 ##### CHECK_FILES: Check that necessary inputs exist before trying to use them #####
@@ -245,6 +238,7 @@ fi
 # Assemble list of input filenames that need to be checked
 # Need template fsf file
 Filenames="$LevelTwoFsfFile"
+
 errMsg="";
 # Check files in Level1 Analysis folders
 for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
@@ -337,6 +331,7 @@ if [ "$DesignRuns" != "$NumFirstLevelFolders" ] ; then
     log_Err_Abort "Level2 design has ${DesignRuns} rows, but ${NumFirstLevelFolders} Level1 runs were supplied"
 fi
 
+
 ##### RUN flameo (FIXED-EFFECTS GLM ANALYSIS ON LEVEL2) #####
 
 ### Loop over Level 2 Analyses requested
@@ -346,10 +341,12 @@ for Analysis in ${Analyses} ; do
 	log_Msg "Run Analysis: ${Analysis}"
 	Extension=`echo $ExtensionList | cut -d' ' -f $analysisCounter`;
 	ScalarExtension=`echo $ScalarExtensionList | cut -d' ' -f $analysisCounter`;
+
     StructureString=""
     if [ "$Analysis" = "HippocampusStats" ] ; then
         StructureString="_Hipp"
     fi
+
 	### Exit if cope files are not present in Level 1 folders
 	fileCount=$( ls ${FirstFolder}/${Analysis}/cope1.${Extension} 2>/dev/null | wc -l );
 	if [ "$fileCount" -eq 0 ]; then
@@ -375,32 +372,34 @@ for Analysis in ${Analyses} ; do
 		i=1
 		MERGE_ARGS=()
 
+		if [ "${Analysis}" = "ParcellatedStats" ] ; then
+			MaskExtension="pscalar.nii"
+		else
+			MaskExtension="dscalar.nii"
+		fi
 		while (( i <= NumFirstLevelFolders )); do
 			RunDir="${LevelTwoFEATDir}/${Analysis}/${i}"
 			dof=$(<"${RunDir}/dof")
-			# Previously: fslmaths ${LevelTwoFEATDir}/${Analysis}/${i}/res4d.nii.gz -Tstd -bin -mul $dof ${LevelTwoFEATDir}/${Analysis}/${i}/dofmask.nii.gz
-			wb_command -cifti-reduce "${RunDir}/res4d.${Extension}" STDEV "${RunDir}/res4d_std.dscalar.nii"
-			wb_command -cifti-math "(x > 0) * ${dof}" "${RunDir}/dofmask.dscalar.nii" -var x "${RunDir}/res4d_std.dscalar.nii"
-			MERGE_ARGS+=(-cifti "${RunDir}/dofmask.dscalar.nii")
+			${CARET7DIR}/wb_command -cifti-reduce "${RunDir}/res4d.${Extension}" STDEV "${RunDir}/res4d_std.${MaskExtension}"
+			${CARET7DIR}/wb_command -cifti-math "(x > 0) * ${dof}" "${RunDir}/dofmask.${MaskExtension}" -var x "${RunDir}/res4d_std.${MaskExtension}"
+			MERGE_ARGS+=(-cifti "${RunDir}/dofmask.${MaskExtension}")
 			((i++))
 		done
-		# Previously: fslmerge -t ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz $MERGESTRING
-		#Previously: fslmaths ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz -Tmin -bin ${LevelTwoFEATDir}/${Analysis}/mask.nii.gz
-		wb_command -cifti-merge "${LevelTwoFEATDir}/${Analysis}/dof.dscalar.nii" "${MERGE_ARGS[@]}"
-		wb_command -cifti-reduce "${LevelTwoFEATDir}/${Analysis}/dof.dscalar.nii" MIN "${LevelTwoFEATDir}/${Analysis}/dof_min.dscalar.nii"
-		wb_command -cifti-math "x > 0" "${LevelTwoFEATDir}/${Analysis}/mask.dscalar.nii" -var x "${LevelTwoFEATDir}/${Analysis}/dof_min.dscalar.nii"
+		${CARET7DIR}/wb_command -cifti-merge "${LevelTwoFEATDir}/${Analysis}/dof.${MaskExtension}" "${MERGE_ARGS[@]}"
+		${CARET7DIR}/wb_command -cifti-reduce "${LevelTwoFEATDir}/${Analysis}/dof.${MaskExtension}" MIN "${LevelTwoFEATDir}/${Analysis}/dof_min.${MaskExtension}"
+		${CARET7DIR}/wb_command -cifti-math "x > 0" "${LevelTwoFEATDir}/${Analysis}/mask.${MaskExtension}" -var x "${LevelTwoFEATDir}/${Analysis}/dof_min.${MaskExtension}"
 
 		### FSL does not recognize HIPPOCAMPUS_DENTATE_LEFT/RIGHT.
 		### Solution: For hippocampal analysis, temporarily represent dentate as CORTEX_LEFT/RIGHT.
 		if [[ "${Analysis}" == "HippocampusStats" ]] ; then
 			for File in dof mask ; do
-				wb_command -cifti-separate ${LevelTwoFEATDir}/${Analysis}/${File}.dscalar.nii COLUMN \
+				${CARET7DIR}/wb_command -cifti-separate ${LevelTwoFEATDir}/${Analysis}/${File}.dscalar.nii COLUMN \
 					-metric HIPPOCAMPUS_LEFT ${LevelTwoFEATDir}/${Analysis}/${File}.L.hipp.func.gii \
 					-metric HIPPOCAMPUS_RIGHT ${LevelTwoFEATDir}/${Analysis}/${File}.R.hipp.func.gii \
 					-metric HIPPOCAMPUS_DENTATE_LEFT ${LevelTwoFEATDir}/${Analysis}/${File}.L.dentate.func.gii \
 					-metric HIPPOCAMPUS_DENTATE_RIGHT ${LevelTwoFEATDir}/${Analysis}/${File}.R.dentate.func.gii
 
-				wb_command -cifti-create-dense-scalar ${LevelTwoFEATDir}/${Analysis}/${File}.fsl.dscalar.nii \
+				${CARET7DIR}/wb_command -cifti-create-dense-scalar ${LevelTwoFEATDir}/${Analysis}/${File}.fsl.dscalar.nii \
 					-metric HIPPOCAMPUS_LEFT ${LevelTwoFEATDir}/${Analysis}/${File}.L.hipp.func.gii \
 					-metric HIPPOCAMPUS_RIGHT ${LevelTwoFEATDir}/${Analysis}/${File}.R.hipp.func.gii \
 					-metric CORTEX_LEFT ${LevelTwoFEATDir}/${Analysis}/${File}.L.dentate.func.gii \
@@ -409,7 +408,9 @@ for Analysis in ${Analyses} ; do
 		fi
 	else
 		CIFTIused="NO"
-		log_Msg "Create NIFTI dof and Mask files for input to flameo"
+
+		### Create dof and Mask files for input to flameo (Level 2 analysis)
+		log_Msg "Create dof and Mask files for input to flameo (Level 2 analysis)"
 		MERGESTRING=""
 		i=1
 		while [ "$i" -le "${NumFirstLevelFolders}" ] ; do
@@ -421,7 +422,6 @@ for Analysis in ${Analyses} ; do
 		fslmerge -t ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz $MERGESTRING
 		fslmaths ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz -Tmin -bin ${LevelTwoFEATDir}/${Analysis}/mask.nii.gz
 	fi
-
 
 	### Create merged cope and varcope files for input to flameo (Level 2 analysis)
 	log_Msg "Merge COPES and VARCOPES for ${NumContrasts} Contrasts"
@@ -442,8 +442,8 @@ for Analysis in ${Analyses} ; do
 			i=$(($i+1))
 		done
 		if [ "${CIFTIused}" = "YES" ] ; then
-			wb_command -cifti-merge ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.${Extension} ${COPEMERGE}
-			wb_command -cifti-merge ${LevelTwoFEATDir}/${Analysis}/varcope${copeCounter}.${Extension} ${VARCOPEMERGE}
+			${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.${Extension} ${COPEMERGE}
+			${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Analysis}/varcope${copeCounter}.${Extension} ${VARCOPEMERGE}
 		else
 			fslmerge -t ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.nii.gz $COPEMERGE
 			fslmerge -t ${LevelTwoFEATDir}/${Analysis}/varcope${copeCounter}.nii.gz $VARCOPEMERGE
@@ -462,14 +462,14 @@ for Analysis in ${Analyses} ; do
 
 			if [[ "${Analysis}" == "HippocampusStats" ]] ; then
 				for File in cope${copeCounter} varcope${copeCounter} ; do
-					wb_command -cifti-separate \
+					${CARET7DIR}/wb_command -cifti-separate \
 						${Analysis}/${File}.${Extension} COLUMN \
 						-metric HIPPOCAMPUS_LEFT ${Analysis}/${File}.L.hipp.func.gii \
 						-metric HIPPOCAMPUS_RIGHT ${Analysis}/${File}.R.hipp.func.gii \
 						-metric HIPPOCAMPUS_DENTATE_LEFT ${Analysis}/${File}.L.dentate.func.gii \
 						-metric HIPPOCAMPUS_DENTATE_RIGHT ${Analysis}/${File}.R.dentate.func.gii
 
-					wb_command -cifti-create-dense-timeseries \
+					${CARET7DIR}/wb_command -cifti-create-dense-timeseries \
 						${Analysis}/${File}.fsl.${Extension} \
 						-metric HIPPOCAMPUS_LEFT ${Analysis}/${File}.L.hipp.func.gii \
 						-metric HIPPOCAMPUS_RIGHT ${Analysis}/${File}.R.hipp.func.gii \
@@ -494,14 +494,14 @@ for Analysis in ${Analyses} ; do
 				### Restore CORTEX_LEFT/RIGHT back to the correct dentate structures
 				### in the FLAMEO outputs.
 				for Stat in zstat1 cope1 varcope1 tdof_t1 mask; do
-					wb_command -cifti-separate \
+					${CARET7DIR}/wb_command -cifti-separate \
 						${Analysis}/cope${copeCounter}.feat/${Stat}.nii COLUMN \
 						-metric HIPPOCAMPUS_LEFT ${Analysis}/${Stat}.L.hipp.func.gii \
 						-metric HIPPOCAMPUS_RIGHT ${Analysis}/${Stat}.R.hipp.func.gii \
 						-metric CORTEX_LEFT ${Analysis}/${Stat}.L.dentate.func.gii \
 						-metric CORTEX_RIGHT ${Analysis}/${Stat}.R.dentate.func.gii
 
-					wb_command -cifti-create-dense-timeseries \
+					${CARET7DIR}/wb_command -cifti-create-dense-timeseries \
 						${Analysis}/cope${copeCounter}.feat/${Stat}.${Extension} \
 						-metric HIPPOCAMPUS_LEFT ${Analysis}/${Stat}.L.hipp.func.gii \
 						-metric HIPPOCAMPUS_RIGHT ${Analysis}/${Stat}.R.hipp.func.gii \
@@ -513,8 +513,8 @@ for Analysis in ${Analyses} ; do
 			else
 				flameo --cope=${Analysis}/cope${copeCounter}.${Extension} \
 				       --vc=${Analysis}/varcope${copeCounter}.${Extension} \
-				       --dvc=${Analysis}/dof.dscalar.nii \
-				       --mask=${Analysis}/mask.dscalar.nii \
+				       --dvc=${Analysis}/dof.${MaskExtension} \
+				       --mask=${Analysis}/mask.${MaskExtension} \
 				       --ld=${Analysis}/cope${copeCounter}.feat \
 				       --dm=design.mat \
 				       --cs=design.grp \
@@ -523,6 +523,16 @@ for Analysis in ${Analyses} ; do
 				       --CIFTI
 			fi
 		else
+			log_Msg "Command: flameo --cope=${Analysis}/cope${copeCounter}.nii.gz \\"
+			log_Msg "  --vc=${Analysis}/varcope${copeCounter}.nii.gz \\"
+			log_Msg "  --dvc=${Analysis}/dof.nii.gz \\"
+			log_Msg "  --mask=${Analysis}/mask.nii.gz \\"
+			log_Msg "  --ld=${Analysis}/cope${copeCounter}.feat \\"
+			log_Msg "  --dm=design.mat \\"
+			log_Msg "  --cs=design.grp \\"
+			log_Msg "  --tc=design.con \\"
+			log_Msg "  --runmode=fe"
+
 			flameo --cope=${Analysis}/cope${copeCounter}.nii.gz \
 			       --vc=${Analysis}/varcope${copeCounter}.nii.gz \
 			       --dvc=${Analysis}/dof.nii.gz \
@@ -533,8 +543,9 @@ for Analysis in ${Analyses} ; do
 			       --tc=design.con \
 			       --runmode=fe
 		fi
+
 		log_Msg "Successfully completed flameo for Contrast Number: ${copeCounter}"
-		cd $OLDPWD # Go back to previous directory using bash built-in $OLDPWD
+		cd $OLDPWD; # Go back to previous directory using bash built-in $OLDPWD
 		copeCounter=$(($copeCounter+1))
 	done
 
@@ -545,7 +556,6 @@ for Analysis in ${Analyses} ; do
 		rm -r ${LevelTwoFEATDir}/${Analysis}/${i}
 		i=$(($i+1))
 	done
-
 
 	### Generate Files for Viewing
 	log_Msg "Generate Files for Viewing"
@@ -568,38 +578,39 @@ for Analysis in ${Analyses} ; do
 	copeCounter=1;
 	while [ "$copeCounter" -le "${NumContrasts}" ] ; do
 		Contrast=$(awk -F '\t' -v key="/ContrastName${copeCounter}" '$1 == key {print $2}' "$FirstFolder/design.con")
-    	Contrast=${Contrast//[[:space:]]/_}
+		Contrast=${Contrast//[[:space:]]/_}
 		Contrast=${Contrast%_} #remove suffix underscore if it exists
 		# Contrasts.txt is used to store the contrast names for this analysis
 		echo ${Contrast} >> ${LevelTwoFEATDir}/Contrasts.txt
 		# Contrasttemp.txt is a temporary file used to name the maps in the CIFTI scalar file
 		echo "${Subject}_${LevelTwofsfName}_level2${StructureString}_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}" > "${LevelTwoFEATDir}/Contrasttemp.txt"
+
 		if [ "${Analysis}" = "StandardVolumeStats" ] ; then
 
 			### Make temporary dtseries files to convert into scalar files
 			# Converting volume to dense timeseries requires a volume label file
 			echo "OTHER" >> ${LevelTwoFEATDir}/wbtemp.txt
 			echo "1 255 255 255 255" >> ${LevelTwoFEATDir}/wbtemp.txt
-			wb_command -volume-label-import ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz ${LevelTwoFEATDir}/wbtemp.txt ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -discard-others -unlabeled-value 0
+			${CARET7DIR}/wb_command -volume-label-import ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz ${LevelTwoFEATDir}/wbtemp.txt ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -discard-others -unlabeled-value 0
 			rm ${LevelTwoFEATDir}/wbtemp.txt
 
 			# Convert temporary volume CIFTI timeseries files
-			wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${copeCounter}.feat/zstat1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
-			wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${copeCounter}.feat/cope1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
-			wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${copeCounter}.feat/varcope1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
+			${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${copeCounter}.feat/zstat1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
+			${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${copeCounter}.feat/cope1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
+			${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${copeCounter}.feat/varcope1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
 
 			# Convert volume CIFTI timeseries files to scalar files
-			wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-			wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-			wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
+			${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
+			${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
+			${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
 
 			# Delete the temporary volume CIFTI timeseries files
-			rm ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_{cope,varcope,zstat}_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii
+			rm ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_{cope,varcope,zstat}_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.volume.dtseries.nii
 		else
 			### Convert CIFTI dense or parcellated timeseries to scalar files
-			wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/zstat1.${StatInputExtension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-			wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/cope1.${StatInputExtension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-			wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/varcope1.${StatInputExtension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
+			${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/zstat1.${StatInputExtension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
+			${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/cope1.${StatInputExtension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
+			${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${copeCounter}.feat/varcope1.${StatInputExtension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
 		fi
 
 		# These merge strings are used below to combine the multiple scalar files into a single file for visualization
@@ -613,10 +624,10 @@ for Analysis in ${Analyses} ; do
 	done
 
 	# Perform the merge into viewable scalar files
-	wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${zMergeSTRING}
-	wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${bMergeSTRING}
-	wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${vMergeSTRING}
-
+	${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_zstat${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${zMergeSTRING}
+	${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_cope${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${bMergeSTRING}
+	${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${StructureString}_varcope${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.${ScalarExtension} ${vMergeSTRING}
+	
 	analysisCounter=$(($analysisCounter+1))
 done  # end loop: for Analysis in ${Analyses}
 

@@ -14,11 +14,11 @@ usage() {
 	echo
 	echo "--groupfolder=<GroupFolder>"
 	echo "     Group ID folder name"
-  echo
+	echo
 	echo "--lvl3fsf=<LevelThreeFsf>"
 	echo "     Specification of EVs, Contrasts, and F-tests, in FSL's fsf format"
 	echo "     Does not need to specify any inputs files."
-	echo "     The order of rows in the design matrix are assumed to "
+	echo "     However, the order of rows in the design matrix are assumed to "
 	echo "     match the order of subjects in SubjectList."
 	echo "     Can be created using FSL's Glm GUI"
 	echo
@@ -99,7 +99,7 @@ relabel_hippocampal_cifti() {
 
     temp_dir=$(mktemp -d "$(dirname -- "$output")/relabel.XXXXXX")
 
-    wb_command -cifti-separate "$input" COLUMN \
+    ${CARET7DIR}/wb_command -cifti-separate "$input" COLUMN \
         -metric HIPPOCAMPUS_LEFT "$temp_dir/L.hipp.func.gii" \
             -roi "$temp_dir/L.hipp.roi.func.gii" \
         -metric HIPPOCAMPUS_RIGHT "$temp_dir/R.hipp.func.gii" \
@@ -109,7 +109,7 @@ relabel_hippocampal_cifti() {
         -metric "$right_structure" "$temp_dir/R.dentate.func.gii" \
             -roi "$temp_dir/R.dentate.roi.func.gii"
 
-    wb_command -cifti-create-dense-scalar "$output" \
+    ${CARET7DIR}/wb_command -cifti-create-dense-scalar "$output" \
         -metric HIPPOCAMPUS_LEFT "$temp_dir/L.hipp.func.gii" \
             -roi "$temp_dir/L.hipp.roi.func.gii" \
         -metric HIPPOCAMPUS_RIGHT "$temp_dir/R.hipp.func.gii" \
@@ -127,9 +127,9 @@ if [ $# -eq 0 ] ; then usage; exit 0; fi
 StudyFolder=`getopt1 "--path" $@`  
 SubjectList=`getopt1 "--subjectlist" $@`  
 GroupFolder=`getopt1 "--groupfolder" $@`  
-LevelThreeFsfFile=`getopt1 "--lvl3fsf" $@`  # Needs to specify the EVs, Contrasts, and F-tests.  Does NOT need to specify any inputs.
-                                            # However, order of inputs (rows) MUST correspond to order used in $SubjectList. 
-                                            # Can be created using "Glm" GUI.
+LevelThreeFsf=`getopt1 "--lvl3fsf" $@`   # Needs to specify the EVs, Contrasts, and F-tests.  Does NOT need to specify any inputs.
+                                         # However, order of inputs (rows) MUST correspond to order used in $SubjectList.
+                                         # Can be created using "Glm" GUI.
 LevelTwofMRIName=`getopt1 "--lvl2task" $@`
 LevelTwofsfName=`getopt1 "--lvl2fsf" $@`  
 PrefixAnalysisName=`getopt1 "--prefixanalysisname" $@`  
@@ -277,7 +277,7 @@ else
 fi
 
 #Make design files
-cat ${LevelThreeFsfFile} > ${LevelThreeFEATDir}/design.fsf
+cat ${LevelThreeFsf} > ${LevelThreeFEATDir}/design.fsf
 
 sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelThreeFEATDir}\"|" ${LevelThreeFEATDir}/design.fsf
 
@@ -433,14 +433,14 @@ for Analysis in ${Analyses} ; do
       mkdir -p ${LevelThreeFEATDir}/${Analysis}/${i}
       InputSuffix=".nii"
       CiftiArgs="--CIFTI"
-      wb_command -cifti-merge ${mask}_subjects.nii ${MASKMERGE}
-      wb_command -cifti-reduce ${mask}_subjects.nii MIN ${mask}_min.nii
-      wb_command -cifti-math "x > 0" ${mask}.nii -var x ${mask}_min.nii
-      wb_command -cifti-merge ${mergedcope}_subjects.nii ${COPEMERGE}
-      wb_command -cifti-merge ${mergedvarcope}_subjects.nii ${VARCOPEMERGE}
-      wb_command -cifti-merge ${mergedtdof}_subjects.nii ${DOFMERGE}
+      ${CARET7DIR}/wb_command -cifti-merge ${mask}_subjects.nii ${MASKMERGE}
+      ${CARET7DIR}/wb_command -cifti-reduce ${mask}_subjects.nii MIN ${mask}_min.nii
+      ${CARET7DIR}/wb_command -cifti-math "x > 0" ${mask}.nii -var x ${mask}_min.nii
+      ${CARET7DIR}/wb_command -cifti-merge ${mergedcope}_subjects.nii ${COPEMERGE}
+      ${CARET7DIR}/wb_command -cifti-merge ${mergedvarcope}_subjects.nii ${VARCOPEMERGE}
+      ${CARET7DIR}/wb_command -cifti-merge ${mergedtdof}_subjects.nii ${DOFMERGE}
       for File in ${mergedcope} ${mergedvarcope} ${mergedtdof} ; do
-        wb_command -cifti-math "x * mask" ${File}.nii -var x ${File}_subjects.nii -var mask ${mask}.nii -select 1 1 -repeat
+        ${CARET7DIR}/wb_command -cifti-math "x * mask" ${File}.nii -var x ${File}_subjects.nii -var mask ${mask}.nii -select 1 1 -repeat
       done
 
       # Current FSL workaround: temporarily represent dentate as cortex.
@@ -539,13 +539,13 @@ for Analysis in ${Analyses} ; do
 
         ## Subsection specific to Grayordinates analysis
         if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" || "$Analysis" = "HippocampusStats" ]] ; then
-	          input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.${StatInputExtension}
+	        input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.${StatInputExtension}
 	        if [ ! -e ${input} ] ; then
             echo "ERROR: ${input} does not exist" 1>&2
             exit -1
 	        fi
 	        output=${LevelThreeFEATDir}/${prefix}.${ScalarExtension}
-	        wb_command -cifti-convert-to-scalar ${input} ROW ${output} -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
+	        ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${input} ROW ${output} -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
 	        MergeSTRING=`echo "${MergeSTRING} -cifti ${output}"`
 
         ## Subsection specific to Volume analysis
@@ -555,7 +555,7 @@ for Analysis in ${Analyses} ; do
 	        echo "1 255 255 255 255" >> ${label_list}
 	        volume_to_label=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/mask.nii.gz
 	        labeled_volume=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/masktmp.nii.gz
-	        wb_command -volume-label-import ${volume_to_label} ${label_list} ${labeled_volume} -discard-others -unlabeled-value 0
+	        ${CARET7DIR}/wb_command -volume-label-import ${volume_to_label} ${label_list} ${labeled_volume} -discard-others -unlabeled-value 0
 	        rm ${label_list}
 	        prefix=${PrefixAnalysisString}${LevelTwofsfName}_level3vol_${statistic}_${Contrast}${TemporalFilterString}${SmoothingString}${ProcSTRING}	        
           input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.nii.gz
@@ -565,8 +565,8 @@ for Analysis in ${Analyses} ; do
 	        fi
 	        outputseries=${LevelThreeFEATDir}/${prefix}.${Extension}
 	        outputscalar=${LevelThreeFEATDir}/${prefix}.${ScalarExtension}
-	        wb_command -cifti-create-dense-timeseries ${outputseries} -volume ${input} ${labeled_volume} -timestep 1 -timestart 1
-	        wb_command -cifti-convert-to-scalar ${outputseries} ROW ${outputscalar} -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
+	        ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${outputseries} -volume ${input} ${labeled_volume} -timestep 1 -timestart 1
+	        ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${outputseries} ROW ${outputscalar} -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
 	        rm ${outputseries} ${labeled_volume}
 	        MergeSTRING=`echo "${MergeSTRING} -cifti ${outputscalar}"`
 
@@ -584,7 +584,7 @@ for Analysis in ${Analyses} ; do
       elif [ "$Analysis" = "StandardVolumeStats" ] ; then
 	      cifti_merge_out=${LevelThreeFEATDir}/${PrefixAnalysisString}${LevelTwofsfName}_level3vol_${statistic}${TemporalFilterString}${SmoothingString}${ProcSTRING}.${ScalarExtension}
       fi
-      wb_command -cifti-merge ${cifti_merge_out} ${MergeSTRING}
+      ${CARET7DIR}/wb_command -cifti-merge ${cifti_merge_out} ${MergeSTRING}
       if [ "${DeleteSingleContrastDscalars}" = "YES" ] ; then
 	      FilesToDelete=`echo ${MergeSTRING} | sed 's/-cifti//g'`
 	      rm ${FilesToDelete}
