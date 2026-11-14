@@ -32,7 +32,7 @@
 #       ${Session}_goodvoxels.${Mesh}.dscalar.nii  # Only when enabled
 #
 #   Timeseries and VN CIFTIs are created in WorkingDirectory.
-#   Target-mesh outputs are copied to ResultsFolder, then their working copies are removed.
+#   Target-mesh outputs are moved to ResultsFolder, then their working copies are removed.
 #   Native-mesh timeseries and VN CIFTIs remain in WorkingDirectory.
 ################################################ SUPPORT FUNCTIONS ##################################################
 set -eu
@@ -121,7 +121,6 @@ log_Msg "Selected SBRef file: ${SBRef}"
 # Combining ROIs into a single CIFTI time series and vn file
 # ------------------------------------------------------------------------------
 
-log_Msg "mkdir -p ${WorkingDirectory}"
 log_Msg "Hippocampal Volume To Surface Mapping"
 
 
@@ -131,12 +130,10 @@ log_Msg "Hippocampal Volume To Surface Mapping"
 #Surface Smoothing of each hippocampal structure
 "${HCPPIPEDIR_fMRISurf}/HippocampalSmoothing.sh" "${HippUnfoldFolder}" "${WorkingDirectory}" "${Session}" "${SmoothingFWHM}" "${TargetMesh}"
 
-# Copy final timeseries and VN into the run's Results folder.
+# Move final timeseries and VN into the run's Results folder.
 OutputBase="${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}"
-cp "${WorkingDirectory}/${Session}_fMRI_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${OutputBase}.dtseries.nii"
-cp "${WorkingDirectory}/${Session}_fMRI_vn.${TargetMesh}.dscalar.nii" "${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}_vn.dscalar.nii"
-
-rm -f "${WorkingDirectory}/${Session}_fMRI_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${WorkingDirectory}/${Session}_fMRI_vn.${TargetMesh}.dscalar.nii"
+mv -f "${WorkingDirectory}/${Session}_fMRI_s${SmoothingFWHM}.${TargetMesh}.dtseries.nii" "${OutputBase}.dtseries.nii"
+mv -f "${WorkingDirectory}/${Session}_fMRI_vn.${TargetMesh}.dscalar.nii" "${ResultsFolder}/${NameOffMRI}_AtlasHipp${ProcString}_vn.dscalar.nii"
 
 log_Msg "GenericHippocampusfMRISurfaceProcessingPipeline Completed!"
 
