@@ -9,6 +9,12 @@ usage() {
         echo
 	echo "--path=<StudyFolder>"
 	echo
+	echo "--excluded-subjectlist=<ExcludedSubjectList>"
+	echo "     Optional excluded subject IDs, separated by @. Default=NONE"
+	echo
+	echo "--level2-feat-name=<LevelTwoFeatName>"
+	echo "     Optional Level2 FEAT directory name for reporting"
+	echo
 	echo "--subjectlist=<SubjectList>"
 	echo "     List of subject IDs, separated by @ symbol (without spaces)"
 	echo
@@ -125,7 +131,10 @@ relabel_hippocampal_cifti() {
 if [ $# -eq 0 ] ; then usage; exit 0; fi
 
 StudyFolder=`getopt1 "--path" $@`  
-SubjectList=`getopt1 "--subjectlist" $@`  
+SubjectList=$(getopt1 "--subjectlist" "$@")
+ExcludedSubjectList=$(getopt1 "--excluded-subjectlist" "$@")
+ExcludedSubjectList=${ExcludedSubjectList:-NONE}
+LevelTwoFeatName=$(getopt1 "--level2-feat-name" "$@")
 GroupFolder=`getopt1 "--groupfolder" $@`  
 LevelThreeFsf=`getopt1 "--lvl3fsf" $@`   # Needs to specify the EVs, Contrasts, and F-tests.  Does NOT need to specify any inputs.
                                          # However, order of inputs (rows) MUST correspond to order used in $SubjectList.
@@ -185,10 +194,32 @@ esac
 CommonAtlasFolder="${GroupFolder}/MNINonLinear"
 CommonResultsFolder="${CommonAtlasFolder}/Results"
 
-##Set up some things
 # Note that all lists should be space separated lists. NOT defined as arrays.
-SubjectList=`echo $SubjectList | sed 's/@/ /g'`
-NumSubjects=`echo ${SubjectList} | wc -w`
+IFS=@ read -r -a IncludedSubjects <<< "$SubjectList"
+
+ExcludedSubjects=()
+if [[ "$ExcludedSubjectList" != "NONE" ]]; then
+    IFS=@ read -r -a ExcludedSubjects <<< "$ExcludedSubjectList"
+fi
+
+# report to stdout (o log).
+{
+    echo "===== Subject selection ====="
+    echo "Task: ${LevelTwofMRIName}"
+    echo "Level2 FEAT directory name: ${LevelTwoFeatName:-Not supplied}"
+    echo "Excluded subjects (${#ExcludedSubjects[@]}): ${ExcludedSubjects[*]:-None}"
+    echo "Included subjects (${#IncludedSubjects[@]}), in analysis order: ${IncludedSubjects[*]}"
+    echo "============================="
+}
+
+# Short report to stderr (e log).
+{
+    echo "Task: ${LevelTwofMRIName}"
+    echo "Excluded subjects (${#ExcludedSubjects[@]}): ${ExcludedSubjects[*]:-None}"
+} >&2
+
+SubjectList="${IncludedSubjects[*]}"
+NumSubjects=${#IncludedSubjects[@]}
 
 SmoothingString="_s${FinalSmoothingFWHM}"
 TemporalFilterString="_hp""$TemporalFilter"
@@ -599,3 +630,4 @@ FinishTime=`date`
 echo "Start time: ${StartTime}"
 echo "Finish time: ${FinishTime}"
 exit
+

@@ -58,11 +58,70 @@ resolve_fsf_path() {
     printf '%s\n' "$path"
 }
 
+write_filtered_fsf() {
+    local input="$1"
+    local output="$2"
+    local count="$3"
+
+    # Only resize the supplied single-group mean design.
+    awk '
+        $1 == "set" {
+            if ($2 == "fmri(evs_orig)") orig = $3
+            if ($2 == "fmri(evs_real)") real = $3
+            if ($2 == "fmri(evs_vox)") vox = $3
+
+            if ($2 ~ /^fmri\(evg[0-9]+\.[0-9]+\)$/ &&
+                ($2 !~ /\.1\)$/ || $3 != 1)) bad = 1
+
+            if ($2 ~ /^fmri\(groupmem\.[0-9]+\)$/ &&
+                $3 != 1) bad = 1
+
+            if ($2 ~ /^(feat_files|highres_files|confoundev_files)\(/)
+                bad = 1
+        }
+        END {
+            exit !(orig == 1 && real == 1 && vox == 0 && !bad)
+        }
+    ' "$input" || {
+        echo "ERROR: Expected a single-group mean FSF: $input" >&2
+        return 1
+    }
+
+    awk -v n="$count" '
+        $1 == "set" &&
+        ($2 == "fmri(npts)" || $2 == "fmri(multiple)") {
+            print "set " $2 " " n
+            next
+        }
+
+        $1 == "set" &&
+        ($2 ~ /^fmri\(evg[0-9]+\.[0-9]+\)$/ ||
+         $2 ~ /^fmri\(groupmem\.[0-9]+\)$/) {
+            next
+        }
+
+        /^# Higher-level EV value/ || /^# Group membership for input/ {
+            next
+        }
+
+        { print }
+
+        END {
+            print "\n# Filtered single-group mean design"
+            for (i = 1; i <= n; i++)
+                print "set fmri(evg" i ".1) 1"
+
+            for (i = 1; i <= n; i++)
+                print "set fmri(groupmem." i ") 1"
+        }
+    ' "$input" > "$output"
+}
+
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
+Subjlist="100307 100610 111312" #Space delimited list of subject IDs
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script#Set up pipeline environment variables and software
 
 #Set up pipeline environment variables and software
 source "$EnvironmentScript"
@@ -84,7 +143,7 @@ LevelThreePrefix="GroupAnalysis" # Prefix for Level 3 output names and the group
 LevelThreeContrastList="ALL" # Level 2 contrasts to analyze at Level 3: ALL, or contrast numbers separated by @, e.g. "1@6@8".
 
 # Match the design identifiers used for Levels 1 and 2.
-# Use NONE for the default design.
+# Leave empty for the default design.
 # For multiple designs, use: FsfDesignList="StudyDesignA StudyDesignB"
 FsfDesignList="NONE"
 
@@ -117,7 +176,7 @@ fi
 # Tokens: {StudyFolder}, {Subject}, {Task}, {Run}, {NumSubjects}
 # Use an absolute path or a pattern beginning with {StudyFolder}.
 
-LevelThreeFsfPattern="{StudyFolder}/GroupResults/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
+LevelThreeFsfPattern="AbsolutePathToFsfFolder/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
 LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3" 
 
 # Requirements for this script
@@ -127,27 +186,17 @@ LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3"
 # Log the originating call
 echo "$@"
 
-# Normalize the subject list and prepare the group-analysis arguments.
+# Preserve the complete requested list for filtering each task independently.
 Subjlist=${Subjlist//@/ }
+Subjlist=${Subjlist//$'\n'/ }
 read -r -a Subjects <<< "$Subjlist"
-NumSubjects=${#Subjects[@]}
-SubjectList=$(IFS=@; echo "${Subjects[*]}")
 
-######################################### INPUTS ##########################################
+RequestedNumSubjects=${#Subjects[@]}
+NumSubjects=$RequestedNumSubjects
 
-case "${HippocampalOutput}" in
-    YES) ;;
-    NO) ;;
-    *)
-        echo "ERROR: --hippocampal-output must be YES or NO"
-        exit 1
-        ;;
-esac
-
-if [[ "$LevelThreePrefix" == "NONE" ]]; then
-    LevelThreeOutputFolder="${StudyFolder}/TaskfMRILevel3"
-else
-    LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3"
+if (( RequestedNumSubjects < 2 )); then
+    echo "ERROR: Level 3 requires at least two requested subjects" >&2
+    exit 1
 fi
 
 ######################################### DO WORK ##########################################
@@ -173,31 +222,80 @@ do
                         LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
                         LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
 
+                        # Find the ORIGINAL FSF using the original requested subject count.
+                        NumSubjects=$RequestedNumSubjects
+                        OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
+                        DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$OriginalLevelThreeFsf")
+
+                        if [[ "$DesignSubjects" != "$RequestedNumSubjects" ]]; then
+                            echo "ERROR: Original FSF count does not match requested subjects: ${OriginalLevelThreeFsf}"
+                            exit 1
+                        fi
+
+                        TemporalFilterString=""
+                        if [[ "$HighpassFilter" != "NONE" ]]; then
+                            TemporalFilterString="_hp${HighpassFilter}"
+                        fi
+
+                        RegString=""
+                        if [[ "$RegName" != "NONE" ]]; then
+                            RegString="_${RegName}"
+                        fi
+
+                        ProcSuffix=""
+                        if [[ "$ProcSTRING" != "NONE" && -n "$ProcSTRING" ]]; then
+                            ProcSuffix="_${ProcSTRING#_}"
+                        fi
+
+                        DesignString=""
+                        if [[ "$FsfDesign" != "NONE" && -n "$FsfDesign" ]]; then
+                            DesignString="_${FsfDesign}"
+                        fi
+
+                        ParcellationString=""
+                        if [[ "$Parcellation" != "NONE" ]]; then
+                            ParcellationString="_${Parcellation}"
+                        fi
+
+                        FeatName="${LevelTwoFSF}${DesignString}${TemporalFilterString}_s${FinalSmoothingFWHM}_level2${RegString}${ProcSuffix}${ParcellationString}.feat"
+
+                        # Exclude subjects with a missing task folder
+                        AvailableSubjects=()
+                        ExcludedSubjects=()
+                        for CandidateSubject in "${Subjects[@]}"; do
+                            FeatDir="${StudyFolder}/${CandidateSubject}/MNINonLinear/Results/${LevelTwoTask}/${FeatName}"
+                            if [[ -d "$FeatDir" ]]; then
+                                AvailableSubjects+=("$CandidateSubject")
+                            else
+                                ExcludedSubjects+=("$CandidateSubject")
+                                echo "ERROR: ${LevelTwoTask}: excluding ${CandidateSubject}; missing Level2 FEAT directory: ${FeatDir}" >&2
+                            fi
+                        done
+                        NumSubjects=${#AvailableSubjects[@]}
 
                         if (( NumSubjects < 2 )); then
-                            echo "ERROR: Level 3 requires at least two subjects" >&2
-                            exit 1
+                            echo "ERROR: ${LevelTwoTask}: only ${NumSubjects} subjects available; skipping analysis" >&2
+                            i=$((i + 1))
+                            continue
+                        fi
+                        SubjectList=$(IFS=@; 
+                        echo "${AvailableSubjects[*]}")
+
+                        ExcludedSubjectList="NONE"
+                        if (( ${#ExcludedSubjects[@]} > 0 )); then
+                            ExcludedSubjectList=$(IFS=@; echo "${ExcludedSubjects[*]}")
                         fi
 
-                        # Check every task's design before running any analyses.
-                        LevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
-
-                        if [[ ! -f "$LevelThreeFsf" ]]; then
-                            echo "ERROR: Missing or unreadable Level 3 design: $LevelThreeFsf" >&2
-                            exit 1
-                        fi
-
-                        DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$LevelThreeFsf")
-
-                        if [[ "$DesignSubjects" != "$NumSubjects" ]]; then
-                            echo "ERROR: Design subject count does not match Subjlist: $LevelThreeFsf" >&2
-                            exit 1
-                        fi
-
-                        echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects} subjects"
-
+                        AnalysisLabel="${LevelTwoTask}${DesignString}${TemporalFilterString}_s${FinalSmoothingFWHM}${RegString}${ProcSuffix}${ParcellationString}"
+                        DesignFolder="${LevelThreeOutputFolder}/FilteredDesigns/${AnalysisLabel}"
+                        mkdir -p "$DesignFolder"
+                        LevelThreeFsf="${DesignFolder}/${LevelTwoTask}_level3_${NumSubjects}subjects.fsf"
+                        write_filtered_fsf "$OriginalLevelThreeFsf" "$LevelThreeFsf" "$NumSubjects"
+                        echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects}/${RequestedNumSubjects} subjects"
                         "${HCPPIPEDIR}/global/scripts/captureoutput.sh" \
                             "${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRILevel3.sh" \
+                            --excluded-subjectlist="$ExcludedSubjectList" \
+                            --level2-feat-name="$FeatName" \
                             --path="$StudyFolder" \
                             --subjectlist="$SubjectList" \
                             --groupfolder="$LevelThreeOutputFolder" \
