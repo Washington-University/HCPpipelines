@@ -7,6 +7,11 @@ diffusionMesh='79'
 regName="MSMAll"
 regNameOrig="MSMSulc"
 inflateExtraScale='1'
+
+#DEBUG TODO Point this to MMORF templates dir!! (currently, they don't exist in the HCPpipelines repo)
+GrayordinatesSpaceDir="${HCPPIPEDIR_Templates}/91282_Greyordinates"
+
+SurfaceAtlasDir="${HCPPIPEDIR_Templates}/standard_mesh_atlases"
 EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 source "${EnvironmentScript}"
@@ -34,6 +39,8 @@ for subj in $Subjectlist; do
         --diffusionmesh="${diffusionMesh}" \
         --regname="${regName}" \
         --regnameorig="${regNameOrig}" \
-        --inflatescale="${inflateExtraScale}"
+        --inflatescale="${inflateExtraScale}" \
+        --grayordinates_space-dir="$GrayordinatesSpaceDir" \
+        --surface-atlas-dir="$SurfaceAtlasDir"
 done
 
