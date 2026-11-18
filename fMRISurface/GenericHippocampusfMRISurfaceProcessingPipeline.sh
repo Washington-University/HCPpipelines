@@ -46,7 +46,6 @@ fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"          # Debugging functions; also sources log.shlib
 source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
-source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib" # Check processing mode requirements
 
 opts_SetScriptDescription "Run hippocampal fMRISurface processing"
 
@@ -60,6 +59,10 @@ opts_AddOptional '--factor' 'factor' 'number' "Scaling factor for eliminating hi
 opts_AddOptional '--target_mesh' 'TargetMesh' 'string' "target mesh resolution. Values include: 512, 2k, 8k, 18k " "2k"
 
 opts_ParseArguments "$@"
+
+if [[ "${doGoodVoxels}" != "YES" && "${doGoodVoxels}" != "NO" ]]; then
+    log_Err_Abort "Invalid --goodvoxel value '${doGoodVoxels}'. Use YES or NO."
+fi
 
 if ((pipedirguessed))
 then
@@ -93,15 +96,14 @@ uname -a
 
 MainSessionFolder="${Path}/${Session}"
 AtlasSpaceFolder="${MainSessionFolder}/MNINonLinear"
-InputResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
 ResultsFolder="${AtlasSpaceFolder}/Results/${NameOffMRI}"
 
 WorkingDirectory="${ResultsFolder}/HippocampalVolumeToSurfaceMapping"
 mkdir -p "${WorkingDirectory}"
 
-VolumefMRI="${InputResultsFolder}/${NameOffMRI}${ProcString}.nii.gz"
+VolumefMRI="${ResultsFolder}/${NameOffMRI}${ProcString}.nii.gz"
 
-SBRef="${InputResultsFolder}/${NameOffMRI}_SBRef.nii.gz"
+SBRef="${ResultsFolder}/${NameOffMRI}_SBRef.nii.gz"
 
 HippUnfoldFolder="${AtlasSpaceFolder}/HippUnfold"
 
