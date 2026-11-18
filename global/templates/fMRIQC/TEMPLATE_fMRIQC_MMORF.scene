@@ -1246,7 +1246,7 @@ Notes:
                                     </Object>
                                 </Element>
                                 <Element Index="10">
-                                    <Object Type="class" Class="CaretDataFile" Name="brainmask_fs.2.nii.gz" Version="1">
+                                    <Object Type="class" Class="CaretDataFile" Name="brainmask_fs.nii.gz" Version="1">
                                         <Object Type="class" Class="LabelDrawingProperties" Name="m_labelDrawingProperties" Version="1">
                                             <Object Type="enumeratedType" Name="m_drawingType">DRAW_FILLED</Object>
                                             <Object Type="enumeratedType" Name="m_outlineColor">BLACK</Object>
@@ -1430,7 +1430,7 @@ Notes:
                                             <Element Index="98">false</Element>
                                             <Element Index="99">false</Element>
                                         </ObjectArray>
-                                        <Object Type="pathName" Name="dataFileName_V2">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.2.nii.gz</Object>
+                                        <Object Type="pathName" Name="dataFileName_V2">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.nii.gz</Object>
                                     </Object>
                                 </Element>
                             </ObjectArray>
@@ -1521,7 +1521,7 @@ Notes:
                                         <Object Type="class" Class="SpecFileDataFile" Name="specFileDataFile" Version="1">
                                             <Object Type="enumeratedType" Name="dataFileType">VOLUME</Object>
                                             <Object Type="enumeratedType" Name="structure">INVALID</Object>
-                                            <Object Type="pathName" Name="fileName">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.2.nii.gz</Object>
+                                            <Object Type="pathName" Name="fileName">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.nii.gz</Object>
                                             <Object Type="boolean" Name="selected">true</Object>
                                         </Object>
                                     </Element>
@@ -2848,8 +2848,8 @@ Notes:
                                                                             <Element Index="3">1</Element>
                                                                         </ObjectArray>
                                                                     </Object>
-                                                                    <Object Type="pathName" Name="selectedMapFileNameWithPath">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.2.nii.gz</Object>
-                                                                    <Object Type="string" Name="selectedMapFile">brainmask_fs.2.nii.gz</Object>
+                                                                    <Object Type="pathName" Name="selectedMapFileNameWithPath">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.nii.gz</Object>
+                                                                    <Object Type="string" Name="selectedMapFile">brainmask_fs.nii.gz</Object>
                                                                     <Object Type="string" Name="selectedMapName"></Object>
                                                                     <Object Type="integer" Name="selectedMapIndex">0</Object>
                                                                 </Object>
@@ -3054,7 +3054,7 @@ Notes:
                                                                             <Element Index="3">1</Element>
                                                                         </ObjectArray>
                                                                     </Object>
-                                                                    <Object Type="pathName" Name="selectedMapFileNameWithPath">STUDYDIR/SESSION/FMRINAME/FMRINAME_SBRef_nonlin.nii.gz</Object>
+                                                                    <Object Type="pathName" Name="selectedMapFileNameWithPath">STUDYDIR/SESSION/FMRINAME/MMORFNonLinear/FMRINAME_SBRef_nonlin.nii.gz</Object>
                                                                     <Object Type="string" Name="selectedMapFile">FMRINAME_SBRef_nomask.nii.gz</Object>
                                                                     <Object Type="string" Name="selectedMapName"></Object>
                                                                     <Object Type="integer" Name="selectedMapIndex">0</Object>
@@ -12719,7 +12719,7 @@ Notes:
                                     </Object>
                                 </Element>
                                 <Element Index="31">
-                                    <Object Type="class" Class="CaretDataFile" Name="brainmask_fs.2.nii.gz" Version="1">
+                                    <Object Type="class" Class="CaretDataFile" Name="brainmask_fs.nii.gz" Version="1">
                                         <Object Type="class" Class="LabelDrawingProperties" Name="m_labelDrawingProperties" Version="1">
                                             <Object Type="enumeratedType" Name="m_drawingType">DRAW_FILLED</Object>
                                             <Object Type="enumeratedType" Name="m_outlineColor">BLACK</Object>
@@ -12906,7 +12906,7 @@ Notes:
                                             <Element Index="98">false</Element>
                                             <Element Index="99">false</Element>
                                         </ObjectArray>
-                                        <Object Type="pathName" Name="dataFileName_V2">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.2.nii.gz</Object>
+                                        <Object Type="pathName" Name="dataFileName_V2">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.nii.gz</Object>
                                     </Object>
                                 </Element>
                             </ObjectArray>
@@ -13157,7 +13157,7 @@ Notes:
                                         <Object Type="class" Class="SpecFileDataFile" Name="specFileDataFile" Version="1">
                                             <Object Type="enumeratedType" Name="dataFileType">VOLUME</Object>
                                             <Object Type="enumeratedType" Name="structure">INVALID</Object>
-                                            <Object Type="pathName" Name="fileName">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.2.nii.gz</Object>
+                                            <Object Type="pathName" Name="fileName">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.nii.gz</Object>
                                             <Object Type="boolean" Name="selected">true</Object>
                                         </Object>
                                     </Element>
@@ -14960,8 +14960,8 @@ Notes:
                                                                             <Element Index="3">1</Element>
                                                                         </ObjectArray>
                                                                     </Object>
-                                                                    <Object Type="pathName" Name="selectedMapFileNameWithPath">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.2.nii.gz</Object>
-                                                                    <Object Type="string" Name="selectedMapFile">brainmask_fs.2.nii.gz</Object>
+                                                                    <Object Type="pathName" Name="selectedMapFileNameWithPath">STUDYDIR/SESSION/MMORFNonLinear/brainmask_fs.nii.gz</Object>
+                                                                    <Object Type="string" Name="selectedMapFile">brainmask_fs.nii.gz</Object>
                                                                     <Object Type="string" Name="selectedMapName"></Object>
                                                                     <Object Type="integer" Name="selectedMapIndex">0</Object>
                                                                 </Object>

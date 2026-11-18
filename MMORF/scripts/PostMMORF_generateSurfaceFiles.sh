@@ -2,36 +2,48 @@
 
 #based substantially on PostFreeSurfer/scripts/FreeSurfer2CaretConvertAndRegisterNonlinear.sh
 
-# --------------------------------------------------------------------------------
-#  Usage Description Function
-# --------------------------------------------------------------------------------
 set -eu
-script_name=$(basename "${0}")
 
-show_usage() {
-    cat <<EOF
-
-${script_name}: Sub-script of MMORFPipeline.sh
-
-EOF
-}
-
-# Allow script to return a Usage statement, before any other output or checking
-if [ "$#" = "0" ]; then
-    show_usage
-    exit 1
+pipedirguessed=0
+if [[ "${HCPPIPEDIR:-}" == "" ]]
+then
+    pipedirguessed=1
+    export HCPPIPEDIR="$(dirname -- "$0")/../.."
 fi
-
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
+source "${HCPPIPEDIR}/global/scripts/newopts.shlib" "$@"
 
-opts_ShowVersionIfRequested $@
+opts_SetScriptDescription "Generate native and standard-mesh surface files in MMORF space"
 
-if opts_CheckForHelpRequest $@; then
-    show_usage
-    exit 0
+opts_AddMandatory '--study-folder' 'StudyFolder' 'path' 'Folder containing session folders'
+opts_AddMandatory '--session' 'Session' 'session ID' 'Session whose surfaces are processed'
+opts_AddMandatory '--t1folder' 'T1wFolder' 'path' 'Subject T1w folder containing native anatomical surfaces'
+opts_AddMandatory '--atlasfolder' 'AtlasSpaceFolder' 'path' 'MMORF atlas folder for output volumes and surfaces'
+opts_AddMandatory '--nativefolder' 'NativeFolder' 'folder name' 'Native surface subfolder name, e.g. Native'
+opts_AddMandatory '--t1' 'T1wImage' 'image name' 'Restored T1w image name within the T1w folder, without extension'
+opts_AddMandatory '--t2' 'T2wImage' 'image name or NONE' 'Restored T2w image name within the T1w folder, without extension, or NONE'
+opts_AddMandatory '--hiresmesh' 'HighResMesh' 'number' 'High resolution fs_LR mesh size in thousands of vertices'
+opts_AddMandatory '--lowresmesh' 'LowResMeshes' 'num@num' 'Low resolution fs_LR mesh sizes delimited by @'
+opts_AddMandatory '--diffusionmesh' 'DiffusionMesh' 'number' 'Diffusion fs_LR mesh size in thousands of vertices'
+opts_AddMandatory '--atlas-transform' 'AtlasTransform' 'warp' 'T1w-to-MMORF warp path without the .nii.gz extension'
+opts_AddMandatory '--inverse-atlas-transform' 'InverseAtlasTransform' 'warp' 'MMORF-to-T1w warp path without the .nii.gz extension'
+opts_AddMandatory '--atlas-t1' 'AtlasSpaceT1wImage' 'image name' 'Restored T1w image name within the atlas folder, without extension'
+opts_AddMandatory '--atlas-t2' 'AtlasSpaceT2wImage' 'image name' 'Restored T2w image name within the atlas folder, without extension'
+opts_AddMandatory '--regname' 'RegName' 'registration name' 'Additional surface registration used for suffixed outputs, e.g. MSMAll'
+opts_AddMandatory '--regnameorig' 'RegNameOrig' 'registration name' 'Surface registration used for unsuffixed outputs, e.g. MSMSulc'
+opts_AddMandatory '--inflatescale' 'InflateExtraScale' 'number' 'Additional scaling factor for surface inflation'
+opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
+opts_AddMandatory '--grayordinates-space-dir' 'GrayordinatesSpaceDIR' 'path' "grayordinates space directory"
+
+opts_ParseArguments "$@"
+
+if ((pipedirguessed))
+then
+    log_Err_Abort "HCPPIPEDIR is not set, you must first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
 fi
+
+opts_ShowValues
 
 # ------------------------------------------------------------------------------
 #  Verify required environment variables are set and log value
@@ -41,66 +53,7 @@ log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
 
-# ------------------------------------------------------------------------------
-#  Gather and show positional parameters
-# ------------------------------------------------------------------------------
-
 log_Msg "START"
-
-StudyFolder="$1"
-log_Msg "StudyFolder: ${StudyFolder}"
-
-Session="$2"
-log_Msg "Session: ${Session}"
-
-T1wFolder="$3"
-log_Msg "T1wFolder: ${T1wFolder}"
-
-AtlasSpaceFolder="$4"
-log_Msg "AtlasSpaceFolder: ${AtlasSpaceFolder}"
-
-NativeFolder="$5"
-log_Msg "NativeFolder: ${NativeFolder}"
-
-
-T1wImage="$6"
-log_Msg "T1wImage: ${T1wImage}"
-
-T2wImage="$7"
-log_Msg "T2wImage: ${T2wImage}"
-
-
-
-HighResMesh="${8}"
-log_Msg "HighResMesh: ${HighResMesh}"
-
-LowResMeshes="${9}"
-log_Msg "LowResMeshes: ${LowResMeshes}"
-
-DiffusionMesh="${10}"
-log_Msg "DiffusionMesh: ${DiffusionMesh}"
-
-AtlasTransform="${11}"
-log_Msg "AtlasTransform: ${AtlasTransform}"
-
-InverseAtlasTransform="${12}"
-log_Msg "InverseAtlasTransform: ${InverseAtlasTransform}"
-
-AtlasSpaceT1wImage="${13}"
-log_Msg "AtlasSpaceT1wImage: ${AtlasSpaceT1wImage}"
-
-AtlasSpaceT2wImage="${14}"
-log_Msg "AtlasSpaceT2wImage: ${AtlasSpaceT2wImage}"
-
-
-RegName="${15}"
-log_Msg "RegName: ${RegName}"
-
-RegNameOrig="${16}"
-log_Msg "RegNameOrig: ${RegNameOrig}"
-
-InflateExtraScale="${17}"
-log_Msg "InflateExtraScale: ${InflateExtraScale}"
 
 
 MNINonLinearFolder="$StudyFolder"/"$Session"/"MNINonLinear"
@@ -273,9 +226,14 @@ for Hemisphere in L R ; do
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".inflated_${RegName}."$HighResMesh"k_fs_LR.surf.gii
     ${CARET7DIR}/wb_command -add-to-spec-file "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$RegName"."$HighResMesh"k_fs_LR.wb.spec $Structure "$AtlasSpaceFolder"/fsaverage_LR"$HighResMesh"k/"$Session"."$Hemisphere".very_inflated_${RegName}."$HighResMesh"k_fs_LR.surf.gii
     for LowResMesh in ${LowResMeshes} ; do
+        cp "$SurfaceAtlasDIR"/"$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".sphere."$LowResMesh"k_fs_LR.surf.gii
+        if [[ "$LowResMesh" == "$DiffusionMesh" ]]; then
+            cp "$SurfaceAtlasDIR"/"$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii
+        else
+            cp "$GrayordinatesSpaceDIR"/"$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii "$AtlasSpaceFolder"/fsaverage_LR"$LowResMesh"k/"$Session"."$Hemisphere".atlasroi."$LowResMesh"k_fs_LR.shape.gii
+        fi
+
         #Create downsampled fs_LR spec file in structural space.
-
-
         LowResMeshTemp="${LowResMesh}k"
         CurrentSphere="${MNINonLinearFolder}/${NativeFolder}/${Session}.${Hemisphere}.sphere.${RegNameOrig}.native.surf.gii"
         NewSphere="${HCPPIPEDIR}/global/templates/standard_mesh_atlases/${Hemisphere}.sphere.${LowResMeshTemp}_fs_LR.surf.gii"
@@ -525,6 +483,23 @@ for LowResMesh in ${LowResMeshes}; do
     process_mesh_folder "$MeshFolder" ".${Mesh}_fs_LR" "$RegName" "no" "$Mesh"
 done
 
+
+# Shared structural files referenced by the 32k fMRI QC scene.
+if [[ " ${LowResMeshes} " == *" 32 "* ]]; then
+    for File in \
+        "${Session}.L.flat.32k_fs_LR.surf.gii" \
+        "${Session}.R.flat.32k_fs_LR.surf.gii" \
+        "${Session}.sulc.32k_fs_LR.dscalar.nii" \
+        "${Session}.thickness.32k_fs_LR.dscalar.nii" \
+        "${Session}.curvature.32k_fs_LR.dscalar.nii" \
+        "${Session}.corrThickness.32k_fs_LR.dscalar.nii" \
+        "${Session}.MyelinMap_BC.32k_fs_LR.dscalar.nii" \
+        "${Session}.SmoothedMyelinMap_BC.32k_fs_LR.dscalar.nii" \
+        "${Session}.aparc.32k_fs_LR.dlabel.nii" \
+        "${Session}.aparc.a2009s.32k_fs_LR.dlabel.nii" ; do
+        ln -sf "../../MNINonLinear/fsaverage_LR32k/${File}" "${AtlasSpaceFolder}/fsaverage_LR32k/${File}"
+    done
+fi
 
 log_Msg "END"
 

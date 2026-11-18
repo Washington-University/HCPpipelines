@@ -20,6 +20,8 @@ opts_SetScriptDescription "Tool for non-linearly registering DTI, T1w, T2w to MM
 
 opts_AddMandatory '--t1' 'T1wImage' 'image' 't1w image'
 
+opts_AddMandatory '--t1folder' 'T1wFolder' 'path' 'Folder containing the subject T1w images and FreeSurfer labeled volumes'
+
 opts_AddMandatory '--t1rest' 'T1wRestore' 'image' 'bias corrected t1w image'
 
 opts_AddMandatory '--t1restbrain' 'T1wRestoreBrain' 'image' 'bias corrected brain extracted t1w image'
@@ -35,8 +37,6 @@ opts_AddMandatory '--ref' 'Reference' 'image' 'reference image'
 opts_AddMandatory '--t1brainmask' 'T1wBrainMask' 'image' 'T1w space FreeSurfer brain mask'
 
 opts_AddMandatory '--t1biasfield' 'T1wBiasField' 'image' 'T1w space FreeSurfer bias field'
-
-opts_AddMandatory '--t1wmparc' 'T1wWmparc' 'image' 'FreeSurfer labeled brain volume containing white-matter parcels and subcortical structures, aligned to the subject T1w image (T1w/wmparc_1mm.nii.gz). Used to generate subcortical ROIs in MMORF space.'
 
 opts_AddMandatory "--diffusion" "Diffusion" "image" "Diffusion including bvecs, bvals, and data.nii.gz"
 
@@ -62,6 +62,8 @@ opts_AddMandatory '--ot2restbrain' 'OutputT2wImageRestoreBrain' 'image' 'output 
 
 opts_AddMandatory '--outputfolder' 'Output' 'path' 'target folder for output'
 
+opts_AddMandatory '--grayordinates-space-dir' 'GrayordinatesSpaceDIR' 'path' "grayordinates space directory"
+
 ##optional args
 opts_AddOptional '--ref1mm' 'Reference1mm' 'image' 'reference 1mm image' "${HCPPIPEDIR_Templates}/MMORF_T1_1mm.nii.gz"
 opts_AddOptional '--grayordinatesres' 'GrayordinatesResolutions' 'num@num' 'Grayordinate resolutions in mm delimited by @, default 2' '2'
@@ -80,8 +82,8 @@ opts_ShowValues
 log_Check_Env_Var FSLDIR
 
 for GrayordinatesResolution in ${GrayordinatesResolutions//@/ } ; do
-    if [[ ! -f "${HCPPIPEDIR}/global/templates/MMORF_T1_${GrayordinatesResolution}mm.nii.gz" ]]; then
-        log_Err_Abort "MMORF T1w template not found: ${HCPPIPEDIR}/global/templates/MMORF_T1_${GrayordinatesResolution}mm.nii.gz"
+    if [[ ! -f "$GrayordinatesSpaceDIR/Atlas_ROIs.$GrayordinatesResolution".nii.gz ]]; then
+        log_Err_Abort "Subcortical atlas template not found: $GrayordinatesSpaceDIR/Atlas_ROIs.$GrayordinatesResolution.nii.gz"
     fi
 done
 
@@ -106,7 +108,8 @@ ${FSLDIR}/bin/fslmaths "${OutputT1wImageBiasField}" -thr 0.1 "${OutputT1wImageBi
 verbose_echo " --> Generating subject subcortical ROIs"
 mkdir -p "${Output}/ROIs"
 for GrayordinatesResolution in ${GrayordinatesResolutions//@/ } ; do
-    ${FSLDIR}/bin/applywarp --rel --interp=nn -i "${T1wWmparc}" -r "${Output}/ROIs/Atlas_ROIs.${GrayordinatesResolution}.nii.gz" -w "${OutputTransform}" -o "${Output}/ROIs/wmparc.${GrayordinatesResolution}.nii.gz"
+    cp "$GrayordinatesSpaceDIR"/Atlas_ROIs."$GrayordinatesResolution".nii.gz "$Output"/ROIs/Atlas_ROIs."$GrayordinatesResolution".nii.gz
+    ${FSLDIR}/bin/applywarp --rel --interp=nn -i "${T1wFolder}/wmparc_1mm.nii.gz" -r "${Output}/ROIs/Atlas_ROIs.${GrayordinatesResolution}.nii.gz" -w "${OutputTransform}" -o "${Output}/ROIs/wmparc.${GrayordinatesResolution}.nii.gz"
     ${CARET7DIR}/wb_command -volume-label-import "${Output}/ROIs/wmparc.${GrayordinatesResolution}.nii.gz" "${SubcorticalGrayLabels}" "${Output}/ROIs/ROIs.${GrayordinatesResolution}.nii.gz" -discard-others
 done
 

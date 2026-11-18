@@ -15,6 +15,9 @@ opts_SetScriptDescription "Wrapper for running post MMORF registration"
 opts_AddMandatory '--study-folder' 'StudyFolder' 'folder' 'Path to the study folder containing session folders'
 opts_AddMandatory '--session' 'Session' 'subject ID' "(e.g. 100610)"
 opts_AddMandatory '--t1-template' 'T1wTemplate' 'Image' "Path to the T1w template image"
+opts_AddMandatory '--grayordinates-space-dir' 'GrayordinatesSpaceDIR' 'path' "grayordinates space directory"
+opts_AddMandatory '--surface-atlas-dir' 'SurfaceAtlasDIR' 'path' "surface atlas directory"
+
 opts_AddOptional '--hiresmesh' 'HighResMesh' 'number' 'High resolution mesh, default 164' '164'
 opts_AddOptional '--lowresmesh' 'LowResMeshes' 'num@num' 'Low resolution meshes delimited by @, default 32' '32'
 opts_AddOptional '--diffusionmesh' 'DiffusionMesh' 'number' 'Diffusion mesh, default 79' '79'
@@ -46,14 +49,13 @@ T1wFolder="${StudyFolder}/${Session}/${T1wFolderName}"
 AtlasSpaceFolder="${StudyFolder}/${Session}/${AtlasSpaceFolderName}"
 Diffusion="${T1wFolder}/Diffusion"
 
-
 ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
+    --t1folder="${T1wFolder}" \
     --t1="${T1wFolder}/${T1wImage}_acpc_dc" \
     --t1rest="${T1wFolder}/${T1wImage}_acpc_dc_restore" \
     --t1restbrain="${T1wFolder}/${T1wImage}_acpc_dc_restore_brain" \
     --t1brainmask="${T1wFolder}/${T1wImageBrainMask}" \
     --t1biasfield="${T1wFolder}/${T1wImageBiasField}" \
-    --t1wmparc="${T1wFolder}/wmparc_1mm.nii.gz" \
     --grayordinatesres="${GrayordinatesResolutions}" \
     --subcortgraylabels="${SubcorticalGrayLabels}" \
     --t2="${T1wFolder}/${T2wImage}_acpc_dc" \
@@ -71,13 +73,10 @@ ${HCPPIPEDIR}/MMORF/scripts/PostMMORF_ResampleVolumes.sh \
     --ot2="${AtlasSpaceFolder}/${T2wImage}" \
     --ot2rest="${AtlasSpaceFolder}/${T2wImage}_restore" \
     --ot2restbrain="${AtlasSpaceFolder}/${T2wImage}_restore_brain" \
-    --outputfolder="${AtlasSpaceFolder}"
-
-
-
+    --outputfolder="${AtlasSpaceFolder}" \
+    --grayordinates-space-dir="${GrayordinatesSpaceDIR}"
 
 NativeFolder="Native"
-
 AtlasTransform="acpc_dc2standard"
 InverseAtlasTransform="standard2acpc_dc"
 AtlasSpaceT1wImage="T1w_restore"
@@ -90,22 +89,24 @@ InverseAtlasTransform="$AtlasSpaceFolder"/xfms/"$InverseAtlasTransform"
 
 
 
-argList=("$StudyFolder")                # ${1}
-argList+=("$Session")            # ${2} #same as Session in cross-sectional mode.
-argList+=("$T1wFolder")                 # ${3}
-argList+=("$AtlasSpaceFolder")          # ${4}
-argList+=("$NativeFolder")              # ${5}
-argList+=("$T1wRestoreImage")           # ${6}  Called T1wImage in FreeSurfer2CaretConvertAndRegisterNonlinear.sh
-argList+=("$T2wRestoreImage")           # ${7}
-argList+=("$HighResMesh")        # ${8}  
-argList+=("$LowResMeshes")              # ${9}
-argList+=("$DiffusionMesh")             # ${10}
-argList+=("$AtlasTransform")            # ${11}
-argList+=("$InverseAtlasTransform")     # ${12}
-argList+=("$AtlasSpaceT1wImage")        # ${13}
-argList+=("$AtlasSpaceT2wImage")        # ${14}
-argList+=("$RegName")                   # ${15}
-argList+=("$RegNameOrig")                   # ${16}
-argList+=("$InflateExtraScale")         # ${17}
-    
-${HCPPIPEDIR}/MMORF/scripts/PostMMORF_generateSurfaceFiles.sh "${argList[@]}"
+${HCPPIPEDIR}/MMORF/scripts/PostMMORF_generateSurfaceFiles.sh \
+    --study-folder="${StudyFolder}" \
+    --session="${Session}" \
+    --t1folder="${T1wFolder}" \
+    --atlasfolder="${AtlasSpaceFolder}" \
+    --nativefolder="${NativeFolder}" \
+    --t1="${T1wRestoreImage}" \
+    --t2="${T2wRestoreImage}" \
+    --hiresmesh="${HighResMesh}" \
+    --lowresmesh="${LowResMeshes}" \
+    --diffusionmesh="${DiffusionMesh}" \
+    --atlas-transform="${AtlasTransform}" \
+    --inverse-atlas-transform="${InverseAtlasTransform}" \
+    --atlas-t1="${AtlasSpaceT1wImage}" \
+    --atlas-t2="${AtlasSpaceT2wImage}" \
+    --regname="${RegName}" \
+    --regnameorig="${RegNameOrig}" \
+    --inflatescale="${InflateExtraScale}" \
+    --surface-atlas-dir="${SurfaceAtlasDIR}" \
+    --grayordinates-space-dir="${GrayordinatesSpaceDIR}"
+
