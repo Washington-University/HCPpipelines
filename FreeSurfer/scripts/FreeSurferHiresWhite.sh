@@ -143,7 +143,7 @@ echo "0 0 1 0" >> "$mridir"/transforms/eye.dat
 echo "0 0 0 1" >> "$mridir"/transforms/eye.dat
 echo "round" >> "$mridir"/transforms/eye.dat
 
-if [ ! "${T2wImage}" = "NONE" ] || [ ! "${T2wImage}" = ""] ; then
+if [[ -n "${T2wImage}" && "${T2wImage}" != "NONE" ]] ; then
 
   verbose_red_echo "---> computing T2 to T1 transform"
 
