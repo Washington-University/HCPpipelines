@@ -104,7 +104,7 @@ then
                 then
                     log_Err_Abort "--extra-reconall-arg requires an argument"
                 fi
-                extra_reconall_args_manual+=("${origargs[i + 1]#*=}")
+                extra_reconall_args_manual+=("${origargs[i + 1]}")
                 #skip the next argument, we took care of it
                 i=$((i + 1))
                 changeargs=1
