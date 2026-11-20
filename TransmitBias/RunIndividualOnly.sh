@@ -176,7 +176,7 @@ esac
 # set the default GMWMtemplate
 if [[ -z "$GMWMtemplate" ]]
 then
-    GMWMtemplate="$StudyFolder"/"$Subject"/MNINonLinear/GMWMTemplate.nii.gz
+    GMWMtemplate="$StudyFolder"/"$Session"/MNINonLinear/GMWMTemplate.nii.gz
 fi
 
 "$HCPPIPEDIR"/TransmitBias/Phase3_IndividualAdjustment.sh \

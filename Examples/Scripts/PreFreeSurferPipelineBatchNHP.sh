@@ -78,6 +78,7 @@ get_batch_options() {
             --runlocal)
                 RunLocal=1
                 index=$(( index + 1 ))
+                ;;
             *)
                 echo ""
                 echo "ERROR: Unrecognized Option: ${argument}"

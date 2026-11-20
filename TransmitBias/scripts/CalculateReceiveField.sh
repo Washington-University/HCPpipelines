@@ -176,7 +176,7 @@ then
         convert_xfm -omat "$inversexfmLong" -inverse "$finalxfmLong"
         #3. resample output image
         wb_command -volume-resample "$sourceImage" "$targetImage" CUBIC "$outputImage" \
-                -affine "$finalxfm" \
+                -affine "$finalxfmLong" \
                 -flirt "$sourceImage" "$targetImage"
     }
 
@@ -187,7 +187,7 @@ then
             "$WDCross/xfms/bodycoil2str.mat"    \
             "$WD/xfms/bodycoil2str.mat"         \
             "$WD"/xfms/str2bodycoil.mat         \
-            "$WDСross"/bodycoil.nii.gz          \
+            "$WDCross"/bodycoil.nii.gz          \
             "$T1wFolder"/T1w_acpc_dc_restore.nii.gz \
             "$WD"/bodycoil2T1w.nii.gz
 
@@ -196,7 +196,7 @@ then
             "$WDCross/xfms/headcoil2str.mat"    \
             "$WD/xfms/headcoil2str.mat"         \
             "$WD"/xfms/str2headcoil.mat         \
-            "$WDСross"/headcoil.nii.gz          \
+            "$WDCross"/headcoil.nii.gz          \
             "$T1wFolder"/T1w_acpc_dc.nii.gz     \
             "$WD"/headcoil_restore2T1w.nii.gz
     else
@@ -287,7 +287,7 @@ else
             "$WDCross/xfms/psnimage2str.mat"    \
             "$WD/xfms/psnimage2str.mat"         \
             "$WD"/xfms/str2psnimage.mat         \
-            "$WDСross"/psnimage.nii.gz          \
+            "$WDCross"/psnimage.nii.gz          \
             "$T1wFolder"/T1w_acpc_dc_restore.nii.gz     \
             "$WD"/psnimage2T1w.nii.gz
     else

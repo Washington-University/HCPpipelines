@@ -738,6 +738,7 @@ if [ "$CustomBrain" = "NONE" ] ; then
                 --betcenter=${betcenter} \
                 --betradius=${betradius} \
                 --betfraction=${betfraction} \
+                --betbiasfieldcor=${BetBiasFieldCor} \
                 --brainextract=${BrainExtract} \
                 --species=${SPECIES}
         fi

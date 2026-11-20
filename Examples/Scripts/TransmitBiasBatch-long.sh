@@ -94,5 +94,5 @@ for (( i=0; i<${#Subjlist[@]}; i++ )); do
         --myelin-template="$ReferenceTemplate" \
         --group-uncorrected-myelin="$GroupUncorrectedMyelin" \
         --pt-reference-value-file="$PTRefValFile" \
-        --matlab-mode="$MatlabMode"
+        --matlab-run-mode="$MatlabMode"
 done

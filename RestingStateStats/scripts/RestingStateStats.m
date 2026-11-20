@@ -190,7 +190,7 @@ ICAorig=normalise(load(ICAs,'-ascii'));
 
 %%%%  Read WM Timeseries and Highpass Filter
 if ~strcmp(WM,'NONE')
-    WMtcOrig=demean(load(WM,'-ascii')));
+    WMtcOrig=demean(load(WM,'-ascii'));
     fprintf('%s - Starting fslmaths filtering of wm tcs \n',func_name);
     save_avw(reshape(WMtcOrig',size(WMtcOrig,2),1,1,size(WMtcOrig,1)),[outprefix '_fakeNIFTI'],'f',[1 1 1 TR]);
     system(sprintf(['fslmaths ' outprefix '_fakeNIFTI -bptf %f -1 ' outprefix '_fakeNIFTI'],0.5*hp/TR));

@@ -162,7 +162,7 @@ for i in ${!Subjects[@]}; do
     --lowresmesh="$LowResMeshes"                        \
     --subcortgraylabels="$SubcorticalGrayLabels"        \
     --refmyelinmaps="$ReferenceMyelinMaps"              \
-    --regname="$RegName"                                \    
+    --regname="$RegName"
     )
     echo "Running $cmd"
     "${cmd[@]}"
