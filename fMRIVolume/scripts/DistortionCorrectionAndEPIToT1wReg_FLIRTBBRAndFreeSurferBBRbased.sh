@@ -945,7 +945,7 @@ if (( ! IsLongitudinal )); then
     log_Msg "Check to see if FreeSurferNHP.sh was used"
     if [ "$SPECIES" != "Human" ] ; then # - for NHP TH 2017-2024
         if [ "$BBRContrast" = "T1w" ]; then
-            BBRopt="--t1 --${dof}"
+            BBRopt="--t1 --${dof} "
             BBRopt+="--wm-proj-abs 1.1 --gm-proj-abs 0.2 "  # macaque MION EPI/pial surface registration. TO DO: marmoset MION  - TH 2023
             BBRopt+="--brute1max 2 --brute1delta 2 "        # limited coarse search in NHP - TH Nov 2024
 
