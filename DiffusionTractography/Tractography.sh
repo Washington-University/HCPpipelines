@@ -19,7 +19,7 @@ opts_SetScriptDescription "Run probabilistic tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' "subject"
-opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, or MMORFNonLinear"
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'path@path' 'BEDPOSTX Folders delimited by @'
 opts_AddMandatory '--regname' 'RegName' 'MSMAll' 'RegName such as MSMAll or MSMSulc'

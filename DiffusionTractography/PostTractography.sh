@@ -19,7 +19,7 @@ opts_SetScriptDescription "Prepare the data to run Tractography"
 
 opts_AddMandatory '--path' 'StudyFolder' 'Path' "path to session's data folder"
 opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
-opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, or MMORFNonLinear"
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX volspace or whim folder'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
