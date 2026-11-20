@@ -22,7 +22,7 @@ opts_AddMandatory '--subject' 'Subject' 'subject ID' ""
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddOptional '--bpxdirs' 'BedpostXFolders' 'folder@folder' "names of folders containing fiber estimations, default Diffusion.bedpostX" "Diffusion.bedpostX"
 opts_AddMandatory '--regname' 'RegName' 'Name of Registration' 'RegName such as MSMAll'
-opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, MNINonLinear, or MMORFNonLinear"
+opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to generate the tractography outputs in, must be T1w, or MMORFNonLinear"
 opts_AddOptional '--whimmask' 'WhimMask' 'path' "binary mask of voxels included in the WHIM orientations"
 opts_AddOptional '--groupname' 'GroupName' 'string' "Average Group Name"
 
@@ -49,6 +49,19 @@ log_Check_Env_Var CARET7DIR
 
 log_Msg "Platform Information Follows: "
 uname -a
+
+if [[ "$volspace" != "T1w" && "$volspace" != "MMORFNonLinear" ]]; then
+    log_Err_Abort "--volume-space must be T1w or MMORFNonLinear"
+fi
+
+if [[ "$volspace" == "T1w" && -n "$WhimMask" ]]; then
+    log_Err_Abort "--whimmask cannot be used when --volume-space is T1w, otherwise we recommend tracting in MMORFNonLinear space for better inter-subject alignment"
+fi
+
+if [[ "$volspace" == "MMORFNonLinear" && -z "$WhimMask" ]]; then
+    log_Err_Abort "--whimmask must be provided when --volume-space is MMORFNonLinear, otherwise we recommend tracting in native space to avoid distortions"
+fi
+
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_dMRITract}

@@ -33,6 +33,17 @@ opts_ParseArguments "$@"
 
 opts_ShowValues
 
+if [[ "$volspace" != "T1w" && "$volspace" != "MMORFNonLinear" ]]; then
+    log_Err_Abort "--volume-space must be T1w or MMORFNonLinear"
+fi
+
+if [[ "$volspace" == "T1w" && -n "$WhimMask" ]]; then
+    log_Err_Abort "--whimmask cannot be used when --volume-space is T1w, otherwise we recommend tracting in MMORFNonLinear space for better inter-subject alignment"
+fi
+
+if [[ "$volspace" == "MMORFNonLinear" && -z "$WhimMask" ]]; then
+    log_Err_Abort "--whimmask must be provided when --volume-space is MMORFNonLinear, otherwise we recommend tracting in native space to avoid distortions"
+fi
 
 T1wDiffusionFolder="${StudyFolder}/${Subject}/T1w/Diffusion"
 DiffusionResolution=`${FSLDIR}/bin/fslval ${T1wDiffusionFolder}/data pixdim1`
