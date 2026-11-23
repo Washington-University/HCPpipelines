@@ -203,19 +203,20 @@ ribbon="ribbon"
 log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
 #WARNING: do not include a trailing slash on elements, we do string manipulation below
-CommonAtlasFolders=("${CommonFolder}/MNINonLinear" "${CommonFolder}/MMORFNonLinear")
+Atlas=("MNINonLinear" "MMORFNonLinear")
+CommonAtlasFolder="${CommonFolder}/MNINonLinear"
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
-	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
-		CommonDownSampleFolders="${CommonDownSampleFolders}${CommonAtlasFolder}/${DownSampleFolderName} "
+	for AtlasName in "${Atlas[@]}" ; do
+		CommonDownSampleFolders="${CommonDownSampleFolders}${CommonFolder}/${AtlasName}/${DownSampleFolderName} "
 	done
 done
 
 if [ ! -e ${CommonFolder} ] ; then
 	mkdir ${CommonFolder}
 fi
-for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
-	mkdir -p ${CommonAtlasFolder}
+for AtlasName in "${Atlas[@]}" ; do
+	mkdir -p ${CommonFolder}/${AtlasName}
 done
 
 for CommonDownSampleFolder in ${CommonDownSampleFolders} ; do
@@ -230,14 +231,13 @@ log_Msg "Make Average Volumes"
 # Scalar Volumes
 log_Msg "Scalar Volumes"
 for Volume in ${T1wName} ${T2wName} ; do
-	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+	for AtlasName in "${Atlas[@]}" ; do
 		MergeVolumeSTRING=""
-		foldername="${CommonAtlasFolder##*/}"
 		for Subject in ${Subjlist} ; do
-			MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "
+			MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${AtlasName}/${Volume}.nii.gz "
 		done
-		allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
-		avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
+		allvolumes=${CommonFolder}/${AtlasName}/${GroupAverageName}_All${Volume}.nii.gz
+		avgvolume=${CommonFolder}/${AtlasName}/${GroupAverageName}_Average${Volume}.nii.gz
 		if ((MergedT1T2vols)); then
 			fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
 			# fslmaths -Tmean is not implemented in a memory efficient manner. Use -volume-reduce instead.
@@ -254,11 +254,11 @@ for Volume in ${T1wName} ${T2wName} ; do
 	done
 
 done
-for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
-	volume_out=${CommonAtlasFolder}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
+for AtlasName in "${Atlas[@]}" ; do
+	volume_out=${CommonFolder}/${AtlasName}/${GroupAverageName}_AverageT1wDividedByT2w.nii.gz
 	${Caret7_Command} -volume-math "clamp((T1w / T2w), 0, 100)" ${volume_out} \
-		-var T1w ${CommonAtlasFolder}/${GroupAverageName}_Average${T1wName}.nii.gz \
-		-var T2w ${CommonAtlasFolder}/${GroupAverageName}_Average${T2wName}.nii.gz \
+		-var T1w ${CommonFolder}/${AtlasName}/${GroupAverageName}_Average${T1wName}.nii.gz \
+		-var T2w ${CommonFolder}/${AtlasName}/${GroupAverageName}_Average${T2wName}.nii.gz \
 		-fixnan 0
 	${Caret7_Command} -volume-palette ${volume_out} \
 		MODE_AUTO_SCALE_PERCENTAGE -pos-percent 4 96 -interpolate true -palette-name videen_style
@@ -271,15 +271,14 @@ done
 # Thus, it is either all or none for the label volumes.
 log_Msg "Label Volumes"
 for Volume in ${wmparc} ${ribbon} ; do
-	for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+	for AtlasName in "${Atlas[@]}" ; do
 		if ((LabelVols)); then
 			MergeVolumeSTRING=""
-			foldername="${CommonAtlasFolder##*/}"
 			for Subject in ${Subjlist} ; do
-				MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${foldername}/${Volume}.nii.gz "
+				MergeVolumeSTRING="${MergeVolumeSTRING}${StudyFolder}/${Subject}/${AtlasName}/${Volume}.nii.gz "
 			done
-			allvolumes=${CommonAtlasFolder}/${GroupAverageName}_All${Volume}.nii.gz
-			avgvolume=${CommonAtlasFolder}/${GroupAverageName}_Average${Volume}.nii.gz
+			allvolumes=${CommonFolder}/${AtlasName}/${GroupAverageName}_All${Volume}.nii.gz
+			avgvolume=${CommonFolder}/${AtlasName}/${GroupAverageName}_Average${Volume}.nii.gz
 			fslmerge -t ${allvolumes} ${MergeVolumeSTRING}
 			${Caret7_Command} -volume-label-import ${allvolumes} ${FreeSurferLabels} ${allvolumes} -drop-unused-labels
 			${Caret7_Command} -volume-reduce ${allvolumes} MODE ${avgvolume}
@@ -292,8 +291,7 @@ done
 
 # Make Average Surfaces and Surface Data
 log_Msg "Make Average Surfaces and Surface Data"
-offset=0
-for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+for AtlasName in "${Atlas[@]}" ; do
 	for Hemisphere in L R ; do
 		if [ ${Hemisphere} = "L" ] ; then
 			Structure="CORTEX_LEFT"
@@ -303,42 +301,41 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 
 		# Copying of some atlas files
 		file1=${SurfaceAtlasDIR}/fsaverage.${Hemisphere}_LR.spherical_std.${HighResMesh}k_fs_LR.surf.gii
-		file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii
+		file2=${CommonFolder}/${AtlasName}/${GroupAverageName}.${Hemisphere}.sphere.${HighResMesh}k_fs_LR.surf.gii
 		cp ${file1} ${file2}
 
 		file1=${SurfaceAtlasDIR}/${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
-		file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
+		file2=${CommonFolder}/${AtlasName}/${GroupAverageName}.${Hemisphere}.atlasroi.${HighResMesh}k_fs_LR.shape.gii
 		cp ${file1} ${file2}
 
 		file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
-		file2=${CommonAtlasFolder}/${GroupAverageName}.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
+		file2=${CommonFolder}/${AtlasName}/${GroupAverageName}.${Hemisphere}.flat.${HighResMesh}k_fs_LR.surf.gii
 		if [ -e ${file1} ] ; then
 			cp ${file1} ${file2}
 
-			spec_file=${CommonAtlasFolder}/${GroupAverageName}${SpecRegSTRING}.${HighResMesh}k_fs_LR.wb.spec
+			spec_file=${CommonFolder}/${AtlasName}/${GroupAverageName}${SpecRegSTRING}.${HighResMesh}k_fs_LR.wb.spec
 			surf_file=${file2}
 			log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 		fi
 
-		i=$((1 + offset))
+		i=1
 		for LowResMesh in ${LowResMeshes} ; do
 			log_Msg "LowResMesh: ${LowResMesh}"
-			CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
 			file1=${SurfaceAtlasDIR}/${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
-			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
+			file2=${CommonFolder}/${AtlasName}/fsaverage_${LowResMesh}k/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
 			cp ${file1} ${file2}
 
 			file1=${GrayordinatesSpaceDIR}/${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+			file2=${CommonFolder}/${AtlasName}/fsaverage_${LowResMesh}k/${GroupAverageName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
 			cp ${file1} ${file2}
 
 			file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
-			file2=${CommonFolder}/${GroupAverageName}.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
+			file2=${CommonFolder}/${AtlasName}/fsaverage_${LowResMesh}k/${GroupAverageName}.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
 			if [ -e ${file1} ] ; then
 				cp ${file1} ${file2}
 
-				spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${LowResMesh}k_fs_LR.wb.spec
+				spec_file=${CommonFolder}/${AtlasName}/fsaverage_${LowResMesh}k/${GroupAverageName}${SpecRegSTRING}.${LowResMesh}k_fs_LR.wb.spec
 				surf_file=${file2}
 				log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
 				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
@@ -349,6 +346,8 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 
 		# Average the actual surfaces across subjects
 		for Mesh in ${HighResMesh} ${LowResMeshes} ; do
+		    CommonAtlasFolder="${StudyFolder}/${GroupAverageName}/${Atlas}"
+
 			if [ $Mesh = ${HighResMesh} ] ; then
 				CommonFolder=${CommonAtlasFolder}
 				Scale="4"
@@ -356,7 +355,7 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 				i=$((1 + offset))
 				for LowResMesh in ${LowResMeshes} ; do
 					if [ ${LowResMesh} = ${Mesh} ] ; then
-						CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
+						CommonFolder=${CommonAtlasFolder}/fsaverage_${LowResMesh}k
 					fi
 					Scale="1"
 					i=$(($i+1))
@@ -373,9 +372,9 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 				SurfaceSTRING=""
 				for Subject in $Subjlist ; do
 					#log_Msg "Subject: ${Subject}"
-					AtlasFolder="${StudyFolder}/${Subject}/${foldername}"
+					AtlasFolder="${StudyFolder}/${Subject}/${AtlasName}"
 					if [ $Mesh = ${HighResMesh} ] ; then
-						if [[ "$CommonAtlasFolder" == */MNINonLinear ]]; then
+						if [[ "$AtlasName" == MNINonLinear ]]; then
 							Folder="${AtlasFolder}"
 						else
 							Folder="${AtlasFolder}/fsaverage_LR${Mesh}k"
@@ -388,7 +387,7 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 							fi
 							i=$(($i+1))
 						done
-						DownSampleFolder="${StudyFolder}/${Subject}/${foldername}/${DownSampleFolderName}"
+						DownSampleFolder="${StudyFolder}/${Subject}/${AtlasName}/${DownSampleFolderName}"
 						Folder=${DownSampleFolder}
 					fi
 					SurfaceSTRING=`echo "${SurfaceSTRING} -surf ${Folder}/${Subject}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii "`
@@ -433,21 +432,21 @@ for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
 		done
 
 	done
-	offset=$((offset + $(echo "${LowResMeshes}" | wc -w)))
 done
 
 log_Debug_Msg "Debug Point 1"
-offset=0
 # Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
-for CommonAtlasFolder in "${CommonAtlasFolders[@]}" ; do
+for AtlasName in "${Atlas[@]}" ; do
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
+		CommonAtlasFolder="${StudyFolder}/${GroupAverageName}/${Atlas}"
+
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
 		else
 			i=$((1 + offset))
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
-					CommonFolder=$(echo "${CommonDownSampleFolders}" | awk -v i="${i}" '{print $i}')
+					CommonFolder=${CommonAtlasFolder}/fsaverage_${LowResMesh}k
 				fi
 				i=$(($i+1))
 			done
