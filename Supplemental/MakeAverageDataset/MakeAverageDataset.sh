@@ -323,19 +323,19 @@ for AtlasName in "${Atlas[@]}" ; do
 		for LowResMesh in ${LowResMeshes} ; do
 			log_Msg "LowResMesh: ${LowResMesh}"
 			file1=${SurfaceAtlasDIR}/${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
-			file2=${CommonAtlasFolder}/fsaverage_${LowResMesh}k/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
+			file2=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k/${GroupAverageName}.${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
 			cp ${file1} ${file2}
 
 			file1=${GrayordinatesSpaceDIR}/${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
-			file2=${CommonAtlasFolder}/fsaverage_${LowResMesh}k/${GroupAverageName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
+			file2=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k/${GroupAverageName}.${Hemisphere}.atlasroi.${LowResMesh}k_fs_LR.shape.gii
 			cp ${file1} ${file2}
 
 			file1=${SurfaceAtlasDIR}/colin.cerebral.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
-			file2=${CommonAtlasFolder}/fsaverage_${LowResMesh}k/${GroupAverageName}.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
+			file2=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k/${GroupAverageName}.${Hemisphere}.flat.${LowResMesh}k_fs_LR.surf.gii
 			if [ -e ${file1} ] ; then
 				cp ${file1} ${file2}
 
-				spec_file=${CommonAtlasFolder}/fsaverage_${LowResMesh}k/${GroupAverageName}${SpecRegSTRING}.${LowResMesh}k_fs_LR.wb.spec
+				spec_file=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k/${GroupAverageName}${SpecRegSTRING}.${LowResMesh}k_fs_LR.wb.spec
 				surf_file=${file2}
 				log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
 				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
