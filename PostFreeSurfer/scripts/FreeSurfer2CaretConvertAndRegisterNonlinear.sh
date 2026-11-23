@@ -95,7 +95,7 @@ log_Msg "GrayordinatesResolutions: ${GrayordinatesResolutions}"
 # Determine the FreeSurfer version that produced these surfaces, as recorded in
 # the subject's build-stamp.txt (not the currently-loaded FREESURFER_HOME). Some
 # operations below depend on the FreeSurfer version used to generate the data.
-validate_freesurfer_version "$T1wFolder"/"$Session"/scripts/build-stamp.txt
+validate_freesurfer_version "$FreeSurferFolder"/scripts/build-stamp.txt
 
 #Make some folders for this and later scripts
 if [ ! -e "$T1wFolder"/"$NativeFolder" ] ; then
