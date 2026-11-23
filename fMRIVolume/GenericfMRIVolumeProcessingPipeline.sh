@@ -596,6 +596,7 @@ fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
 # This code is a function because it will be reused later to set UseBiasFieldAtlasSpace in longitudinal mode, 
 # after OneStepResampling completed and the bias field has been computed
+# in longitudinal mode, the value of "fMRIFolder" gets changed later on
 function SetUseBiasFieldAtlasSpace() {
     # Set UseBiasFieldAtlasSpace variable, and error check BiasCorrection variable
 # (needs to go after "Naming Conventions" rather than the the initial argument parsing)
