@@ -29,7 +29,7 @@ if [ -z "${HCPPIPEDIR}" ]; then
   exit 1
 fi
 
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+source "${HCPPIPEDIR}/global/scripts/log.shlib" "$@"         # Debugging functions; also sources log.shlib
 source ${HCPPIPEDIR}/global/scripts/opts.shlib                 # Command line option functions
 source ${HCPPIPEDIR}/global/scripts/fsl_version.shlib          # Function for getting FSL version
 
@@ -307,17 +307,9 @@ else
 fi
 
 # Edit template.fsf and place it in LevelTwoFEATDir
-cat "$LevelTwoFsfFile" | sed "s/_hp200_s4/${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}/g" > "${LevelTwoFEATDir}/design.fsf"
+cp "$LevelTwoFsfFile" "${LevelTwoFEATDir}/design.fsf"
+sed -i "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelTwoFEATDir}\"|" ${LevelTwoFEATDir}/design.fsf
 
-# Set the actual Level2 output directory.
-sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelTwoFEATDir}\"|" ${LevelTwoFEATDir}/design.fsf
-
-# Record the actual Level1 input folders in run order.
-i=1
-for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
-    sed -i -e "s|^set feat_files(${i}) .*|set feat_files(${i}) \"${LevelOneFEATDir}\"|" ${LevelTwoFEATDir}/design.fsf
-    i=$(($i+1))
-done
 
 # Make additional design files required by flameo
 log_Msg "Make design files"
