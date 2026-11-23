@@ -436,7 +436,7 @@ log_Debug_Msg "Debug Point 1"
 # Convert the L/R std and uncertainty metric files (.shape.gii) to cifti (.dscalar.nii)
 for AtlasName in "${Atlas[@]}" ; do
 	for Mesh in ${HighResMesh} ${LowResMeshes} ; do
-		CommonAtlasFolder="${StudyFolder}/${GroupAverageName}/${Atlas}"
+		CommonAtlasFolder="${StudyFolder}/${GroupAverageName}/${AtlasName}"
 
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
