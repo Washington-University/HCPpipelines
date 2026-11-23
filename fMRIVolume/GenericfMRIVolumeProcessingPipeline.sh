@@ -529,6 +529,7 @@ if (( IsLongitudinal )); then
     fi
     if [ -n "$fMRIReference" ] && [ "$fMRIReference" != "NONE" ]; then
         log_Warn "fmri reference is used during the initial cross-sectional run on a timepoint, but irrelevant (and therefore the argument is ignored) during the subsequent longitudinal call on the same timepoint."
+        fMRIReference="NONE"
     fi
 fi
 
@@ -588,10 +589,6 @@ JacobianOut="Jacobian"
 SessionFolder="$Path"/"$Session"
 SessionFolderLong="$Path"/"$SessionLong"
 
-#note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
-#this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
-sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
 # This code is a function because it will be reused later to set UseBiasFieldAtlasSpace in longitudinal mode, 
@@ -599,31 +596,36 @@ fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 # in longitudinal mode, the value of "fMRIFolder" gets changed later on
 function SetUseBiasFieldAtlasSpace() {
     # Set UseBiasFieldAtlasSpace variable, and error check BiasCorrection variable
-# (needs to go after "Naming Conventions" rather than the the initial argument parsing)
-    sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-case "$BiasCorrection" in
-    NONE)
+    # (needs to go after "Naming Conventions" rather than the the initial argument parsing)
+
+    #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
+    #this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
+    local sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+    case "$BiasCorrection" in
+        NONE)
             UseBiasFieldAtlasSpace=""
-        ;;
-    LEGACY)
+            ;;
+        LEGACY)
             UseBiasFieldAtlasSpace="${fMRIFolder}/${BiasFieldAtlasSpace}.${FinalfMRIResolution}"
-        ;;
-    SEBASED)
-        if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
-        then
-            log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
-        fi
+            ;;
+        SEBASED)
+            if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
+            then
+                log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
+            fi
             UseBiasFieldAtlasSpace="$sebasedBiasFieldAtlasSpace"
-        ;;
-    "")
-        log_Err_Abort "--biascorrection option not specified"
-        ;;
-    *)
-        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
-        ;;
-esac
+            ;;
+        "")
+            log_Err_Abort "--biascorrection option not specified"
+            ;;
+        *)
+            log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
+            ;;
+    esac
 }
+#This call is for validation of the $BiasCorrection value, to fail early on invalid value.
 SetUseBiasFieldAtlasSpace
+
 # ------------------------------------------------------------------------------
 #  Compliance check of Legacy Style Data options
 # ------------------------------------------------------------------------------
@@ -1044,7 +1046,6 @@ if (( IsLongitudinal )); then
     Session="$SessionLong"
     AtlasSpaceFolder="$AtlasSpaceFolderLong"
     ResultsFolder="$ResultsFolderLong"
-    SetUseBiasFieldAtlasSpace
 fi
 
 # Ensure multi-echo directory is set up for all RunModes
