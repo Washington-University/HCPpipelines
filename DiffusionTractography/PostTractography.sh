@@ -28,20 +28,23 @@ opts_AddOptional '--cleanup' 'cleanup' 'bool' "indicate if you want to cleanup t
 
 
 opts_ParseArguments "$@"
+
+whim=$(opts_StringToBool "$whim") 
+cleanup=$(opts_StringToBool "$cleanup")
+
+
 if [[ "$volspace" != "T1w" && "$volspace" != "MMORFNonLinear" ]]; then
     log_Err_Abort "--volume-space must be T1w or MMORFNonLinear"
 fi
 
-if [[ "$volspace" == "T1w" && -n "$WhimMask" ]]; then
-    log_Err_Abort "--whimmask cannot be used when --volume-space is T1w, otherwise we recommend tracting in MMORFNonLinear space for better inter-subject alignment"
+if [[ "$volspace" == "T1w" && "$whim" ]]; then
+    log_Err_Abort "--whimmask cannot be used when --volume-space is T1w, because rigid alignment is not sufficient for a meaningful human cross-subject white matter space"
 fi
 
-if [[ "$volspace" == "MMORFNonLinear" && -z "$WhimMask" ]]; then
-    log_Err_Abort "--whimmask must be provided when --volume-space is MMORFNonLinear, otherwise we recommend tracting in native space to avoid distortions"
+if [[ "$volspace" == "MMORFNonLinear" && "$whim" ]]; then
+    log_Err_Abort "--whimmask must be provided when --volume-space is MMORFNonLinear, so that WHIM can allow combining data across subjects"
 fi
 
-whim=$(opts_StringToBool "$whim") 
-cleanup=$(opts_StringToBool "$cleanup")
 
 if ((pipedirguessed))
 then
