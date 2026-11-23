@@ -681,7 +681,7 @@ for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 			i=1
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
-					CommonFolder=`echo ${CommonDownSampleFolders} | cut -d " " -f ${i}`
+					CommonFolder=${CommonAtlasFolder}/fsaverage_LR${Mesh}k
 				fi
 				i=$(($i+1))
 			done
