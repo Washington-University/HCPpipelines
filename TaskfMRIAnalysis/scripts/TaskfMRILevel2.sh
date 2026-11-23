@@ -151,19 +151,19 @@ fi
 
 # Determine whether to run Volume, and set strings used for filenaming
 if [ "$VolumeBasedProcessing" = "YES" ] ; then
-        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then #fix indentations below
-	runVolume=true;
-	runDense=false;
-	ExtensionList="nii.gz "
-	ScalarExtensionList="volume.dscalar.nii "
-	Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses
-	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
-        else
-	runVolume=true;
-	ExtensionList="${ExtensionList}nii.gz "
-	ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
-	Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
-	log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
+			runVolume=true;
+			runDense=false;
+			ExtensionList="nii.gz "
+			ScalarExtensionList="volume.dscalar.nii "
+			Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses
+			log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+				else
+			runVolume=true;
+			ExtensionList="${ExtensionList}nii.gz "
+			ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
+			Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
+			log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
         fi
 fi
 

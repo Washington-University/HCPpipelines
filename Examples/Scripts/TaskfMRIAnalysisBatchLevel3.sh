@@ -176,7 +176,7 @@ fi
 # Tokens: {StudyFolder}, {Subject}, {Task}, {Run}, {NumSubjects}
 # Use an absolute path or a pattern beginning with {StudyFolder}.
 
-LevelThreeFsfPattern="AbsolutePathToFsfFolder/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
+LevelThreeFsfPattern="PathToFsfFolder/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
 LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3" 
 
 # Requirements for this script

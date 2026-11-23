@@ -74,6 +74,33 @@ defaultopt() {
     echo $1
 }
 
+level2_cifti_extension() {
+    local analysis="$1"
+    local copedir="$2"
+    local extension
+    local -a extensions
+
+    case "$analysis" in
+        GrayordinatesStats) extensions=(nii dtseries.nii) ;;
+        HippocampusStats)   extensions=(dtseries.nii) ;;
+        ParcellatedStats)   extensions=(nii) ;;
+    esac
+
+    for extension in "${extensions[@]}"; do
+        if [[ -f "${copedir}/mask.${extension}" &&
+              -f "${copedir}/cope1.${extension}" &&
+              -f "${copedir}/varcope1.${extension}" &&
+              -f "${copedir}/tdof_t1.${extension}" ]]; then
+            printf '%s\n' "$extension"
+            return 0
+        fi
+    done
+
+    printf 'ERROR: No complete Level 2 CIFTI set in %s (checked suffixes: %s)\n' \
+        "$copedir" "${extensions[*]}" >&2
+    return 1
+}
+
 # Relabel dentate as cortex for FSL, or restore the dentate labels.
 # Rebuild as scalar CIFTI; each input map remains a separate output map.
 relabel_hippocampal_cifti() {
@@ -378,19 +405,8 @@ for Analysis in ${Analyses} ; do
 
       ## Subsection specific to CIFTI analysis
       if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" || "$Analysis" = "HippocampusStats" ]] ; then
-        if [ "$Analysis" = "HippocampusStats" ] ; then
-          InputExtension="dtseries.nii"
-        else
-          InputExtension="nii"
-        fi
-        ## Confirm that the four required Level2 CIFTIs exist
-        for File in {mask,cope1,varcope1,tdof_t1} ; do
-          cifti_in=${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/${File}.${InputExtension}
-          if [ ! -e ${cifti_in} ] ; then
-            echo "ERROR: ${cifti_in} does not exist"
-            exit -1
-          fi
-        done
+        copedir="${LevelTwoFEATDir}/${Analysis}/cope${i}.feat"
+        InputExtension=$(level2_cifti_extension "$Analysis" "$copedir") || exit 1
 
       ## Subsection specific to Volume analysis
       elif [ "$Analysis" = "StandardVolumeStats" ] ; then
@@ -435,7 +451,8 @@ for Analysis in ${Analyses} ; do
         DOFMERGE="${DOFMERGE} ${LevelThreeFEATDir}/${Analysis}/${i}/${j}/tdof_t1.nii.gz"
       else
         LevelTwoFEATDir=`echo ${LevelTwoFEATDirSTRING} | cut -d " " -f $j`
-        copedir=${LevelTwoFEATDir}/${Analysis}/cope${i}.feat
+        copedir="${LevelTwoFEATDir}/${Analysis}/cope${i}.feat"
+        InputExtension=$(level2_cifti_extension "$Analysis" "$copedir") || exit 1
         MASKMERGE="${MASKMERGE} -cifti ${copedir}/mask.${InputExtension}"
         COPEMERGE="${COPEMERGE} -cifti ${copedir}/cope1.${InputExtension}"
         VARCOPEMERGE="${VARCOPEMERGE} -cifti ${copedir}/varcope1.${InputExtension}"

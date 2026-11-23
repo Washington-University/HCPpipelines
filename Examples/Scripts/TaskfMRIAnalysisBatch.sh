@@ -1,5 +1,4 @@
 #!/bin/bash 
-set -ue
 
 get_batch_options() {
     local arguments=("$@")
@@ -115,7 +114,7 @@ Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} o
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
 RegNames="NONE" # Use NONE to use the default surface registration
-ProcSTRING="NONE" #Any preprocessing beyond CIFTI mapping and surface registration, e.g. spatial and temporal ICA cleanup or NONE
+ProcSTRING="hp0_clean_rclean_tclean" #Any preprocessing beyond CIFTI mapping and surface registration, e.g. spatial and temporal ICA cleanup or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
 HippocampalOutput="YES" # Set to YES to also run hippocampal analysis
@@ -139,6 +138,7 @@ if [ -n "${command_line_specified_subj}" ]; then
 fi
 
 Subjlist=${Subjlist//@/ }
+Subjlist=${Subjlist//$'\n'/ }
 read -r -a Subjects <<< "$Subjlist"
 NumSubjects=${#Subjects[@]}
 
