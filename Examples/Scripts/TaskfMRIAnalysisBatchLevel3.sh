@@ -286,11 +286,6 @@ do
                             ExcludedSubjectList=$(IFS=@; echo "${ExcludedSubjects[*]}")
                         fi
 
-                        AnalysisLabel="${LevelTwoTask}${DesignString}${TemporalFilterString}_s${FinalSmoothingFWHM}${RegString}${ProcSuffix}${ParcellationString}"
-                        DesignFolder="${LevelThreeOutputFolder}/FilteredDesigns/${AnalysisLabel}"
-                        mkdir -p "$DesignFolder"
-                        LevelThreeFsf="${DesignFolder}/${LevelTwoTask}_level3_${NumSubjects}subjects.fsf"
-                        write_filtered_fsf "$OriginalLevelThreeFsf" "$LevelThreeFsf" "$NumSubjects"
                         echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects}/${RequestedNumSubjects} subjects"
                         "${HCPPIPEDIR}/global/scripts/captureoutput.sh" \
                             "${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRILevel3.sh" \
@@ -299,7 +294,6 @@ do
                             --path="$StudyFolder" \
                             --subjectlist="$SubjectList" \
                             --groupfolder="$LevelThreeOutputFolder" \
-                            --lvl3fsf="$LevelThreeFsf" \
                             --lvl2task="$LevelTwoTask" \
                             --lvl2fsf="$LevelTwoFSF" \
                             --fsf-design="$FsfDesign" \

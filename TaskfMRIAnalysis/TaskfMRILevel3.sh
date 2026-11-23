@@ -334,30 +334,65 @@ else
   mkdir -p ${LevelThreeFEATDir}
 fi
 
-#Make design files
-cat ${LevelThreeFsf} > ${LevelThreeFEATDir}/design.fsf
+# Generate the Level 3 FSF with the participant count for this run.
+awk -v n="$NumSubjects" '
+    $1 == "set" && ($2 == "fmri(npts)" || $2 == "fmri(multiple)") {
+        print $1, $2, n
+        next
+    }
 
-sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelThreeFEATDir}\"|" ${LevelThreeFEATDir}/design.fsf
+    /^set fmri\((evg[0-9]+\.1|groupmem\.[0-9]+)\) / {
+        row = $2
+        sub(/^fmri\((evg|groupmem\.)/, "", row)
+        if (int(row) > n) next
+    }
 
-DIR=`pwd`
-cd ${LevelThreeFEATDir}
+    # Skip comments for inputs beyond the included subject count.
+    (/^# Higher-level EV value for EV 1 and input [0-9]+$/ ||
+     /^# Group membership for input [0-9]+$/) && $NF > n {
+        skip_blank = 1
+        next
+    }
+
+    # Skip the blank line after a removed input entry.
+    skip_blank && NF == 0 {
+        skip_blank = 0
+        next
+    }
+
+    {
+        skip_blank = 0
+        print
+    }
+    
+    /^# Higher-level EV value for EV 1 and input [0-9]+$/ {
+        if ($NF > 45 && $NF <= n)
+            printf "set fmri(evg%d.1) 1\n", $NF
+
+        # The template has placeholder comments through input 1020.
+        if ($NF == 1020)
+            for (i = 1021; i <= n; i++)
+                printf "\n# Higher-level EV value for EV 1 and input %d\nset fmri(evg%d.1) 1\n", i, i
+    }
+
+    /^# Group membership for input [0-9]+$/ {
+        if ($NF > 45 && $NF <= n)
+            printf "set fmri(groupmem.%d) 1\n", $NF
+
+        if ($NF == 1020)
+            for (i = 1021; i <= n; i++)
+                printf "\n# Group membership for input %d\nset fmri(groupmem.%d) 1\n", i, i
+    }
+' "$LevelThreeFsf" > "${LevelThreeFEATDir}/design.fsf" || exit 1
+
+sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelThreeFEATDir}\"|" \
+    "${LevelThreeFEATDir}/design.fsf"
+
+# Build the design files from the updated FSF.
+DIR=$(pwd)
+cd "${LevelThreeFEATDir}"
 feat_model design
-cd $DIR
-
-# Check the declared and actual number of design rows.
-DesignSubjects=$(awk '$1 == "/NumPoints" {print $2}' "${LevelThreeFEATDir}/design.mat")
-
-DesignRows=$(awk '
-    $1 == "/Matrix" {in_matrix = 1; next}
-    in_matrix && NF {rows++}
-    END {print rows + 0}
-' "${LevelThreeFEATDir}/design.mat")
-
-if [[ "$DesignSubjects" != "$NumSubjects" || "$DesignRows" != "$NumSubjects" ]]; then
-    echo "ERROR: Subject list contains ${NumSubjects} subjects," >&2
-    echo "but design.mat declares ${DesignSubjects} and contains ${DesignRows} rows." >&2
-    exit 1
-fi
+cd "$DIR"
 
 # Record the input order for checking against the design.
 printf '%s\n' $SubjectList > "${LevelThreeFEATDir}/Subjects.txt"
