@@ -352,7 +352,7 @@ for AtlasName in "${Atlas[@]}" ; do
 				CommonFolder=${CommonAtlasFolder}
 				Scale="4"
 			else
-				i=$((1 + offset))
+				i=1
 				for LowResMesh in ${LowResMeshes} ; do
 					if [ ${LowResMesh} = ${Mesh} ] ; then
 						CommonFolder=${CommonAtlasFolder}/fsaverage_${LowResMesh}k
@@ -380,7 +380,7 @@ for AtlasName in "${Atlas[@]}" ; do
 							Folder="${AtlasFolder}/fsaverage_LR${Mesh}k"
 						fi
 					else
-						i=$((1 + offset))
+						i=1
 						for LowResMesh in ${LowResMeshes} ; do
 							if [ ${LowResMesh} = ${Mesh} ] ; then
 								DownSampleFolderName="fsaverage_LR${Mesh}k"
@@ -443,7 +443,7 @@ for AtlasName in "${Atlas[@]}" ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
 		else
-			i=$((1 + offset))
+			i=1
 			for LowResMesh in ${LowResMeshes} ; do
 				if [ ${LowResMesh} = ${Mesh} ] ; then
 					CommonFolder=${CommonAtlasFolder}/fsaverage_${LowResMesh}k
@@ -468,7 +468,6 @@ for AtlasName in "${Atlas[@]}" ; do
 			done
 		done
 	done
-	offset=$((offset + $(echo "${LowResMeshes}" | wc -w)))
 done
 
 #Surface-only data is stored in the MNINonLinear folder. Currently no plans to create VA files in MMORF space.
