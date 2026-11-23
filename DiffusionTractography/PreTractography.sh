@@ -55,11 +55,11 @@ if [[ "$volspace" != "T1w" && "$volspace" != "MMORFNonLinear" ]]; then
 fi
 
 if [[ "$volspace" == "T1w" && -n "$WhimMask" ]]; then
-    log_Err_Abort "--whimmask cannot be used when --volume-space is T1w, otherwise we recommend tracting in MMORFNonLinear space for better inter-subject alignment"
+    log_Err_Abort "--whimmask cannot be used when --volume-space is T1w, because rigid alignment is not sufficient for a meaningful human cross-subject white matter space"
 fi
 
 if [[ "$volspace" == "MMORFNonLinear" && -z "$WhimMask" ]]; then
-    log_Err_Abort "--whimmask must be provided when --volume-space is MMORFNonLinear, otherwise we recommend tracting in native space to avoid distortions"
+    log_Err_Abort "--whimmask must be provided when --volume-space is MMORFNonLinear, so that WHIM can allow combining data across subjects"
 fi
 
 
