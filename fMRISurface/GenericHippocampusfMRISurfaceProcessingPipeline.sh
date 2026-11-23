@@ -60,10 +60,6 @@ opts_AddOptional '--target_mesh' 'TargetMesh' 'string' "target mesh resolution. 
 
 opts_ParseArguments "$@"
 
-if [[ "${doGoodVoxels}" != "YES" && "${doGoodVoxels}" != "NO" ]]; then
-    log_Err_Abort "Invalid --goodvoxel value '${doGoodVoxels}'. Use YES or NO."
-fi
-
 if ((pipedirguessed))
 then
     log_Err_Abort "HCPPIPEDIR is not set; first source your edited copy of Examples/Scripts/SetUpHCPPipeline.sh"
@@ -80,6 +76,7 @@ opts_ShowValues
 log_Check_Env_Var HCPPIPEDIR
 log_Check_Env_Var FSLDIR
 log_Check_Env_Var CARET7DIR
+log_Check_Env_Var HCPPIPEDIR_fMRISurf
 
 HCPPIPEDIR_fMRISurf="${HCPPIPEDIR}/fMRISurface/scripts"
 
@@ -115,6 +112,9 @@ if [ ! -f "${SBRef}" ]; then
     log_Err_Abort "Cannot find selected SBRef file: ${SBRef}"
 fi
 
+if [[ "${doGoodVoxels}" != "YES" && "${doGoodVoxels}" != "NO" ]]; then
+    log_Err_Abort "Invalid --goodvoxel value '${doGoodVoxels}'. Use YES or NO."
+fi
 
 log_Msg "Selected fMRI file: ${VolumefMRI}"
 log_Msg "Selected SBRef file: ${SBRef}"
