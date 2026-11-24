@@ -23,7 +23,7 @@ opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to ge
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddMandatory '--bpxdir' 'BedpostXFolder' 'folder that stores bedpostX results or whim results' 'BEDPOSTX volspace or whim folder'
 opts_AddMandatory '--matrix' 'Matrix' '1 or 3' 'Matrix 1 or Matrix 3 seeding strategy'
-opts_AddMandatory '--group' 'whim' 'TRUE or FALSE' "Indicate if you tractography for averaging or just an individual. TRUE if this is for averaging"
+opts_AddMandatory '--group' 'whim' 'TRUE or FALSE' "Whether WHIM options were used in the Pre- and Tractography pipelines for this volume space"
 opts_AddOptional '--cleanup' 'cleanup' 'TRUE or FALSE' "indicate if you want to cleanup the intermediate files. Default is FALSE" "FALSE"
 
 
