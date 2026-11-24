@@ -204,7 +204,6 @@ log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
 #WARNING: do not include a trailing slash on elements, we do string manipulation below
 Atlas=("MNINonLinear" "MMORFNonLinear")
-CommonAtlasFolder="${CommonFolder}/MNINonLinear"
 CommonDownSampleFolders=""
 for DownSampleFolderName in ${DownSampleFolderNames} ; do
 	for AtlasName in "${Atlas[@]}" ; do
