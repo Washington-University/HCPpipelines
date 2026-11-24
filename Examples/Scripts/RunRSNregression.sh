@@ -71,6 +71,7 @@ ICATemplateName="Path2File/rfMRI_PCA.ica_dREPLACEDIM_ROW_vn/melodic_oIC.dscalar.
 OutputSpectra="4800" # Set to 0 to omit spectra
 FixLegacyBias="NO"
 ScaleFactor="0.01"
+Normalization="YES" # "YES" for default analysis. If performing FSL's MIGP analysis with weighted regression, use "NO"
 WF="0"
 DoZ="NO" #set to YES to generate Z stat and ZMM (mixture model Z stat) output files
 MatlabMode="1"
@@ -134,10 +135,11 @@ for Subject in $Subjlist ; do
         --scale-factor="$ScaleFactor" \
         --wf="$WF" \
         --matlab-run-mode="$MatlabMode" \
+        --normalization="$Normalization" \
         --hippocampal-output="$HippocampalOutput" \
         --hippocampal-mesh="$HippMesh"
     
     # Interactive debugging setup, matching the Examples/Scripts wrappers.
-    echo "set -- --study-folder=$StudyFolder --subject=$Subject --group-maps=$GroupMaps --subject-timeseries=$fMRINames --surf-reg-name=$RegName --low-res=$LowResMesh --proc-string=$ProcString --method=$Method --output-string=$OutString --output-spectra=$OutputSpectra --volume-template-cifti=\"$VolumeTemplateCIFTI\" --output-z=$DoZ --low-ica-dims=$LowICADims --low-ica-template-name=$ICATemplateName --fix-legacy-bias=$FixLegacyBias --scale-factor=$ScaleFactor --wf=$WF --matlab-run-mode=$MatlabMode --hippocampal-output=$HippocampalOutput --hippocampal-mesh=$HippMesh"
+    echo "set -- --study-folder=$StudyFolder --subject=$Subject --group-maps=$GroupMaps --subject-timeseries=$fMRINames --surf-reg-name=$RegName --low-res=$LowResMesh --proc-string=$ProcString --method=$Method --output-string=$OutString --output-spectra=$OutputSpectra --volume-template-cifti=\"$VolumeTemplateCIFTI\" --output-z=$DoZ --low-ica-dims=$LowICADims --low-ica-template-name=$ICATemplateName --fix-legacy-bias=$FixLegacyBias --scale-factor=$ScaleFactor --wf=$WF --normalization=$Normalization --matlab-run-mode=$MatlabMode --hippocampal-output=$HippocampalOutput --hippocampal-mesh=$HippMesh"
 done
 

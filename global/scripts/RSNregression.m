@@ -1,5 +1,5 @@
 function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, varargin)
-    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'HippInputFile' 'HippInputVNFile' 'OutputHippBeta' 'OutputHippZ' 'OutputHippZMM' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputZMM' 'OutputVolBeta' 'OutputVolZ' 'OutputVolZMM' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma' 'WF'});
+    optional = myargparse(varargin, {'GroupMaps' 'tICAMM' 'VAWeightsName' 'VolInputFile' 'VolInputVNFile' 'VolCiftiTemplate' 'HippInputFile' 'HippInputVNFile' 'OutputHippBeta' 'OutputHippZ' 'OutputHippZMM' 'OldBias' 'OldVolBias' 'GoodBCFile' 'VolGoodBCFile' 'SpectraParams' 'OutputZ' 'OutputZMM' 'OutputVolBeta' 'OutputVolZ' 'OutputVolZMM' 'SurfString' 'ScaleFactor' 'WRSmoothingSigma' 'WF' 'Normalization'});
     %InputFile - text file containing filenames of timeseries to concatenate
     %InputVNFile - text file containing filenames of the variance maps of each input
     %GroupMaps - file name of maps to use as a template
@@ -59,6 +59,10 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         oldBC = ciftiopen(optional.OldBias, wbcommand);
     end
 
+    Normalization = optional.Normalization;
+    if ~any(strcmp(Normalization, {'YES', 'NO'}))
+        error('Normalization must be YES or NO');
+    end    
     %tighten doVol detection to check if volume outputs are asked for?
     doVol = false;
     doVolFixBC = false;
@@ -344,8 +348,14 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         else
             dof = size(NODEtsnorm, 1) - size(NODEtsnorm, 2) - 1; %Approximate, does not include DOF lost from data cleanup
         end
-        residuals = demean(inputConcat, 2) - betaICA * NODEtsnorm';
-        pN = pinv(NODEtsnorm); dpN = diag(pN * pN')';
+        if strcmp(optional.Normalization, 'YES')
+            residuals = demean(inputConcat, 2) - betaICA * NODEtsnorm';
+            pN = pinv(NODEtsnorm)
+        else
+            residuals = demean(inputConcat, 2) - betaICA * NODEts';
+            pN = pinv(NODEts)
+        end
+        dpN = diag(pN * pN')';
         t = double(betaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
         Z = zeros(size(t));
         %Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)

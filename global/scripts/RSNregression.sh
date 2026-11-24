@@ -43,7 +43,7 @@ opts_AddOptional '--weighted-smoothing-sigma' 'WRSmoothingSigma' 'number' "defau
 opts_AddOptional '--low-ica-dims' 'LowICADims' 'num@num@num...' "when using --method=weighted, the low ICA dimensionality files to use for determining weighting"
 opts_AddOptional '--low-ica-template-name' 'ICATemplateName' 'filename' "filename template where 'REPLACEDIM' will be replaced by each of the --low-ica-dims values in turn to form the low-dim inputs"
 opts_AddOptional '--tICA-mixing-matrix' 'tICAMM' 'filename' "path to a previously computed tICA mixing matrix with matching sICA components"
-
+opts_AddOptional '--normalization' 'Normalization' 'string' "Whether to normalize the temporal regression design (YES or NO)" 'YES'
 #outputs
 opts_AddMandatory '--output-string' 'OutString' 'name' "filename part to describe the outputs, like group_ICA_d127"
 opts_AddOptional '--hippocampal-output' 'HippocampalOutputString' 'YES or NO' "YES generates additional hippocampal RSN maps" 'NO'
@@ -306,7 +306,7 @@ fi
 
 #all arguments happen to be passed to matlab as strings anyway, so we don't need special handling on the script side -- can do argument lists for each matlab mode with the same code
 #SurfString and WRSmoothingSigma are optional to the matlab function (needed only for weighted), but we will always have it, so always providing it is simpler here
-matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma")
+matlab_argarray=("$tempname.input.txt" "$tempname.inputvn.txt" "$Method" "$tempname.params.txt" "$OutBeta" "SurfString" "$SurfString" "WRSmoothingSigma" "$WRSmoothingSigma" "Normalization" "$Normalization")
 if [[ "$Method" != "single" ]]
 then
     matlab_argarray+=("GroupMaps" "$GroupMaps")
