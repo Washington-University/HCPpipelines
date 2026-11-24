@@ -318,7 +318,6 @@ for AtlasName in "${Atlas[@]}" ; do
 			${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 		fi
 
-		i=1
 		for LowResMesh in ${LowResMeshes} ; do
 			log_Msg "LowResMesh: ${LowResMesh}"
 			file1=${SurfaceAtlasDIR}/${Hemisphere}.sphere.${LowResMesh}k_fs_LR.surf.gii
@@ -339,7 +338,6 @@ for AtlasName in "${Atlas[@]}" ; do
 				log_Msg "Adding surf_file to spec_file ('${surf_file}' to '${spec_file}')"
 				${Caret7_Command} -add-to-spec-file ${spec_file} ${Structure} ${surf_file}
 			fi
-			i=$(($i+1))
 
 		done
 
@@ -350,14 +348,8 @@ for AtlasName in "${Atlas[@]}" ; do
 				CommonFolder=${CommonAtlasFolder}
 				Scale="4"
 			else
-				i=1
-				for LowResMesh in ${LowResMeshes} ; do
-					if [ ${LowResMesh} = ${Mesh} ] ; then
-						CommonFolder=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k
-					fi
-					Scale="1"
-					i=$(($i+1))
-				done
+				CommonFolder=${CommonAtlasFolder}/fsaverage_LR${Mesh}k
+				Scale="1"
 			fi
 
 			spec_file=${CommonFolder}/${GroupAverageName}${SpecRegSTRING}.${Mesh}k_fs_LR.wb.spec
@@ -377,14 +369,7 @@ for AtlasName in "${Atlas[@]}" ; do
 							Folder="${AtlasFolder}/fsaverage_LR${Mesh}k"
 						fi
 					else
-						i=1
-						for LowResMesh in ${LowResMeshes} ; do
-							if [ ${LowResMesh} = ${Mesh} ] ; then
-								DownSampleFolderName="fsaverage_LR${Mesh}k"
-							fi
-							i=$(($i+1))
-						done
-						DownSampleFolder="${StudyFolder}/${Subject}/${AtlasName}/${DownSampleFolderName}"
+						DownSampleFolder="${StudyFolder}/${Subject}/${AtlasName}/fsaverage_LR${Mesh}k"
 						Folder=${DownSampleFolder}
 					fi
 					SurfaceSTRING=`echo "${SurfaceSTRING} -surf ${Folder}/${Subject}.${Hemisphere}.${Surface}${RegSTRING}.${Mesh}k_fs_LR.surf.gii "`
@@ -440,13 +425,7 @@ for AtlasName in "${Atlas[@]}" ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
 		else
-			i=1
-			for LowResMesh in ${LowResMeshes} ; do
-				if [ ${LowResMesh} = ${Mesh} ] ; then
-					CommonFolder=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k
-				fi
-				i=$(($i+1))
-			done
+			CommonFolder=${CommonAtlasFolder}/fsaverage_LR${Mesh}k
 		fi
 		for Map in white${RegSTRING}_std white${RegSTRING}_uncertainty midthickness${RegSTRING}_std midthickness${RegSTRING}_uncertainty pial${RegSTRING}_std pial${RegSTRING}_uncertainty ; do
 			PaletteStringOne="MODE_AUTO_SCALE_PERCENTAGE"
@@ -481,13 +460,8 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 	if [ $Mesh = ${HighResMesh} ] ; then
 		CommonFolder=${CommonAtlasFolder}
 	else
-		i=1
-		for LowResMesh in ${LowResMeshes} ; do
-			if [ ${LowResMesh} = ${Mesh} ] ; then
-				CommonFolder=${CommonAtlasFolder}/fsaverage_LR${LowResMesh}k
-			fi
-			i=$(($i+1))
-		done
+
+		CommonFolder=${CommonAtlasFolder}/fsaverage_LR${Mesh}k
 	fi
 	MapMerge=""
 	MNIMapMerge=""
@@ -539,15 +513,8 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 		else
 			# Repeat for the LowResMeshes
 			# Here, all the relevant surfaces should already exist
-			i=1
-			for LowResMesh in ${LowResMeshes} ; do
-				if [ ${LowResMesh} = ${Mesh} ] ; then
-					DownSampleFolderName=fsaverage_LR${LowResMesh}k
-				fi
-				i=$(($i+1))
-			done
-			DownSampleFolder="${StudyFolder}/${Subject}/T1w/${DownSampleFolderName}"
-			MNIDownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/${DownSampleFolderName}"
+			DownSampleFolder="${StudyFolder}/${Subject}/T1w/fsaverage_LR${Mesh}k"
+			MNIDownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${Mesh}k"
 			Folder=${DownSampleFolder}
 			MNIFolder=${MNIDownSampleFolder}
 			for Hemisphere in L R ; do
@@ -598,14 +565,7 @@ for Mesh in ${HighResMesh} ${LowResMeshes} ; do
 			rm ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 		done
 	else
-		i=1
-		for LowResMesh in ${LowResMeshes} ; do
-			if [ ${LowResMesh} = ${Mesh} ] ; then
-				DownSampleFolderName=fsaverage_LR${LowResMesh}k
-			fi
-			i=$(($i+1))
-		done
-		MNIDownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/${DownSampleFolderName}"
+		MNIDownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${Mesh}k"
 		MNIFolder=${MNIDownSampleFolder}
 		rm ${MNIFolder}/${Subject}.midthickness${RegSTRING}_va.${Mesh}k_fs_LR.dscalar.nii
 	fi
@@ -677,13 +637,7 @@ for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 		if [ $Mesh = ${HighResMesh} ] ; then
 			CommonFolder=${CommonAtlasFolder}
 		else
-			i=1
-			for LowResMesh in ${LowResMeshes} ; do
-				if [ ${LowResMesh} = ${Mesh} ] ; then
-					CommonFolder=${CommonAtlasFolder}/fsaverage_LR${Mesh}k
-				fi
-				i=$(($i+1))
-			done
+			CommonFolder=${CommonAtlasFolder}/fsaverage_LR${Mesh}k
 		fi
 		MapMerge=""
 		for Subject in ${Subjlist} ; do
@@ -691,14 +645,7 @@ for Map in ${GreyScaleMaps} ${VideenMaps} ${DistortionMaps} ; do
 			if [ $Mesh = ${HighResMesh} ] ; then
 				Folder=${AtlasFolder}
 			else
-				i=1
-				for LowResMesh in ${LowResMeshes} ; do
-					if [ ${LowResMesh} = ${Mesh} ] ; then
-						DownSampleFolderName=fsaverage_LR${LowResMesh}k
-					fi
-					i=$(($i+1))
-				done
-				DownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/${DownSampleFolderName}"
+				DownSampleFolder="${StudyFolder}/${Subject}/MNINonLinear/fsaverage_LR${Mesh}k"
 				Folder=${DownSampleFolder}
 			fi
 			MapMerge=`echo "${MapMerge} -cifti ${Folder}/${Subject}.${Map}${RegSTRING}.${Mesh}k_fs_LR.dscalar.nii"`
