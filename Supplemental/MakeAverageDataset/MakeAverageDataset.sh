@@ -204,12 +204,6 @@ log_Msg "Build Paths / Make Folders"
 CommonFolder="${StudyFolder}/${GroupAverageName}"
 #WARNING: do not include a trailing slash on elements, we do string manipulation below
 Atlas=("MNINonLinear" "MMORFNonLinear")
-CommonDownSampleFolders=""
-for DownSampleFolderName in ${DownSampleFolderNames} ; do
-	for AtlasName in "${Atlas[@]}" ; do
-		CommonDownSampleFolders="${CommonDownSampleFolders}${CommonFolder}/${AtlasName}/${DownSampleFolderName} "
-	done
-done
 
 if [ ! -e ${CommonFolder} ] ; then
 	mkdir ${CommonFolder}
@@ -218,11 +212,13 @@ for AtlasName in "${Atlas[@]}" ; do
 	mkdir -p ${CommonFolder}/${AtlasName}
 done
 
-for CommonDownSampleFolder in ${CommonDownSampleFolders} ; do
-	if [ ! -e ${CommonDownSampleFolder} ] ; then
-		mkdir ${CommonDownSampleFolder}
-	fi
+
+for LowResMesh in ${LowResMeshes} ; do
+	for AtlasName in "${Atlas[@]}" ; do
+	    mkdir -p ${CommonFolder}/${AtlasName}/fsaverage_LR${LowResMesh}k
+	done
 done
+
 
 # Make Average Volumes
 log_Msg "Make Average Volumes"
