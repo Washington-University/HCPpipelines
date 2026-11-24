@@ -23,8 +23,8 @@ opts_AddMandatory '--volume-space' 'volspace' 'string' "which volume space to ge
 opts_AddMandatory '--diffresmesh' 'DiffResMesh' 'number' 'diffusion res mesh number'
 opts_AddMandatory '--bpxdirs' 'BedpostXFolders' 'path@path' 'BEDPOSTX Folders delimited by @'
 opts_AddMandatory '--regname' 'RegName' 'MSMAll' 'RegName such as MSMAll or MSMSulc'
-opts_AddOptional '--matrix4' 'Matrix4' 'TRUE or FALSE' 'If we are running matrix 4, default TRUE' 'TRUE'
-opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'Matrix3'
+opts_AddOptional '--matrix4' 'Matrix4' 'TRUE or FALSE' 'whether to output matrix 4 (per-fiber-direction counting), default TRUE' 'TRUE'
+opts_AddMandatory '--seeding-strategy' 'SeedingStrategy' 'Matrix3 or Matrix1' 'whether to seed tractography from the gray/white boundary (Matrix1) or from all of white matter (Matrix3)'
 opts_AddOptional '--nsamples' 'nsamples' 'integer' 'number of samples we run per seed, has linear effect on runtime, default 100' '100'
 opts_AddOptional '--nsteps' 'nsteps' 'integer' 'maximum number of steps we take per streamline (each step is 1/4 of pixdim1 of the diffusion data), default 2000' '2000'
 opts_AddOptional '--whim' 'Whim' 'path' "full path to whim folder"
