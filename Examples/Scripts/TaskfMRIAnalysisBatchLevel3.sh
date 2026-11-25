@@ -199,9 +199,9 @@ fi
 # Use an absolute path or a pattern beginning with {StudyFolder}.
 
 
-LevelThreeFsfMode="CUSTOM" # CUSTOM uses a user-supplied design. GROUP_MEAN generates a design for the subjects with Level 2 results, using a single-group mean template.
-LevelThreeFsfPattern="/path/to/fsfs/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
-LevelThreeGroupMeanTemplate="/path/to/templates/Level3GroupMean.fsf"
+LevelThreeFsfMode="GROUP_MEAN" # CUSTOM uses a user-supplied design. GROUP_MEAN generates a design for the subjects with Level 2 results, using a single-group mean template.
+# FSF path pattern used in both CUSTOM and GROUP_MEAN modes.
+LevelThreeFsfPattern="${HOME}/projects/HCPpipelines/Examples/fsf_templates/tfMRI_{Task}{FsfDesign}_level3_45subjects.fsf"
 
 case "$LevelThreeFsfMode" in
     CUSTOM|GROUP_MEAN) ;;
@@ -252,17 +252,15 @@ do
                         LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
                         LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
                         NumSubjects=$RequestedNumSubjects
+                        OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
 
                         if [[ "$LevelThreeFsfMode" == "CUSTOM" ]]; then
-                            OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
                             DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$OriginalLevelThreeFsf")
 
                             if [[ "$DesignSubjects" != "$RequestedNumSubjects" ]]; then
                                 echo "ERROR: Custom FSF count does not match requested subjects: $OriginalLevelThreeFsf" >&2
                                 exit 1
                             fi
-                        else
-                            OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeGroupMeanTemplate" "" "$TaskName" "")
                         fi
 
                         TemporalFilterString=""
@@ -332,7 +330,7 @@ do
                             --path="$StudyFolder" \
                             --subjectlist="$SubjectList" \
                             --groupfolder="$LevelThreeOutputFolder" \
-                            --lvl3fsf="$LevelThreeFsf" \
+                            --lvl3fsf="$OriginalLevelThreeFsf" \
                             --lvl3fsf-mode="$LevelThreeFsfMode" \
                             --lvl2task="$LevelTwoTask" \
                             --lvl2fsf="${LevelTwoFSF}${DesignString}" \

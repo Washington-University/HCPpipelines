@@ -1,0 +1,4510 @@
+
+# FEAT version number
+set fmri(version) 6.00
+
+# Are we in MELODIC?
+set fmri(inmelodic) 0
+
+# Analysis level
+# 1 : First-level analysis
+# 2 : Higher-level analysis
+set fmri(level) 2
+
+# Which stages to run
+# 0 : No first-level analysis (registration and/or group stats only)
+# 7 : Full first-level analysis
+# 1 : Pre-Stats
+# 3 : Pre-Stats + Stats
+# 2 :             Stats
+# 6 :             Stats + Post-stats
+# 4 :                     Post-stats
+set fmri(analysis) 6
+
+# Use relative filenames
+set fmri(relative_yn) 0
+
+# Balloon help
+set fmri(help_yn) 1
+
+# Run Featwatcher
+set fmri(featwatcher_yn) 0
+
+# Cleanup first-level standard-space images
+set fmri(sscleanup_yn) 0
+
+# TR(s)
+set fmri(tr) 3
+
+# Total volumes
+set fmri(npts) 45
+
+# Delete volumes
+set fmri(ndelete) 0
+
+# Perfusion tag/control order
+set fmri(tagfirst) 1
+
+# Number of first-level analyses
+set fmri(multiple) 45
+
+# Higher-level input type
+# 1 : Inputs are lower-level FEAT directories
+# 2 : Inputs are cope images from FEAT directories
+set fmri(inputtype) 1
+
+# Carry out pre-stats processing?
+set fmri(filtering_yn) 0
+
+# Brain/background threshold, %
+set fmri(brain_thresh) 10
+
+# Critical z for design efficiency calculation
+set fmri(critical_z) 5.3
+
+# Noise level
+set fmri(noise) 0.66
+
+# Noise AR(1)
+set fmri(noisear) 0.34
+
+# Post-stats-only directory copying
+# 0 : Overwrite original post-stats results
+# 1 : Copy original FEAT directory for new Contrasts, Thresholding, Rendering
+set fmri(newdir_yn) 0
+
+# Motion correction
+# 0 : None
+# 1 : MCFLIRT
+set fmri(mc) 1
+
+# Spin-history (currently obsolete)
+set fmri(sh_yn) 0
+
+# B0 fieldmap unwarping?
+set fmri(regunwarp_yn) 0
+
+# EPI dwell time (ms)
+set fmri(dwell) 0.7
+
+# EPI TE (ms)
+set fmri(te) 35
+
+# % Signal loss threshold
+set fmri(signallossthresh) 10
+
+# Unwarp direction
+set fmri(unwarp_dir) y-
+
+# Slice timing correction
+# 0 : None
+# 1 : Regular up (0, 1, 2, 3, ...)
+# 2 : Regular down
+# 3 : Use slice order file
+# 4 : Use slice timings file
+# 5 : Interleaved (0, 2, 4 ... 1, 3, 5 ... )
+set fmri(st) 0
+
+# Slice timings file
+set fmri(st_file) ""
+
+# BET brain extraction
+set fmri(bet_yn) 1
+
+# Spatial smoothing FWHM (mm)
+set fmri(smooth) 5
+
+# Intensity normalization
+set fmri(norm_yn) 0
+
+# Perfusion subtraction
+set fmri(perfsub_yn) 0
+
+# Highpass temporal filtering
+set fmri(temphp_yn) 1
+
+# Lowpass temporal filtering
+set fmri(templp_yn) 0
+
+# MELODIC ICA data exploration
+set fmri(melodic_yn) 0
+
+# Carry out main stats?
+set fmri(stats_yn) 1
+
+# Carry out prewhitening?
+set fmri(prewhiten_yn) 1
+
+# Add motion parameters to model
+# 0 : No
+# 1 : Yes
+set fmri(motionevs) 0
+set fmri(motionevsbeta) ""
+set fmri(scriptevsbeta) ""
+
+# Robust outlier detection in FLAME?
+set fmri(robust_yn) 0
+
+# Higher-level modelling
+# 3 : Fixed effects
+# 0 : Mixed Effects: Simple OLS
+# 2 : Mixed Effects: FLAME 1
+# 1 : Mixed Effects: FLAME 1+2
+set fmri(mixed_yn) 2
+
+# Number of EVs
+set fmri(evs_orig) 1
+set fmri(evs_real) 1
+set fmri(evs_vox) 0
+
+# Number of contrasts
+set fmri(ncon_orig) 1
+set fmri(ncon_real) 1
+
+# Number of F-tests
+set fmri(nftests_orig) 0
+set fmri(nftests_real) 0
+
+# Add constant column to design matrix? (obsolete)
+set fmri(constcol) 0
+
+# Carry out post-stats steps?
+set fmri(poststats_yn) 1
+
+# Pre-threshold masking?
+set fmri(threshmask) ""
+
+# Thresholding
+# 0 : None
+# 1 : Uncorrected
+# 2 : Voxel
+# 3 : Cluster
+set fmri(thresh) 3
+
+# P threshold
+set fmri(prob_thresh) 0.05
+
+# Z threshold
+set fmri(z_thresh) 3.29
+
+# Z min/max for colour rendering
+# 0 : Use actual Z min/max
+# 1 : Use preset Z min/max
+set fmri(zdisplay) 0
+
+# Z min in colour rendering
+set fmri(zmin) 2
+
+# Z max in colour rendering
+set fmri(zmax) 8
+
+# Colour rendering type
+# 0 : Solid blobs
+# 1 : Transparent blobs
+set fmri(rendertype) 1
+
+# Background image for higher-level stats overlays
+# 1 : Mean highres
+# 2 : First highres
+# 3 : Mean functional
+# 4 : First functional
+# 5 : Standard space template
+set fmri(bgimage) 1
+
+# Create time series plots
+set fmri(tsplot_yn) 1
+
+# Registration?
+set fmri(reg_yn) 0
+
+# Registration to initial structural
+set fmri(reginitial_highres_yn) 0
+
+# Search space for registration to initial structural
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(reginitial_highres_search) 90
+
+# Degrees of Freedom for registration to initial structural
+set fmri(reginitial_highres_dof) 3
+
+# Registration to main structural
+set fmri(reghighres_yn) 0
+
+# Search space for registration to main structural
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(reghighres_search) 90
+
+# Degrees of Freedom for registration to main structural
+set fmri(reghighres_dof) 6
+
+# Registration to standard image?
+set fmri(regstandard_yn) 1
+
+# Use alternate reference images?
+set fmri(alternateReference_yn) 0
+
+# Standard image
+set fmri(regstandard) "/nrgpackages/tools/fsl/data/standard/MNI152_T1_4mm_brain"
+
+# Search space for registration to standard space
+# 0   : No search
+# 90  : Normal search
+# 180 : Full search
+set fmri(regstandard_search) 90
+
+# Degrees of Freedom for registration to standard space
+set fmri(regstandard_dof) 12
+
+# Do nonlinear registration from structural to standard space?
+set fmri(regstandard_nonlinear_yn) 0
+
+# Control nonlinear warp field resolution
+set fmri(regstandard_nonlinear_warpres) 10 
+
+# High pass filter cutoff
+set fmri(paradigm_hp) 100
+
+# Number of lower-level copes feeding into higher-level analysis
+set fmri(ncopeinputs) 1
+
+# Use lower-level cope 1 for higher-level analysis
+set fmri(copeinput.1) 1
+
+# Add confound EVs text file
+set fmri(confoundevs) 0
+
+# EV 1 title
+set fmri(evtitle1) ""
+
+# Basic waveform shape (EV 1)
+# 0 : Square
+# 1 : Sinusoid
+# 2 : Custom (1 entry per volume)
+# 3 : Custom (3 column format)
+# 4 : Interaction
+# 10 : Empty (all zeros)
+set fmri(shape1) 2
+
+# Convolution (EV 1)
+# 0 : None
+# 1 : Gaussian
+# 2 : Gamma
+# 3 : Double-Gamma HRF
+# 4 : Gamma basis functions
+# 5 : Sine basis functions
+# 6 : FIR basis functions
+set fmri(convolve1) 0
+
+# Convolve phase (EV 1)
+set fmri(convolve_phase1) 0
+
+# Apply temporal filtering (EV 1)
+set fmri(tempfilt_yn1) 0
+
+# Add temporal derivative (EV 1)
+set fmri(deriv_yn1) 0
+
+# Custom EV file (EV 1)
+set fmri(custom1) "dummy"
+
+# Orthogonalise EV 1 wrt EV 0
+set fmri(ortho1.0) 0
+
+# Orthogonalise EV 1 wrt EV 1
+set fmri(ortho1.1) 0
+
+# Higher-level EV value for EV 1 and input 1
+set fmri(evg1.1) 1
+
+# Higher-level EV value for EV 1 and input 2
+set fmri(evg2.1) 1
+
+# Higher-level EV value for EV 1 and input 3
+set fmri(evg3.1) 1
+
+# Higher-level EV value for EV 1 and input 4
+set fmri(evg4.1) 1
+
+# Higher-level EV value for EV 1 and input 5
+set fmri(evg5.1) 1
+
+# Higher-level EV value for EV 1 and input 6
+set fmri(evg6.1) 1
+
+# Higher-level EV value for EV 1 and input 7
+set fmri(evg7.1) 1
+
+# Higher-level EV value for EV 1 and input 8
+set fmri(evg8.1) 1
+
+# Higher-level EV value for EV 1 and input 9
+set fmri(evg9.1) 1
+
+# Higher-level EV value for EV 1 and input 10
+set fmri(evg10.1) 1
+
+# Higher-level EV value for EV 1 and input 11
+set fmri(evg11.1) 1
+
+# Higher-level EV value for EV 1 and input 12
+set fmri(evg12.1) 1
+
+# Higher-level EV value for EV 1 and input 13
+set fmri(evg13.1) 1
+
+# Higher-level EV value for EV 1 and input 14
+set fmri(evg14.1) 1
+
+# Higher-level EV value for EV 1 and input 15
+set fmri(evg15.1) 1
+
+# Higher-level EV value for EV 1 and input 16
+set fmri(evg16.1) 1
+
+# Higher-level EV value for EV 1 and input 17
+set fmri(evg17.1) 1
+
+# Higher-level EV value for EV 1 and input 18
+set fmri(evg18.1) 1
+
+# Higher-level EV value for EV 1 and input 19
+set fmri(evg19.1) 1
+
+# Higher-level EV value for EV 1 and input 20
+set fmri(evg20.1) 1
+
+# Higher-level EV value for EV 1 and input 21
+set fmri(evg21.1) 1
+
+# Higher-level EV value for EV 1 and input 22
+set fmri(evg22.1) 1
+
+# Higher-level EV value for EV 1 and input 23
+set fmri(evg23.1) 1
+
+# Higher-level EV value for EV 1 and input 24
+set fmri(evg24.1) 1
+
+# Higher-level EV value for EV 1 and input 25
+set fmri(evg25.1) 1
+
+# Higher-level EV value for EV 1 and input 26
+set fmri(evg26.1) 1
+
+# Higher-level EV value for EV 1 and input 27
+set fmri(evg27.1) 1
+
+# Higher-level EV value for EV 1 and input 28
+set fmri(evg28.1) 1
+
+# Higher-level EV value for EV 1 and input 29
+set fmri(evg29.1) 1
+
+# Higher-level EV value for EV 1 and input 30
+set fmri(evg30.1) 1
+
+# Higher-level EV value for EV 1 and input 31
+set fmri(evg31.1) 1
+
+# Higher-level EV value for EV 1 and input 32
+set fmri(evg32.1) 1
+
+# Higher-level EV value for EV 1 and input 33
+set fmri(evg33.1) 1
+
+# Higher-level EV value for EV 1 and input 34
+set fmri(evg34.1) 1
+
+# Higher-level EV value for EV 1 and input 35
+set fmri(evg35.1) 1
+
+# Higher-level EV value for EV 1 and input 36
+set fmri(evg36.1) 1
+
+# Higher-level EV value for EV 1 and input 37
+set fmri(evg37.1) 1
+
+# Higher-level EV value for EV 1 and input 38
+set fmri(evg38.1) 1
+
+# Higher-level EV value for EV 1 and input 39
+set fmri(evg39.1) 1
+
+# Higher-level EV value for EV 1 and input 40
+set fmri(evg40.1) 1
+
+# Higher-level EV value for EV 1 and input 41
+set fmri(evg41.1) 1
+
+# Higher-level EV value for EV 1 and input 42
+set fmri(evg42.1) 1
+
+# Higher-level EV value for EV 1 and input 43
+set fmri(evg43.1) 1
+
+# Higher-level EV value for EV 1 and input 44
+set fmri(evg44.1) 1
+
+# Higher-level EV value for EV 1 and input 45
+set fmri(evg45.1) 1
+
+# Higher-level EV value for EV 1 and input 46
+
+# Higher-level EV value for EV 1 and input 47
+
+# Higher-level EV value for EV 1 and input 48
+
+# Higher-level EV value for EV 1 and input 49
+
+# Higher-level EV value for EV 1 and input 50
+
+# Higher-level EV value for EV 1 and input 51
+
+# Higher-level EV value for EV 1 and input 52
+
+# Higher-level EV value for EV 1 and input 53
+
+# Higher-level EV value for EV 1 and input 54
+
+# Higher-level EV value for EV 1 and input 55
+
+# Higher-level EV value for EV 1 and input 56
+
+# Higher-level EV value for EV 1 and input 57
+
+# Higher-level EV value for EV 1 and input 58
+
+# Higher-level EV value for EV 1 and input 59
+
+# Higher-level EV value for EV 1 and input 60
+
+# Higher-level EV value for EV 1 and input 61
+
+# Higher-level EV value for EV 1 and input 62
+
+# Higher-level EV value for EV 1 and input 63
+
+# Higher-level EV value for EV 1 and input 64
+
+# Higher-level EV value for EV 1 and input 65
+
+# Higher-level EV value for EV 1 and input 66
+
+# Higher-level EV value for EV 1 and input 67
+
+# Higher-level EV value for EV 1 and input 68
+
+# Higher-level EV value for EV 1 and input 69
+
+# Higher-level EV value for EV 1 and input 70
+
+# Higher-level EV value for EV 1 and input 71
+
+# Higher-level EV value for EV 1 and input 72
+
+# Higher-level EV value for EV 1 and input 73
+
+# Higher-level EV value for EV 1 and input 74
+
+# Higher-level EV value for EV 1 and input 75
+
+# Higher-level EV value for EV 1 and input 76
+
+# Higher-level EV value for EV 1 and input 77
+
+# Higher-level EV value for EV 1 and input 78
+
+# Higher-level EV value for EV 1 and input 79
+
+# Higher-level EV value for EV 1 and input 80
+
+# Higher-level EV value for EV 1 and input 81
+
+# Higher-level EV value for EV 1 and input 82
+
+# Higher-level EV value for EV 1 and input 83
+
+# Higher-level EV value for EV 1 and input 84
+
+# Higher-level EV value for EV 1 and input 85
+
+# Higher-level EV value for EV 1 and input 86
+
+# Higher-level EV value for EV 1 and input 87
+
+# Higher-level EV value for EV 1 and input 88
+
+# Higher-level EV value for EV 1 and input 89
+
+# Higher-level EV value for EV 1 and input 90
+
+# Higher-level EV value for EV 1 and input 91
+
+# Higher-level EV value for EV 1 and input 92
+
+# Higher-level EV value for EV 1 and input 93
+
+# Higher-level EV value for EV 1 and input 94
+
+# Higher-level EV value for EV 1 and input 95
+
+# Higher-level EV value for EV 1 and input 96
+
+# Higher-level EV value for EV 1 and input 97
+
+# Higher-level EV value for EV 1 and input 98
+
+# Higher-level EV value for EV 1 and input 99
+
+# Higher-level EV value for EV 1 and input 100
+
+# Higher-level EV value for EV 1 and input 101
+
+# Higher-level EV value for EV 1 and input 102
+
+# Higher-level EV value for EV 1 and input 103
+
+# Higher-level EV value for EV 1 and input 104
+
+# Higher-level EV value for EV 1 and input 105
+
+# Higher-level EV value for EV 1 and input 106
+
+# Higher-level EV value for EV 1 and input 107
+
+# Higher-level EV value for EV 1 and input 108
+
+# Higher-level EV value for EV 1 and input 109
+
+# Higher-level EV value for EV 1 and input 110
+
+# Higher-level EV value for EV 1 and input 111
+
+# Higher-level EV value for EV 1 and input 112
+
+# Higher-level EV value for EV 1 and input 113
+
+# Higher-level EV value for EV 1 and input 114
+
+# Higher-level EV value for EV 1 and input 115
+
+# Higher-level EV value for EV 1 and input 116
+
+# Higher-level EV value for EV 1 and input 117
+
+# Higher-level EV value for EV 1 and input 118
+
+# Higher-level EV value for EV 1 and input 119
+
+# Higher-level EV value for EV 1 and input 120
+
+# Higher-level EV value for EV 1 and input 121
+
+# Higher-level EV value for EV 1 and input 122
+
+# Higher-level EV value for EV 1 and input 123
+
+# Higher-level EV value for EV 1 and input 124
+
+# Higher-level EV value for EV 1 and input 125
+
+# Higher-level EV value for EV 1 and input 126
+
+# Higher-level EV value for EV 1 and input 127
+
+# Higher-level EV value for EV 1 and input 128
+
+# Higher-level EV value for EV 1 and input 129
+
+# Higher-level EV value for EV 1 and input 130
+
+# Higher-level EV value for EV 1 and input 131
+
+# Higher-level EV value for EV 1 and input 132
+
+# Higher-level EV value for EV 1 and input 133
+
+# Higher-level EV value for EV 1 and input 134
+
+# Higher-level EV value for EV 1 and input 135
+
+# Higher-level EV value for EV 1 and input 136
+
+# Higher-level EV value for EV 1 and input 137
+
+# Higher-level EV value for EV 1 and input 138
+
+# Higher-level EV value for EV 1 and input 139
+
+# Higher-level EV value for EV 1 and input 140
+
+# Higher-level EV value for EV 1 and input 141
+
+# Higher-level EV value for EV 1 and input 142
+
+# Higher-level EV value for EV 1 and input 143
+
+# Higher-level EV value for EV 1 and input 144
+
+# Higher-level EV value for EV 1 and input 145
+
+# Higher-level EV value for EV 1 and input 146
+
+# Higher-level EV value for EV 1 and input 147
+
+# Higher-level EV value for EV 1 and input 148
+
+# Higher-level EV value for EV 1 and input 149
+
+# Higher-level EV value for EV 1 and input 150
+
+# Higher-level EV value for EV 1 and input 151
+
+# Higher-level EV value for EV 1 and input 152
+
+# Higher-level EV value for EV 1 and input 153
+
+# Higher-level EV value for EV 1 and input 154
+
+# Higher-level EV value for EV 1 and input 155
+
+# Higher-level EV value for EV 1 and input 156
+
+# Higher-level EV value for EV 1 and input 157
+
+# Higher-level EV value for EV 1 and input 158
+
+# Higher-level EV value for EV 1 and input 159
+
+# Higher-level EV value for EV 1 and input 160
+
+# Higher-level EV value for EV 1 and input 161
+
+# Higher-level EV value for EV 1 and input 162
+
+# Higher-level EV value for EV 1 and input 163
+
+# Higher-level EV value for EV 1 and input 164
+
+# Higher-level EV value for EV 1 and input 165
+
+# Higher-level EV value for EV 1 and input 166
+
+# Higher-level EV value for EV 1 and input 167
+
+# Higher-level EV value for EV 1 and input 168
+
+# Higher-level EV value for EV 1 and input 169
+
+# Higher-level EV value for EV 1 and input 170
+
+# Higher-level EV value for EV 1 and input 171
+
+# Higher-level EV value for EV 1 and input 172
+
+# Higher-level EV value for EV 1 and input 173
+
+# Higher-level EV value for EV 1 and input 174
+
+# Higher-level EV value for EV 1 and input 175
+
+# Higher-level EV value for EV 1 and input 176
+
+# Higher-level EV value for EV 1 and input 177
+
+# Higher-level EV value for EV 1 and input 178
+
+# Higher-level EV value for EV 1 and input 179
+
+# Higher-level EV value for EV 1 and input 180
+
+# Higher-level EV value for EV 1 and input 181
+
+# Higher-level EV value for EV 1 and input 182
+
+# Higher-level EV value for EV 1 and input 183
+
+# Higher-level EV value for EV 1 and input 184
+
+# Higher-level EV value for EV 1 and input 185
+
+# Higher-level EV value for EV 1 and input 186
+
+# Higher-level EV value for EV 1 and input 187
+
+# Higher-level EV value for EV 1 and input 188
+
+# Higher-level EV value for EV 1 and input 189
+
+# Higher-level EV value for EV 1 and input 190
+
+# Higher-level EV value for EV 1 and input 191
+
+# Higher-level EV value for EV 1 and input 192
+
+# Higher-level EV value for EV 1 and input 193
+
+# Higher-level EV value for EV 1 and input 194
+
+# Higher-level EV value for EV 1 and input 195
+
+# Higher-level EV value for EV 1 and input 196
+
+# Higher-level EV value for EV 1 and input 197
+
+# Higher-level EV value for EV 1 and input 198
+
+# Higher-level EV value for EV 1 and input 199
+
+# Higher-level EV value for EV 1 and input 200
+
+# Higher-level EV value for EV 1 and input 201
+
+# Higher-level EV value for EV 1 and input 202
+
+# Higher-level EV value for EV 1 and input 203
+
+# Higher-level EV value for EV 1 and input 204
+
+# Higher-level EV value for EV 1 and input 205
+
+# Higher-level EV value for EV 1 and input 206
+
+# Higher-level EV value for EV 1 and input 207
+
+# Higher-level EV value for EV 1 and input 208
+
+# Higher-level EV value for EV 1 and input 209
+
+# Higher-level EV value for EV 1 and input 210
+
+# Higher-level EV value for EV 1 and input 211
+
+# Higher-level EV value for EV 1 and input 212
+
+# Higher-level EV value for EV 1 and input 213
+
+# Higher-level EV value for EV 1 and input 214
+
+# Higher-level EV value for EV 1 and input 215
+
+# Higher-level EV value for EV 1 and input 216
+
+# Higher-level EV value for EV 1 and input 217
+
+# Higher-level EV value for EV 1 and input 218
+
+# Higher-level EV value for EV 1 and input 219
+
+# Higher-level EV value for EV 1 and input 220
+
+# Higher-level EV value for EV 1 and input 221
+
+# Higher-level EV value for EV 1 and input 222
+
+# Higher-level EV value for EV 1 and input 223
+
+# Higher-level EV value for EV 1 and input 224
+
+# Higher-level EV value for EV 1 and input 225
+
+# Higher-level EV value for EV 1 and input 226
+
+# Higher-level EV value for EV 1 and input 227
+
+# Higher-level EV value for EV 1 and input 228
+
+# Higher-level EV value for EV 1 and input 229
+
+# Higher-level EV value for EV 1 and input 230
+
+# Higher-level EV value for EV 1 and input 231
+
+# Higher-level EV value for EV 1 and input 232
+
+# Higher-level EV value for EV 1 and input 233
+
+# Higher-level EV value for EV 1 and input 234
+
+# Higher-level EV value for EV 1 and input 235
+
+# Higher-level EV value for EV 1 and input 236
+
+# Higher-level EV value for EV 1 and input 237
+
+# Higher-level EV value for EV 1 and input 238
+
+# Higher-level EV value for EV 1 and input 239
+
+# Higher-level EV value for EV 1 and input 240
+
+# Higher-level EV value for EV 1 and input 241
+
+# Higher-level EV value for EV 1 and input 242
+
+# Higher-level EV value for EV 1 and input 243
+
+# Higher-level EV value for EV 1 and input 244
+
+# Higher-level EV value for EV 1 and input 245
+
+# Higher-level EV value for EV 1 and input 246
+
+# Higher-level EV value for EV 1 and input 247
+
+# Higher-level EV value for EV 1 and input 248
+
+# Higher-level EV value for EV 1 and input 249
+
+# Higher-level EV value for EV 1 and input 250
+
+# Higher-level EV value for EV 1 and input 251
+
+# Higher-level EV value for EV 1 and input 252
+
+# Higher-level EV value for EV 1 and input 253
+
+# Higher-level EV value for EV 1 and input 254
+
+# Higher-level EV value for EV 1 and input 255
+
+# Higher-level EV value for EV 1 and input 256
+
+# Higher-level EV value for EV 1 and input 257
+
+# Higher-level EV value for EV 1 and input 258
+
+# Higher-level EV value for EV 1 and input 259
+
+# Higher-level EV value for EV 1 and input 260
+
+# Higher-level EV value for EV 1 and input 261
+
+# Higher-level EV value for EV 1 and input 262
+
+# Higher-level EV value for EV 1 and input 263
+
+# Higher-level EV value for EV 1 and input 264
+
+# Higher-level EV value for EV 1 and input 265
+
+# Higher-level EV value for EV 1 and input 266
+
+# Higher-level EV value for EV 1 and input 267
+
+# Higher-level EV value for EV 1 and input 268
+
+# Higher-level EV value for EV 1 and input 269
+
+# Higher-level EV value for EV 1 and input 270
+
+# Higher-level EV value for EV 1 and input 271
+
+# Higher-level EV value for EV 1 and input 272
+
+# Higher-level EV value for EV 1 and input 273
+
+# Higher-level EV value for EV 1 and input 274
+
+# Higher-level EV value for EV 1 and input 275
+
+# Higher-level EV value for EV 1 and input 276
+
+# Higher-level EV value for EV 1 and input 277
+
+# Higher-level EV value for EV 1 and input 278
+
+# Higher-level EV value for EV 1 and input 279
+
+# Higher-level EV value for EV 1 and input 280
+
+# Higher-level EV value for EV 1 and input 281
+
+# Higher-level EV value for EV 1 and input 282
+
+# Higher-level EV value for EV 1 and input 283
+
+# Higher-level EV value for EV 1 and input 284
+
+# Higher-level EV value for EV 1 and input 285
+
+# Higher-level EV value for EV 1 and input 286
+
+# Higher-level EV value for EV 1 and input 287
+
+# Higher-level EV value for EV 1 and input 288
+
+# Higher-level EV value for EV 1 and input 289
+
+# Higher-level EV value for EV 1 and input 290
+
+# Higher-level EV value for EV 1 and input 291
+
+# Higher-level EV value for EV 1 and input 292
+
+# Higher-level EV value for EV 1 and input 293
+
+# Higher-level EV value for EV 1 and input 294
+
+# Higher-level EV value for EV 1 and input 295
+
+# Higher-level EV value for EV 1 and input 296
+
+# Higher-level EV value for EV 1 and input 297
+
+# Higher-level EV value for EV 1 and input 298
+
+# Higher-level EV value for EV 1 and input 299
+
+# Higher-level EV value for EV 1 and input 300
+
+# Higher-level EV value for EV 1 and input 301
+
+# Higher-level EV value for EV 1 and input 302
+
+# Higher-level EV value for EV 1 and input 303
+
+# Higher-level EV value for EV 1 and input 304
+
+# Higher-level EV value for EV 1 and input 305
+
+# Higher-level EV value for EV 1 and input 306
+
+# Higher-level EV value for EV 1 and input 307
+
+# Higher-level EV value for EV 1 and input 308
+
+# Higher-level EV value for EV 1 and input 309
+
+# Higher-level EV value for EV 1 and input 310
+
+# Higher-level EV value for EV 1 and input 311
+
+# Higher-level EV value for EV 1 and input 312
+
+# Higher-level EV value for EV 1 and input 313
+
+# Higher-level EV value for EV 1 and input 314
+
+# Higher-level EV value for EV 1 and input 315
+
+# Higher-level EV value for EV 1 and input 316
+
+# Higher-level EV value for EV 1 and input 317
+
+# Higher-level EV value for EV 1 and input 318
+
+# Higher-level EV value for EV 1 and input 319
+
+# Higher-level EV value for EV 1 and input 320
+
+# Higher-level EV value for EV 1 and input 321
+
+# Higher-level EV value for EV 1 and input 322
+
+# Higher-level EV value for EV 1 and input 323
+
+# Higher-level EV value for EV 1 and input 324
+
+# Higher-level EV value for EV 1 and input 325
+
+# Higher-level EV value for EV 1 and input 326
+
+# Higher-level EV value for EV 1 and input 327
+
+# Higher-level EV value for EV 1 and input 328
+
+# Higher-level EV value for EV 1 and input 329
+
+# Higher-level EV value for EV 1 and input 330
+
+# Higher-level EV value for EV 1 and input 331
+
+# Higher-level EV value for EV 1 and input 332
+
+# Higher-level EV value for EV 1 and input 333
+
+# Higher-level EV value for EV 1 and input 334
+
+# Higher-level EV value for EV 1 and input 335
+
+# Higher-level EV value for EV 1 and input 336
+
+# Higher-level EV value for EV 1 and input 337
+
+# Higher-level EV value for EV 1 and input 338
+
+# Higher-level EV value for EV 1 and input 339
+
+# Higher-level EV value for EV 1 and input 340
+
+# Higher-level EV value for EV 1 and input 341
+
+# Higher-level EV value for EV 1 and input 342
+
+# Higher-level EV value for EV 1 and input 343
+
+# Higher-level EV value for EV 1 and input 344
+
+# Higher-level EV value for EV 1 and input 345
+
+# Higher-level EV value for EV 1 and input 346
+
+# Higher-level EV value for EV 1 and input 347
+
+# Higher-level EV value for EV 1 and input 348
+
+# Higher-level EV value for EV 1 and input 349
+
+# Higher-level EV value for EV 1 and input 350
+
+# Higher-level EV value for EV 1 and input 351
+
+# Higher-level EV value for EV 1 and input 352
+
+# Higher-level EV value for EV 1 and input 353
+
+# Higher-level EV value for EV 1 and input 354
+
+# Higher-level EV value for EV 1 and input 355
+
+# Higher-level EV value for EV 1 and input 356
+
+# Higher-level EV value for EV 1 and input 357
+
+# Higher-level EV value for EV 1 and input 358
+
+# Higher-level EV value for EV 1 and input 359
+
+# Higher-level EV value for EV 1 and input 360
+
+# Higher-level EV value for EV 1 and input 361
+
+# Higher-level EV value for EV 1 and input 362
+
+# Higher-level EV value for EV 1 and input 363
+
+# Higher-level EV value for EV 1 and input 364
+
+# Higher-level EV value for EV 1 and input 365
+
+# Higher-level EV value for EV 1 and input 366
+
+# Higher-level EV value for EV 1 and input 367
+
+# Higher-level EV value for EV 1 and input 368
+
+# Higher-level EV value for EV 1 and input 369
+
+# Higher-level EV value for EV 1 and input 370
+
+# Higher-level EV value for EV 1 and input 371
+
+# Higher-level EV value for EV 1 and input 372
+
+# Higher-level EV value for EV 1 and input 373
+
+# Higher-level EV value for EV 1 and input 374
+
+# Higher-level EV value for EV 1 and input 375
+
+# Higher-level EV value for EV 1 and input 376
+
+# Higher-level EV value for EV 1 and input 377
+
+# Higher-level EV value for EV 1 and input 378
+
+# Higher-level EV value for EV 1 and input 379
+
+# Higher-level EV value for EV 1 and input 380
+
+# Higher-level EV value for EV 1 and input 381
+
+# Higher-level EV value for EV 1 and input 382
+
+# Higher-level EV value for EV 1 and input 383
+
+# Higher-level EV value for EV 1 and input 384
+
+# Higher-level EV value for EV 1 and input 385
+
+# Higher-level EV value for EV 1 and input 386
+
+# Higher-level EV value for EV 1 and input 387
+
+# Higher-level EV value for EV 1 and input 388
+
+# Higher-level EV value for EV 1 and input 389
+
+# Higher-level EV value for EV 1 and input 390
+
+# Higher-level EV value for EV 1 and input 391
+
+# Higher-level EV value for EV 1 and input 392
+
+# Higher-level EV value for EV 1 and input 393
+
+# Higher-level EV value for EV 1 and input 394
+
+# Higher-level EV value for EV 1 and input 395
+
+# Higher-level EV value for EV 1 and input 396
+
+# Higher-level EV value for EV 1 and input 397
+
+# Higher-level EV value for EV 1 and input 398
+
+# Higher-level EV value for EV 1 and input 399
+
+# Higher-level EV value for EV 1 and input 400
+
+# Higher-level EV value for EV 1 and input 401
+
+# Higher-level EV value for EV 1 and input 402
+
+# Higher-level EV value for EV 1 and input 403
+
+# Higher-level EV value for EV 1 and input 404
+
+# Higher-level EV value for EV 1 and input 405
+
+# Higher-level EV value for EV 1 and input 406
+
+# Higher-level EV value for EV 1 and input 407
+
+# Higher-level EV value for EV 1 and input 408
+
+# Higher-level EV value for EV 1 and input 409
+
+# Higher-level EV value for EV 1 and input 410
+
+# Higher-level EV value for EV 1 and input 411
+
+# Higher-level EV value for EV 1 and input 412
+
+# Higher-level EV value for EV 1 and input 413
+
+# Higher-level EV value for EV 1 and input 414
+
+# Higher-level EV value for EV 1 and input 415
+
+# Higher-level EV value for EV 1 and input 416
+
+# Higher-level EV value for EV 1 and input 417
+
+# Higher-level EV value for EV 1 and input 418
+
+# Higher-level EV value for EV 1 and input 419
+
+# Higher-level EV value for EV 1 and input 420
+
+# Higher-level EV value for EV 1 and input 421
+
+# Higher-level EV value for EV 1 and input 422
+
+# Higher-level EV value for EV 1 and input 423
+
+# Higher-level EV value for EV 1 and input 424
+
+# Higher-level EV value for EV 1 and input 425
+
+# Higher-level EV value for EV 1 and input 426
+
+# Higher-level EV value for EV 1 and input 427
+
+# Higher-level EV value for EV 1 and input 428
+
+# Higher-level EV value for EV 1 and input 429
+
+# Higher-level EV value for EV 1 and input 430
+
+# Higher-level EV value for EV 1 and input 431
+
+# Higher-level EV value for EV 1 and input 432
+
+# Higher-level EV value for EV 1 and input 433
+
+# Higher-level EV value for EV 1 and input 434
+
+# Higher-level EV value for EV 1 and input 435
+
+# Higher-level EV value for EV 1 and input 436
+
+# Higher-level EV value for EV 1 and input 437
+
+# Higher-level EV value for EV 1 and input 438
+
+# Higher-level EV value for EV 1 and input 439
+
+# Higher-level EV value for EV 1 and input 440
+
+# Higher-level EV value for EV 1 and input 441
+
+# Higher-level EV value for EV 1 and input 442
+
+# Higher-level EV value for EV 1 and input 443
+
+# Higher-level EV value for EV 1 and input 444
+
+# Higher-level EV value for EV 1 and input 445
+
+# Higher-level EV value for EV 1 and input 446
+
+# Higher-level EV value for EV 1 and input 447
+
+# Higher-level EV value for EV 1 and input 448
+
+# Higher-level EV value for EV 1 and input 449
+
+# Higher-level EV value for EV 1 and input 450
+
+# Higher-level EV value for EV 1 and input 451
+
+# Higher-level EV value for EV 1 and input 452
+
+# Higher-level EV value for EV 1 and input 453
+
+# Higher-level EV value for EV 1 and input 454
+
+# Higher-level EV value for EV 1 and input 455
+
+# Higher-level EV value for EV 1 and input 456
+
+# Higher-level EV value for EV 1 and input 457
+
+# Higher-level EV value for EV 1 and input 458
+
+# Higher-level EV value for EV 1 and input 459
+
+# Higher-level EV value for EV 1 and input 460
+
+# Higher-level EV value for EV 1 and input 461
+
+# Higher-level EV value for EV 1 and input 462
+
+# Higher-level EV value for EV 1 and input 463
+
+# Higher-level EV value for EV 1 and input 464
+
+# Higher-level EV value for EV 1 and input 465
+
+# Higher-level EV value for EV 1 and input 466
+
+# Higher-level EV value for EV 1 and input 467
+
+# Higher-level EV value for EV 1 and input 468
+
+# Higher-level EV value for EV 1 and input 469
+
+# Higher-level EV value for EV 1 and input 470
+
+# Higher-level EV value for EV 1 and input 471
+
+# Higher-level EV value for EV 1 and input 472
+
+# Higher-level EV value for EV 1 and input 473
+
+# Higher-level EV value for EV 1 and input 474
+
+# Higher-level EV value for EV 1 and input 475
+
+# Higher-level EV value for EV 1 and input 476
+
+# Higher-level EV value for EV 1 and input 477
+
+# Higher-level EV value for EV 1 and input 478
+
+# Higher-level EV value for EV 1 and input 479
+
+# Higher-level EV value for EV 1 and input 480
+
+# Higher-level EV value for EV 1 and input 481
+
+# Higher-level EV value for EV 1 and input 482
+
+# Higher-level EV value for EV 1 and input 483
+
+# Higher-level EV value for EV 1 and input 484
+
+# Higher-level EV value for EV 1 and input 485
+
+# Higher-level EV value for EV 1 and input 486
+
+# Higher-level EV value for EV 1 and input 487
+
+# Higher-level EV value for EV 1 and input 488
+
+# Higher-level EV value for EV 1 and input 489
+
+# Higher-level EV value for EV 1 and input 490
+
+# Higher-level EV value for EV 1 and input 491
+
+# Higher-level EV value for EV 1 and input 492
+
+# Higher-level EV value for EV 1 and input 493
+
+# Higher-level EV value for EV 1 and input 494
+
+# Higher-level EV value for EV 1 and input 495
+
+# Higher-level EV value for EV 1 and input 496
+
+# Higher-level EV value for EV 1 and input 497
+
+# Higher-level EV value for EV 1 and input 498
+
+# Higher-level EV value for EV 1 and input 499
+
+# Higher-level EV value for EV 1 and input 500
+
+# Higher-level EV value for EV 1 and input 501
+
+# Higher-level EV value for EV 1 and input 502
+
+# Higher-level EV value for EV 1 and input 503
+
+# Higher-level EV value for EV 1 and input 504
+
+# Higher-level EV value for EV 1 and input 505
+
+# Higher-level EV value for EV 1 and input 506
+
+# Higher-level EV value for EV 1 and input 507
+
+# Higher-level EV value for EV 1 and input 508
+
+# Higher-level EV value for EV 1 and input 509
+
+# Higher-level EV value for EV 1 and input 510
+
+# Higher-level EV value for EV 1 and input 511
+
+# Higher-level EV value for EV 1 and input 512
+
+# Higher-level EV value for EV 1 and input 513
+
+# Higher-level EV value for EV 1 and input 514
+
+# Higher-level EV value for EV 1 and input 515
+
+# Higher-level EV value for EV 1 and input 516
+
+# Higher-level EV value for EV 1 and input 517
+
+# Higher-level EV value for EV 1 and input 518
+
+# Higher-level EV value for EV 1 and input 519
+
+# Higher-level EV value for EV 1 and input 520
+
+# Higher-level EV value for EV 1 and input 521
+
+# Higher-level EV value for EV 1 and input 522
+
+# Higher-level EV value for EV 1 and input 523
+
+# Higher-level EV value for EV 1 and input 524
+
+# Higher-level EV value for EV 1 and input 525
+
+# Higher-level EV value for EV 1 and input 526
+
+# Higher-level EV value for EV 1 and input 527
+
+# Higher-level EV value for EV 1 and input 528
+
+# Higher-level EV value for EV 1 and input 529
+
+# Higher-level EV value for EV 1 and input 530
+
+# Higher-level EV value for EV 1 and input 531
+
+# Higher-level EV value for EV 1 and input 532
+
+# Higher-level EV value for EV 1 and input 533
+
+# Higher-level EV value for EV 1 and input 534
+
+# Higher-level EV value for EV 1 and input 535
+
+# Higher-level EV value for EV 1 and input 536
+
+# Higher-level EV value for EV 1 and input 537
+
+# Higher-level EV value for EV 1 and input 538
+
+# Higher-level EV value for EV 1 and input 539
+
+# Higher-level EV value for EV 1 and input 540
+
+# Higher-level EV value for EV 1 and input 541
+
+# Higher-level EV value for EV 1 and input 542
+
+# Higher-level EV value for EV 1 and input 543
+
+# Higher-level EV value for EV 1 and input 544
+
+# Higher-level EV value for EV 1 and input 545
+
+# Higher-level EV value for EV 1 and input 546
+
+# Higher-level EV value for EV 1 and input 547
+
+# Higher-level EV value for EV 1 and input 548
+
+# Higher-level EV value for EV 1 and input 549
+
+# Higher-level EV value for EV 1 and input 550
+
+# Higher-level EV value for EV 1 and input 551
+
+# Higher-level EV value for EV 1 and input 552
+
+# Higher-level EV value for EV 1 and input 553
+
+# Higher-level EV value for EV 1 and input 554
+
+# Higher-level EV value for EV 1 and input 555
+
+# Higher-level EV value for EV 1 and input 556
+
+# Higher-level EV value for EV 1 and input 557
+
+# Higher-level EV value for EV 1 and input 558
+
+# Higher-level EV value for EV 1 and input 559
+
+# Higher-level EV value for EV 1 and input 560
+
+# Higher-level EV value for EV 1 and input 561
+
+# Higher-level EV value for EV 1 and input 562
+
+# Higher-level EV value for EV 1 and input 563
+
+# Higher-level EV value for EV 1 and input 564
+
+# Higher-level EV value for EV 1 and input 565
+
+# Higher-level EV value for EV 1 and input 566
+
+# Higher-level EV value for EV 1 and input 567
+
+# Higher-level EV value for EV 1 and input 568
+
+# Higher-level EV value for EV 1 and input 569
+
+# Higher-level EV value for EV 1 and input 570
+
+# Higher-level EV value for EV 1 and input 571
+
+# Higher-level EV value for EV 1 and input 572
+
+# Higher-level EV value for EV 1 and input 573
+
+# Higher-level EV value for EV 1 and input 574
+
+# Higher-level EV value for EV 1 and input 575
+
+# Higher-level EV value for EV 1 and input 576
+
+# Higher-level EV value for EV 1 and input 577
+
+# Higher-level EV value for EV 1 and input 578
+
+# Higher-level EV value for EV 1 and input 579
+
+# Higher-level EV value for EV 1 and input 580
+
+# Higher-level EV value for EV 1 and input 581
+
+# Higher-level EV value for EV 1 and input 582
+
+# Higher-level EV value for EV 1 and input 583
+
+# Higher-level EV value for EV 1 and input 584
+
+# Higher-level EV value for EV 1 and input 585
+
+# Higher-level EV value for EV 1 and input 586
+
+# Higher-level EV value for EV 1 and input 587
+
+# Higher-level EV value for EV 1 and input 588
+
+# Higher-level EV value for EV 1 and input 589
+
+# Higher-level EV value for EV 1 and input 590
+
+# Higher-level EV value for EV 1 and input 591
+
+# Higher-level EV value for EV 1 and input 592
+
+# Higher-level EV value for EV 1 and input 593
+
+# Higher-level EV value for EV 1 and input 594
+
+# Higher-level EV value for EV 1 and input 595
+
+# Higher-level EV value for EV 1 and input 596
+
+# Higher-level EV value for EV 1 and input 597
+
+# Higher-level EV value for EV 1 and input 598
+
+# Higher-level EV value for EV 1 and input 599
+
+# Higher-level EV value for EV 1 and input 600
+
+# Higher-level EV value for EV 1 and input 601
+
+# Higher-level EV value for EV 1 and input 602
+
+# Higher-level EV value for EV 1 and input 603
+
+# Higher-level EV value for EV 1 and input 604
+
+# Higher-level EV value for EV 1 and input 605
+
+# Higher-level EV value for EV 1 and input 606
+
+# Higher-level EV value for EV 1 and input 607
+
+# Higher-level EV value for EV 1 and input 608
+
+# Higher-level EV value for EV 1 and input 609
+
+# Higher-level EV value for EV 1 and input 610
+
+# Higher-level EV value for EV 1 and input 611
+
+# Higher-level EV value for EV 1 and input 612
+
+# Higher-level EV value for EV 1 and input 613
+
+# Higher-level EV value for EV 1 and input 614
+
+# Higher-level EV value for EV 1 and input 615
+
+# Higher-level EV value for EV 1 and input 616
+
+# Higher-level EV value for EV 1 and input 617
+
+# Higher-level EV value for EV 1 and input 618
+
+# Higher-level EV value for EV 1 and input 619
+
+# Higher-level EV value for EV 1 and input 620
+
+# Higher-level EV value for EV 1 and input 621
+
+# Higher-level EV value for EV 1 and input 622
+
+# Higher-level EV value for EV 1 and input 623
+
+# Higher-level EV value for EV 1 and input 624
+
+# Higher-level EV value for EV 1 and input 625
+
+# Higher-level EV value for EV 1 and input 626
+
+# Higher-level EV value for EV 1 and input 627
+
+# Higher-level EV value for EV 1 and input 628
+
+# Higher-level EV value for EV 1 and input 629
+
+# Higher-level EV value for EV 1 and input 630
+
+# Higher-level EV value for EV 1 and input 631
+
+# Higher-level EV value for EV 1 and input 632
+
+# Higher-level EV value for EV 1 and input 633
+
+# Higher-level EV value for EV 1 and input 634
+
+# Higher-level EV value for EV 1 and input 635
+
+# Higher-level EV value for EV 1 and input 636
+
+# Higher-level EV value for EV 1 and input 637
+
+# Higher-level EV value for EV 1 and input 638
+
+# Higher-level EV value for EV 1 and input 639
+
+# Higher-level EV value for EV 1 and input 640
+
+# Higher-level EV value for EV 1 and input 641
+
+# Higher-level EV value for EV 1 and input 642
+
+# Higher-level EV value for EV 1 and input 643
+
+# Higher-level EV value for EV 1 and input 644
+
+# Higher-level EV value for EV 1 and input 645
+
+# Higher-level EV value for EV 1 and input 646
+
+# Higher-level EV value for EV 1 and input 647
+
+# Higher-level EV value for EV 1 and input 648
+
+# Higher-level EV value for EV 1 and input 649
+
+# Higher-level EV value for EV 1 and input 650
+
+# Higher-level EV value for EV 1 and input 651
+
+# Higher-level EV value for EV 1 and input 652
+
+# Higher-level EV value for EV 1 and input 653
+
+# Higher-level EV value for EV 1 and input 654
+
+# Higher-level EV value for EV 1 and input 655
+
+# Higher-level EV value for EV 1 and input 656
+
+# Higher-level EV value for EV 1 and input 657
+
+# Higher-level EV value for EV 1 and input 658
+
+# Higher-level EV value for EV 1 and input 659
+
+# Higher-level EV value for EV 1 and input 660
+
+# Higher-level EV value for EV 1 and input 661
+
+# Higher-level EV value for EV 1 and input 662
+
+# Higher-level EV value for EV 1 and input 663
+
+# Higher-level EV value for EV 1 and input 664
+
+# Higher-level EV value for EV 1 and input 665
+
+# Higher-level EV value for EV 1 and input 666
+
+# Higher-level EV value for EV 1 and input 667
+
+# Higher-level EV value for EV 1 and input 668
+
+# Higher-level EV value for EV 1 and input 669
+
+# Higher-level EV value for EV 1 and input 670
+
+# Higher-level EV value for EV 1 and input 671
+
+# Higher-level EV value for EV 1 and input 672
+
+# Higher-level EV value for EV 1 and input 673
+
+# Higher-level EV value for EV 1 and input 674
+
+# Higher-level EV value for EV 1 and input 675
+
+# Higher-level EV value for EV 1 and input 676
+
+# Higher-level EV value for EV 1 and input 677
+
+# Higher-level EV value for EV 1 and input 678
+
+# Higher-level EV value for EV 1 and input 679
+
+# Higher-level EV value for EV 1 and input 680
+
+# Higher-level EV value for EV 1 and input 681
+
+# Higher-level EV value for EV 1 and input 682
+
+# Higher-level EV value for EV 1 and input 683
+
+# Higher-level EV value for EV 1 and input 684
+
+# Higher-level EV value for EV 1 and input 685
+
+# Higher-level EV value for EV 1 and input 686
+
+# Higher-level EV value for EV 1 and input 687
+
+# Higher-level EV value for EV 1 and input 688
+
+# Higher-level EV value for EV 1 and input 689
+
+# Higher-level EV value for EV 1 and input 690
+
+# Higher-level EV value for EV 1 and input 691
+
+# Higher-level EV value for EV 1 and input 692
+
+# Higher-level EV value for EV 1 and input 693
+
+# Higher-level EV value for EV 1 and input 694
+
+# Higher-level EV value for EV 1 and input 695
+
+# Higher-level EV value for EV 1 and input 696
+
+# Higher-level EV value for EV 1 and input 697
+
+# Higher-level EV value for EV 1 and input 698
+
+# Higher-level EV value for EV 1 and input 699
+
+# Higher-level EV value for EV 1 and input 700
+
+# Higher-level EV value for EV 1 and input 701
+
+# Higher-level EV value for EV 1 and input 702
+
+# Higher-level EV value for EV 1 and input 703
+
+# Higher-level EV value for EV 1 and input 704
+
+# Higher-level EV value for EV 1 and input 705
+
+# Higher-level EV value for EV 1 and input 706
+
+# Higher-level EV value for EV 1 and input 707
+
+# Higher-level EV value for EV 1 and input 708
+
+# Higher-level EV value for EV 1 and input 709
+
+# Higher-level EV value for EV 1 and input 710
+
+# Higher-level EV value for EV 1 and input 711
+
+# Higher-level EV value for EV 1 and input 712
+
+# Higher-level EV value for EV 1 and input 713
+
+# Higher-level EV value for EV 1 and input 714
+
+# Higher-level EV value for EV 1 and input 715
+
+# Higher-level EV value for EV 1 and input 716
+
+# Higher-level EV value for EV 1 and input 717
+
+# Higher-level EV value for EV 1 and input 718
+
+# Higher-level EV value for EV 1 and input 719
+
+# Higher-level EV value for EV 1 and input 720
+
+# Higher-level EV value for EV 1 and input 721
+
+# Higher-level EV value for EV 1 and input 722
+
+# Higher-level EV value for EV 1 and input 723
+
+# Higher-level EV value for EV 1 and input 724
+
+# Higher-level EV value for EV 1 and input 725
+
+# Higher-level EV value for EV 1 and input 726
+
+# Higher-level EV value for EV 1 and input 727
+
+# Higher-level EV value for EV 1 and input 728
+
+# Higher-level EV value for EV 1 and input 729
+
+# Higher-level EV value for EV 1 and input 730
+
+# Higher-level EV value for EV 1 and input 731
+
+# Higher-level EV value for EV 1 and input 732
+
+# Higher-level EV value for EV 1 and input 733
+
+# Higher-level EV value for EV 1 and input 734
+
+# Higher-level EV value for EV 1 and input 735
+
+# Higher-level EV value for EV 1 and input 736
+
+# Higher-level EV value for EV 1 and input 737
+
+# Higher-level EV value for EV 1 and input 738
+
+# Higher-level EV value for EV 1 and input 739
+
+# Higher-level EV value for EV 1 and input 740
+
+# Higher-level EV value for EV 1 and input 741
+
+# Higher-level EV value for EV 1 and input 742
+
+# Higher-level EV value for EV 1 and input 743
+
+# Higher-level EV value for EV 1 and input 744
+
+# Higher-level EV value for EV 1 and input 745
+
+# Higher-level EV value for EV 1 and input 746
+
+# Higher-level EV value for EV 1 and input 747
+
+# Higher-level EV value for EV 1 and input 748
+
+# Higher-level EV value for EV 1 and input 749
+
+# Higher-level EV value for EV 1 and input 750
+
+# Higher-level EV value for EV 1 and input 751
+
+# Higher-level EV value for EV 1 and input 752
+
+# Higher-level EV value for EV 1 and input 753
+
+# Higher-level EV value for EV 1 and input 754
+
+# Higher-level EV value for EV 1 and input 755
+
+# Higher-level EV value for EV 1 and input 756
+
+# Higher-level EV value for EV 1 and input 757
+
+# Higher-level EV value for EV 1 and input 758
+
+# Higher-level EV value for EV 1 and input 759
+
+# Higher-level EV value for EV 1 and input 760
+
+# Higher-level EV value for EV 1 and input 761
+
+# Higher-level EV value for EV 1 and input 762
+
+# Higher-level EV value for EV 1 and input 763
+
+# Higher-level EV value for EV 1 and input 764
+
+# Higher-level EV value for EV 1 and input 765
+
+# Higher-level EV value for EV 1 and input 766
+
+# Higher-level EV value for EV 1 and input 767
+
+# Higher-level EV value for EV 1 and input 768
+
+# Higher-level EV value for EV 1 and input 769
+
+# Higher-level EV value for EV 1 and input 770
+
+# Higher-level EV value for EV 1 and input 771
+
+# Higher-level EV value for EV 1 and input 772
+
+# Higher-level EV value for EV 1 and input 773
+
+# Higher-level EV value for EV 1 and input 774
+
+# Higher-level EV value for EV 1 and input 775
+
+# Higher-level EV value for EV 1 and input 776
+
+# Higher-level EV value for EV 1 and input 777
+
+# Higher-level EV value for EV 1 and input 778
+
+# Higher-level EV value for EV 1 and input 779
+
+# Higher-level EV value for EV 1 and input 780
+
+# Higher-level EV value for EV 1 and input 781
+
+# Higher-level EV value for EV 1 and input 782
+
+# Higher-level EV value for EV 1 and input 783
+
+# Higher-level EV value for EV 1 and input 784
+
+# Higher-level EV value for EV 1 and input 785
+
+# Higher-level EV value for EV 1 and input 786
+
+# Higher-level EV value for EV 1 and input 787
+
+# Higher-level EV value for EV 1 and input 788
+
+# Higher-level EV value for EV 1 and input 789
+
+# Higher-level EV value for EV 1 and input 790
+
+# Higher-level EV value for EV 1 and input 791
+
+# Higher-level EV value for EV 1 and input 792
+
+# Higher-level EV value for EV 1 and input 793
+
+# Higher-level EV value for EV 1 and input 794
+
+# Higher-level EV value for EV 1 and input 795
+
+# Higher-level EV value for EV 1 and input 796
+
+# Higher-level EV value for EV 1 and input 797
+
+# Higher-level EV value for EV 1 and input 798
+
+# Higher-level EV value for EV 1 and input 799
+
+# Higher-level EV value for EV 1 and input 800
+
+# Higher-level EV value for EV 1 and input 801
+
+# Higher-level EV value for EV 1 and input 802
+
+# Higher-level EV value for EV 1 and input 803
+
+# Higher-level EV value for EV 1 and input 804
+
+# Higher-level EV value for EV 1 and input 805
+
+# Higher-level EV value for EV 1 and input 806
+
+# Higher-level EV value for EV 1 and input 807
+
+# Higher-level EV value for EV 1 and input 808
+
+# Higher-level EV value for EV 1 and input 809
+
+# Higher-level EV value for EV 1 and input 810
+
+# Higher-level EV value for EV 1 and input 811
+
+# Higher-level EV value for EV 1 and input 812
+
+# Higher-level EV value for EV 1 and input 813
+
+# Higher-level EV value for EV 1 and input 814
+
+# Higher-level EV value for EV 1 and input 815
+
+# Higher-level EV value for EV 1 and input 816
+
+# Higher-level EV value for EV 1 and input 817
+
+# Higher-level EV value for EV 1 and input 818
+
+# Higher-level EV value for EV 1 and input 819
+
+# Higher-level EV value for EV 1 and input 820
+
+# Higher-level EV value for EV 1 and input 821
+
+# Higher-level EV value for EV 1 and input 822
+
+# Higher-level EV value for EV 1 and input 823
+
+# Higher-level EV value for EV 1 and input 824
+
+# Higher-level EV value for EV 1 and input 825
+
+# Higher-level EV value for EV 1 and input 826
+
+# Higher-level EV value for EV 1 and input 827
+
+# Higher-level EV value for EV 1 and input 828
+
+# Higher-level EV value for EV 1 and input 829
+
+# Higher-level EV value for EV 1 and input 830
+
+# Higher-level EV value for EV 1 and input 831
+
+# Higher-level EV value for EV 1 and input 832
+
+# Higher-level EV value for EV 1 and input 833
+
+# Higher-level EV value for EV 1 and input 834
+
+# Higher-level EV value for EV 1 and input 835
+
+# Higher-level EV value for EV 1 and input 836
+
+# Higher-level EV value for EV 1 and input 837
+
+# Higher-level EV value for EV 1 and input 838
+
+# Higher-level EV value for EV 1 and input 839
+
+# Higher-level EV value for EV 1 and input 840
+
+# Higher-level EV value for EV 1 and input 841
+
+# Higher-level EV value for EV 1 and input 842
+
+# Higher-level EV value for EV 1 and input 843
+
+# Higher-level EV value for EV 1 and input 844
+
+# Higher-level EV value for EV 1 and input 845
+
+# Higher-level EV value for EV 1 and input 846
+
+# Higher-level EV value for EV 1 and input 847
+
+# Higher-level EV value for EV 1 and input 848
+
+# Higher-level EV value for EV 1 and input 849
+
+# Higher-level EV value for EV 1 and input 850
+
+# Higher-level EV value for EV 1 and input 851
+
+# Higher-level EV value for EV 1 and input 852
+
+# Higher-level EV value for EV 1 and input 853
+
+# Higher-level EV value for EV 1 and input 854
+
+# Higher-level EV value for EV 1 and input 855
+
+# Higher-level EV value for EV 1 and input 856
+
+# Higher-level EV value for EV 1 and input 857
+
+# Higher-level EV value for EV 1 and input 858
+
+# Higher-level EV value for EV 1 and input 859
+
+# Higher-level EV value for EV 1 and input 860
+
+# Higher-level EV value for EV 1 and input 861
+
+# Higher-level EV value for EV 1 and input 862
+
+# Higher-level EV value for EV 1 and input 863
+
+# Higher-level EV value for EV 1 and input 864
+
+# Higher-level EV value for EV 1 and input 865
+
+# Higher-level EV value for EV 1 and input 866
+
+# Higher-level EV value for EV 1 and input 867
+
+# Higher-level EV value for EV 1 and input 868
+
+# Higher-level EV value for EV 1 and input 869
+
+# Higher-level EV value for EV 1 and input 870
+
+# Higher-level EV value for EV 1 and input 871
+
+# Higher-level EV value for EV 1 and input 872
+
+# Higher-level EV value for EV 1 and input 873
+
+# Higher-level EV value for EV 1 and input 874
+
+# Higher-level EV value for EV 1 and input 875
+
+# Higher-level EV value for EV 1 and input 876
+
+# Higher-level EV value for EV 1 and input 877
+
+# Higher-level EV value for EV 1 and input 878
+
+# Higher-level EV value for EV 1 and input 879
+
+# Higher-level EV value for EV 1 and input 880
+
+# Higher-level EV value for EV 1 and input 881
+
+# Higher-level EV value for EV 1 and input 882
+
+# Higher-level EV value for EV 1 and input 883
+
+# Higher-level EV value for EV 1 and input 884
+
+# Higher-level EV value for EV 1 and input 885
+
+# Higher-level EV value for EV 1 and input 886
+
+# Higher-level EV value for EV 1 and input 887
+
+# Higher-level EV value for EV 1 and input 888
+
+# Higher-level EV value for EV 1 and input 889
+
+# Higher-level EV value for EV 1 and input 890
+
+# Higher-level EV value for EV 1 and input 891
+
+# Higher-level EV value for EV 1 and input 892
+
+# Higher-level EV value for EV 1 and input 893
+
+# Higher-level EV value for EV 1 and input 894
+
+# Higher-level EV value for EV 1 and input 895
+
+# Higher-level EV value for EV 1 and input 896
+
+# Higher-level EV value for EV 1 and input 897
+
+# Higher-level EV value for EV 1 and input 898
+
+# Higher-level EV value for EV 1 and input 899
+
+# Higher-level EV value for EV 1 and input 900
+
+# Higher-level EV value for EV 1 and input 901
+
+# Higher-level EV value for EV 1 and input 902
+
+# Higher-level EV value for EV 1 and input 903
+
+# Higher-level EV value for EV 1 and input 904
+
+# Higher-level EV value for EV 1 and input 905
+
+# Higher-level EV value for EV 1 and input 906
+
+# Higher-level EV value for EV 1 and input 907
+
+# Higher-level EV value for EV 1 and input 908
+
+# Higher-level EV value for EV 1 and input 909
+
+# Higher-level EV value for EV 1 and input 910
+
+# Higher-level EV value for EV 1 and input 911
+
+# Higher-level EV value for EV 1 and input 912
+
+# Higher-level EV value for EV 1 and input 913
+
+# Higher-level EV value for EV 1 and input 914
+
+# Higher-level EV value for EV 1 and input 915
+
+# Higher-level EV value for EV 1 and input 916
+
+# Higher-level EV value for EV 1 and input 917
+
+# Higher-level EV value for EV 1 and input 918
+
+# Higher-level EV value for EV 1 and input 919
+
+# Higher-level EV value for EV 1 and input 920
+
+# Higher-level EV value for EV 1 and input 921
+
+# Higher-level EV value for EV 1 and input 922
+
+# Higher-level EV value for EV 1 and input 923
+
+# Higher-level EV value for EV 1 and input 924
+
+# Higher-level EV value for EV 1 and input 925
+
+# Higher-level EV value for EV 1 and input 926
+
+# Higher-level EV value for EV 1 and input 927
+
+# Higher-level EV value for EV 1 and input 928
+
+# Higher-level EV value for EV 1 and input 929
+
+# Higher-level EV value for EV 1 and input 930
+
+# Higher-level EV value for EV 1 and input 931
+
+# Higher-level EV value for EV 1 and input 932
+
+# Higher-level EV value for EV 1 and input 933
+
+# Higher-level EV value for EV 1 and input 934
+
+# Higher-level EV value for EV 1 and input 935
+
+# Higher-level EV value for EV 1 and input 936
+
+# Higher-level EV value for EV 1 and input 937
+
+# Higher-level EV value for EV 1 and input 938
+
+# Higher-level EV value for EV 1 and input 939
+
+# Higher-level EV value for EV 1 and input 940
+
+# Higher-level EV value for EV 1 and input 941
+
+# Higher-level EV value for EV 1 and input 942
+
+# Higher-level EV value for EV 1 and input 943
+
+# Higher-level EV value for EV 1 and input 944
+
+# Higher-level EV value for EV 1 and input 945
+
+# Higher-level EV value for EV 1 and input 946
+
+# Higher-level EV value for EV 1 and input 947
+
+# Higher-level EV value for EV 1 and input 948
+
+# Higher-level EV value for EV 1 and input 949
+
+# Higher-level EV value for EV 1 and input 950
+
+# Higher-level EV value for EV 1 and input 951
+
+# Higher-level EV value for EV 1 and input 952
+
+# Higher-level EV value for EV 1 and input 953
+
+# Higher-level EV value for EV 1 and input 954
+
+# Higher-level EV value for EV 1 and input 955
+
+# Higher-level EV value for EV 1 and input 956
+
+# Higher-level EV value for EV 1 and input 957
+
+# Higher-level EV value for EV 1 and input 958
+
+# Higher-level EV value for EV 1 and input 959
+
+# Higher-level EV value for EV 1 and input 960
+
+# Higher-level EV value for EV 1 and input 961
+
+# Higher-level EV value for EV 1 and input 962
+
+# Higher-level EV value for EV 1 and input 963
+
+# Higher-level EV value for EV 1 and input 964
+
+# Higher-level EV value for EV 1 and input 965
+
+# Higher-level EV value for EV 1 and input 966
+
+# Higher-level EV value for EV 1 and input 967
+
+# Higher-level EV value for EV 1 and input 968
+
+# Higher-level EV value for EV 1 and input 969
+
+# Higher-level EV value for EV 1 and input 970
+
+# Higher-level EV value for EV 1 and input 971
+
+# Higher-level EV value for EV 1 and input 972
+
+# Higher-level EV value for EV 1 and input 973
+
+# Higher-level EV value for EV 1 and input 974
+
+# Higher-level EV value for EV 1 and input 975
+
+# Higher-level EV value for EV 1 and input 976
+
+# Higher-level EV value for EV 1 and input 977
+
+# Higher-level EV value for EV 1 and input 978
+
+# Higher-level EV value for EV 1 and input 979
+
+# Higher-level EV value for EV 1 and input 980
+
+# Higher-level EV value for EV 1 and input 981
+
+# Higher-level EV value for EV 1 and input 982
+
+# Higher-level EV value for EV 1 and input 983
+
+# Higher-level EV value for EV 1 and input 984
+
+# Higher-level EV value for EV 1 and input 985
+
+# Higher-level EV value for EV 1 and input 986
+
+# Higher-level EV value for EV 1 and input 987
+
+# Higher-level EV value for EV 1 and input 988
+
+# Higher-level EV value for EV 1 and input 989
+
+# Higher-level EV value for EV 1 and input 990
+
+# Higher-level EV value for EV 1 and input 991
+
+# Higher-level EV value for EV 1 and input 992
+
+# Higher-level EV value for EV 1 and input 993
+
+# Higher-level EV value for EV 1 and input 994
+
+# Higher-level EV value for EV 1 and input 995
+
+# Higher-level EV value for EV 1 and input 996
+
+# Higher-level EV value for EV 1 and input 997
+
+# Higher-level EV value for EV 1 and input 998
+
+# Higher-level EV value for EV 1 and input 999
+
+# Higher-level EV value for EV 1 and input 1000
+
+# Higher-level EV value for EV 1 and input 1001
+
+# Higher-level EV value for EV 1 and input 1002
+
+# Higher-level EV value for EV 1 and input 1003
+
+# Higher-level EV value for EV 1 and input 1004
+
+# Higher-level EV value for EV 1 and input 1005
+
+# Higher-level EV value for EV 1 and input 1006
+
+# Higher-level EV value for EV 1 and input 1007
+
+# Higher-level EV value for EV 1 and input 1008
+
+# Higher-level EV value for EV 1 and input 1009
+
+# Higher-level EV value for EV 1 and input 1010
+
+# Higher-level EV value for EV 1 and input 1011
+
+# Higher-level EV value for EV 1 and input 1012
+
+# Higher-level EV value for EV 1 and input 1013
+
+# Higher-level EV value for EV 1 and input 1014
+
+# Higher-level EV value for EV 1 and input 1015
+
+# Higher-level EV value for EV 1 and input 1016
+
+# Group membership for input 1
+set fmri(groupmem.1) 1
+
+# Group membership for input 2
+set fmri(groupmem.2) 1
+
+# Group membership for input 3
+set fmri(groupmem.3) 1
+
+# Group membership for input 4
+set fmri(groupmem.4) 1
+
+# Group membership for input 5
+set fmri(groupmem.5) 1
+
+# Group membership for input 6
+set fmri(groupmem.6) 1
+
+# Group membership for input 7
+set fmri(groupmem.7) 1
+
+# Group membership for input 8
+set fmri(groupmem.8) 1
+
+# Group membership for input 9
+set fmri(groupmem.9) 1
+
+# Group membership for input 10
+set fmri(groupmem.10) 1
+
+# Group membership for input 11
+set fmri(groupmem.11) 1
+
+# Group membership for input 12
+set fmri(groupmem.12) 1
+
+# Group membership for input 13
+set fmri(groupmem.13) 1
+
+# Group membership for input 14
+set fmri(groupmem.14) 1
+
+# Group membership for input 15
+set fmri(groupmem.15) 1
+
+# Group membership for input 16
+set fmri(groupmem.16) 1
+
+# Group membership for input 17
+set fmri(groupmem.17) 1
+
+# Group membership for input 18
+set fmri(groupmem.18) 1
+
+# Group membership for input 19
+set fmri(groupmem.19) 1
+
+# Group membership for input 20
+set fmri(groupmem.20) 1
+
+# Group membership for input 21
+set fmri(groupmem.21) 1
+
+# Group membership for input 22
+set fmri(groupmem.22) 1
+
+# Group membership for input 23
+set fmri(groupmem.23) 1
+
+# Group membership for input 24
+set fmri(groupmem.24) 1
+
+# Group membership for input 25
+set fmri(groupmem.25) 1
+
+# Group membership for input 26
+set fmri(groupmem.26) 1
+
+# Group membership for input 27
+set fmri(groupmem.27) 1
+
+# Group membership for input 28
+set fmri(groupmem.28) 1
+
+# Group membership for input 29
+set fmri(groupmem.29) 1
+
+# Group membership for input 30
+set fmri(groupmem.30) 1
+
+# Group membership for input 31
+set fmri(groupmem.31) 1
+
+# Group membership for input 32
+set fmri(groupmem.32) 1
+
+# Group membership for input 33
+set fmri(groupmem.33) 1
+
+# Group membership for input 34
+set fmri(groupmem.34) 1
+
+# Group membership for input 35
+set fmri(groupmem.35) 1
+
+# Group membership for input 36
+set fmri(groupmem.36) 1
+
+# Group membership for input 37
+set fmri(groupmem.37) 1
+
+# Group membership for input 38
+set fmri(groupmem.38) 1
+
+# Group membership for input 39
+set fmri(groupmem.39) 1
+
+# Group membership for input 40
+set fmri(groupmem.40) 1
+
+# Group membership for input 41
+set fmri(groupmem.41) 1
+
+# Group membership for input 42
+set fmri(groupmem.42) 1
+
+# Group membership for input 43
+set fmri(groupmem.43) 1
+
+# Group membership for input 44
+set fmri(groupmem.44) 1
+
+# Group membership for input 45
+set fmri(groupmem.45) 1
+
+# Group membership for input 46
+
+# Group membership for input 47
+
+# Group membership for input 48
+
+# Group membership for input 49
+
+# Group membership for input 50
+
+# Group membership for input 51
+
+# Group membership for input 52
+
+# Group membership for input 53
+
+# Group membership for input 54
+
+# Group membership for input 55
+
+# Group membership for input 56
+
+# Group membership for input 57
+
+# Group membership for input 58
+
+# Group membership for input 59
+
+# Group membership for input 60
+
+# Group membership for input 61
+
+# Group membership for input 62
+
+# Group membership for input 63
+
+# Group membership for input 64
+
+# Group membership for input 65
+
+# Group membership for input 66
+
+# Group membership for input 67
+
+# Group membership for input 68
+
+# Group membership for input 69
+
+# Group membership for input 70
+
+# Group membership for input 71
+
+# Group membership for input 72
+
+# Group membership for input 73
+
+# Group membership for input 74
+
+# Group membership for input 75
+
+# Group membership for input 76
+
+# Group membership for input 77
+
+# Group membership for input 78
+
+# Group membership for input 79
+
+# Group membership for input 80
+
+# Group membership for input 81
+
+# Group membership for input 82
+
+# Group membership for input 83
+
+# Group membership for input 84
+
+# Group membership for input 85
+
+# Group membership for input 86
+
+# Group membership for input 87
+
+# Group membership for input 88
+
+# Group membership for input 89
+
+# Group membership for input 90
+
+# Group membership for input 91
+
+# Group membership for input 92
+
+# Group membership for input 93
+
+# Group membership for input 94
+
+# Group membership for input 95
+
+# Group membership for input 96
+
+# Group membership for input 97
+
+# Group membership for input 98
+
+# Group membership for input 99
+
+# Group membership for input 100
+
+# Group membership for input 101
+
+# Group membership for input 102
+
+# Group membership for input 103
+
+# Group membership for input 104
+
+# Group membership for input 105
+
+# Group membership for input 106
+
+# Group membership for input 107
+
+# Group membership for input 108
+
+# Group membership for input 109
+
+# Group membership for input 110
+
+# Group membership for input 111
+
+# Group membership for input 112
+
+# Group membership for input 113
+
+# Group membership for input 114
+
+# Group membership for input 115
+
+# Group membership for input 116
+
+# Group membership for input 117
+
+# Group membership for input 118
+
+# Group membership for input 119
+
+# Group membership for input 120
+
+# Group membership for input 121
+
+# Group membership for input 122
+
+# Group membership for input 123
+
+# Group membership for input 124
+
+# Group membership for input 125
+
+# Group membership for input 126
+
+# Group membership for input 127
+
+# Group membership for input 128
+
+# Group membership for input 129
+
+# Group membership for input 130
+
+# Group membership for input 131
+
+# Group membership for input 132
+
+# Group membership for input 133
+
+# Group membership for input 134
+
+# Group membership for input 135
+
+# Group membership for input 136
+
+# Group membership for input 137
+
+# Group membership for input 138
+
+# Group membership for input 139
+
+# Group membership for input 140
+
+# Group membership for input 141
+
+# Group membership for input 142
+
+# Group membership for input 143
+
+# Group membership for input 144
+
+# Group membership for input 145
+
+# Group membership for input 146
+
+# Group membership for input 147
+
+# Group membership for input 148
+
+# Group membership for input 149
+
+# Group membership for input 150
+
+# Group membership for input 151
+
+# Group membership for input 152
+
+# Group membership for input 153
+
+# Group membership for input 154
+
+# Group membership for input 155
+
+# Group membership for input 156
+
+# Group membership for input 157
+
+# Group membership for input 158
+
+# Group membership for input 159
+
+# Group membership for input 160
+
+# Group membership for input 161
+
+# Group membership for input 162
+
+# Group membership for input 163
+
+# Group membership for input 164
+
+# Group membership for input 165
+
+# Group membership for input 166
+
+# Group membership for input 167
+
+# Group membership for input 168
+
+# Group membership for input 169
+
+# Group membership for input 170
+
+# Group membership for input 171
+
+# Group membership for input 172
+
+# Group membership for input 173
+
+# Group membership for input 174
+
+# Group membership for input 175
+
+# Group membership for input 176
+
+# Group membership for input 177
+
+# Group membership for input 178
+
+# Group membership for input 179
+
+# Group membership for input 180
+
+# Group membership for input 181
+
+# Group membership for input 182
+
+# Group membership for input 183
+
+# Group membership for input 184
+
+# Group membership for input 185
+
+# Group membership for input 186
+
+# Group membership for input 187
+
+# Group membership for input 188
+
+# Group membership for input 189
+
+# Group membership for input 190
+
+# Group membership for input 191
+
+# Group membership for input 192
+
+# Group membership for input 193
+
+# Group membership for input 194
+
+# Group membership for input 195
+
+# Group membership for input 196
+
+# Group membership for input 197
+
+# Group membership for input 198
+
+# Group membership for input 199
+
+# Group membership for input 200
+
+# Group membership for input 201
+
+# Group membership for input 202
+
+# Group membership for input 203
+
+# Group membership for input 204
+
+# Group membership for input 205
+
+# Group membership for input 206
+
+# Group membership for input 207
+
+# Group membership for input 208
+
+# Group membership for input 209
+
+# Group membership for input 210
+
+# Group membership for input 211
+
+# Group membership for input 212
+
+# Group membership for input 213
+
+# Group membership for input 214
+
+# Group membership for input 215
+
+# Group membership for input 216
+
+# Group membership for input 217
+
+# Group membership for input 218
+
+# Group membership for input 219
+
+# Group membership for input 220
+
+# Group membership for input 221
+
+# Group membership for input 222
+
+# Group membership for input 223
+
+# Group membership for input 224
+
+# Group membership for input 225
+
+# Group membership for input 226
+
+# Group membership for input 227
+
+# Group membership for input 228
+
+# Group membership for input 229
+
+# Group membership for input 230
+
+# Group membership for input 231
+
+# Group membership for input 232
+
+# Group membership for input 233
+
+# Group membership for input 234
+
+# Group membership for input 235
+
+# Group membership for input 236
+
+# Group membership for input 237
+
+# Group membership for input 238
+
+# Group membership for input 239
+
+# Group membership for input 240
+
+# Group membership for input 241
+
+# Group membership for input 242
+
+# Group membership for input 243
+
+# Group membership for input 244
+
+# Group membership for input 245
+
+# Group membership for input 246
+
+# Group membership for input 247
+
+# Group membership for input 248
+
+# Group membership for input 249
+
+# Group membership for input 250
+
+# Group membership for input 251
+
+# Group membership for input 252
+
+# Group membership for input 253
+
+# Group membership for input 254
+
+# Group membership for input 255
+
+# Group membership for input 256
+
+# Group membership for input 257
+
+# Group membership for input 258
+
+# Group membership for input 259
+
+# Group membership for input 260
+
+# Group membership for input 261
+
+# Group membership for input 262
+
+# Group membership for input 263
+
+# Group membership for input 264
+
+# Group membership for input 265
+
+# Group membership for input 266
+
+# Group membership for input 267
+
+# Group membership for input 268
+
+# Group membership for input 269
+
+# Group membership for input 270
+
+# Group membership for input 271
+
+# Group membership for input 272
+
+# Group membership for input 273
+
+# Group membership for input 274
+
+# Group membership for input 275
+
+# Group membership for input 276
+
+# Group membership for input 277
+
+# Group membership for input 278
+
+# Group membership for input 279
+
+# Group membership for input 280
+
+# Group membership for input 281
+
+# Group membership for input 282
+
+# Group membership for input 283
+
+# Group membership for input 284
+
+# Group membership for input 285
+
+# Group membership for input 286
+
+# Group membership for input 287
+
+# Group membership for input 288
+
+# Group membership for input 289
+
+# Group membership for input 290
+
+# Group membership for input 291
+
+# Group membership for input 292
+
+# Group membership for input 293
+
+# Group membership for input 294
+
+# Group membership for input 295
+
+# Group membership for input 296
+
+# Group membership for input 297
+
+# Group membership for input 298
+
+# Group membership for input 299
+
+# Group membership for input 300
+
+# Group membership for input 301
+
+# Group membership for input 302
+
+# Group membership for input 303
+
+# Group membership for input 304
+
+# Group membership for input 305
+
+# Group membership for input 306
+
+# Group membership for input 307
+
+# Group membership for input 308
+
+# Group membership for input 309
+
+# Group membership for input 310
+
+# Group membership for input 311
+
+# Group membership for input 312
+
+# Group membership for input 313
+
+# Group membership for input 314
+
+# Group membership for input 315
+
+# Group membership for input 316
+
+# Group membership for input 317
+
+# Group membership for input 318
+
+# Group membership for input 319
+
+# Group membership for input 320
+
+# Group membership for input 321
+
+# Group membership for input 322
+
+# Group membership for input 323
+
+# Group membership for input 324
+
+# Group membership for input 325
+
+# Group membership for input 326
+
+# Group membership for input 327
+
+# Group membership for input 328
+
+# Group membership for input 329
+
+# Group membership for input 330
+
+# Group membership for input 331
+
+# Group membership for input 332
+
+# Group membership for input 333
+
+# Group membership for input 334
+
+# Group membership for input 335
+
+# Group membership for input 336
+
+# Group membership for input 337
+
+# Group membership for input 338
+
+# Group membership for input 339
+
+# Group membership for input 340
+
+# Group membership for input 341
+
+# Group membership for input 342
+
+# Group membership for input 343
+
+# Group membership for input 344
+
+# Group membership for input 345
+
+# Group membership for input 346
+
+# Group membership for input 347
+
+# Group membership for input 348
+
+# Group membership for input 349
+
+# Group membership for input 350
+
+# Group membership for input 351
+
+# Group membership for input 352
+
+# Group membership for input 353
+
+# Group membership for input 354
+
+# Group membership for input 355
+
+# Group membership for input 356
+
+# Group membership for input 357
+
+# Group membership for input 358
+
+# Group membership for input 359
+
+# Group membership for input 360
+
+# Group membership for input 361
+
+# Group membership for input 362
+
+# Group membership for input 363
+
+# Group membership for input 364
+
+# Group membership for input 365
+
+# Group membership for input 366
+
+# Group membership for input 367
+
+# Group membership for input 368
+
+# Group membership for input 369
+
+# Group membership for input 370
+
+# Group membership for input 371
+
+# Group membership for input 372
+
+# Group membership for input 373
+
+# Group membership for input 374
+
+# Group membership for input 375
+
+# Group membership for input 376
+
+# Group membership for input 377
+
+# Group membership for input 378
+
+# Group membership for input 379
+
+# Group membership for input 380
+
+# Group membership for input 381
+
+# Group membership for input 382
+
+# Group membership for input 383
+
+# Group membership for input 384
+
+# Group membership for input 385
+
+# Group membership for input 386
+
+# Group membership for input 387
+
+# Group membership for input 388
+
+# Group membership for input 389
+
+# Group membership for input 390
+
+# Group membership for input 391
+
+# Group membership for input 392
+
+# Group membership for input 393
+
+# Group membership for input 394
+
+# Group membership for input 395
+
+# Group membership for input 396
+
+# Group membership for input 397
+
+# Group membership for input 398
+
+# Group membership for input 399
+
+# Group membership for input 400
+
+# Group membership for input 401
+
+# Group membership for input 402
+
+# Group membership for input 403
+
+# Group membership for input 404
+
+# Group membership for input 405
+
+# Group membership for input 406
+
+# Group membership for input 407
+
+# Group membership for input 408
+
+# Group membership for input 409
+
+# Group membership for input 410
+
+# Group membership for input 411
+
+# Group membership for input 412
+
+# Group membership for input 413
+
+# Group membership for input 414
+
+# Group membership for input 415
+
+# Group membership for input 416
+
+# Group membership for input 417
+
+# Group membership for input 418
+
+# Group membership for input 419
+
+# Group membership for input 420
+
+# Group membership for input 421
+
+# Group membership for input 422
+
+# Group membership for input 423
+
+# Group membership for input 424
+
+# Group membership for input 425
+
+# Group membership for input 426
+
+# Group membership for input 427
+
+# Group membership for input 428
+
+# Group membership for input 429
+
+# Group membership for input 430
+
+# Group membership for input 431
+
+# Group membership for input 432
+
+# Group membership for input 433
+
+# Group membership for input 434
+
+# Group membership for input 435
+
+# Group membership for input 436
+
+# Group membership for input 437
+
+# Group membership for input 438
+
+# Group membership for input 439
+
+# Group membership for input 440
+
+# Group membership for input 441
+
+# Group membership for input 442
+
+# Group membership for input 443
+
+# Group membership for input 444
+
+# Group membership for input 445
+
+# Group membership for input 446
+
+# Group membership for input 447
+
+# Group membership for input 448
+
+# Group membership for input 449
+
+# Group membership for input 450
+
+# Group membership for input 451
+
+# Group membership for input 452
+
+# Group membership for input 453
+
+# Group membership for input 454
+
+# Group membership for input 455
+
+# Group membership for input 456
+
+# Group membership for input 457
+
+# Group membership for input 458
+
+# Group membership for input 459
+
+# Group membership for input 460
+
+# Group membership for input 461
+
+# Group membership for input 462
+
+# Group membership for input 463
+
+# Group membership for input 464
+
+# Group membership for input 465
+
+# Group membership for input 466
+
+# Group membership for input 467
+
+# Group membership for input 468
+
+# Group membership for input 469
+
+# Group membership for input 470
+
+# Group membership for input 471
+
+# Group membership for input 472
+
+# Group membership for input 473
+
+# Group membership for input 474
+
+# Group membership for input 475
+
+# Group membership for input 476
+
+# Group membership for input 477
+
+# Group membership for input 478
+
+# Group membership for input 479
+
+# Group membership for input 480
+
+# Group membership for input 481
+
+# Group membership for input 482
+
+# Group membership for input 483
+
+# Group membership for input 484
+
+# Group membership for input 485
+
+# Group membership for input 486
+
+# Group membership for input 487
+
+# Group membership for input 488
+
+# Group membership for input 489
+
+# Group membership for input 490
+
+# Group membership for input 491
+
+# Group membership for input 492
+
+# Group membership for input 493
+
+# Group membership for input 494
+
+# Group membership for input 495
+
+# Group membership for input 496
+
+# Group membership for input 497
+
+# Group membership for input 498
+
+# Group membership for input 499
+
+# Group membership for input 500
+
+# Group membership for input 501
+
+# Group membership for input 502
+
+# Group membership for input 503
+
+# Group membership for input 504
+
+# Group membership for input 505
+
+# Group membership for input 506
+
+# Group membership for input 507
+
+# Group membership for input 508
+
+# Group membership for input 509
+
+# Group membership for input 510
+
+# Group membership for input 511
+
+# Group membership for input 512
+
+# Group membership for input 513
+
+# Group membership for input 514
+
+# Group membership for input 515
+
+# Group membership for input 516
+
+# Group membership for input 517
+
+# Group membership for input 518
+
+# Group membership for input 519
+
+# Group membership for input 520
+
+# Group membership for input 521
+
+# Group membership for input 522
+
+# Group membership for input 523
+
+# Group membership for input 524
+
+# Group membership for input 525
+
+# Group membership for input 526
+
+# Group membership for input 527
+
+# Group membership for input 528
+
+# Group membership for input 529
+
+# Group membership for input 530
+
+# Group membership for input 531
+
+# Group membership for input 532
+
+# Group membership for input 533
+
+# Group membership for input 534
+
+# Group membership for input 535
+
+# Group membership for input 536
+
+# Group membership for input 537
+
+# Group membership for input 538
+
+# Group membership for input 539
+
+# Group membership for input 540
+
+# Group membership for input 541
+
+# Group membership for input 542
+
+# Group membership for input 543
+
+# Group membership for input 544
+
+# Group membership for input 545
+
+# Group membership for input 546
+
+# Group membership for input 547
+
+# Group membership for input 548
+
+# Group membership for input 549
+
+# Group membership for input 550
+
+# Group membership for input 551
+
+# Group membership for input 552
+
+# Group membership for input 553
+
+# Group membership for input 554
+
+# Group membership for input 555
+
+# Group membership for input 556
+
+# Group membership for input 557
+
+# Group membership for input 558
+
+# Group membership for input 559
+
+# Group membership for input 560
+
+# Group membership for input 561
+
+# Group membership for input 562
+
+# Group membership for input 563
+
+# Group membership for input 564
+
+# Group membership for input 565
+
+# Group membership for input 566
+
+# Group membership for input 567
+
+# Group membership for input 568
+
+# Group membership for input 569
+
+# Group membership for input 570
+
+# Group membership for input 571
+
+# Group membership for input 572
+
+# Group membership for input 573
+
+# Group membership for input 574
+
+# Group membership for input 575
+
+# Group membership for input 576
+
+# Group membership for input 577
+
+# Group membership for input 578
+
+# Group membership for input 579
+
+# Group membership for input 580
+
+# Group membership for input 581
+
+# Group membership for input 582
+
+# Group membership for input 583
+
+# Group membership for input 584
+
+# Group membership for input 585
+
+# Group membership for input 586
+
+# Group membership for input 587
+
+# Group membership for input 588
+
+# Group membership for input 589
+
+# Group membership for input 590
+
+# Group membership for input 591
+
+# Group membership for input 592
+
+# Group membership for input 593
+
+# Group membership for input 594
+
+# Group membership for input 595
+
+# Group membership for input 596
+
+# Group membership for input 597
+
+# Group membership for input 598
+
+# Group membership for input 599
+
+# Group membership for input 600
+
+# Group membership for input 601
+
+# Group membership for input 602
+
+# Group membership for input 603
+
+# Group membership for input 604
+
+# Group membership for input 605
+
+# Group membership for input 606
+
+# Group membership for input 607
+
+# Group membership for input 608
+
+# Group membership for input 609
+
+# Group membership for input 610
+
+# Group membership for input 611
+
+# Group membership for input 612
+
+# Group membership for input 613
+
+# Group membership for input 614
+
+# Group membership for input 615
+
+# Group membership for input 616
+
+# Group membership for input 617
+
+# Group membership for input 618
+
+# Group membership for input 619
+
+# Group membership for input 620
+
+# Group membership for input 621
+
+# Group membership for input 622
+
+# Group membership for input 623
+
+# Group membership for input 624
+
+# Group membership for input 625
+
+# Group membership for input 626
+
+# Group membership for input 627
+
+# Group membership for input 628
+
+# Group membership for input 629
+
+# Group membership for input 630
+
+# Group membership for input 631
+
+# Group membership for input 632
+
+# Group membership for input 633
+
+# Group membership for input 634
+
+# Group membership for input 635
+
+# Group membership for input 636
+
+# Group membership for input 637
+
+# Group membership for input 638
+
+# Group membership for input 639
+
+# Group membership for input 640
+
+# Group membership for input 641
+
+# Group membership for input 642
+
+# Group membership for input 643
+
+# Group membership for input 644
+
+# Group membership for input 645
+
+# Group membership for input 646
+
+# Group membership for input 647
+
+# Group membership for input 648
+
+# Group membership for input 649
+
+# Group membership for input 650
+
+# Group membership for input 651
+
+# Group membership for input 652
+
+# Group membership for input 653
+
+# Group membership for input 654
+
+# Group membership for input 655
+
+# Group membership for input 656
+
+# Group membership for input 657
+
+# Group membership for input 658
+
+# Group membership for input 659
+
+# Group membership for input 660
+
+# Group membership for input 661
+
+# Group membership for input 662
+
+# Group membership for input 663
+
+# Group membership for input 664
+
+# Group membership for input 665
+
+# Group membership for input 666
+
+# Group membership for input 667
+
+# Group membership for input 668
+
+# Group membership for input 669
+
+# Group membership for input 670
+
+# Group membership for input 671
+
+# Group membership for input 672
+
+# Group membership for input 673
+
+# Group membership for input 674
+
+# Group membership for input 675
+
+# Group membership for input 676
+
+# Group membership for input 677
+
+# Group membership for input 678
+
+# Group membership for input 679
+
+# Group membership for input 680
+
+# Group membership for input 681
+
+# Group membership for input 682
+
+# Group membership for input 683
+
+# Group membership for input 684
+
+# Group membership for input 685
+
+# Group membership for input 686
+
+# Group membership for input 687
+
+# Group membership for input 688
+
+# Group membership for input 689
+
+# Group membership for input 690
+
+# Group membership for input 691
+
+# Group membership for input 692
+
+# Group membership for input 693
+
+# Group membership for input 694
+
+# Group membership for input 695
+
+# Group membership for input 696
+
+# Group membership for input 697
+
+# Group membership for input 698
+
+# Group membership for input 699
+
+# Group membership for input 700
+
+# Group membership for input 701
+
+# Group membership for input 702
+
+# Group membership for input 703
+
+# Group membership for input 704
+
+# Group membership for input 705
+
+# Group membership for input 706
+
+# Group membership for input 707
+
+# Group membership for input 708
+
+# Group membership for input 709
+
+# Group membership for input 710
+
+# Group membership for input 711
+
+# Group membership for input 712
+
+# Group membership for input 713
+
+# Group membership for input 714
+
+# Group membership for input 715
+
+# Group membership for input 716
+
+# Group membership for input 717
+
+# Group membership for input 718
+
+# Group membership for input 719
+
+# Group membership for input 720
+
+# Group membership for input 721
+
+# Group membership for input 722
+
+# Group membership for input 723
+
+# Group membership for input 724
+
+# Group membership for input 725
+
+# Group membership for input 726
+
+# Group membership for input 727
+
+# Group membership for input 728
+
+# Group membership for input 729
+
+# Group membership for input 730
+
+# Group membership for input 731
+
+# Group membership for input 732
+
+# Group membership for input 733
+
+# Group membership for input 734
+
+# Group membership for input 735
+
+# Group membership for input 736
+
+# Group membership for input 737
+
+# Group membership for input 738
+
+# Group membership for input 739
+
+# Group membership for input 740
+
+# Group membership for input 741
+
+# Group membership for input 742
+
+# Group membership for input 743
+
+# Group membership for input 744
+
+# Group membership for input 745
+
+# Group membership for input 746
+
+# Group membership for input 747
+
+# Group membership for input 748
+
+# Group membership for input 749
+
+# Group membership for input 750
+
+# Group membership for input 751
+
+# Group membership for input 752
+
+# Group membership for input 753
+
+# Group membership for input 754
+
+# Group membership for input 755
+
+# Group membership for input 756
+
+# Group membership for input 757
+
+# Group membership for input 758
+
+# Group membership for input 759
+
+# Group membership for input 760
+
+# Group membership for input 761
+
+# Group membership for input 762
+
+# Group membership for input 763
+
+# Group membership for input 764
+
+# Group membership for input 765
+
+# Group membership for input 766
+
+# Group membership for input 767
+
+# Group membership for input 768
+
+# Group membership for input 769
+
+# Group membership for input 770
+
+# Group membership for input 771
+
+# Group membership for input 772
+
+# Group membership for input 773
+
+# Group membership for input 774
+
+# Group membership for input 775
+
+# Group membership for input 776
+
+# Group membership for input 777
+
+# Group membership for input 778
+
+# Group membership for input 779
+
+# Group membership for input 780
+
+# Group membership for input 781
+
+# Group membership for input 782
+
+# Group membership for input 783
+
+# Group membership for input 784
+
+# Group membership for input 785
+
+# Group membership for input 786
+
+# Group membership for input 787
+
+# Group membership for input 788
+
+# Group membership for input 789
+
+# Group membership for input 790
+
+# Group membership for input 791
+
+# Group membership for input 792
+
+# Group membership for input 793
+
+# Group membership for input 794
+
+# Group membership for input 795
+
+# Group membership for input 796
+
+# Group membership for input 797
+
+# Group membership for input 798
+
+# Group membership for input 799
+
+# Group membership for input 800
+
+# Group membership for input 801
+
+# Group membership for input 802
+
+# Group membership for input 803
+
+# Group membership for input 804
+
+# Group membership for input 805
+
+# Group membership for input 806
+
+# Group membership for input 807
+
+# Group membership for input 808
+
+# Group membership for input 809
+
+# Group membership for input 810
+
+# Group membership for input 811
+
+# Group membership for input 812
+
+# Group membership for input 813
+
+# Group membership for input 814
+
+# Group membership for input 815
+
+# Group membership for input 816
+
+# Group membership for input 817
+
+# Group membership for input 818
+
+# Group membership for input 819
+
+# Group membership for input 820
+
+# Group membership for input 821
+
+# Group membership for input 822
+
+# Group membership for input 823
+
+# Group membership for input 824
+
+# Group membership for input 825
+
+# Group membership for input 826
+
+# Group membership for input 827
+
+# Group membership for input 828
+
+# Group membership for input 829
+
+# Group membership for input 830
+
+# Group membership for input 831
+
+# Group membership for input 832
+
+# Group membership for input 833
+
+# Group membership for input 834
+
+# Group membership for input 835
+
+# Group membership for input 836
+
+# Group membership for input 837
+
+# Group membership for input 838
+
+# Group membership for input 839
+
+# Group membership for input 840
+
+# Group membership for input 841
+
+# Group membership for input 842
+
+# Group membership for input 843
+
+# Group membership for input 844
+
+# Group membership for input 845
+
+# Group membership for input 846
+
+# Group membership for input 847
+
+# Group membership for input 848
+
+# Group membership for input 849
+
+# Group membership for input 850
+
+# Group membership for input 851
+
+# Group membership for input 852
+
+# Group membership for input 853
+
+# Group membership for input 854
+
+# Group membership for input 855
+
+# Group membership for input 856
+
+# Group membership for input 857
+
+# Group membership for input 858
+
+# Group membership for input 859
+
+# Group membership for input 860
+
+# Group membership for input 861
+
+# Group membership for input 862
+
+# Group membership for input 863
+
+# Group membership for input 864
+
+# Group membership for input 865
+
+# Group membership for input 866
+
+# Group membership for input 867
+
+# Group membership for input 868
+
+# Group membership for input 869
+
+# Group membership for input 870
+
+# Group membership for input 871
+
+# Group membership for input 872
+
+# Group membership for input 873
+
+# Group membership for input 874
+
+# Group membership for input 875
+
+# Group membership for input 876
+
+# Group membership for input 877
+
+# Group membership for input 878
+
+# Group membership for input 879
+
+# Group membership for input 880
+
+# Group membership for input 881
+
+# Group membership for input 882
+
+# Group membership for input 883
+
+# Group membership for input 884
+
+# Group membership for input 885
+
+# Group membership for input 886
+
+# Group membership for input 887
+
+# Group membership for input 888
+
+# Group membership for input 889
+
+# Group membership for input 890
+
+# Group membership for input 891
+
+# Group membership for input 892
+
+# Group membership for input 893
+
+# Group membership for input 894
+
+# Group membership for input 895
+
+# Group membership for input 896
+
+# Group membership for input 897
+
+# Group membership for input 898
+
+# Group membership for input 899
+
+# Group membership for input 900
+
+# Group membership for input 901
+
+# Group membership for input 902
+
+# Group membership for input 903
+
+# Group membership for input 904
+
+# Group membership for input 905
+
+# Group membership for input 906
+
+# Group membership for input 907
+
+# Group membership for input 908
+
+# Group membership for input 909
+
+# Group membership for input 910
+
+# Group membership for input 911
+
+# Group membership for input 912
+
+# Group membership for input 913
+
+# Group membership for input 914
+
+# Group membership for input 915
+
+# Group membership for input 916
+
+# Group membership for input 917
+
+# Group membership for input 918
+
+# Group membership for input 919
+
+# Group membership for input 920
+
+# Group membership for input 921
+
+# Group membership for input 922
+
+# Group membership for input 923
+
+# Group membership for input 924
+
+# Group membership for input 925
+
+# Group membership for input 926
+
+# Group membership for input 927
+
+# Group membership for input 928
+
+# Group membership for input 929
+
+# Group membership for input 930
+
+# Group membership for input 931
+
+# Group membership for input 932
+
+# Group membership for input 933
+
+# Group membership for input 934
+
+# Group membership for input 935
+
+# Group membership for input 936
+
+# Group membership for input 937
+
+# Group membership for input 938
+
+# Group membership for input 939
+
+# Group membership for input 940
+
+# Group membership for input 941
+
+# Group membership for input 942
+
+# Group membership for input 943
+
+# Group membership for input 944
+
+# Group membership for input 945
+
+# Group membership for input 946
+
+# Group membership for input 947
+
+# Group membership for input 948
+
+# Group membership for input 949
+
+# Group membership for input 950
+
+# Group membership for input 951
+
+# Group membership for input 952
+
+# Group membership for input 953
+
+# Group membership for input 954
+
+# Group membership for input 955
+
+# Group membership for input 956
+
+# Group membership for input 957
+
+# Group membership for input 958
+
+# Group membership for input 959
+
+# Group membership for input 960
+
+# Group membership for input 961
+
+# Group membership for input 962
+
+# Group membership for input 963
+
+# Group membership for input 964
+
+# Group membership for input 965
+
+# Group membership for input 966
+
+# Group membership for input 967
+
+# Group membership for input 968
+
+# Group membership for input 969
+
+# Group membership for input 970
+
+# Group membership for input 971
+
+# Group membership for input 972
+
+# Group membership for input 973
+
+# Group membership for input 974
+
+# Group membership for input 975
+
+# Group membership for input 976
+
+# Group membership for input 977
+
+# Group membership for input 978
+
+# Group membership for input 979
+
+# Group membership for input 980
+
+# Group membership for input 981
+
+# Group membership for input 982
+
+# Group membership for input 983
+
+# Group membership for input 984
+
+# Group membership for input 985
+
+# Group membership for input 986
+
+# Group membership for input 987
+
+# Group membership for input 988
+
+# Group membership for input 989
+
+# Group membership for input 990
+
+# Group membership for input 991
+
+# Group membership for input 992
+
+# Group membership for input 993
+
+# Group membership for input 994
+
+# Group membership for input 995
+
+# Group membership for input 996
+
+# Group membership for input 997
+
+# Group membership for input 998
+
+# Group membership for input 999
+
+# Group membership for input 1000
+
+# Group membership for input 1001
+
+# Group membership for input 1002
+
+# Group membership for input 1003
+
+# Group membership for input 1004
+
+# Group membership for input 1005
+
+# Group membership for input 1006
+
+# Group membership for input 1007
+
+# Group membership for input 1008
+
+# Group membership for input 1009
+
+# Group membership for input 1010
+
+# Group membership for input 1011
+
+# Group membership for input 1012
+
+# Group membership for input 1013
+
+# Group membership for input 1014
+
+# Group membership for input 1015
+
+# Group membership for input 1016
+
+# Contrast & F-tests mode
+# real : control real EVs
+# orig : control original EVs
+set fmri(con_mode_old) real
+set fmri(con_mode) real
+
+# Display images for contrast_real 1
+set fmri(conpic_real.1) 1
+
+# Title for contrast_real 1
+set fmri(conname_real.1) "group mean"
+
+# Real contrast_real vector 1 element 1
+set fmri(con_real1.1) 1
+
+# Contrast masking - use >0 instead of thresholding?
+set fmri(conmask_zerothresh_yn) 0
+
+# Do contrast masking at all?
+set fmri(conmask1_1) 0
+
+##########################################################
+# Now options that don't appear in the GUI
+
+# Alternative (to BETting) mask image
+set fmri(alternative_mask) ""
+
+# Initial structural space registration initialisation transform
+set fmri(init_initial_highres) ""
+
+# Structural space registration initialisation transform
+set fmri(init_highres) ""
+
+# Standard space registration initialisation transform
+set fmri(init_standard) ""
+
+# For full FEAT analysis: overwrite existing .feat output dir?
+set fmri(overwrite_yn) 0
