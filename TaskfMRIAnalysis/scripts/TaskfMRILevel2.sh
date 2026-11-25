@@ -124,9 +124,9 @@ Analyses=""; ExtensionList=""; ScalarExtensionList="";
 
 # Determine whether to run Parcellated, and set strings used for filenaming
 if [ "${Parcellation}" != "NONE" ] ; then
-    if [ "${VolumeBasedProcessing}" = "YES" ] || [ "${HippocampalOutput}" = "YES" ]; then
-        log_Err_Abort "Parcellated analysis must be run separately from dense, volume, and hippocampal analyses"
-    fi
+	if [ "${VolumeBasedProcessing}" = "YES" ] || [ "${HippocampalOutput}" = "YES" ]; then
+		log_Err_Abort "Parcellated analysis must be run separately from dense, volume, and hippocampal analyses"
+	fi
 	# Run Parcellated Analyses
 	runParcellated=true;
 	ParcellationString="_${Parcellation}"
@@ -151,20 +151,20 @@ fi
 
 # Determine whether to run Volume, and set strings used for filenaming
 if [ "$VolumeBasedProcessing" = "YES" ] ; then
-        if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
-			runVolume=true;
-			runDense=false;
-			ExtensionList="nii.gz "
-			ScalarExtensionList="volume.dscalar.nii "
-			Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses
-			log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
-				else
-			runVolume=true;
-			ExtensionList="${ExtensionList}nii.gz "
-			ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
-			Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
-			log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
-        fi
+	if [ ${FinalSmoothingFWHM} -eq 0 ] ; then
+		runVolume=true;
+		runDense=false;
+		ExtensionList="nii.gz "
+		ScalarExtensionList="volume.dscalar.nii "
+		Analyses="StandardVolumeStats "; # space character at end to separate multiple analyses
+		log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+	else
+		runVolume=true;
+		ExtensionList="${ExtensionList}nii.gz "
+		ScalarExtensionList="${ScalarExtensionList}volume.dscalar.nii "
+		Analyses+="StandardVolumeStats "; # space character at end to separate multiple analyses	
+		log_Msg "MAIN: DETERMINE_ANALYSES: Volume Analysis requested"
+	fi
 fi
 
 if [ "${HippocampalOutput}" = "YES" ] ; then
@@ -334,10 +334,10 @@ for Analysis in ${Analyses} ; do
 	Extension=`echo $ExtensionList | cut -d' ' -f $analysisCounter`;
 	ScalarExtension=`echo $ScalarExtensionList | cut -d' ' -f $analysisCounter`;
 
-    StructureString=""
-    if [ "$Analysis" = "HippocampusStats" ] ; then
-        StructureString="_Hipp"
-    fi
+	StructureString=""
+	if [ "$Analysis" = "HippocampusStats" ] ; then
+		StructureString="_Hipp"
+	fi
 
 	### Exit if cope files are not present in Level 1 folders
 	fileCount=$( ls ${FirstFolder}/${Analysis}/cope1.${Extension} 2>/dev/null | wc -l );

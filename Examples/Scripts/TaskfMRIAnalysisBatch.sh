@@ -95,7 +95,7 @@ get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/HCPpipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307 100610" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script#Set up pipeline environment variables and software
+EnvironmentScript="${HOME}/projects/HCPpipelines/Examples/Scripts/SetUpHCPPipeline.sh"
 
 source "$EnvironmentScript"
 
@@ -113,7 +113,7 @@ OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outpu
 Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
-RegNames="NONE" # Use NONE to use the default surface registration
+RegNames="MSMAll" # Use NONE to use the default surface registration
 ProcSTRING="hp0_clean_rclean_tclean" #Any preprocessing beyond CIFTI mapping and surface registration, e.g. spatial and temporal ICA cleanup or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
@@ -160,6 +160,12 @@ FSFprocstring="hp200_s4"
 FsfDesignList="NONE"
 
 LevelOneFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}_{Session}/tfMRI_{Task}_{Session}{FsfDesign}_{FSFprocstring}_level1.fsf"
+
+# Set an absolute path to CustomLevelTwoFsf to use your own Level 2 FSF.
+# Use {Task} or {Subject} in the path to select different files per task or subject.
+# Leave empty to use the standard per-subject FSF path.
+# Example: CustomLevelTwoFsf="${HOME}/projects/CustomFSFs/tfMRI_{Task}_level2.fsf"
+CustomLevelTwoFsf=""
 LevelTwoFsfPattern="{StudyFolder}/{Subject}/MNINonLinear/Results/tfMRI_{Task}/tfMRI_{Task}{FsfDesign}_{FSFprocstring}_level2.fsf"
 
 LevelOneTaskPattern="tfMRI_{Task}_{Session}"
@@ -184,6 +190,7 @@ case "${HippocampalOutput}" in
         ;;
 esac
 
+LevelTwoFsfPattern="${CustomLevelTwoFsf:-$LevelTwoFsfPattern}"
 
 # Log the originating call
 echo "$@"

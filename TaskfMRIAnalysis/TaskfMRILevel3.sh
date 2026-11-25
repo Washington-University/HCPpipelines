@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -xv
 set -e
-# Authors: Matthew Glasser, Michael Harms, Sachin Dixit
+# Authors: Matthew Glasser, Michael Harms, Sachin Dixit, Oren Poliva
 
 usage() {
     {
@@ -125,8 +125,7 @@ relabel_hippocampal_cifti() {
             output_right="HIPPOCAMPUS_DENTATE_RIGHT"
             ;;
         *)
-            echo "ERROR: Invalid relabel direction: $direction" >&2
-            return 1
+            log_Err_Abort "Invalid relabel direction: $direction"
             ;;
     esac
 
@@ -157,14 +156,16 @@ relabel_hippocampal_cifti() {
 # Just give usage if no arguments specified
 if [ $# -eq 0 ] ; then usage; exit 0; fi
 
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
 StudyFolder=`getopt1 "--path" $@`  
-SubjectList=$(getopt1 "--subjectlist" "$@")
-ExcludedSubjectList=$(getopt1 "--excluded-subjectlist" "$@")
+SubjectList=`getopt1 "--subjectlist" $@`
+ExcludedSubjectList=`getopt1 "--excluded-subjectlist" $@`
 ExcludedSubjectList=${ExcludedSubjectList:-NONE}
-LevelTwoFeatName=$(getopt1 "--level2-feat-name" "$@")
+LevelTwoFeatName=`getopt1 "--level2-feat-name" $@`
 GroupFolder=`getopt1 "--groupfolder" $@`  
 LevelThreeFsf=`getopt1 "--lvl3fsf" $@`   # Needs to specify the EVs, Contrasts, and F-tests.  Does NOT need to specify any inputs.
-                                         # However, order of inputs (rows) MUST correspond to order used in $SubjectList.
+                                         # However, order of inputs (rows) MUST correspond to order used in $SubjectList. 
                                          # Can be created using "Glm" GUI.
 LevelTwofMRIName=`getopt1 "--lvl2task" $@`
 LevelTwofsfName=`getopt1 "--lvl2fsf" $@`  
@@ -176,8 +177,18 @@ RegName=`getopt1 "--regname" $@`
 ContrastListIn=`getopt1 "--contrastlist" $@`
 Parcellation=`getopt1 "--parcellation" $@`
 ProcSTRING=`getopt1 "--procstring" $@`
-HippocampalOutput=$(getopt1 "--hippocampal-output" "$@")
+HippocampalOutput=`getopt1 "--hippocampal-output" $@`
+LevelThreeFsfMode=`getopt1 "--lvl3fsf-mode" $@`
+LevelThreeFsfMode=${LevelThreeFsfMode:-CUSTOM}
 
+if [[ ! -f "$LevelThreeFsf" || ! -r "$LevelThreeFsf" ]]; then
+    log_Err_Abort "Level 3 FSF must be a readable file: $LevelThreeFsf"
+fi
+
+case "$LevelThreeFsfMode" in
+    CUSTOM|GROUP_MEAN) ;;
+    *) log_Err_Abort "--lvl3fsf-mode must be CUSTOM or GROUP_MEAN" ;;
+esac
 
 HippocampalOutput=${HippocampalOutput:-NO}
 case "$HippocampalOutput" in
@@ -248,8 +259,36 @@ fi
 SubjectList="${IncludedSubjects[*]}"
 NumSubjects=${#IncludedSubjects[@]}
 
+if [[ "$LevelThreeFsfMode" == "GROUP_MEAN" ]]; then
+    awk '
+        $1 == "set" {
+            if ($2 == "fmri(evs_orig)") orig = $3
+            if ($2 == "fmri(evs_real)") real = $3
+            if ($2 == "fmri(evs_vox)") vox = $3
+            if ($2 == "fmri(confoundevs)" && $3 != 0) invalid = 1
+
+            if ($2 ~ /^fmri\(evg[0-9]+\.[0-9]+\)$/ &&
+                ($2 !~ /\.1\)$/ || $3 != 1)) invalid = 1
+
+            if ($2 ~ /^fmri\(groupmem\.[0-9]+\)$/ &&
+                $3 != 1) invalid = 1
+
+            if ($2 ~ /^(feat_files|highres_files|confoundev_files)\(/)
+                invalid = 1
+        }
+        END {
+            exit !(orig == 1 && real == 1 && vox == 0 && !invalid)
+        }
+    ' "$LevelThreeFsf" ||
+        log_Err_Abort "GROUP_MEAN requires a single-group mean FSF template: $LevelThreeFsf"
+fi
+
 SmoothingString="_s${FinalSmoothingFWHM}"
-TemporalFilterString="_hp""$TemporalFilter"
+if [[ "$TemporalFilter" == "NONE" ]]; then
+    TemporalFilterString="_hp0"
+else
+    TemporalFilterString="_hp${TemporalFilter}"
+fi
 
 if [ ! "${RegName}" = "NONE" ] ; then 
   RegString="_${RegName}"
@@ -334,59 +373,61 @@ else
   mkdir -p ${LevelThreeFEATDir}
 fi
 
-# Generate the Level 3 FSF with the participant count for this run.
-awk -v n="$NumSubjects" '
-    $1 == "set" && ($2 == "fmri(npts)" || $2 == "fmri(multiple)") {
-        print $1, $2, n
-        next
-    }
+if [[ "$LevelThreeFsfMode" == "GROUP_MEAN" ]]; then
+    # Generate one EV row and one group-membership row per included subject.
+    awk -v n="$NumSubjects" '
+        $1 == "set" && ($2 == "fmri(npts)" || $2 == "fmri(multiple)") {
+            print $1, $2, n
+            if ($2 == "fmri(npts)") found_npts = 1
+            if ($2 == "fmri(multiple)") found_multiple = 1
+            next
+        }
 
-    /^set fmri\((evg[0-9]+\.1|groupmem\.[0-9]+)\) / {
-        row = $2
-        sub(/^fmri\((evg|groupmem\.)/, "", row)
-        if (int(row) > n) next
-    }
+        /^# Higher-level EV value for EV 1 and input [0-9]+[[:space:]]*$/ ||
+        ($1 == "set" && $2 ~ /^fmri\(evg[0-9]+\.1\)$/) {
+            if (!wrote_ev) {
+                for (i = 1; i <= n; i++) {
+                    printf "# Higher-level EV value for EV 1 and input %d\n", i
+                    printf "set fmri(evg%d.1) 1\n\n", i
+                }
+                wrote_ev = 1
+            }
+            skip_blank = 1
+            next
+        }
 
-    # Skip comments for inputs beyond the included subject count.
-    (/^# Higher-level EV value for EV 1 and input [0-9]+$/ ||
-     /^# Group membership for input [0-9]+$/) && $NF > n {
-        skip_blank = 1
-        next
-    }
+        /^# Group membership for input [0-9]+[[:space:]]*$/ ||
+        ($1 == "set" && $2 ~ /^fmri\(groupmem\.[0-9]+\)$/) {
+            if (!wrote_groups) {
+                for (i = 1; i <= n; i++) {
+                    printf "# Group membership for input %d\n", i
+                    printf "set fmri(groupmem.%d) 1\n\n", i
+                }
+                wrote_groups = 1
+            }
+            skip_blank = 1
+            next
+        }
 
-    # Skip the blank line after a removed input entry.
-    skip_blank && NF == 0 {
-        skip_blank = 0
-        next
-    }
+        skip_blank && NF == 0 { next }
 
-    {
-        skip_blank = 0
-        print
-    }
-    
-    /^# Higher-level EV value for EV 1 and input [0-9]+$/ {
-        if ($NF > 45 && $NF <= n)
-            printf "set fmri(evg%d.1) 1\n", $NF
+        {
+            skip_blank = 0
+            print
+        }
 
-        # The template has placeholder comments through input 1020.
-        if ($NF == 1020)
-            for (i = 1021; i <= n; i++)
-                printf "\n# Higher-level EV value for EV 1 and input %d\nset fmri(evg%d.1) 1\n", i, i
-    }
+        END {
+            if (!(found_npts && found_multiple && wrote_ev && wrote_groups))
+                exit 1
+        }
+    ' "$LevelThreeFsf" > "${LevelThreeFEATDir}/design.fsf" ||
+        log_Err_Abort "Could not generate a group-mean FSF from: $LevelThreeFsf"
+else
+    # Preserve the caller's custom statistical design.
+    cp -- "$LevelThreeFsf" "${LevelThreeFEATDir}/design.fsf"
+fi
 
-    /^# Group membership for input [0-9]+$/ {
-        if ($NF > 45 && $NF <= n)
-            printf "set fmri(groupmem.%d) 1\n", $NF
-
-        if ($NF == 1020)
-            for (i = 1021; i <= n; i++)
-                printf "\n# Group membership for input %d\nset fmri(groupmem.%d) 1\n", i, i
-    }
-' "$LevelThreeFsf" > "${LevelThreeFEATDir}/design.fsf" || exit 1
-
-sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelThreeFEATDir}\"|" \
-    "${LevelThreeFEATDir}/design.fsf"
+sed -i -e "s|^set fmri(outputdir) .*|set fmri(outputdir) \"${LevelThreeFEATDir}\"|" "${LevelThreeFEATDir}/design.fsf"
 
 # Build the design files from the updated FSF.
 DIR=$(pwd)
@@ -394,8 +435,14 @@ cd "${LevelThreeFEATDir}"
 feat_model design
 cd "$DIR"
 
-# Record the input order for checking against the design.
-printf '%s\n' $SubjectList > "${LevelThreeFEATDir}/Subjects.txt"
+# Compare subject count based on number of feat directories vs. number of rows in design matrix.
+DesignSubjects=$(awk '$1 == "/NumPoints" { print $2 }' "${LevelThreeFEATDir}/design.mat")
+if [[ "$DesignSubjects" != "$NumSubjects" ]]; then
+    log_Err_Abort "Level 3 design has ${DesignSubjects:-unknown} rows, but --subjectlist contains $NumSubjects subjects"
+fi
+
+# Record the subject order used for the Level 3 inputs.
+printf '%s\n' "${IncludedSubjects[@]}" > "${LevelThreeFEATDir}/Subjects.txt"
 
 #Loop over Grayordinates and Standard Volume (if requested) Level 2 Analyses
 if [ ${VolumeBasedProcessing} = "YES" ] ; then
@@ -441,7 +488,7 @@ for Analysis in ${Analyses} ; do
       ## Subsection specific to CIFTI analysis
       if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" || "$Analysis" = "HippocampusStats" ]] ; then
         copedir="${LevelTwoFEATDir}/${Analysis}/cope${i}.feat"
-        InputExtension=$(level2_cifti_extension "$Analysis" "$copedir") || exit 1
+        InputExtension=$(level2_cifti_extension "$Analysis" "$copedir")
 
       ## Subsection specific to Volume analysis
       elif [ "$Analysis" = "StandardVolumeStats" ] ; then
@@ -487,7 +534,7 @@ for Analysis in ${Analyses} ; do
       else
         LevelTwoFEATDir=`echo ${LevelTwoFEATDirSTRING} | cut -d " " -f $j`
         copedir="${LevelTwoFEATDir}/${Analysis}/cope${i}.feat"
-        InputExtension=$(level2_cifti_extension "$Analysis" "$copedir") || exit 1
+        InputExtension=$(level2_cifti_extension "$Analysis" "$copedir")
         MASKMERGE="${MASKMERGE} -cifti ${copedir}/mask.${InputExtension}"
         COPEMERGE="${COPEMERGE} -cifti ${copedir}/cope1.${InputExtension}"
         VARCOPEMERGE="${VARCOPEMERGE} -cifti ${copedir}/varcope1.${InputExtension}"

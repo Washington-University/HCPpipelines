@@ -88,33 +88,54 @@ write_filtered_fsf() {
     }
 
     awk -v n="$count" '
-        $1 == "set" &&
-        ($2 == "fmri(npts)" || $2 == "fmri(multiple)") {
+        $1 == "set" && ($2 == "fmri(npts)" || $2 == "fmri(multiple)") {
             print "set " $2 " " n
+            if ($2 == "fmri(npts)") found_npts = 1
+            if ($2 == "fmri(multiple)") found_multiple = 1
             next
         }
 
-        $1 == "set" &&
-        ($2 ~ /^fmri\(evg[0-9]+\.[0-9]+\)$/ ||
-         $2 ~ /^fmri\(groupmem\.[0-9]+\)$/) {
+        /^# Higher-level EV value for EV 1 and input [0-9]+[[:space:]]*$/ ||
+        ($1 == "set" && $2 ~ /^fmri\(evg[0-9]+\.1\)$/) {
+            if (!wrote_ev) {
+                for (i = 1; i <= n; i++) {
+                    printf "# Higher-level EV value for EV 1 and input %d\n", i
+                    printf "set fmri(evg%d.1) 1\n\n", i
+                }
+                wrote_ev = 1
+            }
+            skip_blank = 1
             next
         }
 
-        /^# Higher-level EV value/ || /^# Group membership for input/ {
+        /^# Group membership for input [0-9]+[[:space:]]*$/ ||
+        ($1 == "set" && $2 ~ /^fmri\(groupmem\.[0-9]+\)$/) {
+            if (!wrote_groups) {
+                for (i = 1; i <= n; i++) {
+                    printf "# Group membership for input %d\n", i
+                    printf "set fmri(groupmem.%d) 1\n\n", i
+                }
+                wrote_groups = 1
+            }
+            skip_blank = 1
             next
         }
 
-        { print }
+        skip_blank && NF == 0 { next }
+
+        {
+            skip_blank = 0
+            print
+        }
 
         END {
-            print "\n# Filtered single-group mean design"
-            for (i = 1; i <= n; i++)
-                print "set fmri(evg" i ".1) 1"
-
-            for (i = 1; i <= n; i++)
-                print "set fmri(groupmem." i ") 1"
+            if (!(found_npts && found_multiple && wrote_ev && wrote_groups))
+                exit 1
         }
-    ' "$input" > "$output"
+    ' "$input" > "$output" || {
+        echo "ERROR: Could not generate a group-mean FSF from: $input" >&2
+        return 1
+    }
 }
 
 get_batch_options "$@"
@@ -134,13 +155,14 @@ OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outpu
 Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
 HighpassFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI, NONE to turn off
 VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
-RegNames="MSMAll" # Use NONE to use the default surface registration
+RegNames="MSMAll" # Use NONE to use the default cerebral-cortex surface registration
 ProcSTRING="hp0_clean_rclean_tclean" #A string indicating already perfomed MRI , e.g. rclean_tclean or NONE
 ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 ParcellationFileList="NONE" # Absolute path the parcellation dlabel file.  Also accepts NONE when the ptseries already exists and does not need to be generated.
 HippocampalOutput="YES" # Set to YES to also run hippocampal analysis
 LevelThreePrefix="GroupAnalysis" # Prefix for Level 3 output names and the group output folder; Use NONE to omit the analysis-name prefix.
 LevelThreeContrastList="ALL" # Level 2 contrasts to analyze at Level 3: ALL, or contrast numbers separated by @, e.g. "1@6@8".
+LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3"  # Output folder for Level 3 results.  Use an absolute path or a pattern beginning with {StudyFolder}.  If the folder does not exist, it will be created. 
 
 # Match the design identifiers used for Levels 1 and 2.
 # Leave empty for the default design.
@@ -176,8 +198,18 @@ fi
 # Tokens: {StudyFolder}, {Subject}, {Task}, {Run}, {NumSubjects}
 # Use an absolute path or a pattern beginning with {StudyFolder}.
 
-LevelThreeFsfPattern="PathToFsfFolder/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
-LevelThreeOutputFolder="${StudyFolder}/${LevelThreePrefix}_TaskfMRILevel3" 
+
+LevelThreeFsfMode="CUSTOM" # CUSTOM uses a user-supplied design. GROUP_MEAN generates a design for the subjects with Level 2 results, using a single-group mean template.
+LevelThreeFsfPattern="/path/to/fsfs/tfMRI_{Task}{FsfDesign}_level3_{NumSubjects}subjects.fsf"
+LevelThreeGroupMeanTemplate="/path/to/templates/Level3GroupMean.fsf"
+
+case "$LevelThreeFsfMode" in
+    CUSTOM|GROUP_MEAN) ;;
+    *)
+        echo "ERROR: LevelThreeFsfMode must be CUSTOM or GROUP_MEAN" >&2
+        exit 1
+        ;;
+esac
 
 # Requirements for this script
 #  installed versions of: FSL, Connectome Workbench (wb_command)
@@ -192,13 +224,11 @@ Subjlist=${Subjlist//$'\n'/ }
 read -r -a Subjects <<< "$Subjlist"
 
 RequestedNumSubjects=${#Subjects[@]}
-NumSubjects=$RequestedNumSubjects
 
 if (( RequestedNumSubjects < 2 )); then
     echo "ERROR: Level 3 requires at least two requested subjects" >&2
     exit 1
 fi
-
 ######################################### DO WORK ##########################################
 
 for TaskName in ${TaskNameList}
@@ -221,15 +251,18 @@ do
 
                         LevelTwoTask=`echo $LevelTwoTaskList | cut -d " " -f $i`
                         LevelTwoFSF=`echo $LevelTwoFSFList | cut -d " " -f $i`
-
-                        # Find the ORIGINAL FSF using the original requested subject count.
                         NumSubjects=$RequestedNumSubjects
-                        OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
-                        DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$OriginalLevelThreeFsf")
 
-                        if [[ "$DesignSubjects" != "$RequestedNumSubjects" ]]; then
-                            echo "ERROR: Original FSF count does not match requested subjects: ${OriginalLevelThreeFsf}"
-                            exit 1
+                        if [[ "$LevelThreeFsfMode" == "CUSTOM" ]]; then
+                            OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeFsfPattern" "" "$TaskName" "")
+                            DesignSubjects=$(awk '$1 == "set" && $2 == "fmri(npts)" {gsub(/"/, "", $3); print $3}' "$OriginalLevelThreeFsf")
+
+                            if [[ "$DesignSubjects" != "$RequestedNumSubjects" ]]; then
+                                echo "ERROR: Custom FSF count does not match requested subjects: $OriginalLevelThreeFsf" >&2
+                                exit 1
+                            fi
+                        else
+                            OriginalLevelThreeFsf=$(resolve_fsf_path "$LevelThreeGroupMeanTemplate" "" "$TaskName" "")
                         fi
 
                         TemporalFilterString=""
@@ -267,8 +300,14 @@ do
                             if [[ -d "$FeatDir" ]]; then
                                 AvailableSubjects+=("$CandidateSubject")
                             else
+                                if [[ "$LevelThreeFsfMode" == "CUSTOM" ]]; then
+                                    echo "ERROR: ${LevelTwoTask}: missing Level 2 FEAT directory for ${CandidateSubject}: ${FeatDir}" >&2
+                                    echo "Supply a subject list and custom FSF with matching rows in the same order." >&2
+                                    exit 1
+                                fi
+
                                 ExcludedSubjects+=("$CandidateSubject")
-                                echo "ERROR: ${LevelTwoTask}: excluding ${CandidateSubject}; missing Level2 FEAT directory: ${FeatDir}" >&2
+                                echo "WARNING: ${LevelTwoTask}: excluding ${CandidateSubject}; missing Level 2 FEAT directory: ${FeatDir}" >&2
                             fi
                         done
                         NumSubjects=${#AvailableSubjects[@]}
@@ -285,7 +324,6 @@ do
                         if (( ${#ExcludedSubjects[@]} > 0 )); then
                             ExcludedSubjectList=$(IFS=@; echo "${ExcludedSubjects[*]}")
                         fi
-
                         echo "Running Level 3: ${LevelTwoTask}, ${NumSubjects}/${RequestedNumSubjects} subjects"
                         "${HCPPIPEDIR}/global/scripts/captureoutput.sh" \
                             "${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRILevel3.sh" \
@@ -294,9 +332,10 @@ do
                             --path="$StudyFolder" \
                             --subjectlist="$SubjectList" \
                             --groupfolder="$LevelThreeOutputFolder" \
+                            --lvl3fsf="$LevelThreeFsf" \
+                            --lvl3fsf-mode="$LevelThreeFsfMode" \
                             --lvl2task="$LevelTwoTask" \
-                            --lvl2fsf="$LevelTwoFSF" \
-                            --fsf-design="$FsfDesign" \
+                            --lvl2fsf="${LevelTwoFSF}${DesignString}" \
                             --prefixanalysisname="$LevelThreePrefix" \
                             --finalsmoothingFWHM="$FinalSmoothingFWHM" \
                             --temporalfilter="$HighpassFilter" \
