@@ -27,6 +27,7 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     %SurfString - string, <leftsurf>@<rightsurf>, surfaces to use in weighted method for smoothing the alignment quality map
     %ScaleFactor - string representation of a number, multiply the input data by this factor before processing (to convert grand mean 10,000 data to % bold, use 0.01)
     %WRSmoothingSigma - string representation of a number, when using 'weighted' method, smooth the alignment quality map with this sigma (default 14, tuned for human data)
+    %Normalization - YES (default) standardizes spatial and temporal predictors. NO keeps their scale.
     %WF - number of Wishart Distributions for Wishart Filtering, set to zero to turn off (default)
  
     %if isdeployed()
@@ -60,9 +61,14 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
     end
 
     Normalization = optional.Normalization;
+    if isempty(Normalization)
+        Normalization = 'YES';
+    end
     if ~any(strcmp(Normalization, {'YES', 'NO'}))
         error('Normalization must be YES or NO');
-    end    
+    end
+    doNormalize = strcmp(Normalization, 'YES');
+
     %tighten doVol detection to check if volume outputs are asked for?
     doVol = false;
     doVolFixBC = false;
@@ -222,8 +228,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 LowDim = ciftiopen(LowDim, wbcommand);
                 %betaICAone = weightedDualRegression(LowDim.cdata, inputConcat, AreaWeights); 
                 %betaICA = weightedDualRegression(betaICAone, inputConcat, AreaWeights); 
-                betaICAone = weightedDualRegression(LowDim.cdata, inputConcat, AreaWeights, 0); %Always use WF=0
-                betaICA = weightedDualRegression(betaICAone, inputConcat, AreaWeights, 0); %Always use WF=0
+                betaICAone = weightedDualRegression(LowDim.cdata, inputConcat, AreaWeights, 0, doNormalize); %Always use WF=0
+                betaICA = weightedDualRegression(betaICAone, inputConcat, AreaWeights, 0,  doNormalize); %Always use WF=0
                 for j = 1:length(betaICA)
                     var(j) = atanh(corr(betaICA(j, :)', LowDim.cdata(j, :)')); %#ok<AGROW>
                 end
@@ -241,8 +247,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             
             %betaICAone = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights .* ScaledAlignmentQuality);
             %[betaICA, NODEts] = weightedDualRegression(normalise(betaICAone), inputConcat, AreaWeights);
-            betaICAone = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights .* ScaledAlignmentQuality, 0); %Always use WF=0
-            [betaICA, NODEts, inputConcat, DOF] = weightedDualRegression(normalise(betaICAone), inputConcat, AreaWeights, WF); %WF if requested only for the last spatial regression to avoid error propogation
+            betaICAone = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights .* ScaledAlignmentQuality, 0, doNormalize); %Always use WF=0
+            [betaICA, NODEts, inputConcat, DOF] = weightedDualRegression(betaICAone, inputConcat, AreaWeights, WF, doNormalize); %WF if requested only for the last spatial regression to avoid error propogation
             
             if strcmp(Method, "tICA_weighted") % based on tICA/scripts/ComputeGroupTICA.m but for one subject as a group
                 NODEts=NODEts';
@@ -288,23 +294,27 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
                 % single regression
                 NODEts = tICAtcs';
                 %betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
-                [betaICA, inputConcat, DOF] = temporalRegression(inputConcat,NODEts,WF);
+                [betaICA, inputConcat, DOF] = temporalRegression(inputConcat,NODEts,WF, doNormalize);
             end
         case 'dual'
             %[betaICA, NODEts] = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights);
-            [betaICA, NODEts, inputConcat, DOF] = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights, WF);
+            [betaICA, NODEts, inputConcat, DOF] = weightedDualRegression(GroupMapcii.cdata, inputConcat, AreaWeights, WF, doNormalize);
         case 'single'
             SpectraArray = textscan(optional.SpectraParams, '%s', 'Delimiter', {'@'});
             InputSpectraTS = SpectraArray{1}{1};
             NODEts=ciftiopen(InputSpectraTS, wbcommand);
             NODEts=NODEts.cdata';
             %betaICA = ((pinv(normalise(NODEts)) * demean(inputConcat')))';
-            [betaICA, inputConcat, DOF] = temporalRegression(inputConcat,NODEts,WF);
+            [betaICA, inputConcat, DOF] = temporalRegression(inputConcat,NODEts,WF, doNormalize);
         otherwise
             error(['unrecognized method: "' Method '", use "weighted", "tICA_weighted", "dual", or "single"']);
     end
     
-    NODEtsnorm = normalise(NODEts);
+    
+    NODEtsnorm = NODEts;
+    if doNormalize
+        NODEtsnorm = normalise(NODEts);
+    end
     
     %outputs
     %Save Timeseries and Spectra if Desired
@@ -348,14 +358,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         else
             dof = size(NODEtsnorm, 1) - size(NODEtsnorm, 2) - 1; %Approximate, does not include DOF lost from data cleanup
         end
-        if strcmp(optional.Normalization, 'YES')
-            residuals = demean(inputConcat, 2) - betaICA * NODEtsnorm';
-            pN = pinv(NODEtsnorm)
-        else
-            residuals = demean(inputConcat, 2) - betaICA * NODEts';
-            pN = pinv(NODEts)
-        end
-        dpN = diag(pN * pN')';
+        residuals = demean(inputConcat, 2) - betaICA * NODEtsnorm';
+        pN = pinv(NODEtsnorm); dpN = diag(pN * pN')';
         t = double(betaICA ./ sqrt(sum(residuals .^ 2, 2) * dpN / dof));
         Z = zeros(size(t));
         %Z(t > 0) = min(-norminv(tcdf(-t(t > 0), dof)), 38.5); %Exact p-value based method for t to z, but cannot handle values below matlab realmin (minimum accurate value of double)
@@ -378,7 +382,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             hippWF=WF;
             warning('Wishart filtering with hippocampal outputs is experimental.');
         end
-        [HippbetaICA, hippInputConcat, hippDOF] = temporalRegression(hippInputConcat,NODEtsnorm,hippWF);
+        % function receives false for Normalization as NODEtsnorm is already normalized
+        [HippbetaICA, hippInputConcat, hippDOF] = temporalRegression(hippInputConcat,NODEtsnorm,hippWF, false);
         if ~strcmp(optional.OutputHippBeta, '')
             %multiply by vn to get back to BC
             outHippTemplate.cdata = HippbetaICA .* repmat(vnhippmean, 1, size(HippbetaICA, 2));
@@ -414,7 +419,8 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
         elseif WF>1
           volWF=1; %Reduce volWF to 1
         end
-        [VolbetaICA, volInputConcat, DOF] = temporalRegression(volInputConcat,NODEtsnorm,volWF); 
+        % function receives false for Normalization as NODEtsnorm is already normalized
+        [VolbetaICA, volInputConcat, DOF] = temporalRegression(volInputConcat,NODEtsnorm,volWF, false); 
         if ~strcmp(optional.OutputVolBeta, '')
             %multiply by vn to get back to BC
             outVolTemplate.cdata = VolbetaICA .* repmat(vnvolmean, 1, size(VolbetaICA, 2));
@@ -443,7 +449,39 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             end
         end
     end
+
+    outputMaps = {OutputBeta, optional.OutputZ};
+    if ~isempty(optional.OutputZ)
+        outputMaps{end + 1} = optional.OutputZMM;
+    end
+    if doHipp
+        outputMaps = [outputMaps, {optional.OutputHippBeta, optional.OutputHippZ}];
+        if ~isempty(optional.OutputHippZ)
+            outputMaps{end + 1} = optional.OutputHippZMM;
+        end
+    end
+    if doVol
+        outputMaps = [outputMaps, {optional.OutputVolBeta, optional.OutputVolZ}];
+        if ~isempty(optional.OutputVolZ)
+            outputMaps{end + 1} = optional.OutputVolZMM;
+        end
+    end
+
+    for i = 1:numel(outputMaps)
+        scalarFile = outputMaps{i};
+        if endsWith(scalarFile, '.dscalar.nii')
+            seriesFile = [scalarFile(1:end-numel('.dscalar.nii')) '.dtseries.nii'];
+            quote = char(39);
+            escapedQuote = [quote '"' quote '"' quote];
+            scalarArg = [quote strrep(scalarFile, quote, escapedQuote) quote];
+            seriesArg = [quote strrep(seriesFile, quote, escapedQuote) quote];
+            my_system([wbcommand ' -cifti-change-mapping ' scalarArg ' ROW ' seriesArg ' -series 1 0']);
+            delete(scalarFile);
+
+        end
+    end
 end
+
 
 function outstruct = myargparse(myvarargs, allowed)
     for i = 1:length(allowed)
@@ -469,15 +507,18 @@ function lines = myreadtext(filename)
 end
 
 %function [betaMaps, mapTimeseries] = weightedDualRegression(SpatialMaps, Timeseries, Weights)
-function [betaMaps, mapTimeseries, OutDenseTimeseries, DOF] = weightedDualRegression(SpatialMaps, Timeseries, Weights,WF)
+function [betaMaps, mapTimeseries, OutDenseTimeseries, DOF] = weightedDualRegression(SpatialMaps, Timeseries, Weights,WF, doNormalize)
+    if doNormalize
+        SpatialMaps = normalise(SpatialMaps);
+    end
     DesignWeights = repmat(sqrt(Weights), 1, size(SpatialMaps, 2));
     DenseWeights = repmat(sqrt(Weights), 1, size(Timeseries, 2));
     mapTimeseries = demean((pinv(demean(SpatialMaps .* DesignWeights)) * (demean(Timeseries .* DenseWeights)))');
     %betaMaps = ((pinv(normalise(mapTimeseries)) * demean(Timeseries')))';
-    [betaMaps, OutDenseTimeseries, DOF] = temporalRegression(Timeseries,mapTimeseries,WF);
+    [betaMaps, OutDenseTimeseries, DOF] = temporalRegression(Timeseries,mapTimeseries,WF,doNormalize);
 end
 
-function [betaMaps, OutDenseTimeseries, DOF] = temporalRegression(DenseTimeseries,DesignTimeseries,WF)
+function [betaMaps, OutDenseTimeseries, DOF] = temporalRegression(DenseTimeseries,DesignTimeseries,WF,doNormalize)
     if WF>0
         Out=icaDim(DenseTimeseries,0,1,-1,WF); %demean only
         OutDenseTimeseries=Out.data;
@@ -486,7 +527,10 @@ function [betaMaps, OutDenseTimeseries, DOF] = temporalRegression(DenseTimeserie
         OutDenseTimeseries=DenseTimeseries;
         DOF=0; %This is junk so we can always set this output variable sometimes
     end
-    betaMaps = ((pinv(normalise(DesignTimeseries)) * demean(OutDenseTimeseries')))';
+    if doNormalize
+        DesignTimeseries = normalise(DesignTimeseries);
+    end
+    betaMaps = ((pinv(DesignTimeseries) * demean(OutDenseTimeseries')))';
 end
 
 function outstruct = open_vol_as_cifti(volName, ciftiTemplate, wbcommand)
