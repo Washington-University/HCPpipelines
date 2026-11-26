@@ -50,26 +50,12 @@ source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/debug.shlib" "$@"
 source "$HCPPIPEDIR/global/scripts/processingmodecheck.shlib" "$@" # Check processing mode requirements
 
+#description of this script to use in usage
+opts_SetScriptDescription "takes FreeSurfer output folder and converts files into HCP format/organization, etc."
+
 log_Msg "Platform Information Follows: "
 uname -a
 "$HCPPIPEDIR"/show_version
-
-#this function gets called by opts_ParseArguments when --help is specified
-function usage()
-{
-    #header text
-    echo "
-$log_ToolName: takes FreeSurfer output folder and converts files into HCP format/organization, etc.
-
-Usage: $log_ToolName PARAMETER...
-
-PARAMETERs are [ ] = optional; < > = user supplied value
-"
-    #automatic argument descriptions
-    opts_ShowArguments
-    
-    #do not use exit, the parsing code takes care of it
-}
 
 defaultSigma=$(echo "sqrt(200)" | bc -l)
 
