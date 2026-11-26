@@ -30,7 +30,6 @@ fi
 
 source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
 source "$HCPPIPEDIR/global/scripts/newopts.shlib" "$@"
-source "${HCPPIPEDIR}/global/scripts/processingmodecheck.shlib"  # Check processing mode requirements
 
 opts_SetScriptDescription "Run fMRISurface processing"
 
