@@ -313,7 +313,7 @@ function opts_ParseArguments()
         done
         if ((! opts_config_found))
         then
-            log_Err_Abort "developer error: config alias '${opts_config_aliases[$config_index2]}' refers to unknown config key '${opts_config_aliases[$config_index2 + 1]}'"
+            log_Err_Abort "developer error: config alias '${opts_config_aliases[$opts_config_index2]}' refers to unknown config key '${opts_config_aliases[$opts_config_index2 + 1]}'"
         fi
     done
     #save a copy of arguments for later, since we use shift
@@ -413,7 +413,7 @@ function opts_ParseArguments()
                 if ((! opts_config_found))
                 then
                     #check aliases
-                    for ((opts_config_index2 = 0; opts_config_index2 < ${#opts_config_alias_lookup[@]}; opts_config_index += 2))
+                    for ((opts_config_index2 = 0; opts_config_index2 < ${#opts_config_alias_lookup[@]}; opts_config_index2 += 2))
                     do
                         if [[ "$opts_config_key" == "${opts_config_alias_lookup[$opts_config_index2]}" ]]
                         then

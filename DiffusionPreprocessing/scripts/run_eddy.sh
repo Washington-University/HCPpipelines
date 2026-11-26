@@ -101,9 +101,9 @@ then
                 #also support "--extra-eddy-arg foo", for fewer surprises
                 if ((i + 1 >= ${#origargs[@]}))
                 then
-                    log_Err_Abort "--extra-reconall-arg requires an argument"
+                    log_Err_Abort "--extra-eddy-arg requires an argument"
                 fi
-                extra_reconall_args_manual+=("${origargs[i + 1]#*=}")
+                extra_eddy_args_manual+=("${origargs[i + 1]}")
                 #skip the next argument, we took care of it
                 i=$((i + 1))
                 changeargs=1

@@ -2,7 +2,6 @@
 
 import sys
 from sys import argv
-from commands import getoutput
 from numpy import *
 
 def usage():
@@ -13,7 +12,7 @@ def usage():
     print("          aligning the AC, the AC-PC line and the mid-sagittal plane (in order of decreasing accuracy)")
     sys.exit(1)
 
-if len(argv) < 2:
+if len(argv) < 3:
     usage()
 
 # Load in the necessary info

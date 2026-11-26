@@ -315,8 +315,8 @@ for Mesh in ${LowResMeshes} ${HighResMesh} ; do
 		Scale="4"
 	else 
 		i=1
-		for LowResMesh in ${LowResMeshes} ; do
-			if [ ${LowResMesh} = ${Mesh} ] ; then
+		for CandidateLowResMesh in ${LowResMeshes} ; do
+			if [ ${CandidateLowResMesh} = ${Mesh} ] ; then
 				Folder=$(echo ${DownSampleFolderNames} | cut -d " " -f ${i})
 				DownSampleT1wFolder=$(echo ${DownSampleT1wFolderNames} | cut -d " " -f ${i})
 			fi

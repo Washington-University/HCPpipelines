@@ -53,6 +53,8 @@ opts_AddOptional '--betradius' 'BetRadius' 'float' 'radius in mm' "75"
 
 opts_AddOptional '--betfraction' 'BetFraction' 'float' 'fract 0 to 1' "0.3"
 
+opts_AddOptional '--betbiasfieldcor' 'BetBiasFieldCor' 'TRUE/FALSE' "Indicates whether to correct bias field for BET (default: FALSE)" "FALSE"
+
 opts_AddOptional '--species' 'SPECIES' 'string' 'species' "Human"
 
 opts_ParseArguments "$@"
@@ -121,7 +123,8 @@ fi
 if [ ! -z $BetFraction ] ; then
   BetOpts+=" -f $BetFraction"
 fi
-if [ "BiasfieldCor" = TRUE ] ; then 
+BetBiasFieldCor=$(opts_StringToBool "$BetBiasFieldCor")
+if ((BetBiasFieldCor)) ; then
   BetOpts+=" -B"               # bias filed correction and rubust centre estimation
 fi
 BetOpts+=" -z $betspecieslabel"

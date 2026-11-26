@@ -104,7 +104,7 @@ then
                 then
                     log_Err_Abort "--extra-reconall-arg requires an argument"
                 fi
-                extra_reconall_args_manual+=("${origargs[i + 1]#*=}")
+                extra_reconall_args_manual+=("${origargs[i + 1]}")
                 #skip the next argument, we took care of it
                 i=$((i + 1))
                 changeargs=1
@@ -190,7 +190,7 @@ if [[ "$T1wImage" == "NONE" ]]; then
     T1wImage=""
 fi
 if [[ "$T1wImageBrain" == "NONE" ]]; then
-    T1wImage=""
+    T1wImageBrain=""
 fi
 if [[ "$T2wImage" == "NONE" ]]; then
     T2wImage=""
