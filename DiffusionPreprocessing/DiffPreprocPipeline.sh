@@ -433,10 +433,18 @@ if (( ! IsLongitudinal )); then
 
     log_Msg "eddy_cmd: ${eddy_cmd[*]}"
     "${eddy_cmd[@]}"
-else #copy cross-sectional output to longitudinal session
+else #portably copy cross-sectional output to longitudinal session
     log_Msg "Longitudinal mode, copying cross-sectional output of Pre-Eddy and Eddy steps to longitudinal session"
-    cp -rf "$StudyFolder/$Session/Diffusion" "$StudyFolder/$SessionLong/Diffusion"
-    cp -rf "$StudyFolder/$Session/T1w/Diffusion" "$StudyFolder/$SessionLong/T1w/Diffusion"
+    cp -rfL "$StudyFolder/$Session/${DWIName}/." "$StudyFolder/$SessionLong/${DWIName}"
+    cp -rfL "$StudyFolder/$Session/T1w/${DWIName}/." "$StudyFolder/$SessionLong/T1w/${DWIName}"
+
+    #portably copy timestamps from cross-sectional to longitudinal session
+    for folder in "${DWIName}" "T1w/${DWIName}"; do
+        src="$StudyFolder/$Session/$folder"
+        dest="$StudyFolder/$SessionLong/$folder"
+        for file in $(cd "$src" && find -L . -type f | sed 's|^\./||'); do touch -c -r "$src/$file" "$dest/$file"; done
+    done
+    chmod -R +w "$StudyFolder/$SessionLong/${DWIName}" "$StudyFolder/$SessionLong/T1w/${DWIName}"
 fi
 
 #PostEddy step must be run on longitudinal session rather than copied from cross-sectional.
@@ -462,7 +470,9 @@ log_Msg "post_eddy_cmd: ${post_eddy_cmd[*]}"
 
 # Clean up diffusion files in raw space for longitudinal runs
 if (( IsLongitudinal )); then 
-    rm -rf "${StudyFolder}/${DWIName}"
+    for folder in rawdata topup eddy data; do
+        rm -rf "${StudyFolder}/${Session}/${DWIName}/${folder}"
+    done
 fi
 
 log_Msg "Completed!"

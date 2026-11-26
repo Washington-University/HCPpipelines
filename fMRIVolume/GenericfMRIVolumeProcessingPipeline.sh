@@ -529,6 +529,7 @@ if (( IsLongitudinal )); then
     fi
     if [ -n "$fMRIReference" ] && [ "$fMRIReference" != "NONE" ]; then
         log_Warn "fmri reference is used during the initial cross-sectional run on a timepoint, but irrelevant (and therefore the argument is ignored) during the subsequent longitudinal call on the same timepoint."
+        fMRIReference="NONE"
     fi
 fi
 
@@ -566,7 +567,7 @@ T1wFolder="T1w" #Location of T1w images
 AtlasSpaceFolderBase="MNINonLinear"
 ResultsFolder="Results"
 BiasField="BiasField_acpc_dc"
-BiasFieldMNI="BiasField"
+BiasFieldAtlasSpace="BiasField"
 T1wAtlasName="T1w_restore"
 MovementRegressor="Movement_Regressors" #No extension, .txt appended
 MotionMatrixFolder="MotionMatrices"
@@ -588,35 +589,42 @@ JacobianOut="Jacobian"
 SessionFolder="$Path"/"$Session"
 SessionFolderLong="$Path"/"$SessionLong"
 
-#note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
-#this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
-sebasedBiasFieldMNI="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
-
 fMRIFolder="$Path"/"$Session"/"$NameOffMRI"
 
-# Set UseBiasFieldMNI variable, and error check BiasCorrection variable
-# (needs to go after "Naming Conventions" rather than the the initial argument parsing)
-case "$BiasCorrection" in
-    NONE)
-        UseBiasFieldMNI=""
-        ;;
-    LEGACY)
-        UseBiasFieldMNI="${fMRIFolder}/${BiasFieldMNI}.${FinalfMRIResolution}"
-        ;;
-    SEBASED)
-        if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
-        then
-            log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
-        fi
-        UseBiasFieldMNI="$sebasedBiasFieldMNI"
-        ;;
-    "")
-        log_Err_Abort "--biascorrection option not specified"
-        ;;
-    *)
-        log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
-        ;;
-esac
+# This code is a function because it will be reused later to set UseBiasFieldAtlasSpace in longitudinal mode, 
+# after OneStepResampling completed and the bias field has been computed
+# in longitudinal mode, the value of "fMRIFolder" gets changed later on
+function SetUseBiasFieldAtlasSpace() {
+    # Set UseBiasFieldAtlasSpace variable, and error check BiasCorrection variable
+    # (needs to go after "Naming Conventions" rather than the the initial argument parsing)
+
+    #note, this file doesn't exist yet, gets created by ComputeSpinEchoBiasField.sh during DistortionCorrectionAnd...
+    #this name specifically gets passed to fslmaths, and the script blindly puts _dilated on it, so don't use an extension
+    local sebasedBiasFieldAtlasSpace="$SessionFolder/$AtlasSpaceFolderBase/Results/$NameOffMRI/${NameOffMRI}_sebased_bias"
+    case "$BiasCorrection" in
+        NONE)
+            UseBiasFieldAtlasSpace=""
+            ;;
+        LEGACY)
+            UseBiasFieldAtlasSpace="${fMRIFolder}/${BiasFieldAtlasSpace}.${FinalfMRIResolution}"
+            ;;
+        SEBASED)
+            if [[ "$DistortionCorrection" != "${SPIN_ECHO_METHOD_OPT}" && "$DistortionCorrection" != "${TOPUP_MISMATCHED_METHOD_OPT}" ]]
+            then
+                log_Err_Abort "--biascorrection=SEBASED is only available with --dcmethod=${SPIN_ECHO_METHOD_OPT} or --dcmethod=${TOPUP_MISMATCHED_METHOD_OPT}"
+            fi
+            UseBiasFieldAtlasSpace="$sebasedBiasFieldAtlasSpace"
+            ;;
+        "")
+            log_Err_Abort "--biascorrection option not specified"
+            ;;
+        *)
+            log_Err_Abort "unrecognized value for bias correction: $BiasCorrection"
+            ;;
+    esac
+}
+#This call is for validation of the $BiasCorrection value, to fail early on invalid value.
+SetUseBiasFieldAtlasSpace
 
 # ------------------------------------------------------------------------------
 #  Compliance check of Legacy Style Data options
@@ -1130,6 +1138,7 @@ if [ "$RunMode" -lt 3 ] ; then
 fi  # RunMode < 3 (end of DistortionCorrection stage)
 
 # ---- Stage 3: OneStepResampling, IntensityNormalization, Copy Results, Cleanup
+SetUseBiasFieldAtlasSpace
 
 #One Step Resampling
 log_Msg "One Step Resampling"
@@ -1151,7 +1160,7 @@ for iEcho in $(seq 0 $((nEcho-1))) ; do
         --motionmatprefix=${MotionMatrixPrefix} \
         --ofmri="${fMRIFolder}/${tcsEchoesOrig[iEcho]}_nonlin" \
         --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
-        --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
+        --biasfield=${AtlasSpaceFolder}/${BiasFieldAtlasSpace} \
         --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
         --scoutin="${fMRIFolder}/${sctEchoesOrig[iEcho]}" \
         --scoutgdcin="${fMRIFolder}/${sctEchoesGdc[iEcho]}" \
@@ -1225,7 +1234,7 @@ fi
 log_Msg "Intensity Normalization and Bias Removal"
 ${RUN} ${PipelineScripts}/IntensityNormalization.sh \
     --infmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-    --biasfield=${UseBiasFieldMNI} \
+    --biasfield=${UseBiasFieldAtlasSpace} \
     --jacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution} \
     --brainmask=${fMRIFolder}/${FreeSurferBrainMask}.${FinalfMRIResolution} \
     --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin_norm \
