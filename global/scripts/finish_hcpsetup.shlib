@@ -20,6 +20,8 @@ export HCPPIPEDIR_fMRIVol=${HCPPIPEDIR}/fMRIVolume/scripts
 export HCPPIPEDIR_tfMRI=${HCPPIPEDIR}/tfMRI/scripts
 export HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
+export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
+
 
 #try to reduce strangeness from locale and other environment settings
 export LC_ALL=C
