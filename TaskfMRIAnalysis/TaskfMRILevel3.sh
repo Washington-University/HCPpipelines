@@ -28,7 +28,12 @@ usage() {
 	echo "     match the order of subjects in SubjectList."
 	echo "     Can be created using FSL's Glm GUI"
 	echo
-	echo "--lvl2task=<LevelTwofMRIName>"
+	echo "--lvl3fsf-mode=<CUSTOM, GROUP_MEAN>"
+	echo "     GROUP_MEAN (default) requires a single-group mean FSF template and sizes"
+	echo "     CUSTOM uses the design supplied via --lvl3fsf."
+	echo "     the design to the number of subjects in --subjectlist."
+	echo
+  echo "--lvl2task=<LevelTwofMRIName>"
 	echo "--lvl2fsf=<LevelTwofsfName>"
 	echo "--prefixanalysisname=<PrefixAnalysisName>"
 	echo "     Prefix for output folder name, turn off with NONE"
@@ -74,6 +79,11 @@ defaultopt() {
     echo $1
 }
 
+# Just give usage if no arguments specified
+if [ $# -eq 0 ] ; then usage; exit 0; fi
+
+source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
+
 level2_cifti_extension() {
     local analysis="$1"
     local copedir="$2"
@@ -96,9 +106,7 @@ level2_cifti_extension() {
         fi
     done
 
-    printf 'ERROR: No complete Level 2 CIFTI set in %s (checked suffixes: %s)\n' \
-        "$copedir" "${extensions[*]}" >&2
-    return 1
+  log_Err_Abort "No complete Level 2 CIFTI set in $copedir (checked suffixes: ${extensions[*]})"
 }
 
 # Relabel dentate as cortex for FSL, or restore the dentate labels.
@@ -153,11 +161,6 @@ relabel_hippocampal_cifti() {
     rm -r "$temp_dir"
 }
 
-# Just give usage if no arguments specified
-if [ $# -eq 0 ] ; then usage; exit 0; fi
-
-source "${HCPPIPEDIR}/global/scripts/debug.shlib" "$@"         # Debugging functions; also sources log.shlib
-
 StudyFolder=`getopt1 "--path" $@`  
 SubjectList=`getopt1 "--subjectlist" $@`
 ExcludedSubjectList=`getopt1 "--excluded-subjectlist" $@`
@@ -179,7 +182,7 @@ Parcellation=`getopt1 "--parcellation" $@`
 ProcSTRING=`getopt1 "--procstring" $@`
 HippocampalOutput=`getopt1 "--hippocampal-output" $@`
 LevelThreeFsfMode=`getopt1 "--lvl3fsf-mode" $@`
-LevelThreeFsfMode=${LevelThreeFsfMode:-CUSTOM}
+LevelThreeFsfMode=${LevelThreeFsfMode:-GROUP_MEAN}
 
 if [[ ! -f "$LevelThreeFsf" || ! -r "$LevelThreeFsf" ]]; then
     log_Err_Abort "Level 3 FSF must be a readable file: $LevelThreeFsf"
@@ -194,8 +197,7 @@ HippocampalOutput=${HippocampalOutput:-NO}
 case "$HippocampalOutput" in
     YES|NO) ;;
     *)
-        echo "ERROR: --hippocampal-output must be YES or NO" >&2
-        exit 1
+        log_Err_Abort "--hippocampal-output must be YES or NO"
         ;;
 esac
 
@@ -240,21 +242,13 @@ if [[ "$ExcludedSubjectList" != "NONE" ]]; then
     IFS=@ read -r -a ExcludedSubjects <<< "$ExcludedSubjectList"
 fi
 
-# report to stdout (o log).
-{
-    echo "===== Subject selection ====="
-    echo "Task: ${LevelTwofMRIName}"
-    echo "Level2 FEAT directory name: ${LevelTwoFeatName:-Not supplied}"
-    echo "Excluded subjects (${#ExcludedSubjects[@]}): ${ExcludedSubjects[*]:-None}"
-    echo "Included subjects (${#IncludedSubjects[@]}), in analysis order: ${IncludedSubjects[*]}"
-    echo "============================="
-}
-
-# Short report to stderr (e log).
-{
-    echo "Task: ${LevelTwofMRIName}"
-    echo "Excluded subjects (${#ExcludedSubjects[@]}): ${ExcludedSubjects[*]:-None}"
-} >&2
+# Report subject selection to stdout.
+echo "===== Subject selection ====="
+echo "Task: ${LevelTwofMRIName}"
+echo "Level2 FEAT directory name: ${LevelTwoFeatName:-Not supplied}"
+echo "Excluded subjects (${#ExcludedSubjects[@]}): ${ExcludedSubjects[*]:-None}"
+echo "Included subjects (${#IncludedSubjects[@]}), in analysis order: ${IncludedSubjects[*]}"
+echo "============================="
 
 SubjectList="${IncludedSubjects[*]}"
 NumSubjects=${#IncludedSubjects[@]}
@@ -340,8 +334,7 @@ for Subject in $SubjectList ; do
   if [ -d ${LevelTwoFEATDir} ] ; then
     LevelTwoFEATDirSTRING="${LevelTwoFEATDirSTRING} ${LevelTwoFEATDir}"
   else
-    echo "ERROR: ${LevelTwoFEATDir} does not exist for ${Subject}"
-    exit -1
+    log_Err_Abort "ERROR: ${LevelTwoFEATDir} does not exist for ${Subject}"
   fi
 done
 
@@ -481,8 +474,7 @@ for Analysis in ${Analyses} ; do
 
       #Confirm that all the Lev2 inputs have the same contrasts, otherwise we have a problem
       if ! diff ${FirstFolder}/Contrasts.txt ${LevelTwoFEATDir}/Contrasts.txt > /dev/null ; then
-	      echo "ERROR: Contrasts.txt in ${LevelTwoFEATDir} doesn't match that in ${FirstFolder}"
-	      exit -1
+	      log_Err_Abort "Contrasts.txt in ${LevelTwoFEATDir} doesn't match that in ${FirstFolder}"
       fi
 
       ## Subsection specific to CIFTI analysis
@@ -496,14 +488,12 @@ for Analysis in ${Analyses} ; do
 	      ## For StandardVolumeStats, just create symbolic links to original copeX.feat directories
 	      copedir=${LevelTwoFEATDir}/${Analysis}/cope${i}.feat
 	      if [ ! -e ${copedir} ] ; then
-	        echo "ERROR: ${copedir} does not exist"
-	        exit -1
+	        log_Err_Abort "ERROR: ${copedir} does not exist"
 	      fi
         #symlinks review: absolute link, needs attention.
         ln -s ${copedir} ${LevelThreeFEATDir}/${Analysis}/${i}/${j}
       else
-	      echo "ERROR: $Analysis not a valid analysis mode"
-	      exit -1
+	      log_Err_Abort "ERROR: $Analysis not a valid analysis mode"
       fi ##End of specific gray and vol subsections
 
       j=$(($j+1))
@@ -671,8 +661,7 @@ for Analysis in ${Analyses} ; do
         if [[ "$Analysis" = "GrayordinatesStats" || "$Analysis" = "ParcellatedStats" || "$Analysis" = "HippocampusStats" ]] ; then
 	        input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.${StatInputExtension}
 	        if [ ! -e ${input} ] ; then
-            echo "ERROR: ${input} does not exist" 1>&2
-            exit -1
+            log_Err_Abort "ERROR: ${input} does not exist"
 	        fi
 	        output=${LevelThreeFEATDir}/${prefix}.${ScalarExtension}
 	        ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${input} ROW ${output} -name-file ${LevelThreeFEATDir}/Contrasttemp.txt
@@ -690,8 +679,7 @@ for Analysis in ${Analyses} ; do
 	        prefix=${PrefixAnalysisString}${LevelTwofsfName}_level3vol_${statistic}_${Contrast}${TemporalFilterString}${SmoothingString}${ProcSTRING}	        
           input=${LevelThreeFEATDir}/${Analysis}/cope${i}.feat/${statistic}.nii.gz
 	        if [ ! -e ${input} ] ; then
-	          echo "ERROR: ${input} does not exist" 1>&2
-	          exit -1
+	          log_Err_Abort "ERROR: ${input} does not exist"
 	        fi
 	        outputseries=${LevelThreeFEATDir}/${prefix}.${Extension}
 	        outputscalar=${LevelThreeFEATDir}/${prefix}.${ScalarExtension}
@@ -701,8 +689,7 @@ for Analysis in ${Analyses} ; do
 	        MergeSTRING=`echo "${MergeSTRING} -cifti ${outputscalar}"`
 
 	        else
-	          echo "ERROR: $Analysis not a valid analysis mode" 1>&2
-	          exit -1
+	          log_Err_Abort "ERROR: $Analysis not a valid analysis mode" 1>&2
 	      fi
       
 	      rm ${LevelThreeFEATDir}/Contrasttemp.txt

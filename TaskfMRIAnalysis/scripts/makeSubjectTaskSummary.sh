@@ -188,7 +188,7 @@ Analyses=""; ExtensionList=""; ScalarExtensionList="";
 if [ "${Parcellation}" != "NONE" ] ; then
 	# Run Parcellated Analyses
 	ParcellationString="_${Parcellation}"
-  	ExtensionList="${ExtensionList}ptseries.nii "
+	ExtensionList="${ExtensionList}ptseries.nii "
 	ScalarExtensionList="${ScalarExtensionList}pscalar.nii "
 	Analyses+="ParcellatedStats "; # space character at end to separate multiple analyses
 fi
@@ -230,8 +230,8 @@ if [[ "${SummaryName}" = "NONE" || "${SummaryName}" = "" ]]; then
 	# Determine location where SummaryDirectory should be created
 	SummaryDirectory="${ResultsFolder}/${SummaryName}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_subjectSummary.feat"
 else
-    # Determine location where SummaryDirectory should be created
-    SummaryDirectory="${ResultsFolder}/${SummaryName}/${SummaryName}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_subjectSummary.feat"
+	# Determine location where SummaryDirectory should be created
+	SummaryDirectory="${ResultsFolder}/${SummaryName}/${SummaryName}${TemporalFilterString}${SmoothingString}${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}_subjectSummary.feat"
 fi
 
 # Check if summary directory already exists, and remove old summary directory
@@ -248,12 +248,12 @@ mkdir -pv "$SummaryDirectory"
 log_Msg "Loop over analyses requested: ${Analyses}"
 analysisCounter=1;
 for Analysis in ${Analyses} ; do
-    if [ "$Analysis" = "HippocampusStats" ] ; then
-        StructureString="_Hipp"
-    else
-        StructureString=""
-    fi
-    log_Msg "Make Summary for Analysis: ${Analysis}"
+	if [ "$Analysis" = "HippocampusStats" ] ; then
+		StructureString="_Hipp"
+	else
+		StructureString=""
+	fi
+	log_Msg "Make Summary for Analysis: ${Analysis}"
 	Extension=`echo $ExtensionList | cut -d' ' -f $analysisCounter`;
 	ScalarExtension=`echo $ScalarExtensionList | cut -d' ' -f $analysisCounter`;
 	log_Msg "Using ${Extension} and ${ScalarExtension}"
@@ -263,13 +263,13 @@ for Analysis in ${Analyses} ; do
 	# Check if Level2 analysis was requested
 	if [ "$LevelTwofMRIName" != "NONE" ]; then
 		echo "Using Level2"
-        if [[ "$Analysis" == "HippocampusStats" ]]; then
-            StatInputExtension="dtseries.nii"
-        elif [[ "$Analysis" == "StandardVolumeStats" ]]; then
-            StatInputExtension="nii.gz"
-        else
-            StatInputExtension="nii"
-        fi
+		if [[ "$Analysis" == "HippocampusStats" ]]; then
+			StatInputExtension="dtseries.nii"
+		elif [[ "$Analysis" == "StandardVolumeStats" ]]; then
+			StatInputExtension="nii.gz"
+		else
+			StatInputExtension="nii"
+		fi
 		# Check if Level2 outputs are present, else throw error
         LevelTwoFEATDir="${ResultsFolder}/${LevelTwofMRIName}/${LevelTwofsfName}${TemporalFilterString}${SmoothingString}_level2${RegString}${ProcSTRING}${LowPassSTRING}${ParcellationString}.feat"		
 		## Check for Contrasts.txt file in feat directory
