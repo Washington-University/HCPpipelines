@@ -243,7 +243,7 @@ if [[ "$WF" != "" ]] ; then
 else
   WFstr=""
 fi
-OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dscalar.nii"
+OutBeta="$DownSampleMNIFolder/${Subject}.${OutString}_${MethodStr}${WFstr}${RegString}.${LowResMesh}k_fs_LR.dtseries.nii"
 OutputVolBeta=""
 if ((DoVol))
 then
@@ -269,9 +269,8 @@ OutputHippZMM=""
 if ((HippocampalOutput))
 then
     HippOutputPrefix="${Subject}.${OutString}_AtlasHipp"
-    OutputHippBeta="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}.dscalar.nii"
-    if ((DoZ))
-    then
+    OutputHippBeta="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}.dtseries.nii"
+    if ((DoZ)); then
         OutputHippZ="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}Z.dscalar.nii"
         OutputHippZMM="${HippDownSampleMNIFolder}/${HippOutputPrefix}_${MethodStr}${WFstr}ZMM.dscalar.nii"
     fi

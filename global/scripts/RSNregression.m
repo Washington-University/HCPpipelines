@@ -449,37 +449,6 @@ function RSNregression(InputFile, InputVNFile, Method, ParamsFile, OutputBeta, v
             end
         end
     end
-
-    outputMaps = {OutputBeta, optional.OutputZ};
-    if ~isempty(optional.OutputZ)
-        outputMaps{end + 1} = optional.OutputZMM;
-    end
-    if doHipp
-        outputMaps = [outputMaps, {optional.OutputHippBeta, optional.OutputHippZ}];
-        if ~isempty(optional.OutputHippZ)
-            outputMaps{end + 1} = optional.OutputHippZMM;
-        end
-    end
-    if doVol
-        outputMaps = [outputMaps, {optional.OutputVolBeta, optional.OutputVolZ}];
-        if ~isempty(optional.OutputVolZ)
-            outputMaps{end + 1} = optional.OutputVolZMM;
-        end
-    end
-
-    for i = 1:numel(outputMaps)
-        scalarFile = outputMaps{i};
-        if endsWith(scalarFile, '.dscalar.nii')
-            seriesFile = [scalarFile(1:end-numel('.dscalar.nii')) '.dtseries.nii'];
-            quote = char(39);
-            escapedQuote = [quote '"' quote '"' quote];
-            scalarArg = [quote strrep(scalarFile, quote, escapedQuote) quote];
-            seriesArg = [quote strrep(seriesFile, quote, escapedQuote) quote];
-            my_system([wbcommand ' -cifti-change-mapping ' scalarArg ' ROW ' seriesArg ' -series 1 0']);
-            delete(scalarFile);
-
-        end
-    end
 end
 
 
